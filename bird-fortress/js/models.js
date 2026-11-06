@@ -89,7 +89,7 @@ const Models = (() => {
     const root = new THREE.Group();
     const b = group(root); // корпус (для подпрыгивания)
     const P = { root, body: b };
-    const legC = { loon: 0x222222, eagle: 0xe8c040, owl: 0x8a7050, parrot: 0x555555 }[id] || 0xc08060;
+    const legC = { flamingo: 0xf08aa8, hummingbird: 0x333333, phoenix: 0xf0c040, peacock: 0x8a8a8a, loon: 0x222222, eagle: 0xe8c040, owl: 0x8a7050, parrot: 0x555555 }[id] || 0xc08060;
     let bodyMat = mat(0x8a6a4a), bellyMat = mat(0xe8dcc8), headMat = mat(0x8a7a62), wingMat = mat(0x6a4a2a), beakC = 0x7a7a7a, tailMat;
     let bodyS = [0.62, 0.56, 0.78], headS = 0.38, headPos = [0, 0.8, 0.32], neck = 0, beakLen = 0.16, beakR = 0.07;
     switch (id) {
@@ -101,11 +101,15 @@ const Models = (() => {
       case 'loon': bodyMat = texMat(T.checker()); bellyMat = mat(0xf2f2f2); headMat = mat(0x0e1012); wingMat = texMat(T.checker()); beakC = 0x111111; beakLen = 0.36; beakR = 0.055; neck = 0.25; headPos = [0, 1.05, 0.46]; headS = 0.34; bodyS = [0.66, 0.6, 0.95]; break;
       case 'turkey': bodyMat = texMat(T.feather('#5f4c38', '#c8a878', 'turk')); bellyMat = bodyMat; headMat = mat(0x9fb0c8); wingMat = texMat(T.feather('#4a3a2a', '#d6c09a', 'turkw')); beakC = 0xd8c8a0; neck = 0.35; headS = 0.24; headPos = [0, 1.12, 0.42]; bodyS = [0.78, 0.74, 0.95]; break;
       case 'owl': bodyMat = texMat(T.feather('#7a5a3a', '#3a2818', 'owl')); bellyMat = texMat(T.feather('#d8c09a', '#8a6a4a', 'owlb')); headMat = mat(0x7a5a3a); wingMat = texMat(T.feather('#6a4a2a', '#2a1a0a', 'owlw')); beakC = 0x333333; headS = 0.5; headPos = [0, 0.95, 0.12]; bodyS = [0.7, 0.8, 0.66]; beakLen = 0.1; break;
+      case 'hummingbird': bodyMat = mat(0x2ab07a, { metalness: 0.4, roughness: 0.35 }); bellyMat = mat(0xd8f0e0); headMat = mat(0x1a9a6a, { metalness: 0.4, roughness: 0.35 }); wingMat = mat(0x6a8a8a); beakC = 0x222222; beakLen = 0.42; beakR = 0.03; bodyS = [0.42, 0.42, 0.62]; headS = 0.3; break;
+      case 'flamingo': bodyMat = mat(0xf08aa8); bellyMat = mat(0xf8a8c0); headMat = mat(0xf08aa8); wingMat = mat(0xe86890); beakC = 0x222222; beakLen = 0.24; beakR = 0.07; neck = 0.55; headPos = [0, 1.55, 0.4]; headS = 0.28; bodyS = [0.6, 0.55, 0.85]; break;
+      case 'peacock': bodyMat = mat(0x1a5ad0, { metalness: 0.3, roughness: 0.4 }); bellyMat = mat(0x1a4ab0); headMat = mat(0x1a5ad0, { metalness: 0.3, roughness: 0.4 }); wingMat = mat(0x8a6a40); beakC = 0xd8c8a0; headS = 0.3; headPos = [0, 1.0, 0.4]; neck = 0.25; bodyS = [0.6, 0.6, 0.85]; break;
+      case 'phoenix': bodyMat = mat(0xe8401a, { emissive: 0xc02000, emissiveIntensity: 0.7 }); bellyMat = mat(0xf8a020, { emissive: 0xe06000, emissiveIntensity: 0.6 }); headMat = bodyMat; wingMat = mat(0xf86a10, { emissive: 0xd04000, emissiveIntensity: 0.8 }); beakC = 0xf0d040; beakR = 0.09; beakLen = 0.2; bodyS = [0.64, 0.6, 0.86]; break;
       case 'parrot': bodyMat = mat(0xd62a20); bellyMat = mat(0xe03a28); headMat = mat(0xd62a20); wingMat = mat(0x2a6ad8); beakC = 0xf0ead8; beakR = 0.1; beakLen = 0.16; bodyS = [0.58, 0.62, 0.74]; break;
       case 'eagle': bodyMat = texMat(T.feather('#4a3220', '#2a1a10', 'eagle')); bellyMat = bodyMat; headMat = mat(0xb08840); wingMat = texMat(T.feather('#3a2618', '#1a0e08', 'eaglew')); beakC = 0xf0c030; beakR = 0.1; beakLen = 0.2; bodyS = [0.72, 0.66, 0.92]; break;
     }
     // тело
-    const legH = 0.2;
+    const legH = id === 'flamingo' ? 0.75 : 0.2;
     sph(bodyS[0], bodyS[1], bodyS[2], bodyMat, 0, legH + bodyS[1] / 2, 0, b);
     sph(bodyS[0] * 0.82, bodyS[1] * 0.8, bodyS[2] * 0.7, bellyMat, 0, legH + bodyS[1] * 0.42, bodyS[2] * 0.18, b);
     // шея
@@ -144,6 +148,9 @@ const Models = (() => {
     if (id === 'turkey') { const w = sph(0.09, 0.3, 0.08, 0xd0281c, 0, -0.18, 0.1, head, true); w.rotation.x = 0.2; cone(0.03, 0.14, 0xc02018, 0.04, 0.02, 0.18, head, 5).rotation.x = 2.5; }
     if (id === 'owl') { [-1, 1].forEach(sx => { const t = cone(0.07, 0.22, 0x5a3a20, sx * 0.17, 0.25, -0.02, head, 4); t.rotation.z = -sx * 0.35; }); sph(0.42, 0.36, 0.1, 0xd8c09a, 0, -0.01, 0.2, head, true); }
     if (id === 'parrot') { sph(0.2, 0.18, 0.06, 0xf6f0e6, 0, 0.02, 0.17, head, true, false); }
+    if (id === 'flamingo') { const bk = cone(0.05, 0.12, 0x111111, 0, -0.08, 0.32, head, 5); bk.rotation.x = 2.3; }
+    if (id === 'peacock') for (let i = 0; i < 5; i++) { const c = cyl(0.008, 0.008, 0.18, 0x1a3a90, -0.08 + i * 0.04, 0.22, -0.02, head, 3, false); c.rotation.z = (i - 2) * 0.15; sph(0.05, 0.05, 0.05, 0x40c0f0, -0.08 + i * 0.04 - (i - 2) * 0.03, 0.31, -0.02, head, true, false); }
+    if (id === 'phoenix') { for (let i = 0; i < 4; i++) { const f = cone(0.06, 0.28, mat(0xffd040, { emissive: 0xffa000, emissiveIntensity: 1.6 }), -0.09 + i * 0.06, 0.22, -0.05 - i * 0.03, head, 4, false); f.rotation.x = -0.4 - i * 0.15; } }
     if (id === 'eagle') sph(headS * 1.05, headS * 0.6, headS * 1.05, 0xd8b060, 0, 0.06, -0.02, head, true);
     if (id === 'loon') { box(0.36, 0.05, 0.02, 0xf4f4f4, 0, -0.22, 0.05, head, false); }
     // крылья
@@ -155,7 +162,15 @@ const Models = (() => {
     P.wingL = wingL; P.wingR = wingR; wl.rotation.x = 0.15; wr.rotation.x = 0.15;
     // хвост
     const tail = group(b, 0, legH + bodyS[1] * 0.55, -bodyS[2] * 0.45); P.tail = tail;
-    if (id === 'turkey') {
+    if (id === 'peacock') {
+      const fanMat = texMat(canvasTex('pfan', 64, 128, (g2, w, h2) => { g2.fillStyle = '#2a8a3a'; g2.fillRect(0, 0, w, h2); g2.strokeStyle = '#7ad04a'; g2.lineWidth = 2; for (let i = 0; i < 8; i++) { g2.beginPath(); g2.moveTo(w / 2, h2); g2.lineTo(i * 9, 0); g2.stroke(); } g2.fillStyle = '#e8c030'; g2.beginPath(); g2.arc(w / 2, 22, 13, 0, 7); g2.fill(); g2.fillStyle = '#1a5ad0'; g2.beginPath(); g2.arc(w / 2, 22, 8, 0, 7); g2.fill(); g2.fillStyle = '#101830'; g2.beginPath(); g2.arc(w / 2, 22, 4, 0, 7); g2.fill(); }));
+      for (let i = 0; i < 13; i++) { const a = -1.45 + i * 0.242; const f = box(0.26, 1.3, 0.03, fanMat, Math.sin(a) * 0.6, 0.35 + Math.cos(a) * 0.6, -0.12, tail); f.rotation.z = -a; }
+    } else if (id === 'phoenix') {
+      const fl = mat(0xffa020, { emissive: 0xff6000, emissiveIntensity: 1.4 });
+      for (let i = 0; i < 5; i++) { const f = cone(0.09, 0.9, fl, (i - 2) * 0.09, 0.05, -0.45, tail, 5, false); f.rotation.x = -Math.PI / 2 - 0.2 + Math.abs(i - 2) * 0.12; f.rotation.z = (i - 2) * 0.15; }
+    } else if (id === 'flamingo' || id === 'hummingbird') {
+      const t1 = box(0.16, 0.04, 0.3, wingMat, 0, 0, -0.12, tail); t1.rotation.x = -0.3;
+    } else if (id === 'turkey') {
       const fanMat = texMat(T.feather('#6a4e34', '#e8d8b0', 'fan'));
       for (let i = 0; i < 11; i++) {
         const a = -1.35 + i * 0.27;
@@ -180,7 +195,7 @@ const Models = (() => {
     P.legL = legL; P.legR = legR;
     const s = BIRDS[id] ? BIRDS[id].size : 1;
     root.scale.setScalar(s);
-    root.userData.parts = P;
+    root.userData.parts = P; root.userData.hover = id === 'hummingbird';
     return root;
   }
   // mode: idle | walk | peck | fly | sit
@@ -194,7 +209,7 @@ const Models = (() => {
       return;
     }
     P.body.rotation.x = 0;
-    const flutter = (Math.sin(tt * 0.7) > 0.97) ? Math.sin(tt * 30) * 0.4 : 0;
+    const flutter = root.userData.hover ? Math.sin(tt * 60) * 0.9 : (Math.sin(tt * 0.7) > 0.97) ? Math.sin(tt * 30) * 0.4 : 0;
     P.wingL.rotation.z = -0.05 - Math.abs(flutter); P.wingR.rotation.z = 0.05 + Math.abs(flutter);
     if (mode === 'walk') {
       P.legL.rotation.x = Math.sin(tt * 14) * 0.7; P.legR.rotation.x = -Math.sin(tt * 14) * 0.7;
@@ -265,6 +280,24 @@ const Models = (() => {
     root.userData.parts = P;
     root.userData.type = type;
     return root;
+  }
+  // Снаряжение: лампа в левой руке или каска с прожектором
+  function setGear(root, gear) {
+    const P = root.userData.parts;
+    if (P.gearL) { P.gearL.parent.remove(P.gearL); P.gearL = null; }
+    if (P.gearH) { P.gearH.parent.remove(P.gearH); P.gearH = null; }
+    if (gear === 'lamp') {
+      const l = group(P.arms[0], 0, -0.7, 0.05); P.gearL = l;
+      cyl(0.01, 0.01, 0.12, 0x2a2a2e, 0, 0.02, 0, l, 4, false);
+      box(0.16, 0.2, 0.16, mat(0xffd27a, { emissive: 0xffa030, emissiveIntensity: 1.8 }), 0, -0.12, 0, l, false);
+      cone(0.13, 0.1, 0x2a2a2e, 0, 0.0, 0, l, 4, false);
+    } else if (gear === 'helmet') {
+      const hd = group(P.head, 0, 0, 0); P.gearH = hd;
+      sph(0.44, 0.26, 0.44, mat(0xf2c41a, { roughness: 0.5 }), 0, 0.14, 0, hd, true);
+      cyl(0.31, 0.31, 0.03, 0xf2c41a, 0, 0.09, 0.03, hd, 12);
+      const lamp = cyl(0.08, 0.1, 0.1, 0x3a3a40, 0, 0.18, 0.2, hd, 10); lamp.rotation.x = Math.PI / 2;
+      const glass = cyl(0.075, 0.075, 0.02, mat(0xffffff, { emissive: 0xfff4c0, emissiveIntensity: 2.5 }), 0, 0.18, 0.26, hd, 10, false); glass.rotation.x = Math.PI / 2;
+    }
   }
   function makeTool(kind, tier) {
     const g = new THREE.Group();
@@ -448,19 +481,35 @@ const Models = (() => {
     }
     return g;
   }
-  function makeGate(stone) {
+  function makeGate(lvl) {
     const g = new THREE.Group();
-    if (!stone) {
-      [-1.75, 1.75].forEach(x => { cyl(0.32, 0.34, 3.2, WOOD_D, x, 1.6, 0, g, 6); cone(0.34, 0.6, WOOD_L, x, 3.5, 0, g, 6); });
-      const doorMat = texMat(T.planks());
-      box(3.1, 2.3, 0.2, doorMat, 0, 1.2, 0, g);
-      [0.6, 1.8].forEach(y => box(3.15, 0.14, 0.24, 0x4a4a50, 0, y, 0, g, false));
+    const steel = mat(0x5a5a62, { metalness: 0.5, roughness: 0.4 });
+    if (lvl <= 2) {
+      [-1.75, 1.75].forEach(x => { cyl(lvl === 2 ? 0.38 : 0.32, 0.36, 3.2, WOOD_D, x, 1.6, 0, g, 6); cone(0.36, 0.6, lvl === 2 ? 0x8a8a94 : WOOD_L, x, 3.5, 0, g, 6); });
+      box(3.1, 2.3, 0.2, texMat(T.planks()), 0, 1.2, 0, g);
+      (lvl === 2 ? [0.35, 0.95, 1.55, 2.1] : [0.6, 1.8]).forEach(y => box(3.15, 0.14, 0.24, 0x4a4a50, 0, y, 0, g, false));
       box(4, 0.3, 0.4, WOOD_D, 0, 2.7, 0, g);
+      if (lvl === 2) {
+        for (let i = 0; i < 7; i++) cone(0.08, 0.35, 0x9a9aa4, -1.5 + i * 0.5, 3.0, 0, g, 4, false);
+        [-0.7, 0.7].forEach(x => { const r = torus(0.14, 0.03, 0x2a2a2e, x, 1.3, 0.14, g, 8); void r; });
+      }
     } else {
-      [-1.6, 1.6].forEach(x => { box(1, 3.8, 1.4, brickMat(4), x, 1.9, 0, g); for (let i = 0; i < 2; i++) box(0.35, 0.4, 1.4, brickMat(4), x - 0.25 + i * 0.5, 4.0, 0, g); });
-      box(2.4, 0.7, 1.2, brickMat(4), 0, 3.2, 0, g);
-      box(2.2, 2.8, 0.18, mat(0x5a5a62, { metalness: 0.5, roughness: 0.4 }), 0, 1.4, 0, g);
-      for (let i = 0; i < 6; i++) box(0.06, 2.8, 0.24, 0x2a2a30, -1 + i * 0.4, 1.4, 0, g, false);
+      const bm = brickMat(lvl === 5 ? 5 : 4);
+      const H = lvl === 3 ? 3.8 : 4.3;
+      [-1.6, 1.6].forEach(x => { box(1, H, 1.4, bm, x, H / 2, 0, g); for (let i = 0; i < 2; i++) box(0.35, 0.4, 1.4, bm, x - 0.25 + i * 0.5, H + 0.2, 0, g); });
+      box(2.4, 0.7, 1.2, bm, 0, H - 0.6, 0, g);
+      if (lvl === 3) { box(2.2, 2.8, 0.18, steel, 0, 1.4, 0, g); for (let i = 0; i < 6; i++) box(0.06, 2.8, 0.24, 0x2a2a30, -1 + i * 0.4, 1.4, 0, g, false); }
+      else if (lvl === 4) {
+        box(2.2, 3.2, 0.22, texMat(T.planks()), 0, 1.6, 0, g);
+        const gold = mat(0xd8b040, { metalness: 0.7, roughness: 0.35 });
+        [0.5, 1.6, 2.7].forEach(y => box(2.25, 0.16, 0.28, gold, 0, y, 0, g, false));
+        [-1.6, 1.6].forEach(x => box(0.6, 1.2, 0.04, 0xc03028, x, H - 1.3, 0.72, g, false));
+      } else {
+        for (let i = 0; i < 7; i++) box(0.1, 3.3, 0.14, mat(0x9aa0aa, { metalness: 0.8, roughness: 0.3 }), -1.05 + i * 0.35, 1.65, 0, g);
+        for (let i = 0; i < 4; i++) box(2.2, 0.1, 0.14, mat(0x9aa0aa, { metalness: 0.8, roughness: 0.3 }), 0, 0.4 + i * 0.85, 0, g, false);
+        for (let i = 0; i < 7; i++) cone(0.06, 0.3, 0x9aa0aa, -1.05 + i * 0.35, 0.0, 0, g, 4, false).rotation.x = Math.PI;
+        [-1.6, 1.6].forEach(x => { cone(0.5, 0.9, 0x2a2c34, x, H + 0.85, 0, g, 4); });
+      }
     }
     return g;
   }
@@ -512,8 +561,8 @@ const Models = (() => {
         [0.45, 0.95].forEach(y => box(4, 0.1, 0.07, 0xe0823a, 0, y, 0, g));
         break;
       }
-      case 'gate': g = makeGate(false); break;
-      case 'stonegate': g = makeGate(true); break;
+      case 'gate': g = makeGate(lvl); break;
+      case 'stonegate': g = makeGate(3); break;
       case 'tower': {
         g = new THREE.Group(); woodTower(g, 3.6, 2.0);
         [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => box(0.1, 0.8, 0.1, WOOD_D, sx * 1.1, 4.1, sz * 1.1, g));
@@ -539,12 +588,49 @@ const Models = (() => {
       case 'ballista': {
         g = new THREE.Group(); woodTower(g, 1.6, 1.8);
         const cb = group(g, 0, 1.9, 0); g.userData.turret = cb;
-        cyl(0.4, 0.5, 0.3, 0x4a4e58, 0, 0, 0, cb, 8);
-        box(0.35, 0.3, 2.0, 0x6e4622, 0, 0.3, 0.2, cb);
-        const arm = box(2.6, 0.12, 0.16, mat(0x9a9aa4, { metalness: 0.6, roughness: 0.4 }), 0, 0.35, 0.9, cb); arm.rotation.y = 0;
-        box(0.08, 0.08, 1.6, 0xd8b040, 0, 0.5, 0.4, cb, false);
-        const gear = cyl(0.3, 0.3, 0.1, 0xb0b0b8, 0.3, 0.3, -0.5, cb, 8); gear.rotation.z = Math.PI / 2;
+        const steel = mat(0x9a9aa4, { metalness: 0.6, roughness: 0.4 });
+        cyl(0.45, 0.55, 0.3, 0x4a4e58, 0, 0, 0, cb, 8);
+        if (lvl <= 1) {
+          box(0.35, 0.3, 2.0, 0x6e4622, 0, 0.3, 0.2, cb);
+          box(2.6, 0.12, 0.16, steel, 0, 0.35, 0.9, cb);
+          box(0.08, 0.08, 1.6, 0xd8b040, 0, 0.5, 0.4, cb, false);
+          const gr = cyl(0.3, 0.3, 0.1, 0xb0b0b8, 0.3, 0.3, -0.5, cb, 8); gr.rotation.z = Math.PI / 2;
+          g.userData.muzzleL = new THREE.Vector3(0, 0.5, 1.2);
+        } else if (lvl === 2) {
+          box(0.7, 0.55, 1.0, 0x3a3e48, 0, 0.45, -0.1, cb);
+          [-0.14, 0.14].forEach(x => { const b = cyl(0.07, 0.08, 1.5, steel, x, 0.5, 0.9, cb, 8); b.rotation.x = Math.PI / 2; const m = cyl(0.1, 0.1, 0.2, 0x2a2a2e, x, 0.5, 1.6, cb, 8); m.rotation.x = Math.PI / 2; });
+          box(0.45, 0.4, 0.5, 0x5a6a3a, 0.6, 0.35, -0.1, cb); // ящик с патронами
+          for (let i = 0; i < 6; i++) box(0.05, 0.12, 0.05, 0xd8b040, 0.38 - i * 0.05, 0.45, 0.1 + i * 0.05, cb, false);
+          box(0.9, 0.5, 0.06, steel, 0, 0.75, 0.3, cb); // щиток
+          g.userData.muzzleL = new THREE.Vector3(0, 0.5, 1.7);
+        } else {
+          const green = mat(0x3e8a3a, { roughness: 0.6 });
+          box(1.3, 0.9, 1.5, green, 0, 0.75, 0.1, cb);
+          box(1.35, 0.1, 1.55, 0x2a5a28, 0, 1.22, 0.1, cb, false);
+          for (let i = 0; i < 6; i++) {
+            const x = -0.4 + (i % 3) * 0.4, y = 0.55 + Math.floor(i / 3) * 0.42;
+            const t = cyl(0.15, 0.15, 0.1, 0x1a1a1a, x, y, 0.86, cb, 10, false); t.rotation.x = Math.PI / 2;
+            const r = cone(0.11, 0.25, 0xe8e030, x, y, 0.95, cb, 8, false); r.rotation.x = Math.PI / 2;
+          }
+          box(0.15, 0.6, 0.15, 0x2a2a2e, 0.75, 0.4, -0.4, cb);
+          g.userData.muzzleL = new THREE.Vector3(0, 0.8, 1.0);
+        }
         g.userData.muzzle = new THREE.Vector3(0, 2.2, 1.2);
+        break;
+      }
+      case 'mineshaft': {
+        g = new THREE.Group();
+        const mound = sph(3.4, 2.2, 3.4, 0x7a7670, 0, 0.3, -0.2, g); void mound;
+        for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; sph(1, 0.8, 1, 0x8a8680, Math.cos(a) * 1.4, 0.5, Math.sin(a) * 1.4 - 0.2, g, true); }
+        box(1.6, 1.8, 0.6, 0x080808, 0, 0.9, 1.3, g);
+        [-1, 1].forEach(sx => box(0.25, 2.1, 0.25, WOOD_D, sx * 0.95, 1.05, 1.55, g));
+        box(2.3, 0.3, 0.3, WOOD_D, 0, 2.15, 1.55, g);
+        [-0.35, 0.35].forEach(x => box(0.06, 0.05, 1.8, 0x5a5a62, x, 0.04, 2.1, g, false));
+        const cart = group(g, 0, 0, 2.4); box(0.8, 0.5, 0.9, 0x5a5a62, 0, 0.4, 0, cart);
+        for (let i = 0; i < 3; i++) sph(0.28, 0.22, 0.28, [0x8a8a86, 0x151515, 0xc87a40][i], -0.2 + i * 0.2, 0.7, 0, cart, true);
+        box(0.25, 0.3, 0.25, mat(0xffc040, { emissive: 0xffa020, emissiveIntensity: 1.5 }), 0.95, 1.7, 1.75, g, false);
+        if (lvl >= 2) { [-1, 1].forEach(sx => { const p = box(0.18, 3.2, 0.18, WOOD_D, sx * 0.9, 2.6, -0.4, g); p.rotation.z = -sx * 0.2; }); const wh = torus(0.55, 0.06, 0x5a5a62, 0, 4.1, -0.4, g, 14); g.userData.spin = wh; }
+        if (lvl >= 3) { box(0.9, 1.1, 0.9, 0x3a3e48, -1.6, 0.55, 0.9, g); cyl(0.12, 0.15, 1.6, 0x5a5a5a, -1.6, 1.8, 0.9, g, 6); const gr = cyl(0.35, 0.35, 0.12, 0xb0b0b8, -1.6, 0.8, 1.38, g, 10); gr.rotation.x = Math.PI / 2; g.userData.gear = gr; }
         break;
       }
       case 'cannon': g = makeCannon(lvl, false); break;
@@ -718,5 +804,5 @@ const Models = (() => {
     return { stone, coal, iron, berry };
   }
 
-  return { mat, texMat, T, box, sph, cyl, cone, torus, group, makeBird, animBird, makeHero, makeTool, animHero, makeEnemy, animEnemy, makeBuilding, makeCannon, merge, mtx, treeGeos, rockGeos, WALL_H: l => WALL_LEVELS[l - 1].h };
+  return { setGear, mat, texMat, T, box, sph, cyl, cone, torus, group, makeBird, animBird, makeHero, makeTool, animHero, makeEnemy, animEnemy, makeBuilding, makeCannon, merge, mtx, treeGeos, rockGeos, WALL_H: l => WALL_LEVELS[l - 1].h };
 })();

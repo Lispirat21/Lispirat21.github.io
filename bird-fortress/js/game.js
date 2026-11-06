@@ -12,7 +12,7 @@ const G = window.G = {};
   let nextId = 1, birdSeq = 1;
   let build = null;                   // режим строительства
   let time = 0, menuBird = null;
-  const lightPool = []; let lightT = 0;
+  const lightPool = []; let lightT = 0, gearPoint = null, gearSpot = null;
   const cam = { fp: -0.15, yaw: 0.7, pitch: 0.88, dist: 12, pos: new THREE.Vector3() };
   const input = G.input = { mx: 0, mz: 0, run: false, action: false, camX: 0, camY: 0 };
   const V = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -33,6 +33,8 @@ const G = window.G = {};
     camera = new THREE.PerspectiveCamera(55, 1, 0.3, 1000);
     World.build(scene, q);
     lightPool.length = 0;
+    gearPoint = new THREE.PointLight(0xffd090, 0, 14, 1.5); scene.add(gearPoint);
+    gearSpot = new THREE.SpotLight(0xfff4d8, 0, 50, 0.42, 0.55, 1.2); scene.add(gearSpot); scene.add(gearSpot.target);
     const NL = { low: 2, medium: 4, high: 6, ultra: 8 }[q] || 4;
     for (let i = 0; i < NL; i++) { const l = new THREE.PointLight(0xffb060, 0, 20, 1.2); l.castShadow = false; scene.add(l); lightPool.push(l); }
     menuBird = Models.makeBird('parrot'); menuBird.scale.setScalar(1.6); scene.add(menuBird);
@@ -135,6 +137,8 @@ const G = window.G = {};
     P = { mesh, pos: V(S.player.x, 0, S.player.z), yaw: Math.PI, hp: S.player.hp, maxHp: h.hp, st: h.stamina, maxSt: h.stamina, stRest: 0, tired: false, swing: 0, swingTarget: null, hitDone: false, atkCd: 0, dead: 0, lastHurt: -10, tool: null, toolTier: -2, moving: 0, hintT: 0, animT: 0 };
     P.pos.y = World.groundAt(P.pos.x, P.pos.z);
     setTool('axe');
+    if (!S.gear) S.gear = { own: {}, eq: null };
+    Models.setGear(mesh, S.gear.eq);
   }
   function setTool(kind) {
     if (kind === 'pick' && S.tools.pick < 0) kind = 'axe';
@@ -153,8 +157,10 @@ const G = window.G = {};
   const PASS_ENEMY = { spikes: 1, farm: 1 };
   const WALLISH = { wall: 1, fence: 1, gate: 1, stonegate: 1 };
   function footprint(t, rot) { const s = BUILD[t].size; return rot % 2 ? [s[1], s[0]] : [s[0], s[1]]; }
+  const LEVELS = { wall: WALL_LEVELS, cannon: CANNON_LEVELS, gate: GATE_LEVELS, ballista: BALLISTA_LEVELS, mineshaft: SHAFT_LEVELS };
+  G.LEVELS = LEVELS;
   function maxHpOf(b) {
-    if (b.t === 'wall') return WALL_LEVELS[b.lvl - 1].hp;
+    if (b.t === 'wall' || b.t === 'gate' || b.t === 'ballista' || b.t === 'mineshaft') return LEVELS[b.t][b.lvl - 1].hp;
     if (b.t === 'cannon') return BUILD.cannon.hp + (b.lvl - 1) * 110;
     return BUILD[b.t].hp;
   }
@@ -215,7 +221,7 @@ const G = window.G = {};
   }
   G.buildingLabel = b => {
     if (b.t === 'wall') return `${WALL_LEVELS[b.lvl - 1].name} (ур. ${b.lvl})`;
-    if (b.t === 'cannon') return `${CANNON_LEVELS[b.lvl - 1].name} (ур. ${b.lvl})`;
+    if (LEVELS[b.t]) return `${LEVELS[b.t][b.lvl - 1].name} (ур. ${b.lvl})`;
     return BUILD[b.t].name;
   };
 
@@ -494,6 +500,8 @@ const G = window.G = {};
       }
       if (e.hitT > 0) { e.hitT -= dt; m.scale.setScalar(m.userData.baseScale * (1 + e.hitT)); }
       if (e.slow > 0) e.slow -= dt;
+      if (e.burn) { e.burn.t -= dt; hurtEnemy(e, e.burn.dps * dt, true); if (Math.random() < 0.3) spawnParticles(e.pos.clone().add(V(0, 0.8 * e.d.size, 0)), Math.random() < 0.5 ? 0xff7a20 : 0xffd040, 1, 1, 0.18, 0.4, -0.5); if (e.burn.t <= 0) e.burn = null; if (e.dying > 0) continue; }
+      if (e.stun > 0) { e.stun -= dt; m.rotation.z = Math.sin(e.t * 20) * 0.05; Models.animEnemy(m, 'idle', e.t, e.d.speed); continue; }
       e.atkCd -= dt;
       if (e.type === 'alpha') { e.summonT -= dt; if (e.summonT <= 0 && E.length < 70) { e.summonT = 12; for (let k = 0; k < 2; k++) spawnEnemy('wolf', V(e.pos.x + rand(-3, 3), 0, e.pos.z + rand(-3, 3))); UI.floatText(e.pos.clone().add(V(0, 3, 0)), 'Ау-у-у!', '#ff8080'); Sound.play('growl', 1.2); } }
       if (e.type === 'treant' && e.hp < e.maxHp) e.hp = Math.min(e.maxHp, e.hp + e.maxHp * 0.012 * dt);
@@ -564,8 +572,8 @@ const G = window.G = {};
   }
 
   // ---------------- Пушки и снаряды ----------------
-  const projGeo = { ball: new THREE.SphereGeometry(0.2, 8, 6), arrow: new THREE.CylinderGeometry(0.03, 0.03, 0.9, 4), bolt: new THREE.CylinderGeometry(0.06, 0.06, 1.6, 5) };
-  const projMat = { ball: Models.mat(0x1a1a1a, { metalness: 0.5 }), slow: Models.mat(0x80d0ff, { emissive: 0x3080ff, emissiveIntensity: 0.8 }), arrow: Models.mat(0x6a4a2a), bolt: Models.mat(0xd8b040, { metalness: 0.6 }) };
+  const projGeo = { bullet: new THREE.CylinderGeometry(0.035, 0.035, 0.5, 4), rocket: new THREE.ConeGeometry(0.12, 0.6, 6), ball: new THREE.SphereGeometry(0.2, 8, 6), arrow: new THREE.CylinderGeometry(0.03, 0.03, 0.9, 4), bolt: new THREE.CylinderGeometry(0.06, 0.06, 1.6, 5) };
+  const projMat = { bullet: Models.mat(0xffe070, { emissive: 0xffc030, emissiveIntensity: 2 }), rocket: Models.mat(0x3e9a3a, { emissive: 0x206a10, emissiveIntensity: 0.4 }), fire: Models.mat(0xff7a20, { emissive: 0xff5010, emissiveIntensity: 1.6 }), ball: Models.mat(0x1a1a1a, { metalness: 0.5 }), slow: Models.mat(0x80d0ff, { emissive: 0x3080ff, emissiveIntensity: 0.8 }), arrow: Models.mat(0x6a4a2a), bolt: Models.mat(0xd8b040, { metalness: 0.6 }) };
   function nearestEnemy(x, z, range) {
     let best = null, bd = range;
     for (const e of E) { if (e.dying || e.flee) continue; const d = Math.hypot(e.pos.x - x, e.pos.z - z); if (d < bd) { bd = d; best = e; } }
@@ -573,14 +581,19 @@ const G = window.G = {};
   }
   function fire(from, e, o) {
     const kind = o.kind;
-    const mesh = new THREE.Mesh(projGeo[kind], o.slow ? projMat.slow : projMat[kind]); mesh.castShadow = false;
+    const mesh = new THREE.Mesh(projGeo[kind], o.slow ? projMat.slow : o.burn ? projMat.fire : projMat[kind]); mesh.castShadow = false;
     scene.add(mesh);
-    const speed = kind === 'ball' ? 22 : 40;
+    const speed = kind === 'ball' ? 22 : kind === 'bullet' ? 75 : kind === 'rocket' ? 24 : 40;
     const to = e.pos.clone(); const dist = from.distanceTo(to); const tFlight = dist / speed;
     to.x += Math.sin(e.yaw) * e.d.speed * tFlight * (e.mode === 'walk' ? 0.8 : 0); to.z += Math.cos(e.yaw) * e.d.speed * tFlight * (e.mode === 'walk' ? 0.8 : 0);
     to.y += 0.5;
-    PR.push({ mesh, from: from.clone(), to, u: 0, dur: Math.max(0.1, tFlight), arc: kind === 'ball' ? dist * 0.12 : dist * 0.03, target: e, ...o });
+    PR.push({ mesh, from: from.clone(), to, u: 0, dur: Math.max(0.1, tFlight), arc: kind === 'ball' ? dist * 0.12 : kind === 'rocket' ? dist * 0.15 : kind === 'bullet' ? 0 : dist * 0.03, target: e, ...o });
     mesh.position.copy(from);
+  }
+  function applyFx(e, p) {
+    if (p.slow) e.slow = 2.5;
+    if (p.stun && Math.random() < 0.25 && !e.d.boss) { e.stun = 1.2; UI.floatText(e.pos.clone().add(V(0, 1.8, 0)), '💫', '#fff'); }
+    if (p.burn) e.burn = { dps: p.dmg * 0.35, t: 3 };
   }
   function updateDefense(dt) {
     const hero = HEROES[S.hero];
@@ -599,7 +612,8 @@ const G = window.G = {};
         const bs = bird ? BIRDS[bird.sp] : { dmg: 1, rate: 0.6, range: 1 };
         dmg = L.dmg * bs.dmg * (S.hero === 'defender' ? 1.15 : 1) * (bird && bs.special === 'night' && night ? 1.7 : 1);
         rate = L.rate * bs.rate; range = L.range * bs.range; splash = L.splash * (bird && bs.special === 'splash' ? 1.5 : 1); kind = 'ball';
-      } else { const D = BUILD[b.t]; dmg = D.dmg; rate = D.rate; range = D.range; kind = b.t === 'ballista' ? 'bolt' : 'arrow'; }
+      } else if (b.t === 'ballista') { const L = BALLISTA_LEVELS[b.lvl - 1]; dmg = L.dmg; rate = L.rate; range = L.range; splash = L.splash; kind = L.kind; }
+      else { const D = BUILD[b.t]; dmg = D.dmg; rate = D.rate; range = D.range; kind = 'arrow'; }
       const mp = b.mesh.position; const e = nearestEnemy(mp.x, mp.z, range);
       if (b.mesh.userData.spin && isCannon) b.mesh.userData.spin.rotation.z += dt * (e ? 14 : 1);
       if (!e) continue;
@@ -611,18 +625,20 @@ const G = window.G = {};
       if (b.cd <= 0 && Math.abs(dy) < 0.25) {
         b.cd = 1 / rate;
         const muzzle = isCannon ? tur.localToWorld(V(0, 0.75, 1.3)) : b.mesh.localToWorld(b.mesh.userData.muzzle.clone().setY(b.mesh.userData.muzzle.y));
-        if (!isCannon) { tur.localToWorld(tv2.set(0, 0, 0.7)); muzzle.copy(tv2); }
+        if (!isCannon) { const ml = b.mesh.userData.muzzleL; tur.localToWorld(ml ? tv2.copy(ml) : tv2.set(0, 0, 0.7)); muzzle.copy(tv2); if (kind === 'bullet') { muzzle.x += rand(-0.15, 0.15); } }
         const bs = bird ? BIRDS[bird.sp] : {};
         let fd = dmg, crit = false;
         if (bs.special === 'crit' && Math.random() < 0.25) { fd *= 2.5; crit = true; }
-        fire(muzzle, e, { kind, dmg: fd, splash, slow: bs.special === 'slow', crit });
+        fire(muzzle, e, { kind, dmg: fd, splash, slow: bs.special === 'slow', crit, stun: bs.special === 'stun', burn: bs.special === 'burn' });
         if (bs.special === 'double') setTimeout(() => { if (!e.dying && G.state === 'play') fire(muzzle, e, { kind, dmg: fd * 0.8, splash, crit: false }); }, 140);
         if (isCannon) {
           Sound.play('boom', 0.6);
           spawnParticles(muzzle, 0xdddddd, 5, 2, 0.3, 0.6, -0.5);
           spawnParticles(muzzle, 0xffa030, 3, 3, 0.18, 0.25, 0);
           if (bird) bird.flap = 0.35;
-        } else Sound.play('arrow');
+        } else if (kind === 'bullet') { Sound.play('gun'); if (Math.random() < 0.5) spawnParticles(muzzle, 0xffe070, 1, 1.5, 0.12, 0.08, 0); }
+        else if (kind === 'rocket') { Sound.play('rocket'); spawnParticles(muzzle, 0xcccccc, 6, 1.5, 0.3, 0.7, -0.3); }
+        else Sound.play('arrow');
       }
     }
     // снаряды
@@ -633,16 +649,19 @@ const G = window.G = {};
       const prev = p.mesh.position.clone();
       p.mesh.position.lerpVectors(p.from, p.to, u); p.mesh.position.y += Math.sin(u * Math.PI) * p.arc;
       if (p.kind !== 'ball') { tv.subVectors(p.mesh.position, prev).normalize(); p.mesh.quaternion.setFromUnitVectors(V(0, 1, 0), tv); }
+      if (p.kind === 'rocket' && Math.random() < 0.7) spawnParticles(p.mesh.position, Math.random() < 0.4 ? 0xffa030 : 0xbbbbbb, 1, 0.6, 0.25, 0.6, -0.2);
+      if (p.burn && Math.random() < 0.4) spawnParticles(p.mesh.position, 0xff8a20, 1, 0.5, 0.15, 0.3, -0.3);
       if (u >= 1) {
         scene.remove(p.mesh); PR.splice(i, 1);
         if (p.splash > 0) {
-          for (const e of E) { if (e.dying) continue; if (Math.hypot(e.pos.x - p.to.x, e.pos.z - p.to.z) < p.splash + e.d.radius) { hurtEnemy(e, p.dmg); if (p.slow) e.slow = 2.5; } }
-          spawnParticles(p.to, p.slow ? 0x9adfff : 0xffa040, 8, 4, 0.22, 0.45);
+          for (const e of E) { if (e.dying) continue; if (Math.hypot(e.pos.x - p.to.x, e.pos.z - p.to.z) < p.splash + e.d.radius) { hurtEnemy(e, p.dmg); applyFx(e, p); } }
+          spawnParticles(p.to, p.slow ? 0x9adfff : 0xffa040, p.kind === 'rocket' ? 18 : 8, p.kind === 'rocket' ? 6 : 4, 0.26, 0.5);
+          if (p.kind === 'rocket') spawnParticles(p.to, 0x60d040, 8, 5, 0.2, 0.5);
           spawnParticles(p.to, 0x8a7a6a, 6, 2.5, 0.3, 0.8);
           Sound.play('boom', 0.35);
         } else {
           const e = p.target && !p.target.dying && p.target.pos.distanceTo(p.to) < 2.5 ? p.target : nearestEnemy(p.to.x, p.to.z, 1.6);
-          if (e) hurtEnemy(e, p.dmg);
+          if (e) { hurtEnemy(e, p.dmg); applyFx(e, p); }
         }
         if (p.crit) UI.floatText(p.to.clone().add(V(0, 1.5, 0)), 'КРИТ!', '#ff5050');
       }
@@ -787,13 +806,13 @@ const G = window.G = {};
     const fx = -Math.sin(cam.yaw), fz = -Math.cos(cam.yaw), rx = Math.cos(cam.yaw), rz = -Math.sin(cam.yaw);
     let mx = fx * iz + rx * ix, mz = fz * iz + rz * ix; const ml = Math.hypot(mx, mz);
     const wantRun = input.run && mag > 0.1 && !P.tired;
-    if (wantRun) { P.st -= 28 * dt; P.stRest = 0.8; if (P.st <= 0) { P.st = 0; P.tired = true; input.run = false; UI.toast('Выдохся! Отдохните немного', 'warn'); } }
+    if (wantRun) { P.st -= 20 * dt; P.stRest = 0.8; if (P.st <= 0) { P.st = 0; P.tired = true; input.run = false; UI.toast('Выдохся! Отдохните немного', 'warn'); } }
     else { P.stRest -= dt; if (P.stRest <= 0) P.st = Math.min(P.maxSt, P.st + 20 * dt); if (P.tired && P.st > P.maxSt * 0.3) P.tired = false; }
     const running = wantRun && P.st > 0;
     P.moving = 0;
     if (ml > 0.08) {
       mx /= ml; mz /= ml;
-      let spd = hero.speed * (running ? 1.55 : 1) * Math.max(0.35, mag);
+      let spd = hero.speed * (running ? 1.65 : 1) * Math.max(0.35, mag);
       if (World.inWater(P.pos.x, P.pos.z)) spd *= 0.55;
       if (P.swing > 0) spd *= 0.6;
       P.pos.x += mx * spd * dt; P.pos.z += mz * spd * dt;
@@ -825,6 +844,18 @@ const G = window.G = {};
     P.animT += dt;
     Models.animHero(m, P.moving === 2 ? 'run' : (P.moving ? 'walk' : 'idle'), P.animT, hero.speed / 6, P.swing);
   }
+  G.buyGear = function (id) {
+    if (!S.gear) S.gear = { own: {}, eq: null };
+    if (S.gear.own[id]) return G.equipGear(id);
+    if (!tryPay(GEAR[id].cost)) return false;
+    S.gear.own[id] = true; Sound.play('upgrade'); UI.toast(`Куплено: ${GEAR[id].name}!`, 'good');
+    return G.equipGear(id);
+  };
+  G.equipGear = function (id) {
+    S.gear.eq = S.gear.eq === id ? null : id;
+    Models.setGear(P.mesh, S.gear.eq); Sound.play('click');
+    return true;
+  };
   G.eat = function () {
     if (S.res.food < 3) { UI.toast('Нужно 3 🍖', 'warn'); Sound.play('error'); return; }
     if (P.hp >= P.maxHp) { UI.toast('Здоровье уже полное', 'info'); return; }
@@ -844,8 +875,7 @@ const G = window.G = {};
     return best;
   };
   G.upgradeCost = function (b) {
-    if (b.t === 'wall' && b.lvl < 5) { const L = WALL_LEVELS[b.lvl]; return { cost: G.scaleCost(L.cost), req: L.req, name: L.name }; }
-    if (b.t === 'cannon' && b.lvl < 5) { const L = CANNON_LEVELS[b.lvl]; return { cost: G.scaleCost(L.cost), req: L.req, name: L.name }; }
+    const T = LEVELS[b.t]; if (T && b.lvl < T.length) { const L = T[b.lvl]; return { cost: G.scaleCost(L.cost), req: L.req, name: L.name }; }
     return null;
   };
   G.upgrade = function (b) {
@@ -864,7 +894,7 @@ const G = window.G = {};
     if (b.hp >= b.maxHp) return null;
     const miss = 1 - b.hp / b.maxHp;
     if (b.t === 'core') return { wood: Math.ceil(miss * 80) };
-    const base = b.t === 'wall' ? WALL_LEVELS[b.lvl - 1].cost : b.t === 'cannon' ? CANNON_LEVELS[b.lvl - 1].cost : BUILD[b.t].cost;
+    const base = LEVELS[b.t] ? LEVELS[b.t][b.lvl - 1].cost : BUILD[b.t].cost;
     const o = {}; for (const k in base) if (k !== 'coins') o[k] = Math.max(1, Math.ceil(base[k] * miss * 0.6 * costMul()));
     if (!Object.keys(o).length) o.wood = Math.ceil(miss * 10);
     return o;
@@ -993,6 +1023,15 @@ const G = window.G = {};
   // ---------------- Производство ----------------
   function updateLights(dt) {
     const night = Math.max(0, Math.min(1, 1 - World.daylight * 2.2));
+    const eq = S.gear && S.gear.eq;
+    gearPoint.intensity = eq === 'lamp' && !P.dead ? night * 1.25 : (eq === 'helmet' && !P.dead ? night * 0.35 : 0);
+    gearPoint.position.set(P.pos.x, P.mesh.position.y + 1.7, P.pos.z);
+    if (eq === 'helmet' && !P.dead && night > 0) {
+      gearSpot.intensity = night * 3.2;
+      const fx = -Math.sin(cam.yaw), fz = -Math.cos(cam.yaw), pitch = isFP() ? cam.fp : -0.35;
+      gearSpot.position.set(P.pos.x, P.mesh.position.y + 2.0, P.pos.z);
+      gearSpot.target.position.set(P.pos.x + fx * 20 * Math.cos(pitch), P.mesh.position.y + 2.0 + Math.sin(pitch) * 20, P.pos.z + fz * 20 * Math.cos(pitch));
+    } else gearSpot.intensity = 0;
     for (const b of B) { const f = b.mesh.userData.fire; if (f) { f.scale.set(1 + Math.sin(time * 13 + b.id) * 0.08, 1 + Math.sin(time * 9 + b.id * 2) * 0.15, 1); } }
     lightT -= dt;
     if (lightT <= 0) {
@@ -1011,6 +1050,15 @@ const G = window.G = {};
   function updateProduction(dt) {
     for (const b of B) {
       if (b.t === 'farm') { b.prodT += dt; if (b.prodT >= 10) { b.prodT = 0; addRes('food', 1, Math.hypot(P.pos.x - b.x, P.pos.z - b.z) < 25 ? V(b.x, b.y + 1.5, b.z) : null); } }
+      if (b.t === 'mineshaft') {
+        const L = SHAFT_LEVELS[b.lvl - 1], near = Math.hypot(P.pos.x - b.x, P.pos.z - b.z) < 25;
+        b.prodT += dt; b.prod2 += dt; b.prod3 += dt;
+        if (b.prodT >= L.stone) { b.prodT = 0; addRes('stone', 1, near ? V(b.x, b.y + 2.5, b.z) : null); }
+        if (b.prod2 >= L.coal) { b.prod2 = 0; addRes('coal', 1, near ? V(b.x, b.y + 3.1, b.z) : null); }
+        if (b.prod3 >= L.iron) { b.prod3 = 0; addRes('iron', 1, near ? V(b.x, b.y + 3.7, b.z) : null); }
+        if (b.mesh.userData.spin) b.mesh.userData.spin.rotation.z += dt * 2;
+        if (b.mesh.userData.gear) b.mesh.userData.gear.rotation.y += dt * 3;
+      }
       if (b.t === 'minelift') {
         b.prodT += dt; b.prod2 += dt; b.prod3 += dt;
         const near = Math.hypot(P.pos.x - b.x, P.pos.z - b.z) < 25;

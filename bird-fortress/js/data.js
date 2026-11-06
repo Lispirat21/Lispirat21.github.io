@@ -21,9 +21,13 @@ const BIRDS = {
   turkey:     { name: 'Индюк',           price: 120, food: 8,  hp: 70, dmg: 1.8, rate: 0.75, range: 1.0,  size: 1.35, market: true,  special: 'splash', desc: 'Тяжёлые ядра с большим взрывом.' },
   owl:        { name: 'Филин',           price: 150, food: 6,  hp: 45, dmg: 1.2, rate: 1.0,  range: 1.25, size: 1.0,  market: true,  special: 'night',  desc: 'Ночью урон ×1.7.' },
   parrot:     { name: 'Ара',             price: 200, food: 6,  hp: 40, dmg: 1.1, rate: 1.1,  range: 1.1,  size: 0.95, market: true,  special: 'double', desc: 'Стреляет двумя ядрами сразу.' },
+  hummingbird:{ name: 'Колибри',         price: 140, food: 2,  hp: 18, dmg: 0.5, rate: 2.4,  range: 0.95, size: 0.55, market: true,  desc: 'Крошечная, но стреляет как пулемёт.' },
+  flamingo:   { name: 'Фламинго',        price: 180, food: 5,  hp: 40, dmg: 1.2, rate: 0.95, range: 1.7,  size: 1.1,  market: true,  desc: 'Видит дальше всех птиц.' },
+  peacock:    { name: 'Павлин',          price: 260, food: 7,  hp: 55, dmg: 1.3, rate: 1.0,  range: 1.15, size: 1.15, market: true,  special: 'stun', desc: 'Ядра оглушают зверей (25% шанс).' },
+  phoenix:    { name: 'Феникс',          price: 500, food: 12, hp: 90, dmg: 2.0, rate: 1.2,  range: 1.35, size: 1.15, market: true,  special: 'burn', desc: 'Огненные ядра поджигают врагов.' },
   eagle:      { name: 'Беркут',          price: 300, food: 10, hp: 80, dmg: 2.4, rate: 1.1,  range: 1.3,  size: 1.2,  market: true,  desc: 'Король неба. Огромный урон.' },
 };
-const BIRD_ORDER = ['sparrow', 'tit', 'bullfinch', 'guinea', 'woodpecker', 'loon', 'turkey', 'owl', 'parrot', 'eagle'];
+const BIRD_ORDER = ['sparrow', 'tit', 'bullfinch', 'guinea', 'woodpecker', 'loon', 'hummingbird', 'turkey', 'owl', 'flamingo', 'parrot', 'peacock', 'eagle', 'phoenix'];
 
 const HEROES = {
   defender: { stamina: 100, name: 'Лесной защитник', hp: 125, speed: 6.0, dmg: 18, atkRate: 1.7, gather: 1.0,  buildMul: 1.0,  coinMul: 1.0,
@@ -74,7 +78,7 @@ const BUILD = {
   wall:       { name: 'Стена',              cat: 'walls',   cost: { wood: 10 },             hp: 220,  size: [4, 1],   icon: '🧱', desc: 'Улучшается до 5 уровня. На стену можно поставить пушку.' },
   tower:      { name: 'Деревянная вышка',   cat: 'towers',  cost: { wood: 25 },             hp: 300,  size: [2.6, 2.6], icon: '🗼', desc: 'Сама стреляет стрелами по врагам.', dmg: 8, rate: 1.1, range: 18 },
   stonetower: { name: 'Каменная башня',     cat: 'towers',  cost: { stone: 30, wood: 10 },  hp: 900,  size: [3, 3],   icon: '🏰', desc: 'Прочная башня с дальним обстрелом.', dmg: 15, rate: 1.2, range: 23, req: 'stone' },
-  gate:       { name: 'Ворота',             cat: 'gates',   cost: { wood: 15 },             hp: 320,  size: [4, 1],   icon: '🚪', desc: 'Вы проходите, враги — нет.' },
+  gate:       { name: 'Ворота',             cat: 'gates',   cost: { wood: 15 },             hp: 320,  size: [4, 1],   icon: '🚪', desc: 'Вы проходите, враги — нет. Улучшаются до 5 уровня.' },
   stonegate:  { name: 'Каменные ворота',    cat: 'gates',   cost: { stone: 25, wood: 8 },   hp: 950,  size: [4, 1.4], icon: '⛩️', desc: 'Очень прочные ворота.', req: 'stone' },
   birdhouse:  { name: 'Скворечник',         cat: 'houses',  cost: { wood: 12 },             hp: 120,  size: [1.6, 1.6], icon: '🏠', desc: '+3 места для птиц. Птицы прячутся тут.', cap: 3 },
   aviary:     { name: 'Птичник',            cat: 'houses',  cost: { wood: 30, stone: 10 },  hp: 350,  size: [3.4, 3.4], icon: '🏡', desc: '+6 мест для птиц.', cap: 6 },
@@ -83,10 +87,11 @@ const BUILD = {
   market:     { name: 'Птичий рынок',       cat: 'houses',  cost: { wood: 35, coins: 20 },  hp: 300,  size: [3.6, 2.6], icon: '🎪', desc: 'Открывает редких птиц для покупки.', unique: true },
   cannon:     { name: 'Пушка',              cat: 'defense', cost: { wood: 20, coins: 20 },  hp: 260,  size: [2.4, 2.4], icon: '💣', desc: 'Ставится на стену или на вышку. За пушку садится птица.' },
   spikes:     { name: 'Шипы',               cat: 'defense', cost: { wood: 8 },              hp: 120,  size: [2, 2],   icon: '📍', desc: 'Ранят зверей, которые по ним проходят.' },
-  ballista:   { name: 'Авто-баллиста',      cat: 'defense', cost: { wood: 20, iron: 12, coal: 5 }, hp: 400, size: [2.4, 2.4], icon: '🏹', desc: 'Автоматический механизм. Мощные болты.', dmg: 45, rate: 0.7, range: 26, req: 'mech' },
+  ballista:   { name: 'Авто-турель',      cat: 'defense', cost: { wood: 20, iron: 12, coal: 5 }, hp: 400, size: [2.4, 2.4], icon: '🏹', desc: 'Автоматический механизм: арбалет → пулемёт → ракетница. Улучшается до 3 уровня.', dmg: 45, rate: 0.7, range: 26, req: 'mech' },
   storage:    { name: 'Склад',              cat: 'prod',    cost: { wood: 30 },             hp: 300,  size: [3.4, 2.6], icon: '📦', desc: '+150 к вместимости ресурсов.' },
   workshop:   { name: 'Мастерская',         cat: 'prod',    cost: { wood: 40 },             hp: 350,  size: [3.6, 3],   icon: '⚒️', desc: 'Инструменты и технологии.', unique: true },
   farm:       { name: 'Ферма',              cat: 'prod',    cost: { wood: 25 },             hp: 200,  size: [4, 4],   icon: '🌾', desc: 'Производит еду.' },
+  mineshaft:  { name: 'Своя шахта',         cat: 'prod',    cost: { wood: 50, stone: 30 },  hp: 500,  size: [3.4, 3.4], icon: '🕳️', desc: 'Ставится где угодно. Сама добывает камень, уголь и железо. Улучшается до 3 уровня.', req: 'stone' },
   minelift:   { name: 'Шахтный подъёмник',  cat: 'prod',    cost: { wood: 40, stone: 20 },  hp: 400,  size: [3, 3],   icon: '⛏️', desc: 'Ставится в карьере. Сам добывает камень, уголь и железо.', req: 'stone' },
   core:       { name: 'Великое гнездо',     cat: 'none',    cost: {},                       hp: 1200, size: [5, 5],   icon: '🪺', desc: 'Сердце базы. Если его разрушат — игра окончена.' },
 };
@@ -144,3 +149,29 @@ const DIFFICULTY = {
   impossible: { prep: 90, name: 'Невозможная',icon: '💀', hp: 2.1,  dmg: 2,    count: 1.8, timer: 0.6, reward: 0.75, start: 0.6, desc: 'Огромные стаи, очень мало времени. Только для мастеров.' },
 };
 const DIFF_ORDER = ['easy', 'normal', 'hard', 'impossible'];
+
+// Уровни ворот
+const GATE_LEVELS = [
+  { name: 'Деревянные ворота',       hp: 320,  cost: { wood: 15 } },
+  { name: 'Окованные ворота',        hp: 560,  cost: { wood: 25, iron: 2 } },
+  { name: 'Каменные ворота',         hp: 950,  cost: { stone: 25, wood: 8 },  req: 'stone' },
+  { name: 'Крепостные ворота',       hp: 1450, cost: { stone: 40, iron: 8 },  req: 'stone' },
+  { name: 'Стальные ворота-решётка', hp: 2200, cost: { stone: 40, iron: 20, coal: 10 }, req: 'metal' },
+];
+// Уровни авто-турели
+const BALLISTA_LEVELS = [
+  { name: 'Авто-арбалет',   kind: 'bolt',   dmg: 45, rate: 0.7, range: 26, splash: 0,   hp: 400, cost: { wood: 20, iron: 12, coal: 5 } },
+  { name: 'Пулемёт',        kind: 'bullet', dmg: 9,  rate: 7,   range: 24, splash: 0,   hp: 650, cost: { iron: 22, coal: 12, coins: 150 } },
+  { name: 'Ракетница',      kind: 'rocket', dmg: 75, rate: 0.8, range: 32, splash: 3.6, hp: 900, cost: { iron: 35, coal: 25, coins: 300 } },
+];
+// Уровни своей шахты: секунды на 1 единицу ресурса
+const SHAFT_LEVELS = [
+  { name: 'Шахта',              hp: 500,  stone: 9, coal: 20, iron: 34, cost: { wood: 50, stone: 30 } },
+  { name: 'Глубокая шахта',     hp: 750,  stone: 6, coal: 13, iron: 22, cost: { wood: 40, stone: 50, iron: 10 } },
+  { name: 'Механическая шахта', hp: 1100, stone: 4, coal: 8,  iron: 14, cost: { stone: 60, iron: 30, coal: 20, coins: 150 }, req: 'mech' },
+];
+// Снаряжение героя: свет в темноте
+const GEAR = {
+  lamp:   { name: 'Ручная лампа',          icon: '🪔', cost: { wood: 10, coal: 3, coins: 30 },   desc: 'Слабо светит вокруг героя в темноте.' },
+  helmet: { name: 'Каска с прожектором',   icon: '⛑️', cost: { iron: 8, coal: 6, coins: 120 },  desc: 'Мощный луч света туда, куда смотрит герой.' },
+};

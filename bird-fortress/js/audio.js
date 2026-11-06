@@ -182,6 +182,8 @@ const Sound = (() => {
         o.connect(g); g.connect(sfxGain); o.start(t); o.stop(t + 0.55);
         noise(t, 0.35, 0.35 * vol, 'lowpass', 700, null); break;
       }
+      case 'gun': noise(t, 0.05, 0.35 * vol, 'bandpass', 1800, null, 1.5); tone(140, t, 0.05, 'square', 0.06 * vol, sfxGain); break;
+      case 'rocket': noise(t, 0.6, 0.35 * vol, 'bandpass', 900, null, 0.7); tone(220, t, 0.5, 'sawtooth', 0.04 * vol, sfxGain); break;
       case 'arrow': noise(t, 0.12, 0.2 * vol, 'bandpass', 3000, null, 3); break;
       case 'build': tone(120, t, 0.2, 'sine', 0.4, sfxGain); noise(t, 0.15, 0.3, 'lowpass', 600, null); tone(523, t + 0.12, 0.2, 'triangle', 0.08, sfxGain); break;
       case 'upgrade': [523, 659, 784, 1046].forEach((f, i) => tone(f, t + i * 0.08, 0.3, 'triangle', 0.12, sfxGain)); break;

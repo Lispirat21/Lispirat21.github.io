@@ -109,7 +109,9 @@ select { font-size:14px; padding:6px; border-radius:8px; }
 .stick.active { opacity:1; }
 .stick .knob { position:absolute; left:50%; top:50%; width:58px; height:58px; margin:-29px; border-radius:50%; background:radial-gradient(circle at 35% 35%,#fff,#bbb); box-shadow:0 3px 8px #0008; }
 .stick .lbl { position:absolute; top:-20px; width:100%; text-align:center; font-size:11px; font-weight:700; opacity:.85; text-shadow:0 1px 2px #000; }
-#actions { position:absolute; right:max(14px,env(safe-area-inset-right)); bottom:calc(max(10px,env(safe-area-inset-bottom)) + 76px); display:flex; flex-direction:column; align-items:flex-end; gap:10px; }
+#actions { position:absolute; right:max(14px,env(safe-area-inset-right)); bottom:calc(max(10px,env(safe-area-inset-bottom)) + 76px); display:grid; grid-template-areas:'. use' 'run act'; align-items:end; justify-items:center; gap:8px 10px; }
+#btn-use { grid-area:use; } #btn-act { grid-area:act; } #btn-run { grid-area:run; width:72px; height:72px; font-size:32px; }
+@media (max-height:430px) { #btn-run { width:64px; height:64px; font-size:28px; } }
 .round { width:64px; height:64px; border-radius:50%; border:3px solid #fff8; font-size:28px; color:#fff; background:radial-gradient(circle at 40% 35%,#6a8a6a,#253525); box-shadow:0 4px 10px #0008; }
 .round.bigr { width:84px; height:84px; font-size:38px; background:radial-gradient(circle at 40% 35%,#ff9a5a,#b04a1a); }
 .round:active { transform:scale(.92); }
@@ -430,9 +432,13 @@ const BIRDS = {
   turkey:     { name: 'Индюк',           price: 120, food: 8,  hp: 70, dmg: 1.8, rate: 0.75, range: 1.0,  size: 1.35, market: true,  special: 'splash', desc: 'Тяжёлые ядра с большим взрывом.' },
   owl:        { name: 'Филин',           price: 150, food: 6,  hp: 45, dmg: 1.2, rate: 1.0,  range: 1.25, size: 1.0,  market: true,  special: 'night',  desc: 'Ночью урон ×1.7.' },
   parrot:     { name: 'Ара',             price: 200, food: 6,  hp: 40, dmg: 1.1, rate: 1.1,  range: 1.1,  size: 0.95, market: true,  special: 'double', desc: 'Стреляет двумя ядрами сразу.' },
+  hummingbird:{ name: 'Колибри',         price: 140, food: 2,  hp: 18, dmg: 0.5, rate: 2.4,  range: 0.95, size: 0.55, market: true,  desc: 'Крошечная, но стреляет как пулемёт.' },
+  flamingo:   { name: 'Фламинго',        price: 180, food: 5,  hp: 40, dmg: 1.2, rate: 0.95, range: 1.7,  size: 1.1,  market: true,  desc: 'Видит дальше всех птиц.' },
+  peacock:    { name: 'Павлин',          price: 260, food: 7,  hp: 55, dmg: 1.3, rate: 1.0,  range: 1.15, size: 1.15, market: true,  special: 'stun', desc: 'Ядра оглушают зверей (25% шанс).' },
+  phoenix:    { name: 'Феникс',          price: 500, food: 12, hp: 90, dmg: 2.0, rate: 1.2,  range: 1.35, size: 1.15, market: true,  special: 'burn', desc: 'Огненные ядра поджигают врагов.' },
   eagle:      { name: 'Беркут',          price: 300, food: 10, hp: 80, dmg: 2.4, rate: 1.1,  range: 1.3,  size: 1.2,  market: true,  desc: 'Король неба. Огромный урон.' },
 };
-const BIRD_ORDER = ['sparrow', 'tit', 'bullfinch', 'guinea', 'woodpecker', 'loon', 'turkey', 'owl', 'parrot', 'eagle'];
+const BIRD_ORDER = ['sparrow', 'tit', 'bullfinch', 'guinea', 'woodpecker', 'loon', 'hummingbird', 'turkey', 'owl', 'flamingo', 'parrot', 'peacock', 'eagle', 'phoenix'];
 
 const HEROES = {
   defender: { stamina: 100, name: 'Лесной защитник', hp: 125, speed: 6.0, dmg: 18, atkRate: 1.7, gather: 1.0,  buildMul: 1.0,  coinMul: 1.0,
@@ -483,7 +489,7 @@ const BUILD = {
   wall:       { name: 'Стена',              cat: 'walls',   cost: { wood: 10 },             hp: 220,  size: [4, 1],   icon: '🧱', desc: 'Улучшается до 5 уровня. На стену можно поставить пушку.' },
   tower:      { name: 'Деревянная вышка',   cat: 'towers',  cost: { wood: 25 },             hp: 300,  size: [2.6, 2.6], icon: '🗼', desc: 'Сама стреляет стрелами по врагам.', dmg: 8, rate: 1.1, range: 18 },
   stonetower: { name: 'Каменная башня',     cat: 'towers',  cost: { stone: 30, wood: 10 },  hp: 900,  size: [3, 3],   icon: '🏰', desc: 'Прочная башня с дальним обстрелом.', dmg: 15, rate: 1.2, range: 23, req: 'stone' },
-  gate:       { name: 'Ворота',             cat: 'gates',   cost: { wood: 15 },             hp: 320,  size: [4, 1],   icon: '🚪', desc: 'Вы проходите, враги — нет.' },
+  gate:       { name: 'Ворота',             cat: 'gates',   cost: { wood: 15 },             hp: 320,  size: [4, 1],   icon: '🚪', desc: 'Вы проходите, враги — нет. Улучшаются до 5 уровня.' },
   stonegate:  { name: 'Каменные ворота',    cat: 'gates',   cost: { stone: 25, wood: 8 },   hp: 950,  size: [4, 1.4], icon: '⛩️', desc: 'Очень прочные ворота.', req: 'stone' },
   birdhouse:  { name: 'Скворечник',         cat: 'houses',  cost: { wood: 12 },             hp: 120,  size: [1.6, 1.6], icon: '🏠', desc: '+3 места для птиц. Птицы прячутся тут.', cap: 3 },
   aviary:     { name: 'Птичник',            cat: 'houses',  cost: { wood: 30, stone: 10 },  hp: 350,  size: [3.4, 3.4], icon: '🏡', desc: '+6 мест для птиц.', cap: 6 },
@@ -492,10 +498,11 @@ const BUILD = {
   market:     { name: 'Птичий рынок',       cat: 'houses',  cost: { wood: 35, coins: 20 },  hp: 300,  size: [3.6, 2.6], icon: '🎪', desc: 'Открывает редких птиц для покупки.', unique: true },
   cannon:     { name: 'Пушка',              cat: 'defense', cost: { wood: 20, coins: 20 },  hp: 260,  size: [2.4, 2.4], icon: '💣', desc: 'Ставится на стену или на вышку. За пушку садится птица.' },
   spikes:     { name: 'Шипы',               cat: 'defense', cost: { wood: 8 },              hp: 120,  size: [2, 2],   icon: '📍', desc: 'Ранят зверей, которые по ним проходят.' },
-  ballista:   { name: 'Авто-баллиста',      cat: 'defense', cost: { wood: 20, iron: 12, coal: 5 }, hp: 400, size: [2.4, 2.4], icon: '🏹', desc: 'Автоматический механизм. Мощные болты.', dmg: 45, rate: 0.7, range: 26, req: 'mech' },
+  ballista:   { name: 'Авто-турель',      cat: 'defense', cost: { wood: 20, iron: 12, coal: 5 }, hp: 400, size: [2.4, 2.4], icon: '🏹', desc: 'Автоматический механизм: арбалет → пулемёт → ракетница. Улучшается до 3 уровня.', dmg: 45, rate: 0.7, range: 26, req: 'mech' },
   storage:    { name: 'Склад',              cat: 'prod',    cost: { wood: 30 },             hp: 300,  size: [3.4, 2.6], icon: '📦', desc: '+150 к вместимости ресурсов.' },
   workshop:   { name: 'Мастерская',         cat: 'prod',    cost: { wood: 40 },             hp: 350,  size: [3.6, 3],   icon: '⚒️', desc: 'Инструменты и технологии.', unique: true },
   farm:       { name: 'Ферма',              cat: 'prod',    cost: { wood: 25 },             hp: 200,  size: [4, 4],   icon: '🌾', desc: 'Производит еду.' },
+  mineshaft:  { name: 'Своя шахта',         cat: 'prod',    cost: { wood: 50, stone: 30 },  hp: 500,  size: [3.4, 3.4], icon: '🕳️', desc: 'Ставится где угодно. Сама добывает камень, уголь и железо. Улучшается до 3 уровня.', req: 'stone' },
   minelift:   { name: 'Шахтный подъёмник',  cat: 'prod',    cost: { wood: 40, stone: 20 },  hp: 400,  size: [3, 3],   icon: '⛏️', desc: 'Ставится в карьере. Сам добывает камень, уголь и железо.', req: 'stone' },
   core:       { name: 'Великое гнездо',     cat: 'none',    cost: {},                       hp: 1200, size: [5, 5],   icon: '🪺', desc: 'Сердце базы. Если его разрушат — игра окончена.' },
 };
@@ -553,6 +560,32 @@ const DIFFICULTY = {
   impossible: { prep: 90, name: 'Невозможная',icon: '💀', hp: 2.1,  dmg: 2,    count: 1.8, timer: 0.6, reward: 0.75, start: 0.6, desc: 'Огромные стаи, очень мало времени. Только для мастеров.' },
 };
 const DIFF_ORDER = ['easy', 'normal', 'hard', 'impossible'];
+
+// Уровни ворот
+const GATE_LEVELS = [
+  { name: 'Деревянные ворота',       hp: 320,  cost: { wood: 15 } },
+  { name: 'Окованные ворота',        hp: 560,  cost: { wood: 25, iron: 2 } },
+  { name: 'Каменные ворота',         hp: 950,  cost: { stone: 25, wood: 8 },  req: 'stone' },
+  { name: 'Крепостные ворота',       hp: 1450, cost: { stone: 40, iron: 8 },  req: 'stone' },
+  { name: 'Стальные ворота-решётка', hp: 2200, cost: { stone: 40, iron: 20, coal: 10 }, req: 'metal' },
+];
+// Уровни авто-турели
+const BALLISTA_LEVELS = [
+  { name: 'Авто-арбалет',   kind: 'bolt',   dmg: 45, rate: 0.7, range: 26, splash: 0,   hp: 400, cost: { wood: 20, iron: 12, coal: 5 } },
+  { name: 'Пулемёт',        kind: 'bullet', dmg: 9,  rate: 7,   range: 24, splash: 0,   hp: 650, cost: { iron: 22, coal: 12, coins: 150 } },
+  { name: 'Ракетница',      kind: 'rocket', dmg: 75, rate: 0.8, range: 32, splash: 3.6, hp: 900, cost: { iron: 35, coal: 25, coins: 300 } },
+];
+// Уровни своей шахты: секунды на 1 единицу ресурса
+const SHAFT_LEVELS = [
+  { name: 'Шахта',              hp: 500,  stone: 9, coal: 20, iron: 34, cost: { wood: 50, stone: 30 } },
+  { name: 'Глубокая шахта',     hp: 750,  stone: 6, coal: 13, iron: 22, cost: { wood: 40, stone: 50, iron: 10 } },
+  { name: 'Механическая шахта', hp: 1100, stone: 4, coal: 8,  iron: 14, cost: { stone: 60, iron: 30, coal: 20, coins: 150 }, req: 'mech' },
+];
+// Снаряжение героя: свет в темноте
+const GEAR = {
+  lamp:   { name: 'Ручная лампа',          icon: '🪔', cost: { wood: 10, coal: 3, coins: 30 },   desc: 'Слабо светит вокруг героя в темноте.' },
+  helmet: { name: 'Каска с прожектором',   icon: '⛑️', cost: { iron: 8, coal: 6, coins: 120 },  desc: 'Мощный луч света туда, куда смотрит герой.' },
+};
 
 </script>
 <script>
@@ -740,6 +773,8 @@ const Sound = (() => {
         o.connect(g); g.connect(sfxGain); o.start(t); o.stop(t + 0.55);
         noise(t, 0.35, 0.35 * vol, 'lowpass', 700, null); break;
       }
+      case 'gun': noise(t, 0.05, 0.35 * vol, 'bandpass', 1800, null, 1.5); tone(140, t, 0.05, 'square', 0.06 * vol, sfxGain); break;
+      case 'rocket': noise(t, 0.6, 0.35 * vol, 'bandpass', 900, null, 0.7); tone(220, t, 0.5, 'sawtooth', 0.04 * vol, sfxGain); break;
       case 'arrow': noise(t, 0.12, 0.2 * vol, 'bandpass', 3000, null, 3); break;
       case 'build': tone(120, t, 0.2, 'sine', 0.4, sfxGain); noise(t, 0.15, 0.3, 'lowpass', 600, null); tone(523, t + 0.12, 0.2, 'triangle', 0.08, sfxGain); break;
       case 'upgrade': [523, 659, 784, 1046].forEach((f, i) => tone(f, t + i * 0.08, 0.3, 'triangle', 0.12, sfxGain)); break;
@@ -866,7 +901,7 @@ const Models = (() => {
     const root = new THREE.Group();
     const b = group(root); // корпус (для подпрыгивания)
     const P = { root, body: b };
-    const legC = { loon: 0x222222, eagle: 0xe8c040, owl: 0x8a7050, parrot: 0x555555 }[id] || 0xc08060;
+    const legC = { flamingo: 0xf08aa8, hummingbird: 0x333333, phoenix: 0xf0c040, peacock: 0x8a8a8a, loon: 0x222222, eagle: 0xe8c040, owl: 0x8a7050, parrot: 0x555555 }[id] || 0xc08060;
     let bodyMat = mat(0x8a6a4a), bellyMat = mat(0xe8dcc8), headMat = mat(0x8a7a62), wingMat = mat(0x6a4a2a), beakC = 0x7a7a7a, tailMat;
     let bodyS = [0.62, 0.56, 0.78], headS = 0.38, headPos = [0, 0.8, 0.32], neck = 0, beakLen = 0.16, beakR = 0.07;
     switch (id) {
@@ -878,11 +913,15 @@ const Models = (() => {
       case 'loon': bodyMat = texMat(T.checker()); bellyMat = mat(0xf2f2f2); headMat = mat(0x0e1012); wingMat = texMat(T.checker()); beakC = 0x111111; beakLen = 0.36; beakR = 0.055; neck = 0.25; headPos = [0, 1.05, 0.46]; headS = 0.34; bodyS = [0.66, 0.6, 0.95]; break;
       case 'turkey': bodyMat = texMat(T.feather('#5f4c38', '#c8a878', 'turk')); bellyMat = bodyMat; headMat = mat(0x9fb0c8); wingMat = texMat(T.feather('#4a3a2a', '#d6c09a', 'turkw')); beakC = 0xd8c8a0; neck = 0.35; headS = 0.24; headPos = [0, 1.12, 0.42]; bodyS = [0.78, 0.74, 0.95]; break;
       case 'owl': bodyMat = texMat(T.feather('#7a5a3a', '#3a2818', 'owl')); bellyMat = texMat(T.feather('#d8c09a', '#8a6a4a', 'owlb')); headMat = mat(0x7a5a3a); wingMat = texMat(T.feather('#6a4a2a', '#2a1a0a', 'owlw')); beakC = 0x333333; headS = 0.5; headPos = [0, 0.95, 0.12]; bodyS = [0.7, 0.8, 0.66]; beakLen = 0.1; break;
+      case 'hummingbird': bodyMat = mat(0x2ab07a, { metalness: 0.4, roughness: 0.35 }); bellyMat = mat(0xd8f0e0); headMat = mat(0x1a9a6a, { metalness: 0.4, roughness: 0.35 }); wingMat = mat(0x6a8a8a); beakC = 0x222222; beakLen = 0.42; beakR = 0.03; bodyS = [0.42, 0.42, 0.62]; headS = 0.3; break;
+      case 'flamingo': bodyMat = mat(0xf08aa8); bellyMat = mat(0xf8a8c0); headMat = mat(0xf08aa8); wingMat = mat(0xe86890); beakC = 0x222222; beakLen = 0.24; beakR = 0.07; neck = 0.55; headPos = [0, 1.55, 0.4]; headS = 0.28; bodyS = [0.6, 0.55, 0.85]; break;
+      case 'peacock': bodyMat = mat(0x1a5ad0, { metalness: 0.3, roughness: 0.4 }); bellyMat = mat(0x1a4ab0); headMat = mat(0x1a5ad0, { metalness: 0.3, roughness: 0.4 }); wingMat = mat(0x8a6a40); beakC = 0xd8c8a0; headS = 0.3; headPos = [0, 1.0, 0.4]; neck = 0.25; bodyS = [0.6, 0.6, 0.85]; break;
+      case 'phoenix': bodyMat = mat(0xe8401a, { emissive: 0xc02000, emissiveIntensity: 0.7 }); bellyMat = mat(0xf8a020, { emissive: 0xe06000, emissiveIntensity: 0.6 }); headMat = bodyMat; wingMat = mat(0xf86a10, { emissive: 0xd04000, emissiveIntensity: 0.8 }); beakC = 0xf0d040; beakR = 0.09; beakLen = 0.2; bodyS = [0.64, 0.6, 0.86]; break;
       case 'parrot': bodyMat = mat(0xd62a20); bellyMat = mat(0xe03a28); headMat = mat(0xd62a20); wingMat = mat(0x2a6ad8); beakC = 0xf0ead8; beakR = 0.1; beakLen = 0.16; bodyS = [0.58, 0.62, 0.74]; break;
       case 'eagle': bodyMat = texMat(T.feather('#4a3220', '#2a1a10', 'eagle')); bellyMat = bodyMat; headMat = mat(0xb08840); wingMat = texMat(T.feather('#3a2618', '#1a0e08', 'eaglew')); beakC = 0xf0c030; beakR = 0.1; beakLen = 0.2; bodyS = [0.72, 0.66, 0.92]; break;
     }
     // тело
-    const legH = 0.2;
+    const legH = id === 'flamingo' ? 0.75 : 0.2;
     sph(bodyS[0], bodyS[1], bodyS[2], bodyMat, 0, legH + bodyS[1] / 2, 0, b);
     sph(bodyS[0] * 0.82, bodyS[1] * 0.8, bodyS[2] * 0.7, bellyMat, 0, legH + bodyS[1] * 0.42, bodyS[2] * 0.18, b);
     // шея
@@ -921,6 +960,9 @@ const Models = (() => {
     if (id === 'turkey') { const w = sph(0.09, 0.3, 0.08, 0xd0281c, 0, -0.18, 0.1, head, true); w.rotation.x = 0.2; cone(0.03, 0.14, 0xc02018, 0.04, 0.02, 0.18, head, 5).rotation.x = 2.5; }
     if (id === 'owl') { [-1, 1].forEach(sx => { const t = cone(0.07, 0.22, 0x5a3a20, sx * 0.17, 0.25, -0.02, head, 4); t.rotation.z = -sx * 0.35; }); sph(0.42, 0.36, 0.1, 0xd8c09a, 0, -0.01, 0.2, head, true); }
     if (id === 'parrot') { sph(0.2, 0.18, 0.06, 0xf6f0e6, 0, 0.02, 0.17, head, true, false); }
+    if (id === 'flamingo') { const bk = cone(0.05, 0.12, 0x111111, 0, -0.08, 0.32, head, 5); bk.rotation.x = 2.3; }
+    if (id === 'peacock') for (let i = 0; i < 5; i++) { const c = cyl(0.008, 0.008, 0.18, 0x1a3a90, -0.08 + i * 0.04, 0.22, -0.02, head, 3, false); c.rotation.z = (i - 2) * 0.15; sph(0.05, 0.05, 0.05, 0x40c0f0, -0.08 + i * 0.04 - (i - 2) * 0.03, 0.31, -0.02, head, true, false); }
+    if (id === 'phoenix') { for (let i = 0; i < 4; i++) { const f = cone(0.06, 0.28, mat(0xffd040, { emissive: 0xffa000, emissiveIntensity: 1.6 }), -0.09 + i * 0.06, 0.22, -0.05 - i * 0.03, head, 4, false); f.rotation.x = -0.4 - i * 0.15; } }
     if (id === 'eagle') sph(headS * 1.05, headS * 0.6, headS * 1.05, 0xd8b060, 0, 0.06, -0.02, head, true);
     if (id === 'loon') { box(0.36, 0.05, 0.02, 0xf4f4f4, 0, -0.22, 0.05, head, false); }
     // крылья
@@ -932,7 +974,15 @@ const Models = (() => {
     P.wingL = wingL; P.wingR = wingR; wl.rotation.x = 0.15; wr.rotation.x = 0.15;
     // хвост
     const tail = group(b, 0, legH + bodyS[1] * 0.55, -bodyS[2] * 0.45); P.tail = tail;
-    if (id === 'turkey') {
+    if (id === 'peacock') {
+      const fanMat = texMat(canvasTex('pfan', 64, 128, (g2, w, h2) => { g2.fillStyle = '#2a8a3a'; g2.fillRect(0, 0, w, h2); g2.strokeStyle = '#7ad04a'; g2.lineWidth = 2; for (let i = 0; i < 8; i++) { g2.beginPath(); g2.moveTo(w / 2, h2); g2.lineTo(i * 9, 0); g2.stroke(); } g2.fillStyle = '#e8c030'; g2.beginPath(); g2.arc(w / 2, 22, 13, 0, 7); g2.fill(); g2.fillStyle = '#1a5ad0'; g2.beginPath(); g2.arc(w / 2, 22, 8, 0, 7); g2.fill(); g2.fillStyle = '#101830'; g2.beginPath(); g2.arc(w / 2, 22, 4, 0, 7); g2.fill(); }));
+      for (let i = 0; i < 13; i++) { const a = -1.45 + i * 0.242; const f = box(0.26, 1.3, 0.03, fanMat, Math.sin(a) * 0.6, 0.35 + Math.cos(a) * 0.6, -0.12, tail); f.rotation.z = -a; }
+    } else if (id === 'phoenix') {
+      const fl = mat(0xffa020, { emissive: 0xff6000, emissiveIntensity: 1.4 });
+      for (let i = 0; i < 5; i++) { const f = cone(0.09, 0.9, fl, (i - 2) * 0.09, 0.05, -0.45, tail, 5, false); f.rotation.x = -Math.PI / 2 - 0.2 + Math.abs(i - 2) * 0.12; f.rotation.z = (i - 2) * 0.15; }
+    } else if (id === 'flamingo' || id === 'hummingbird') {
+      const t1 = box(0.16, 0.04, 0.3, wingMat, 0, 0, -0.12, tail); t1.rotation.x = -0.3;
+    } else if (id === 'turkey') {
       const fanMat = texMat(T.feather('#6a4e34', '#e8d8b0', 'fan'));
       for (let i = 0; i < 11; i++) {
         const a = -1.35 + i * 0.27;
@@ -957,7 +1007,7 @@ const Models = (() => {
     P.legL = legL; P.legR = legR;
     const s = BIRDS[id] ? BIRDS[id].size : 1;
     root.scale.setScalar(s);
-    root.userData.parts = P;
+    root.userData.parts = P; root.userData.hover = id === 'hummingbird';
     return root;
   }
   // mode: idle | walk | peck | fly | sit
@@ -971,7 +1021,7 @@ const Models = (() => {
       return;
     }
     P.body.rotation.x = 0;
-    const flutter = (Math.sin(tt * 0.7) > 0.97) ? Math.sin(tt * 30) * 0.4 : 0;
+    const flutter = root.userData.hover ? Math.sin(tt * 60) * 0.9 : (Math.sin(tt * 0.7) > 0.97) ? Math.sin(tt * 30) * 0.4 : 0;
     P.wingL.rotation.z = -0.05 - Math.abs(flutter); P.wingR.rotation.z = 0.05 + Math.abs(flutter);
     if (mode === 'walk') {
       P.legL.rotation.x = Math.sin(tt * 14) * 0.7; P.legR.rotation.x = -Math.sin(tt * 14) * 0.7;
@@ -1042,6 +1092,24 @@ const Models = (() => {
     root.userData.parts = P;
     root.userData.type = type;
     return root;
+  }
+  // Снаряжение: лампа в левой руке или каска с прожектором
+  function setGear(root, gear) {
+    const P = root.userData.parts;
+    if (P.gearL) { P.gearL.parent.remove(P.gearL); P.gearL = null; }
+    if (P.gearH) { P.gearH.parent.remove(P.gearH); P.gearH = null; }
+    if (gear === 'lamp') {
+      const l = group(P.arms[0], 0, -0.7, 0.05); P.gearL = l;
+      cyl(0.01, 0.01, 0.12, 0x2a2a2e, 0, 0.02, 0, l, 4, false);
+      box(0.16, 0.2, 0.16, mat(0xffd27a, { emissive: 0xffa030, emissiveIntensity: 1.8 }), 0, -0.12, 0, l, false);
+      cone(0.13, 0.1, 0x2a2a2e, 0, 0.0, 0, l, 4, false);
+    } else if (gear === 'helmet') {
+      const hd = group(P.head, 0, 0, 0); P.gearH = hd;
+      sph(0.44, 0.26, 0.44, mat(0xf2c41a, { roughness: 0.5 }), 0, 0.14, 0, hd, true);
+      cyl(0.31, 0.31, 0.03, 0xf2c41a, 0, 0.09, 0.03, hd, 12);
+      const lamp = cyl(0.08, 0.1, 0.1, 0x3a3a40, 0, 0.18, 0.2, hd, 10); lamp.rotation.x = Math.PI / 2;
+      const glass = cyl(0.075, 0.075, 0.02, mat(0xffffff, { emissive: 0xfff4c0, emissiveIntensity: 2.5 }), 0, 0.18, 0.26, hd, 10, false); glass.rotation.x = Math.PI / 2;
+    }
   }
   function makeTool(kind, tier) {
     const g = new THREE.Group();
@@ -1225,19 +1293,35 @@ const Models = (() => {
     }
     return g;
   }
-  function makeGate(stone) {
+  function makeGate(lvl) {
     const g = new THREE.Group();
-    if (!stone) {
-      [-1.75, 1.75].forEach(x => { cyl(0.32, 0.34, 3.2, WOOD_D, x, 1.6, 0, g, 6); cone(0.34, 0.6, WOOD_L, x, 3.5, 0, g, 6); });
-      const doorMat = texMat(T.planks());
-      box(3.1, 2.3, 0.2, doorMat, 0, 1.2, 0, g);
-      [0.6, 1.8].forEach(y => box(3.15, 0.14, 0.24, 0x4a4a50, 0, y, 0, g, false));
+    const steel = mat(0x5a5a62, { metalness: 0.5, roughness: 0.4 });
+    if (lvl <= 2) {
+      [-1.75, 1.75].forEach(x => { cyl(lvl === 2 ? 0.38 : 0.32, 0.36, 3.2, WOOD_D, x, 1.6, 0, g, 6); cone(0.36, 0.6, lvl === 2 ? 0x8a8a94 : WOOD_L, x, 3.5, 0, g, 6); });
+      box(3.1, 2.3, 0.2, texMat(T.planks()), 0, 1.2, 0, g);
+      (lvl === 2 ? [0.35, 0.95, 1.55, 2.1] : [0.6, 1.8]).forEach(y => box(3.15, 0.14, 0.24, 0x4a4a50, 0, y, 0, g, false));
       box(4, 0.3, 0.4, WOOD_D, 0, 2.7, 0, g);
+      if (lvl === 2) {
+        for (let i = 0; i < 7; i++) cone(0.08, 0.35, 0x9a9aa4, -1.5 + i * 0.5, 3.0, 0, g, 4, false);
+        [-0.7, 0.7].forEach(x => { const r = torus(0.14, 0.03, 0x2a2a2e, x, 1.3, 0.14, g, 8); void r; });
+      }
     } else {
-      [-1.6, 1.6].forEach(x => { box(1, 3.8, 1.4, brickMat(4), x, 1.9, 0, g); for (let i = 0; i < 2; i++) box(0.35, 0.4, 1.4, brickMat(4), x - 0.25 + i * 0.5, 4.0, 0, g); });
-      box(2.4, 0.7, 1.2, brickMat(4), 0, 3.2, 0, g);
-      box(2.2, 2.8, 0.18, mat(0x5a5a62, { metalness: 0.5, roughness: 0.4 }), 0, 1.4, 0, g);
-      for (let i = 0; i < 6; i++) box(0.06, 2.8, 0.24, 0x2a2a30, -1 + i * 0.4, 1.4, 0, g, false);
+      const bm = brickMat(lvl === 5 ? 5 : 4);
+      const H = lvl === 3 ? 3.8 : 4.3;
+      [-1.6, 1.6].forEach(x => { box(1, H, 1.4, bm, x, H / 2, 0, g); for (let i = 0; i < 2; i++) box(0.35, 0.4, 1.4, bm, x - 0.25 + i * 0.5, H + 0.2, 0, g); });
+      box(2.4, 0.7, 1.2, bm, 0, H - 0.6, 0, g);
+      if (lvl === 3) { box(2.2, 2.8, 0.18, steel, 0, 1.4, 0, g); for (let i = 0; i < 6; i++) box(0.06, 2.8, 0.24, 0x2a2a30, -1 + i * 0.4, 1.4, 0, g, false); }
+      else if (lvl === 4) {
+        box(2.2, 3.2, 0.22, texMat(T.planks()), 0, 1.6, 0, g);
+        const gold = mat(0xd8b040, { metalness: 0.7, roughness: 0.35 });
+        [0.5, 1.6, 2.7].forEach(y => box(2.25, 0.16, 0.28, gold, 0, y, 0, g, false));
+        [-1.6, 1.6].forEach(x => box(0.6, 1.2, 0.04, 0xc03028, x, H - 1.3, 0.72, g, false));
+      } else {
+        for (let i = 0; i < 7; i++) box(0.1, 3.3, 0.14, mat(0x9aa0aa, { metalness: 0.8, roughness: 0.3 }), -1.05 + i * 0.35, 1.65, 0, g);
+        for (let i = 0; i < 4; i++) box(2.2, 0.1, 0.14, mat(0x9aa0aa, { metalness: 0.8, roughness: 0.3 }), 0, 0.4 + i * 0.85, 0, g, false);
+        for (let i = 0; i < 7; i++) cone(0.06, 0.3, 0x9aa0aa, -1.05 + i * 0.35, 0.0, 0, g, 4, false).rotation.x = Math.PI;
+        [-1.6, 1.6].forEach(x => { cone(0.5, 0.9, 0x2a2c34, x, H + 0.85, 0, g, 4); });
+      }
     }
     return g;
   }
@@ -1289,8 +1373,8 @@ const Models = (() => {
         [0.45, 0.95].forEach(y => box(4, 0.1, 0.07, 0xe0823a, 0, y, 0, g));
         break;
       }
-      case 'gate': g = makeGate(false); break;
-      case 'stonegate': g = makeGate(true); break;
+      case 'gate': g = makeGate(lvl); break;
+      case 'stonegate': g = makeGate(3); break;
       case 'tower': {
         g = new THREE.Group(); woodTower(g, 3.6, 2.0);
         [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => box(0.1, 0.8, 0.1, WOOD_D, sx * 1.1, 4.1, sz * 1.1, g));
@@ -1316,12 +1400,49 @@ const Models = (() => {
       case 'ballista': {
         g = new THREE.Group(); woodTower(g, 1.6, 1.8);
         const cb = group(g, 0, 1.9, 0); g.userData.turret = cb;
-        cyl(0.4, 0.5, 0.3, 0x4a4e58, 0, 0, 0, cb, 8);
-        box(0.35, 0.3, 2.0, 0x6e4622, 0, 0.3, 0.2, cb);
-        const arm = box(2.6, 0.12, 0.16, mat(0x9a9aa4, { metalness: 0.6, roughness: 0.4 }), 0, 0.35, 0.9, cb); arm.rotation.y = 0;
-        box(0.08, 0.08, 1.6, 0xd8b040, 0, 0.5, 0.4, cb, false);
-        const gear = cyl(0.3, 0.3, 0.1, 0xb0b0b8, 0.3, 0.3, -0.5, cb, 8); gear.rotation.z = Math.PI / 2;
+        const steel = mat(0x9a9aa4, { metalness: 0.6, roughness: 0.4 });
+        cyl(0.45, 0.55, 0.3, 0x4a4e58, 0, 0, 0, cb, 8);
+        if (lvl <= 1) {
+          box(0.35, 0.3, 2.0, 0x6e4622, 0, 0.3, 0.2, cb);
+          box(2.6, 0.12, 0.16, steel, 0, 0.35, 0.9, cb);
+          box(0.08, 0.08, 1.6, 0xd8b040, 0, 0.5, 0.4, cb, false);
+          const gr = cyl(0.3, 0.3, 0.1, 0xb0b0b8, 0.3, 0.3, -0.5, cb, 8); gr.rotation.z = Math.PI / 2;
+          g.userData.muzzleL = new THREE.Vector3(0, 0.5, 1.2);
+        } else if (lvl === 2) {
+          box(0.7, 0.55, 1.0, 0x3a3e48, 0, 0.45, -0.1, cb);
+          [-0.14, 0.14].forEach(x => { const b = cyl(0.07, 0.08, 1.5, steel, x, 0.5, 0.9, cb, 8); b.rotation.x = Math.PI / 2; const m = cyl(0.1, 0.1, 0.2, 0x2a2a2e, x, 0.5, 1.6, cb, 8); m.rotation.x = Math.PI / 2; });
+          box(0.45, 0.4, 0.5, 0x5a6a3a, 0.6, 0.35, -0.1, cb); // ящик с патронами
+          for (let i = 0; i < 6; i++) box(0.05, 0.12, 0.05, 0xd8b040, 0.38 - i * 0.05, 0.45, 0.1 + i * 0.05, cb, false);
+          box(0.9, 0.5, 0.06, steel, 0, 0.75, 0.3, cb); // щиток
+          g.userData.muzzleL = new THREE.Vector3(0, 0.5, 1.7);
+        } else {
+          const green = mat(0x3e8a3a, { roughness: 0.6 });
+          box(1.3, 0.9, 1.5, green, 0, 0.75, 0.1, cb);
+          box(1.35, 0.1, 1.55, 0x2a5a28, 0, 1.22, 0.1, cb, false);
+          for (let i = 0; i < 6; i++) {
+            const x = -0.4 + (i % 3) * 0.4, y = 0.55 + Math.floor(i / 3) * 0.42;
+            const t = cyl(0.15, 0.15, 0.1, 0x1a1a1a, x, y, 0.86, cb, 10, false); t.rotation.x = Math.PI / 2;
+            const r = cone(0.11, 0.25, 0xe8e030, x, y, 0.95, cb, 8, false); r.rotation.x = Math.PI / 2;
+          }
+          box(0.15, 0.6, 0.15, 0x2a2a2e, 0.75, 0.4, -0.4, cb);
+          g.userData.muzzleL = new THREE.Vector3(0, 0.8, 1.0);
+        }
         g.userData.muzzle = new THREE.Vector3(0, 2.2, 1.2);
+        break;
+      }
+      case 'mineshaft': {
+        g = new THREE.Group();
+        const mound = sph(3.4, 2.2, 3.4, 0x7a7670, 0, 0.3, -0.2, g); void mound;
+        for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; sph(1, 0.8, 1, 0x8a8680, Math.cos(a) * 1.4, 0.5, Math.sin(a) * 1.4 - 0.2, g, true); }
+        box(1.6, 1.8, 0.6, 0x080808, 0, 0.9, 1.3, g);
+        [-1, 1].forEach(sx => box(0.25, 2.1, 0.25, WOOD_D, sx * 0.95, 1.05, 1.55, g));
+        box(2.3, 0.3, 0.3, WOOD_D, 0, 2.15, 1.55, g);
+        [-0.35, 0.35].forEach(x => box(0.06, 0.05, 1.8, 0x5a5a62, x, 0.04, 2.1, g, false));
+        const cart = group(g, 0, 0, 2.4); box(0.8, 0.5, 0.9, 0x5a5a62, 0, 0.4, 0, cart);
+        for (let i = 0; i < 3; i++) sph(0.28, 0.22, 0.28, [0x8a8a86, 0x151515, 0xc87a40][i], -0.2 + i * 0.2, 0.7, 0, cart, true);
+        box(0.25, 0.3, 0.25, mat(0xffc040, { emissive: 0xffa020, emissiveIntensity: 1.5 }), 0.95, 1.7, 1.75, g, false);
+        if (lvl >= 2) { [-1, 1].forEach(sx => { const p = box(0.18, 3.2, 0.18, WOOD_D, sx * 0.9, 2.6, -0.4, g); p.rotation.z = -sx * 0.2; }); const wh = torus(0.55, 0.06, 0x5a5a62, 0, 4.1, -0.4, g, 14); g.userData.spin = wh; }
+        if (lvl >= 3) { box(0.9, 1.1, 0.9, 0x3a3e48, -1.6, 0.55, 0.9, g); cyl(0.12, 0.15, 1.6, 0x5a5a5a, -1.6, 1.8, 0.9, g, 6); const gr = cyl(0.35, 0.35, 0.12, 0xb0b0b8, -1.6, 0.8, 1.38, g, 10); gr.rotation.x = Math.PI / 2; g.userData.gear = gr; }
         break;
       }
       case 'cannon': g = makeCannon(lvl, false); break;
@@ -1495,7 +1616,7 @@ const Models = (() => {
     return { stone, coal, iron, berry };
   }
 
-  return { mat, texMat, T, box, sph, cyl, cone, torus, group, makeBird, animBird, makeHero, makeTool, animHero, makeEnemy, animEnemy, makeBuilding, makeCannon, merge, mtx, treeGeos, rockGeos, WALL_H: l => WALL_LEVELS[l - 1].h };
+  return { setGear, mat, texMat, T, box, sph, cyl, cone, torus, group, makeBird, animBird, makeHero, makeTool, animHero, makeEnemy, animEnemy, makeBuilding, makeCannon, merge, mtx, treeGeos, rockGeos, WALL_H: l => WALL_LEVELS[l - 1].h };
 })();
 
 </script>
@@ -1930,7 +2051,7 @@ const G = window.G = {};
   let nextId = 1, birdSeq = 1;
   let build = null;                   // режим строительства
   let time = 0, menuBird = null;
-  const lightPool = []; let lightT = 0;
+  const lightPool = []; let lightT = 0, gearPoint = null, gearSpot = null;
   const cam = { fp: -0.15, yaw: 0.7, pitch: 0.88, dist: 12, pos: new THREE.Vector3() };
   const input = G.input = { mx: 0, mz: 0, run: false, action: false, camX: 0, camY: 0 };
   const V = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -1951,6 +2072,8 @@ const G = window.G = {};
     camera = new THREE.PerspectiveCamera(55, 1, 0.3, 1000);
     World.build(scene, q);
     lightPool.length = 0;
+    gearPoint = new THREE.PointLight(0xffd090, 0, 14, 1.5); scene.add(gearPoint);
+    gearSpot = new THREE.SpotLight(0xfff4d8, 0, 50, 0.42, 0.55, 1.2); scene.add(gearSpot); scene.add(gearSpot.target);
     const NL = { low: 2, medium: 4, high: 6, ultra: 8 }[q] || 4;
     for (let i = 0; i < NL; i++) { const l = new THREE.PointLight(0xffb060, 0, 20, 1.2); l.castShadow = false; scene.add(l); lightPool.push(l); }
     menuBird = Models.makeBird('parrot'); menuBird.scale.setScalar(1.6); scene.add(menuBird);
@@ -2053,6 +2176,8 @@ const G = window.G = {};
     P = { mesh, pos: V(S.player.x, 0, S.player.z), yaw: Math.PI, hp: S.player.hp, maxHp: h.hp, st: h.stamina, maxSt: h.stamina, stRest: 0, tired: false, swing: 0, swingTarget: null, hitDone: false, atkCd: 0, dead: 0, lastHurt: -10, tool: null, toolTier: -2, moving: 0, hintT: 0, animT: 0 };
     P.pos.y = World.groundAt(P.pos.x, P.pos.z);
     setTool('axe');
+    if (!S.gear) S.gear = { own: {}, eq: null };
+    Models.setGear(mesh, S.gear.eq);
   }
   function setTool(kind) {
     if (kind === 'pick' && S.tools.pick < 0) kind = 'axe';
@@ -2071,8 +2196,10 @@ const G = window.G = {};
   const PASS_ENEMY = { spikes: 1, farm: 1 };
   const WALLISH = { wall: 1, fence: 1, gate: 1, stonegate: 1 };
   function footprint(t, rot) { const s = BUILD[t].size; return rot % 2 ? [s[1], s[0]] : [s[0], s[1]]; }
+  const LEVELS = { wall: WALL_LEVELS, cannon: CANNON_LEVELS, gate: GATE_LEVELS, ballista: BALLISTA_LEVELS, mineshaft: SHAFT_LEVELS };
+  G.LEVELS = LEVELS;
   function maxHpOf(b) {
-    if (b.t === 'wall') return WALL_LEVELS[b.lvl - 1].hp;
+    if (b.t === 'wall' || b.t === 'gate' || b.t === 'ballista' || b.t === 'mineshaft') return LEVELS[b.t][b.lvl - 1].hp;
     if (b.t === 'cannon') return BUILD.cannon.hp + (b.lvl - 1) * 110;
     return BUILD[b.t].hp;
   }
@@ -2133,7 +2260,7 @@ const G = window.G = {};
   }
   G.buildingLabel = b => {
     if (b.t === 'wall') return `${WALL_LEVELS[b.lvl - 1].name} (ур. ${b.lvl})`;
-    if (b.t === 'cannon') return `${CANNON_LEVELS[b.lvl - 1].name} (ур. ${b.lvl})`;
+    if (LEVELS[b.t]) return `${LEVELS[b.t][b.lvl - 1].name} (ур. ${b.lvl})`;
     return BUILD[b.t].name;
   };
 
@@ -2412,6 +2539,8 @@ const G = window.G = {};
       }
       if (e.hitT > 0) { e.hitT -= dt; m.scale.setScalar(m.userData.baseScale * (1 + e.hitT)); }
       if (e.slow > 0) e.slow -= dt;
+      if (e.burn) { e.burn.t -= dt; hurtEnemy(e, e.burn.dps * dt, true); if (Math.random() < 0.3) spawnParticles(e.pos.clone().add(V(0, 0.8 * e.d.size, 0)), Math.random() < 0.5 ? 0xff7a20 : 0xffd040, 1, 1, 0.18, 0.4, -0.5); if (e.burn.t <= 0) e.burn = null; if (e.dying > 0) continue; }
+      if (e.stun > 0) { e.stun -= dt; m.rotation.z = Math.sin(e.t * 20) * 0.05; Models.animEnemy(m, 'idle', e.t, e.d.speed); continue; }
       e.atkCd -= dt;
       if (e.type === 'alpha') { e.summonT -= dt; if (e.summonT <= 0 && E.length < 70) { e.summonT = 12; for (let k = 0; k < 2; k++) spawnEnemy('wolf', V(e.pos.x + rand(-3, 3), 0, e.pos.z + rand(-3, 3))); UI.floatText(e.pos.clone().add(V(0, 3, 0)), 'Ау-у-у!', '#ff8080'); Sound.play('growl', 1.2); } }
       if (e.type === 'treant' && e.hp < e.maxHp) e.hp = Math.min(e.maxHp, e.hp + e.maxHp * 0.012 * dt);
@@ -2482,8 +2611,8 @@ const G = window.G = {};
   }
 
   // ---------------- Пушки и снаряды ----------------
-  const projGeo = { ball: new THREE.SphereGeometry(0.2, 8, 6), arrow: new THREE.CylinderGeometry(0.03, 0.03, 0.9, 4), bolt: new THREE.CylinderGeometry(0.06, 0.06, 1.6, 5) };
-  const projMat = { ball: Models.mat(0x1a1a1a, { metalness: 0.5 }), slow: Models.mat(0x80d0ff, { emissive: 0x3080ff, emissiveIntensity: 0.8 }), arrow: Models.mat(0x6a4a2a), bolt: Models.mat(0xd8b040, { metalness: 0.6 }) };
+  const projGeo = { bullet: new THREE.CylinderGeometry(0.035, 0.035, 0.5, 4), rocket: new THREE.ConeGeometry(0.12, 0.6, 6), ball: new THREE.SphereGeometry(0.2, 8, 6), arrow: new THREE.CylinderGeometry(0.03, 0.03, 0.9, 4), bolt: new THREE.CylinderGeometry(0.06, 0.06, 1.6, 5) };
+  const projMat = { bullet: Models.mat(0xffe070, { emissive: 0xffc030, emissiveIntensity: 2 }), rocket: Models.mat(0x3e9a3a, { emissive: 0x206a10, emissiveIntensity: 0.4 }), fire: Models.mat(0xff7a20, { emissive: 0xff5010, emissiveIntensity: 1.6 }), ball: Models.mat(0x1a1a1a, { metalness: 0.5 }), slow: Models.mat(0x80d0ff, { emissive: 0x3080ff, emissiveIntensity: 0.8 }), arrow: Models.mat(0x6a4a2a), bolt: Models.mat(0xd8b040, { metalness: 0.6 }) };
   function nearestEnemy(x, z, range) {
     let best = null, bd = range;
     for (const e of E) { if (e.dying || e.flee) continue; const d = Math.hypot(e.pos.x - x, e.pos.z - z); if (d < bd) { bd = d; best = e; } }
@@ -2491,14 +2620,19 @@ const G = window.G = {};
   }
   function fire(from, e, o) {
     const kind = o.kind;
-    const mesh = new THREE.Mesh(projGeo[kind], o.slow ? projMat.slow : projMat[kind]); mesh.castShadow = false;
+    const mesh = new THREE.Mesh(projGeo[kind], o.slow ? projMat.slow : o.burn ? projMat.fire : projMat[kind]); mesh.castShadow = false;
     scene.add(mesh);
-    const speed = kind === 'ball' ? 22 : 40;
+    const speed = kind === 'ball' ? 22 : kind === 'bullet' ? 75 : kind === 'rocket' ? 24 : 40;
     const to = e.pos.clone(); const dist = from.distanceTo(to); const tFlight = dist / speed;
     to.x += Math.sin(e.yaw) * e.d.speed * tFlight * (e.mode === 'walk' ? 0.8 : 0); to.z += Math.cos(e.yaw) * e.d.speed * tFlight * (e.mode === 'walk' ? 0.8 : 0);
     to.y += 0.5;
-    PR.push({ mesh, from: from.clone(), to, u: 0, dur: Math.max(0.1, tFlight), arc: kind === 'ball' ? dist * 0.12 : dist * 0.03, target: e, ...o });
+    PR.push({ mesh, from: from.clone(), to, u: 0, dur: Math.max(0.1, tFlight), arc: kind === 'ball' ? dist * 0.12 : kind === 'rocket' ? dist * 0.15 : kind === 'bullet' ? 0 : dist * 0.03, target: e, ...o });
     mesh.position.copy(from);
+  }
+  function applyFx(e, p) {
+    if (p.slow) e.slow = 2.5;
+    if (p.stun && Math.random() < 0.25 && !e.d.boss) { e.stun = 1.2; UI.floatText(e.pos.clone().add(V(0, 1.8, 0)), '💫', '#fff'); }
+    if (p.burn) e.burn = { dps: p.dmg * 0.35, t: 3 };
   }
   function updateDefense(dt) {
     const hero = HEROES[S.hero];
@@ -2517,7 +2651,8 @@ const G = window.G = {};
         const bs = bird ? BIRDS[bird.sp] : { dmg: 1, rate: 0.6, range: 1 };
         dmg = L.dmg * bs.dmg * (S.hero === 'defender' ? 1.15 : 1) * (bird && bs.special === 'night' && night ? 1.7 : 1);
         rate = L.rate * bs.rate; range = L.range * bs.range; splash = L.splash * (bird && bs.special === 'splash' ? 1.5 : 1); kind = 'ball';
-      } else { const D = BUILD[b.t]; dmg = D.dmg; rate = D.rate; range = D.range; kind = b.t === 'ballista' ? 'bolt' : 'arrow'; }
+      } else if (b.t === 'ballista') { const L = BALLISTA_LEVELS[b.lvl - 1]; dmg = L.dmg; rate = L.rate; range = L.range; splash = L.splash; kind = L.kind; }
+      else { const D = BUILD[b.t]; dmg = D.dmg; rate = D.rate; range = D.range; kind = 'arrow'; }
       const mp = b.mesh.position; const e = nearestEnemy(mp.x, mp.z, range);
       if (b.mesh.userData.spin && isCannon) b.mesh.userData.spin.rotation.z += dt * (e ? 14 : 1);
       if (!e) continue;
@@ -2529,18 +2664,20 @@ const G = window.G = {};
       if (b.cd <= 0 && Math.abs(dy) < 0.25) {
         b.cd = 1 / rate;
         const muzzle = isCannon ? tur.localToWorld(V(0, 0.75, 1.3)) : b.mesh.localToWorld(b.mesh.userData.muzzle.clone().setY(b.mesh.userData.muzzle.y));
-        if (!isCannon) { tur.localToWorld(tv2.set(0, 0, 0.7)); muzzle.copy(tv2); }
+        if (!isCannon) { const ml = b.mesh.userData.muzzleL; tur.localToWorld(ml ? tv2.copy(ml) : tv2.set(0, 0, 0.7)); muzzle.copy(tv2); if (kind === 'bullet') { muzzle.x += rand(-0.15, 0.15); } }
         const bs = bird ? BIRDS[bird.sp] : {};
         let fd = dmg, crit = false;
         if (bs.special === 'crit' && Math.random() < 0.25) { fd *= 2.5; crit = true; }
-        fire(muzzle, e, { kind, dmg: fd, splash, slow: bs.special === 'slow', crit });
+        fire(muzzle, e, { kind, dmg: fd, splash, slow: bs.special === 'slow', crit, stun: bs.special === 'stun', burn: bs.special === 'burn' });
         if (bs.special === 'double') setTimeout(() => { if (!e.dying && G.state === 'play') fire(muzzle, e, { kind, dmg: fd * 0.8, splash, crit: false }); }, 140);
         if (isCannon) {
           Sound.play('boom', 0.6);
           spawnParticles(muzzle, 0xdddddd, 5, 2, 0.3, 0.6, -0.5);
           spawnParticles(muzzle, 0xffa030, 3, 3, 0.18, 0.25, 0);
           if (bird) bird.flap = 0.35;
-        } else Sound.play('arrow');
+        } else if (kind === 'bullet') { Sound.play('gun'); if (Math.random() < 0.5) spawnParticles(muzzle, 0xffe070, 1, 1.5, 0.12, 0.08, 0); }
+        else if (kind === 'rocket') { Sound.play('rocket'); spawnParticles(muzzle, 0xcccccc, 6, 1.5, 0.3, 0.7, -0.3); }
+        else Sound.play('arrow');
       }
     }
     // снаряды
@@ -2551,16 +2688,19 @@ const G = window.G = {};
       const prev = p.mesh.position.clone();
       p.mesh.position.lerpVectors(p.from, p.to, u); p.mesh.position.y += Math.sin(u * Math.PI) * p.arc;
       if (p.kind !== 'ball') { tv.subVectors(p.mesh.position, prev).normalize(); p.mesh.quaternion.setFromUnitVectors(V(0, 1, 0), tv); }
+      if (p.kind === 'rocket' && Math.random() < 0.7) spawnParticles(p.mesh.position, Math.random() < 0.4 ? 0xffa030 : 0xbbbbbb, 1, 0.6, 0.25, 0.6, -0.2);
+      if (p.burn && Math.random() < 0.4) spawnParticles(p.mesh.position, 0xff8a20, 1, 0.5, 0.15, 0.3, -0.3);
       if (u >= 1) {
         scene.remove(p.mesh); PR.splice(i, 1);
         if (p.splash > 0) {
-          for (const e of E) { if (e.dying) continue; if (Math.hypot(e.pos.x - p.to.x, e.pos.z - p.to.z) < p.splash + e.d.radius) { hurtEnemy(e, p.dmg); if (p.slow) e.slow = 2.5; } }
-          spawnParticles(p.to, p.slow ? 0x9adfff : 0xffa040, 8, 4, 0.22, 0.45);
+          for (const e of E) { if (e.dying) continue; if (Math.hypot(e.pos.x - p.to.x, e.pos.z - p.to.z) < p.splash + e.d.radius) { hurtEnemy(e, p.dmg); applyFx(e, p); } }
+          spawnParticles(p.to, p.slow ? 0x9adfff : 0xffa040, p.kind === 'rocket' ? 18 : 8, p.kind === 'rocket' ? 6 : 4, 0.26, 0.5);
+          if (p.kind === 'rocket') spawnParticles(p.to, 0x60d040, 8, 5, 0.2, 0.5);
           spawnParticles(p.to, 0x8a7a6a, 6, 2.5, 0.3, 0.8);
           Sound.play('boom', 0.35);
         } else {
           const e = p.target && !p.target.dying && p.target.pos.distanceTo(p.to) < 2.5 ? p.target : nearestEnemy(p.to.x, p.to.z, 1.6);
-          if (e) hurtEnemy(e, p.dmg);
+          if (e) { hurtEnemy(e, p.dmg); applyFx(e, p); }
         }
         if (p.crit) UI.floatText(p.to.clone().add(V(0, 1.5, 0)), 'КРИТ!', '#ff5050');
       }
@@ -2705,13 +2845,13 @@ const G = window.G = {};
     const fx = -Math.sin(cam.yaw), fz = -Math.cos(cam.yaw), rx = Math.cos(cam.yaw), rz = -Math.sin(cam.yaw);
     let mx = fx * iz + rx * ix, mz = fz * iz + rz * ix; const ml = Math.hypot(mx, mz);
     const wantRun = input.run && mag > 0.1 && !P.tired;
-    if (wantRun) { P.st -= 28 * dt; P.stRest = 0.8; if (P.st <= 0) { P.st = 0; P.tired = true; input.run = false; UI.toast('Выдохся! Отдохните немного', 'warn'); } }
+    if (wantRun) { P.st -= 20 * dt; P.stRest = 0.8; if (P.st <= 0) { P.st = 0; P.tired = true; input.run = false; UI.toast('Выдохся! Отдохните немного', 'warn'); } }
     else { P.stRest -= dt; if (P.stRest <= 0) P.st = Math.min(P.maxSt, P.st + 20 * dt); if (P.tired && P.st > P.maxSt * 0.3) P.tired = false; }
     const running = wantRun && P.st > 0;
     P.moving = 0;
     if (ml > 0.08) {
       mx /= ml; mz /= ml;
-      let spd = hero.speed * (running ? 1.55 : 1) * Math.max(0.35, mag);
+      let spd = hero.speed * (running ? 1.65 : 1) * Math.max(0.35, mag);
       if (World.inWater(P.pos.x, P.pos.z)) spd *= 0.55;
       if (P.swing > 0) spd *= 0.6;
       P.pos.x += mx * spd * dt; P.pos.z += mz * spd * dt;
@@ -2743,6 +2883,18 @@ const G = window.G = {};
     P.animT += dt;
     Models.animHero(m, P.moving === 2 ? 'run' : (P.moving ? 'walk' : 'idle'), P.animT, hero.speed / 6, P.swing);
   }
+  G.buyGear = function (id) {
+    if (!S.gear) S.gear = { own: {}, eq: null };
+    if (S.gear.own[id]) return G.equipGear(id);
+    if (!tryPay(GEAR[id].cost)) return false;
+    S.gear.own[id] = true; Sound.play('upgrade'); UI.toast(`Куплено: ${GEAR[id].name}!`, 'good');
+    return G.equipGear(id);
+  };
+  G.equipGear = function (id) {
+    S.gear.eq = S.gear.eq === id ? null : id;
+    Models.setGear(P.mesh, S.gear.eq); Sound.play('click');
+    return true;
+  };
   G.eat = function () {
     if (S.res.food < 3) { UI.toast('Нужно 3 🍖', 'warn'); Sound.play('error'); return; }
     if (P.hp >= P.maxHp) { UI.toast('Здоровье уже полное', 'info'); return; }
@@ -2762,8 +2914,7 @@ const G = window.G = {};
     return best;
   };
   G.upgradeCost = function (b) {
-    if (b.t === 'wall' && b.lvl < 5) { const L = WALL_LEVELS[b.lvl]; return { cost: G.scaleCost(L.cost), req: L.req, name: L.name }; }
-    if (b.t === 'cannon' && b.lvl < 5) { const L = CANNON_LEVELS[b.lvl]; return { cost: G.scaleCost(L.cost), req: L.req, name: L.name }; }
+    const T = LEVELS[b.t]; if (T && b.lvl < T.length) { const L = T[b.lvl]; return { cost: G.scaleCost(L.cost), req: L.req, name: L.name }; }
     return null;
   };
   G.upgrade = function (b) {
@@ -2782,7 +2933,7 @@ const G = window.G = {};
     if (b.hp >= b.maxHp) return null;
     const miss = 1 - b.hp / b.maxHp;
     if (b.t === 'core') return { wood: Math.ceil(miss * 80) };
-    const base = b.t === 'wall' ? WALL_LEVELS[b.lvl - 1].cost : b.t === 'cannon' ? CANNON_LEVELS[b.lvl - 1].cost : BUILD[b.t].cost;
+    const base = LEVELS[b.t] ? LEVELS[b.t][b.lvl - 1].cost : BUILD[b.t].cost;
     const o = {}; for (const k in base) if (k !== 'coins') o[k] = Math.max(1, Math.ceil(base[k] * miss * 0.6 * costMul()));
     if (!Object.keys(o).length) o.wood = Math.ceil(miss * 10);
     return o;
@@ -2911,6 +3062,15 @@ const G = window.G = {};
   // ---------------- Производство ----------------
   function updateLights(dt) {
     const night = Math.max(0, Math.min(1, 1 - World.daylight * 2.2));
+    const eq = S.gear && S.gear.eq;
+    gearPoint.intensity = eq === 'lamp' && !P.dead ? night * 1.25 : (eq === 'helmet' && !P.dead ? night * 0.35 : 0);
+    gearPoint.position.set(P.pos.x, P.mesh.position.y + 1.7, P.pos.z);
+    if (eq === 'helmet' && !P.dead && night > 0) {
+      gearSpot.intensity = night * 3.2;
+      const fx = -Math.sin(cam.yaw), fz = -Math.cos(cam.yaw), pitch = isFP() ? cam.fp : -0.35;
+      gearSpot.position.set(P.pos.x, P.mesh.position.y + 2.0, P.pos.z);
+      gearSpot.target.position.set(P.pos.x + fx * 20 * Math.cos(pitch), P.mesh.position.y + 2.0 + Math.sin(pitch) * 20, P.pos.z + fz * 20 * Math.cos(pitch));
+    } else gearSpot.intensity = 0;
     for (const b of B) { const f = b.mesh.userData.fire; if (f) { f.scale.set(1 + Math.sin(time * 13 + b.id) * 0.08, 1 + Math.sin(time * 9 + b.id * 2) * 0.15, 1); } }
     lightT -= dt;
     if (lightT <= 0) {
@@ -2929,6 +3089,15 @@ const G = window.G = {};
   function updateProduction(dt) {
     for (const b of B) {
       if (b.t === 'farm') { b.prodT += dt; if (b.prodT >= 10) { b.prodT = 0; addRes('food', 1, Math.hypot(P.pos.x - b.x, P.pos.z - b.z) < 25 ? V(b.x, b.y + 1.5, b.z) : null); } }
+      if (b.t === 'mineshaft') {
+        const L = SHAFT_LEVELS[b.lvl - 1], near = Math.hypot(P.pos.x - b.x, P.pos.z - b.z) < 25;
+        b.prodT += dt; b.prod2 += dt; b.prod3 += dt;
+        if (b.prodT >= L.stone) { b.prodT = 0; addRes('stone', 1, near ? V(b.x, b.y + 2.5, b.z) : null); }
+        if (b.prod2 >= L.coal) { b.prod2 = 0; addRes('coal', 1, near ? V(b.x, b.y + 3.1, b.z) : null); }
+        if (b.prod3 >= L.iron) { b.prod3 = 0; addRes('iron', 1, near ? V(b.x, b.y + 3.7, b.z) : null); }
+        if (b.mesh.userData.spin) b.mesh.userData.spin.rotation.z += dt * 2;
+        if (b.mesh.userData.gear) b.mesh.userData.gear.rotation.y += dt * 3;
+      }
       if (b.t === 'minelift') {
         b.prodT += dt; b.prod2 += dt; b.prod3 += dt;
         const near = Math.hypot(P.pos.x - b.x, P.pos.z - b.z) < 25;
@@ -3558,6 +3727,9 @@ const UI = window.UI = {};
       sect.append(h('div', { style: 'margin-top:6px;font-size:13px' }, `Урон ${L.dmg} · Скорость ${L.rate}/с · Дальность ${L.range} · Взрыв ${L.splash}${b.lvl >= 4 ? ' · стреляет сама (птица усиливает)' : ' · нужна птица-стрелок'}`));
     }
     if (b.t === 'farm') sect.append(h('div', null, 'Производит 1 🍖 каждые 10 сек.'));
+    if (b.t === 'ballista') { const L = BALLISTA_LEVELS[b.lvl - 1]; sect.append(h('div', { style: 'margin-top:6px;font-size:13px' }, `${L.name}: урон ${L.dmg} · скорость ${L.rate}/с · дальность ${L.range}${L.splash ? ' · взрыв ' + L.splash : ''}. Уровни: арбалет → пулемёт → ракетница.`)); }
+    if (b.t === 'mineshaft') { const L = SHAFT_LEVELS[b.lvl - 1]; sect.append(h('div', { style: 'margin-top:6px', html: `Добывает: ${RES_INFO.stone.icon} раз в ${L.stone}с, ${RES_INFO.coal.icon} раз в ${L.coal}с, ${RES_INFO.iron.icon} раз в ${L.iron}с.` })); }
+    if (b.t === 'gate') sect.append(h('div', { style: 'margin-top:6px;font-size:13px' }, 'Уровни: деревянные → окованные → каменные → крепостные → стальные.'));
     if (b.t === 'minelift') sect.append(h('div', null, 'Добывает 🪨 каждые 6с, ⚫ каждые 14с, 🔩 каждые 24с.'));
     if (b.t === 'storage') sect.append(h('div', null, `Вместимость ресурсов: ${G.cap()}`));
     if (d.cap) sect.append(h('div', null, `Места для птиц: +${d.cap} (всего ${G.birdCap()})`));
@@ -3568,7 +3740,7 @@ const UI = window.UI = {};
       const btn = h('button', { cls: 'btn gold', html: `⬆ Улучшить до «${up.name}» — ${costHtml(up.cost)}${locked ? ` <br><small>🔒 ${TECH[up.req].name}</small>` : ''}` });
       tap(btn, () => { if (G.upgrade(b)) renderModal(); else renderModal(); });
       acts.append(btn);
-    } else if (b.t === 'wall' || b.t === 'cannon') acts.append(h('span', { cls: 'tag g' }, '★ Максимальный уровень'));
+    } else if (G.LEVELS[b.t]) acts.append(h('span', { cls: 'tag g' }, '★ Максимальный уровень'));
     const rc = G.repairCost(b);
     if (rc) { const btn = h('button', { cls: 'btn blue', html: `🔧 Починить — ${costHtml(rc)}` }); tap(btn, () => { G.repair(b); renderModal(); }); acts.append(btn); }
     if (b.t !== 'core') {
@@ -3605,6 +3777,16 @@ const UI = window.UI = {};
   function renderWorkshop(body) {
     const S = G.S();
     if (!G.hasWorkshop()) { body.append(h('div', { cls: 'perk' }, '⚒️ Постройте «Мастерскую» (Стройка → Производство), чтобы создавать инструменты и изучать технологии.')); }
+    const gear = h('div', { cls: 'sect' }, h('h4', null, '🔦 Снаряжение — свет в темноте'));
+    const gg = h('div', { cls: 'grid' });
+    const G2 = S.gear || { own: {}, eq: null };
+    Object.keys(GEAR).forEach(id => {
+      const d = GEAR[id], own = G2.own[id], on = G2.eq === id;
+      const btn = h('button', { cls: 'btn' + (own ? (on ? ' red' : ' blue') : ' gold') }, own ? (on ? 'Снять' : 'Надеть') : 'Купить');
+      tap(btn, () => { G.buyGear(id); renderModal(); });
+      gg.append(h('div', { cls: 'item' }, h('div', { cls: 'ico' }, d.icon), h('div', { cls: 'nm' }, d.name + (on ? ' ✔' : '')), h('div', { cls: 'ds' }, d.desc), own ? null : h('div', { cls: 'cost', html: costHtml(d.cost) }), btn));
+    });
+    gear.append(gg); body.append(gear);
     const tools = h('div', { cls: 'sect' }, h('h4', null, '🛠 Инструменты'));
     const g1 = h('div', { cls: 'grid' });
     [['axe', AXES, '🪓'], ['pick', PICKS, '⛏️']].forEach(([k, list, ic]) => {

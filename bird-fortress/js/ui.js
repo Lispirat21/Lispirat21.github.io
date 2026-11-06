@@ -380,6 +380,9 @@ const UI = window.UI = {};
       sect.append(h('div', { style: 'margin-top:6px;font-size:13px' }, `Урон ${L.dmg} · Скорость ${L.rate}/с · Дальность ${L.range} · Взрыв ${L.splash}${b.lvl >= 4 ? ' · стреляет сама (птица усиливает)' : ' · нужна птица-стрелок'}`));
     }
     if (b.t === 'farm') sect.append(h('div', null, 'Производит 1 🍖 каждые 10 сек.'));
+    if (b.t === 'ballista') { const L = BALLISTA_LEVELS[b.lvl - 1]; sect.append(h('div', { style: 'margin-top:6px;font-size:13px' }, `${L.name}: урон ${L.dmg} · скорость ${L.rate}/с · дальность ${L.range}${L.splash ? ' · взрыв ' + L.splash : ''}. Уровни: арбалет → пулемёт → ракетница.`)); }
+    if (b.t === 'mineshaft') { const L = SHAFT_LEVELS[b.lvl - 1]; sect.append(h('div', { style: 'margin-top:6px', html: `Добывает: ${RES_INFO.stone.icon} раз в ${L.stone}с, ${RES_INFO.coal.icon} раз в ${L.coal}с, ${RES_INFO.iron.icon} раз в ${L.iron}с.` })); }
+    if (b.t === 'gate') sect.append(h('div', { style: 'margin-top:6px;font-size:13px' }, 'Уровни: деревянные → окованные → каменные → крепостные → стальные.'));
     if (b.t === 'minelift') sect.append(h('div', null, 'Добывает 🪨 каждые 6с, ⚫ каждые 14с, 🔩 каждые 24с.'));
     if (b.t === 'storage') sect.append(h('div', null, `Вместимость ресурсов: ${G.cap()}`));
     if (d.cap) sect.append(h('div', null, `Места для птиц: +${d.cap} (всего ${G.birdCap()})`));
@@ -390,7 +393,7 @@ const UI = window.UI = {};
       const btn = h('button', { cls: 'btn gold', html: `⬆ Улучшить до «${up.name}» — ${costHtml(up.cost)}${locked ? ` <br><small>🔒 ${TECH[up.req].name}</small>` : ''}` });
       tap(btn, () => { if (G.upgrade(b)) renderModal(); else renderModal(); });
       acts.append(btn);
-    } else if (b.t === 'wall' || b.t === 'cannon') acts.append(h('span', { cls: 'tag g' }, '★ Максимальный уровень'));
+    } else if (G.LEVELS[b.t]) acts.append(h('span', { cls: 'tag g' }, '★ Максимальный уровень'));
     const rc = G.repairCost(b);
     if (rc) { const btn = h('button', { cls: 'btn blue', html: `🔧 Починить — ${costHtml(rc)}` }); tap(btn, () => { G.repair(b); renderModal(); }); acts.append(btn); }
     if (b.t !== 'core') {
@@ -427,6 +430,16 @@ const UI = window.UI = {};
   function renderWorkshop(body) {
     const S = G.S();
     if (!G.hasWorkshop()) { body.append(h('div', { cls: 'perk' }, '⚒️ Постройте «Мастерскую» (Стройка → Производство), чтобы создавать инструменты и изучать технологии.')); }
+    const gear = h('div', { cls: 'sect' }, h('h4', null, '🔦 Снаряжение — свет в темноте'));
+    const gg = h('div', { cls: 'grid' });
+    const G2 = S.gear || { own: {}, eq: null };
+    Object.keys(GEAR).forEach(id => {
+      const d = GEAR[id], own = G2.own[id], on = G2.eq === id;
+      const btn = h('button', { cls: 'btn' + (own ? (on ? ' red' : ' blue') : ' gold') }, own ? (on ? 'Снять' : 'Надеть') : 'Купить');
+      tap(btn, () => { G.buyGear(id); renderModal(); });
+      gg.append(h('div', { cls: 'item' }, h('div', { cls: 'ico' }, d.icon), h('div', { cls: 'nm' }, d.name + (on ? ' ✔' : '')), h('div', { cls: 'ds' }, d.desc), own ? null : h('div', { cls: 'cost', html: costHtml(d.cost) }), btn));
+    });
+    gear.append(gg); body.append(gear);
     const tools = h('div', { cls: 'sect' }, h('h4', null, '🛠 Инструменты'));
     const g1 = h('div', { cls: 'grid' });
     [['axe', AXES, '🪓'], ['pick', PICKS, '⛏️']].forEach(([k, list, ic]) => {

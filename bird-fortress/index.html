@@ -110,7 +110,9 @@ select { font-size:14px; padding:6px; border-radius:8px; }
 .stick.active { opacity:1; }
 .stick .knob { position:absolute; left:50%; top:50%; width:58px; height:58px; margin:-29px; border-radius:50%; background:radial-gradient(circle at 35% 35%,#fff,#bbb); box-shadow:0 3px 8px #0008; }
 .stick .lbl { position:absolute; top:-20px; width:100%; text-align:center; font-size:11px; font-weight:700; opacity:.85; text-shadow:0 1px 2px #000; }
-#actions { position:absolute; right:max(14px,env(safe-area-inset-right)); bottom:calc(max(10px,env(safe-area-inset-bottom)) + 76px); display:flex; flex-direction:column; align-items:flex-end; gap:10px; }
+#actions { position:absolute; right:max(14px,env(safe-area-inset-right)); bottom:calc(max(10px,env(safe-area-inset-bottom)) + 76px); display:grid; grid-template-areas:'. use' 'run act'; align-items:end; justify-items:center; gap:8px 10px; }
+#btn-use { grid-area:use; } #btn-act { grid-area:act; } #btn-run { grid-area:run; width:72px; height:72px; font-size:32px; }
+@media (max-height:430px) { #btn-run { width:64px; height:64px; font-size:28px; } }
 .round { width:64px; height:64px; border-radius:50%; border:3px solid #fff8; font-size:28px; color:#fff; background:radial-gradient(circle at 40% 35%,#6a8a6a,#253525); box-shadow:0 4px 10px #0008; }
 .round.bigr { width:84px; height:84px; font-size:38px; background:radial-gradient(circle at 40% 35%,#ff9a5a,#b04a1a); }
 .round:active { transform:scale(.92); }
