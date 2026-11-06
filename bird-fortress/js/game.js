@@ -12,6 +12,7 @@ const G = window.G = {};
   let nextId = 1, birdSeq = 1;
   let build = null;                   // режим строительства
   let time = 0, menuBird = null;
+  const lightPool = []; let lightT = 0;
   const cam = { yaw: 0.7, pitch: 0.88, dist: 12, pos: new THREE.Vector3() };
   const input = G.input = { mx: 0, mz: 0, run: false, action: false, camX: 0, camY: 0 };
   const V = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -31,6 +32,9 @@ const G = window.G = {};
     scene.fog = new THREE.Fog(0x8fd0f4, 60, 240);
     camera = new THREE.PerspectiveCamera(55, 1, 0.3, 1000);
     World.build(scene, q);
+    lightPool.length = 0;
+    const NL = { low: 2, medium: 4, high: 6, ultra: 8 }[q] || 4;
+    for (let i = 0; i < NL; i++) { const l = new THREE.PointLight(0xffb060, 0, 20, 1.2); l.castShadow = false; scene.add(l); lightPool.push(l); }
     menuBird = Models.makeBird('parrot'); menuBird.scale.setScalar(1.6); scene.add(menuBird);
     // сцена выбора героя
     selScene = new THREE.Scene(); selScene.background = new THREE.Color(0x1d3a24);
@@ -66,15 +70,18 @@ const G = window.G = {};
   };
 
   // ---------------- Состояние ----------------
-  function newState(hero) {
+  function newState(hero, diff) {
+    const D = DIFFICULTY[diff] || DIFFICULTY.normal, st = D.start;
     return {
-      v: 1, hero, res: { wood: 30, stone: 0, iron: 0, coal: 0, food: 10, coins: 60 },
+      v: 1, hero, diff: diff || 'normal', res: { wood: Math.round(30 * st), stone: 0, iron: 0, coal: 0, food: Math.round(10 * st), coins: Math.round(60 * st) },
       tools: { axe: 0, pick: -1 }, tech: { stone: false, metal: false, mech: false },
-      wave: 1, waveTimer: 110, waveActive: false, dayTime: 0.02, day: 1, quest: 0,
+      wave: 1, waveTimer: Math.round(110 * D.timer), waveActive: false, dayTime: 0.02, day: 1, quest: 0,
       player: { x: 0, z: 6, hp: HEROES[hero].hp }, stats: { wood: 0, stone: 0, iron: 0, kills: 0, built: 0, boughtBirds: 0 },
     };
   }
   G.hero = () => S && HEROES[S.hero];
+  const DF = () => DIFFICULTY[S && S.diff] || DIFFICULTY.normal;
+  G.diff = DF;
   G.countB = t => B.filter(b => b.t === t).length;
   G.maxLevel = t => B.reduce((m, b) => b.t === t ? Math.max(m, b.lvl) : m, 0);
   G.cap = () => 150 + 150 * G.countB('storage');
@@ -95,9 +102,9 @@ const G = window.G = {};
     nextId = 1;
   }
 
-  G.newGame = function (hero) {
+  G.newGame = function (hero, diff) {
     clearWorld();
-    S = newState(hero);
+    S = newState(hero, diff);
     // стартовая база: кольцо из частокола, ворота, гнездо, скворечники, пушка
     addBuilding('core', 0, 0, 0);
     for (let i = -8; i <= 8; i += 4) {
@@ -106,6 +113,7 @@ const G = window.G = {};
       addBuilding('wall', 10, i, 1); addBuilding('wall', -10, i, 3);
     }
     addBuilding('birdhouse', -6, -6, 0); addBuilding('birdhouse', 6, -6, 0);
+    addBuilding('lantern', -4, 5, 0); addBuilding('lantern', 4, 5, 0);
     const nw = B.find(b => b.t === 'wall' && b.x === 0 && b.z === -10);
     const c1 = addBuilding('cannon', nw.x, nw.z, nw.rot, 1, null, nw.id);
     const ew = B.find(b => b.t === 'wall' && b.x === 10 && b.z === 0);
@@ -141,6 +149,7 @@ const G = window.G = {};
   // ---------------- Постройки ----------------
   const PASS_PLAYER = { gate: 1, stonegate: 1, spikes: 1, farm: 1 };
   const PASS_ENEMY = { spikes: 1, farm: 1 };
+  const WALLISH = { wall: 1, fence: 1, gate: 1, stonegate: 1 };
   function footprint(t, rot) { const s = BUILD[t].size; return rot % 2 ? [s[1], s[0]] : [s[0], s[1]]; }
   function maxHpOf(b) {
     if (b.t === 'wall') return WALL_LEVELS[b.lvl - 1].hp;
@@ -390,7 +399,7 @@ const G = window.G = {};
   // ---------------- Враги и волны ----------------
   function waveList(n) {
     const types = Object.keys(ENEMIES).filter(t => t !== 'monster' && ENEMIES[t].wave <= n);
-    const count = 2 + Math.floor(n * 1.7);
+    const count = Math.max(1, Math.round((2 + Math.floor(n * 1.7)) * DF().count));
     const list = [];
     for (let i = 0; i < count; i++) list.push(types[Math.floor(Math.random() * types.length)]);
     if (n % 5 === 0) for (let i = 0; i < n / 5; i++) list.push('monster');
@@ -406,8 +415,8 @@ const G = window.G = {};
   function spawnEnemy(type, pos) {
     const d = ENEMIES[type], n = S.wave;
     const mesh = Models.makeEnemy(type); scene.add(mesh);
-    const hpMul = 1 + (n - 1) * 0.14;
-    const e = { type, d, mesh, pos: pos.clone(), vel: V(0, 0, 0), yaw: 0, hp: d.hp * hpMul, maxHp: d.hp * hpMul, dmg: d.dmg * (1 + (n - 1) * 0.06), atkCd: 0, target: null, tkind: null, retarget: 0, slow: 0, dying: 0, mode: 'walk', t: Math.random() * 10, hitT: 0, flee: false, stuck: 0 };
+    const hpMul = (1 + (n - 1) * 0.14) * DF().hp;
+    const e = { type, d, mesh, pos: pos.clone(), vel: V(0, 0, 0), yaw: 0, hp: d.hp * hpMul, maxHp: d.hp * hpMul, dmg: d.dmg * (1 + (n - 1) * 0.06) * DF().dmg, atkCd: 0, target: null, tkind: null, retarget: 0, slow: 0, dying: 0, mode: 'walk', t: Math.random() * 10, hitT: 0, flee: false, stuck: 0 };
     mesh.position.copy(pos);
     E.push(e);
     if (type === 'monster') { UI.toast('⚠️ Появилось Лесное чудище!', 'bad', 4000); Sound.play('growl', 1.6); }
@@ -430,12 +439,12 @@ const G = window.G = {};
       }
     } else if (!E.some(e => !e.dying && !e.flee)) {
       S.waveActive = false;
-      const bonus = Math.round((15 + S.wave * 6) * (S.earlyBonus ? 1.25 : 1));
+      const bonus = Math.round((15 + S.wave * 6) * (S.earlyBonus ? 1.25 : 1) * DF().reward);
       addRes('coins', bonus);
       UI.toast(`✅ Волна ${S.wave} отбита! +${bonus} 🪙`, 'good', 3500);
       Sound.play('win'); Sound.setMode('calm');
       S.wave++; S.earlyBonus = false;
-      S.waveTimer = Math.max(60, 120 - S.wave * 3);
+      S.waveTimer = Math.max(60, 120 - S.wave * 3) * DF().timer;
       G.save();
     }
   }
@@ -539,7 +548,7 @@ const G = window.G = {};
     e.hp -= dmg; if (!quiet) e.hitT = 0.15;
     if (e.hp <= 0) {
       e.dying = 1.6; e.mesh.scale.setScalar(e.type === 'monster' ? 1.1 : 1);
-      const c = Math.round(e.d.coins * HEROES[S.hero].coinMul * (1 + S.wave * 0.03));
+      const c = Math.max(1, Math.round(e.d.coins * HEROES[S.hero].coinMul * (1 + S.wave * 0.03) * DF().reward));
       addRes('coins', c, e.pos.clone().add(V(0, 1.6, 0)));
       if (e.d.food) addRes('food', e.d.food, e.pos.clone().add(V(0, 2.3, 0)));
       S.stats.kills++;
@@ -919,12 +928,26 @@ const G = window.G = {};
       B.forEach(b => { if (b.t === 'wall' && !b.cannonId) { const dd = Math.hypot(b.x - px, b.z - pz); if (dd < bd) { bd = dd; bw = b; } } });
       if (bw) { build.onWall = bw; x = bw.x; z = bw.z; }
     }
-    const rot = build.onWall ? build.onWall.rot : build.rot;
+    let rot = build.onWall ? build.onWall.rot : build.rot;
+    // стены, заборы и ворота «прилипают» к соседним — можно ставить вплотную и закрывать проломы
+    if (WALLISH[t]) {
+      let best = null, bdist = 3.4;
+      const free = (cx, cz) => !B.some(o => WALLISH[o.t] && Math.hypot(o.x - cx, o.z - cz) < 1.2);
+      const tryC = (cx, cz, r) => { const dd2 = Math.hypot(cx - px, cz - pz); if (dd2 < bdist && free(cx, cz)) { bdist = dd2; best = [cx, cz, r]; } };
+      for (const o of B) {
+        if (!WALLISH[o.t]) continue;
+        const a = o.rot * Math.PI / 2, ax = Math.cos(a), az = -Math.sin(a), nx = Math.sin(a), nz = Math.cos(a);
+        tryC(o.x + ax * 4, o.z + az * 4, o.rot); tryC(o.x - ax * 4, o.z - az * 4, o.rot);
+        for (const s1 of [-1, 1]) for (const s2 of [-1, 1]) tryC(o.x + ax * 2 * s1 + nx * 2 * s2, o.z + az * 2 * s1 + nz * 2 * s2, (o.rot + 1) % 4);
+      }
+      if (best) { x = Math.round(best[0] * 100) / 100; z = Math.round(best[1] * 100) / 100; rot = best[2]; }
+    }
+    build.prot = rot;
     let valid = true, reason = '';
     const [w, dd] = footprint(t, rot);
     if (!build.onWall) {
       const minx = x - w / 2, maxx = x + w / 2, minz = z - dd / 2, maxz = z + dd / 2, sh = 0.3;
-      for (const b of B) { if (b.onWall) continue; if (minx + sh < b.maxx && maxx - sh > b.minx && minz + sh < b.maxz && maxz - sh > b.minz) { valid = false; reason = 'Место занято'; break; } }
+      for (const b of B) { if (b.onWall) continue; const s2 = WALLISH[t] && WALLISH[b.t] ? 0.75 : sh; if (minx + s2 < b.maxx && maxx - s2 > b.minx && minz + s2 < b.maxz && maxz - s2 > b.minz) { valid = false; reason = 'Место занято'; break; } }
       if (valid) for (const n of World.nodesNear(x, z, 6, nearTmp)) { if (!n.alive) continue; const cx = clamp(n.x, minx, maxx), cz = clamp(n.z, minz, maxz); if (Math.hypot(n.x - cx, n.z - cz) < n.r * 0.8) { valid = false; reason = 'Мешает ' + NODE_INFO[n.kind].name.toLowerCase(); break; } }
       const by = baseY(t, x, z, rot);
       if (valid && by.min < World.WATER_Y + 0.1) { valid = false; reason = 'Нельзя строить в воде'; }
@@ -949,7 +972,7 @@ const G = window.G = {};
     if (!tryPay(cost)) return;
     let b;
     if (build.onWall) b = addBuilding('cannon', build.x, build.z, build.onWall.rot, 1, null, build.onWall.id);
-    else b = addBuilding(t, build.x, build.z, build.rot);
+    else b = addBuilding(t, build.x, build.z, build.prot != null ? build.prot : build.rot);
     S.stats.built++;
     Sound.play('build');
     spawnParticles(V(b.x, b.mesh.position.y + 0.3, b.z), 0xc8b090, 14, 3, 0.35, 0.9);
@@ -958,6 +981,23 @@ const G = window.G = {};
   };
 
   // ---------------- Производство ----------------
+  function updateLights(dt) {
+    const night = Math.max(0, Math.min(1, 1 - World.daylight * 2.2));
+    for (const b of B) { const f = b.mesh.userData.fire; if (f) { f.scale.set(1 + Math.sin(time * 13 + b.id) * 0.08, 1 + Math.sin(time * 9 + b.id * 2) * 0.15, 1); } }
+    lightT -= dt;
+    if (lightT <= 0) {
+      lightT = 0.3;
+      const lamps = B.filter(b => b.mesh.userData.lightPos).sort((a, b) => Math.hypot(a.x - P.pos.x, a.z - P.pos.z) - Math.hypot(b.x - P.pos.x, b.z - P.pos.z));
+      lightPool.forEach((l, i) => { const b = lamps[i]; l.userData.b = b || null; if (b) l.position.copy(b.mesh.localToWorld(b.mesh.userData.lightPos.clone())); });
+    }
+    lightPool.forEach(l => {
+      const b = l.userData.b;
+      if (!b || !B.includes(b) || night <= 0) { l.intensity = 0; return; }
+      const pw = b.mesh.userData.lightPower;
+      l.intensity = night * 0.75 * pw * (b.mesh.userData.fire ? 0.9 + Math.sin(time * 17 + b.id) * 0.1 : 1);
+      l.distance = 11 + pw * 5; l.decay = 1.6; l.color.setHex(b.mesh.userData.fire ? 0xff9a40 : 0xffc070);
+    });
+  }
   function updateProduction(dt) {
     for (const b of B) {
       if (b.t === 'farm') { b.prodT += dt; if (b.prodT >= 10) { b.prodT = 0; addRes('food', 1, Math.hypot(P.pos.x - b.x, P.pos.z - b.z) < 25 ? V(b.x, b.y + 1.5, b.z) : null); } }
@@ -1051,6 +1091,7 @@ const G = window.G = {};
     updateDefense(dt);
     updateBirds(dt);
     updateProduction(dt);
+    updateLights(dt);
     updateParticles(dt);
     updateQuests(dt);
     autosaveT -= dt; if (autosaveT <= 0) { autosaveT = 45; if (!S.waveActive) G.save(true); }
@@ -1140,6 +1181,7 @@ const G = window.G = {};
     clearWorld();
     S = data; const blds = data.buildings, birds = data.birds, nodes = data.nodes;
     delete S.buildings; delete S.birds; delete S.nodes;
+    if (!S.diff) S.diff = 'normal';
     S.res = Object.assign({ wood: 0, stone: 0, iron: 0, coal: 0, food: 0, coins: 0 }, S.res);
     S.waveActive = false;
     blds.filter(b => !b.w).forEach(b => addBuilding(b.t, b.x, b.z, b.r, b.l, b.hp, null, b.id));
@@ -1154,6 +1196,6 @@ const G = window.G = {};
   };
   G.deleteSave = () => { try { localStorage.removeItem(SAVE_KEY); } catch (e) { } };
   G.saveInfo = function () {
-    try { const d = JSON.parse(localStorage.getItem(SAVE_KEY)); if (!d) return null; return { hero: d.hero, wave: d.wave, day: d.day, at: d.savedAt }; } catch (e) { return null; }
+    try { const d = JSON.parse(localStorage.getItem(SAVE_KEY)); if (!d) return null; return { hero: d.hero, wave: d.wave, day: d.day, at: d.savedAt, diff: d.diff || 'normal' }; } catch (e) { return null; }
   };
 })();

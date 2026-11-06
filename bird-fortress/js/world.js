@@ -328,9 +328,9 @@ const World = (() => {
     const useSun = el > -0.05;
     const L = useSun ? sdir : mdir;
     sun.position.copy(center).addScaledVector(L, 120); sun.target.position.copy(center);
-    sun.intensity = useSun ? 0.35 + 1.35 * daylight : 0.35;
+    sun.intensity = useSun ? 0.3 + 0.95 * daylight : 0.35;
     sun.color.setHex(useSun ? (dusk > 0.3 ? 0xffc890 : 0xfff2d8) : 0x8aa8ff);
-    hemi.intensity = 0.4 + 0.45 * daylight;
+    hemi.intensity = 0.38 + 0.32 * daylight;
     hemi.color.setHex(daylight > 0.3 ? 0xcfe8ff : 0x6a80c0);
     sunMesh.position.copy(center).addScaledVector(sdir, 380); sunMesh.visible = el > -0.1;
     moonMesh.position.copy(center).addScaledVector(mdir, 380); moonMesh.visible = el < 0.1;

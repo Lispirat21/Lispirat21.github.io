@@ -5,12 +5,14 @@ const UI = window.UI = {};
   const $ = id => document.getElementById(id);
   const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
   const SKEY = 'birdfortress_settings_v1';
-  const DEF = { quality: isTouch ? 'medium' : 'high', resolution: 'auto', musicOn: true, musicVol: 60, sfxOn: true, sfxVol: 80, autoAct: true, camDist: 100, sens: 100 };
+  const DEF = { uiScale: 100, quality: isTouch ? 'medium' : 'high', resolution: 'auto', musicOn: true, musicVol: 60, sfxOn: true, sfxVol: 80, autoAct: true, camDist: 100, sens: 100 };
   let saved = {}; try { saved = JSON.parse(localStorage.getItem(SKEY)) || {}; } catch (e) { }
   G.settings = Object.assign({}, DEF, saved);
   const saveSettings = () => { try { localStorage.setItem(SKEY, JSON.stringify(G.settings)); } catch (e) { } };
   const applyAudio = () => Sound.set({ musicOn: G.settings.musicOn, sfxOn: G.settings.sfxOn, musicVol: G.settings.musicVol / 100, sfxVol: G.settings.sfxVol / 100 });
   applyAudio();
+  const applyUiScale = () => document.documentElement.style.setProperty('--ui', (G.settings.uiScale || 100) / 100);
+  applyUiScale();
 
   function h(tag, attrs, ...kids) {
     const e = document.createElement(tag);
@@ -64,7 +66,7 @@ const UI = window.UI = {};
   function refreshContinue() {
     const info = G.saveInfo();
     $('btn-continue').disabled = !info;
-    $('saveinfo').textContent = info ? `${HEROES[info.hero] ? HEROES[info.hero].name : ''} · волна ${info.wave} · день ${info.day}` : 'нет сохранения';
+    $('saveinfo').textContent = info ? `${HEROES[info.hero] ? HEROES[info.hero].name : ''} · ${(DIFFICULTY[info.diff] || DIFFICULTY.normal).name} · волна ${info.wave}` : 'нет сохранения';
   }
   function exitGame() {
     if (G.state === 'play') G.save(true);
@@ -81,12 +83,13 @@ const UI = window.UI = {};
     document.querySelectorAll('#s-quality button').forEach(b => b.classList.toggle('on', b.dataset.v === s.quality));
     $('s-res').value = s.resolution;
     $('s-musicOn').classList.toggle('on', s.musicOn); $('s-sfxOn').classList.toggle('on', s.sfxOn); $('s-autoAct').classList.toggle('on', s.autoAct);
+    $('s-uiScale').value = s.uiScale; $('s-uiScaleV').textContent = s.uiScale + '%';
     $('s-musicVol').value = s.musicVol; $('s-sfxVol').value = s.sfxVol; $('s-camDist').value = s.camDist; $('s-sens').value = s.sens;
   }
   document.querySelectorAll('#s-quality button').forEach(b => tap(b, () => { G.settings.quality = b.dataset.v; saveSettings(); renderSettings(); G.applyQuality(); }));
   $('s-res').addEventListener('change', () => { G.settings.resolution = $('s-res').value; saveSettings(); G.resize(); });
   ['musicOn', 'sfxOn', 'autoAct'].forEach(k => tap($('s-' + k), () => { G.settings[k] = !G.settings[k]; saveSettings(); renderSettings(); applyAudio(); }));
-  ['musicVol', 'sfxVol', 'camDist', 'sens'].forEach(k => $('s-' + k).addEventListener('input', e => { G.settings[k] = +e.target.value; saveSettings(); applyAudio(); }));
+  ['musicVol', 'sfxVol', 'camDist', 'sens', 'uiScale'].forEach(k => $('s-' + k).addEventListener('input', e => { G.settings[k] = +e.target.value; saveSettings(); applyAudio(); applyUiScale(); $('s-uiScaleV').textContent = G.settings.uiScale + '%'; placeIdleSticks(); }));
   tap($('s-full'), toggleFullscreen);
   tap($('s-back'), () => { $('settings').classList.add('hidden'); if (settingsFrom === 'menu') $('menu').classList.remove('hidden'); });
   function toggleFullscreen() {
@@ -101,7 +104,7 @@ const UI = window.UI = {};
   }
 
   // ---------------- Выбор героя ----------------
-  let selIdx = 0;
+  let selIdx = 0, selDiff = 'normal';
   function openSelect() {
     G.state = 'select'; show('select'); selIdx = 0; G.selRot = 0.4; renderHero(); goFullscreenMobile();
   }
@@ -111,13 +114,16 @@ const UI = window.UI = {};
     const bar = (lbl, v, max) => h('div', { cls: 'stat' }, h('b', null, lbl), h('div', { cls: 'sb' }, h('i', { style: `width:${Math.min(100, v / max * 100)}%` })));
     const c = $('heroCard'); c.innerHTML = '';
     c.append(h('h3', null, d.name), h('p', null, d.desc),
-      bar('Здоровье', d.hp, 160), bar('Скорость', d.speed, 8), bar('Атака', d.dmg * d.atkRate, 56), bar('Добыча', d.gather, 1.4), bar('Стройка', 1 / d.buildMul, 1.4),
+      h('div', { cls: 'stats' }, bar('Здоровье', d.hp, 160), bar('Скорость', d.speed, 8), bar('Атака', d.dmg * d.atkRate, 56), bar('Добыча', d.gather, 1.4), bar('Стройка', 1 / d.buildMul, 1.4)),
       h('div', { cls: 'perk' }, '⭐ ' + d.perk));
+    const seg = h('div', { cls: 'seg diff' });
+    DIFF_ORDER.forEach(k => { const D = DIFFICULTY[k]; const b = h('button', { cls: (k === selDiff ? 'on ' : '') + 'd-' + k }, D.icon + ' ' + D.name); tap(b, () => { selDiff = k; renderHero(); }); seg.append(b); });
+    c.append(h('div', { style: 'margin-top:8px;font-weight:800' }, 'Сложность:'), seg, h('div', { cls: 'ddesc', style: 'font-size:12px;margin-top:3px;opacity:.85' }, DIFFICULTY[selDiff].desc));
   }
   tap($('sel-prev'), () => { selIdx = (selIdx + 2) % 3; renderHero(); });
   tap($('sel-next'), () => { selIdx = (selIdx + 1) % 3; renderHero(); });
   tap($('sel-back'), () => { G.state = 'menu'; show('menu'); });
-  tap($('sel-go'), () => { G.newGame(HERO_ORDER[selIdx]); enterGame(); toast('Добро пожаловать! Рубите деревья и защищайте птиц 🐦', 'good', 4000); });
+  tap($('sel-go'), () => { G.newGame(HERO_ORDER[selIdx], selDiff); enterGame(); toast('Добро пожаловать! Рубите деревья и защищайте птиц 🐦', 'good', 4000); });
 
   // ---------------- Вход в игру ----------------
   function enterGame() {
@@ -156,7 +162,7 @@ const UI = window.UI = {};
   const chips = {};
   function buildResChips() {
     const r = $('res'); r.innerHTML = '';
-    RES_KEYS.forEach(k => { const v = h('span', null, '0'); const c = h('div', { cls: 'chip' + (k === 'coins' ? ' coins' : ''), title: RES_INFO[k].name }, h('span', { cls: 'ic' }, RES_INFO[k].icon), v); chips[k] = { c, v }; r.append(c); });
+    RES_KEYS.forEach(k => { const v = h('span', null, '0'); const c = h('div', { cls: 'chip' + (k === 'coins' ? ' coins' : ''), title: RES_INFO[k].name }, h('span', { cls: 'ic', html: RES_INFO[k].icon }), v); chips[k] = { c, v }; r.append(c); });
   }
   let hudT = 0;
   UI.hud = function (dt) {
@@ -177,7 +183,7 @@ const UI = window.UI = {};
       const ph = P.hp / P.maxHp; const pe = $('php'); pe.style.width = (ph * 100) + '%'; pe.className = ph < 0.3 ? 'low' : ph < 0.6 ? 'mid' : '';
       $('phptxt').textContent = P.dead ? 'ранен…' : `${Math.ceil(P.hp)}/${P.maxHp}`;
       const dl = World.daylight;
-      $('daytxt').textContent = `${dl > 0.3 ? '☀️' : '🌙'} День ${S.day}`;
+      $('daytxt').textContent = `${dl > 0.3 ? '☀️' : '🌙'} День ${S.day} · ${G.diff().icon}`;
       $('quest').innerHTML = `<b>Задание:</b> ${G.questText()}`;
       const birds = G.birds();
       $('birdcount').textContent = `🐦 Птиц: ${birds.length}/${G.birdCap()} · у пушек: ${birds.filter(b => b.cannon).length}`;
@@ -234,7 +240,7 @@ const UI = window.UI = {};
   const floats = [];
   UI.floatText = function (pos, text, color) {
     if (floats.length > 30) return;
-    const el = h('div', { cls: 'ft', style: `color:${color || '#fff'}` }, text);
+    const el = h('div', { cls: 'ft', style: `color:${color || '#fff'}`, html: text });
     $('floats').append(el); floats.push({ el, p: pos.clone(), t: 0 });
   };
   function updateFloats(dt) {
@@ -250,7 +256,7 @@ const UI = window.UI = {};
   function toast(msg, type = 'info', ms = 2400) {
     const box = $('toasts');
     if (box.children.length >= 4) box.firstChild.remove();
-    const el = h('div', { cls: 'toast ' + type }, msg); box.append(el);
+    const el = h('div', { cls: 'toast ' + type, html: msg }); box.append(el);
     setTimeout(() => el.remove(), ms);
   }
   UI.toast = toast;
@@ -408,7 +414,7 @@ const UI = window.UI = {};
       const S = G.S();
       if (t === 'res') {
         const grid = h('div', { cls: 'grid' });
-        RES_KEYS.forEach(k => grid.append(h('div', { cls: 'item' }, h('div', { cls: 'ico' }, RES_INFO[k].icon), h('div', { cls: 'nm' }, RES_INFO[k].name), h('div', { style: 'font-size:20px;font-weight:900' }, `${Math.floor(S.res[k])}${k === 'coins' ? '' : ' / ' + G.cap()}`))));
+        RES_KEYS.forEach(k => grid.append(h('div', { cls: 'item' }, h('div', { cls: 'ico', html: RES_INFO[k].icon }), h('div', { cls: 'nm' }, RES_INFO[k].name), h('div', { style: 'font-size:20px;font-weight:900' }, `${Math.floor(S.res[k])}${k === 'coins' ? '' : ' / ' + G.cap()}`))));
         body.append(grid);
         const eat = h('button', { cls: 'btn gold', style: 'margin-top:10px' }, '🍖 Съесть (+35 ❤️ за 3 еды)'); tap(eat, () => { G.eat(); renderModal(); });
         body.append(eat);
@@ -483,12 +489,13 @@ const UI = window.UI = {};
   const sticks = { L: { el: $('stickL'), id: null, ox: 0, oy: 0 }, R: { el: $('stickR'), id: null, ox: 0, oy: 0, lx: 0, ly: 0 } };
   function placeIdleSticks() {
     const W = window.innerWidth, H = window.innerHeight;
+    R = 55 * (G.settings.uiScale || 100) / 100;
     if (!isTouch) { sticks.L.el.style.display = sticks.R.el.style.display = 'none'; return; }
     if (sticks.L.id === null) setStick(sticks.L, Math.max(100, W * 0.12), H - Math.max(110, H * 0.24));
     if (sticks.R.id === null) setStick(sticks.R, W - Math.max(190, W * 0.22), H - Math.max(150, H * 0.33));
   }
   function setStick(s, x, y) { s.ox = x; s.oy = y; s.el.style.left = x + 'px'; s.el.style.top = y + 'px'; s.el.querySelector('.knob').style.transform = ''; }
-  const R = 55;
+  let R = 55;
   const touchLayer = $('touch');
   let mouse = null;
   touchLayer.addEventListener('pointerdown', e => {
@@ -542,7 +549,7 @@ const UI = window.UI = {};
   touchLayer.addEventListener('wheel', e => { if (G.state === 'play') G.camZoom(e.deltaY * 0.01); }, { passive: true });
   touchLayer.addEventListener('contextmenu', e => e.preventDefault());
   // защита от системных жестов
-  document.addEventListener('touchmove', e => { if (!e.target.closest('#mbody,#settings .card,#mtabs')) e.preventDefault(); }, { passive: false });
+  document.addEventListener('touchmove', e => { if (!e.target.closest('#mbody,#settings .card,#mtabs,#heroCard')) e.preventDefault(); }, { passive: false });
   document.addEventListener('gesturestart', e => e.preventDefault());
 
   // ---------------- Клавиатура ----------------

@@ -190,6 +190,47 @@ select { font-size:14px; padding:6px; border-radius:8px; }
   #leftinfo { top:130px; }
   .slot { width:52px; }
 }
+
+/* ---------- масштаб интерфейса (только GUI, мир не меняется) ---------- */
+:root { --ui: 1; }
+.rico { width:1.05em; height:1.05em; display:inline-block; vertical-align:-0.18em; }
+.seg.diff { margin-top:4px; } .seg.diff button { padding:6px 7px; font-size:12px; }
+.seg.diff button.on.d-hard { background:#e0782a; } .seg.diff button.on.d-impossible { background:#b02a2a; } .seg.diff button.on.d-easy { background:#3aa0d0; }
+#res { transform:scale(var(--ui)); transform-origin:top left; }
+#basebox { transform:scale(var(--ui)); transform-origin:top center; }
+#topright { transform:scale(var(--ui)); transform-origin:top right; }
+#leftinfo { transform:scale(var(--ui)); transform-origin:top left; top:calc(max(6px,env(safe-area-inset-top)) + 64px * var(--ui)); }
+#btn-wave { transform:scale(var(--ui)); transform-origin:top right; top:calc(max(6px,env(safe-area-inset-top)) + 54px * var(--ui)); }
+#toolbar { transform:translateX(-50%) scale(var(--ui)); transform-origin:bottom center; }
+#prompt { transform:translateX(-50%) scale(var(--ui)); transform-origin:bottom center; bottom:calc(max(10px,env(safe-area-inset-bottom)) + 84px * var(--ui)); }
+#buildbar { transform:translateX(-50%) scale(var(--ui)); transform-origin:bottom center; bottom:calc(max(8px,env(safe-area-inset-bottom)) + 76px * var(--ui)); }
+#actions { transform:scale(var(--ui)); transform-origin:bottom right; bottom:calc(max(10px,env(safe-area-inset-bottom)) + 76px * var(--ui)); }
+.stick { transform:scale(var(--ui)); }
+#compass { font-size:calc(34px * var(--ui)); }
+.ft { font-size:calc(18px * var(--ui)); }
+#toasts { transform:translateX(-50%) scale(var(--ui)); transform-origin:top center; }
+#modal .card { width:calc(min(96vw,760px) / var(--ui)); max-height:calc(94vh / var(--ui)); transform:scale(var(--ui)); }
+#settings .card { width:calc(min(94vw,560px) / var(--ui)); max-height:calc(92vh / var(--ui)); transform:scale(var(--ui)); }
+#menu > * { transform:scale(var(--ui)); transform-origin:left center; }
+#pause > *, #over > *, #bye > * { transform:scale(var(--ui)); }
+#heroCard { top:calc(max(8px,env(safe-area-inset-top)) + 46px); transform:scale(var(--ui)); transform-origin:top left; }
+#selNav { pointer-events:none; } #selNav > * { pointer-events:auto; }
+#heroCard .stats { display:grid; grid-template-columns:1fr 1fr; column-gap:10px; }
+#heroCard .stat b { width:66px; }
+@media (max-height:430px) { #heroCard { padding:8px 10px; width:min(50vw,390px); } #heroCard > p, #heroCard .ddesc { display:none; } .seg.diff { flex-wrap:nowrap; gap:3px; } .seg.diff button { padding:5px 4px; font-size:11px; white-space:nowrap; } #heroCard h3 { font-size:17px; } #heroCard p { font-size:12px; margin:2px 0; } #heroCard .stat { margin:1px 0; font-size:12px; } #heroCard .perk { font-size:12px; padding:4px 6px; margin-top:4px; } #dragHint { display:none; } }
+#selNav { transform:scale(var(--ui)); transform-origin:bottom center; }
+#selTitle { transform:scale(var(--ui)); transform-origin:top center; }
+@media (max-height:430px) {
+  #leftinfo { top:calc(max(6px,env(safe-area-inset-top)) + 54px * var(--ui)); }
+  #actions { bottom:calc(max(8px,env(safe-area-inset-bottom)) + 66px * var(--ui)); }
+  #prompt { bottom:calc(max(8px,env(safe-area-inset-bottom)) + 70px * var(--ui)); }
+  #buildbar { bottom:calc(max(8px,env(safe-area-inset-bottom)) + 66px * var(--ui)); }
+}
+@media (orientation:portrait) {
+  #heroCard { top:auto; transform:translateX(-50%) scale(var(--ui)); transform-origin:bottom center; }
+  #toasts { transform:scale(var(--ui)); transform-origin:bottom center; left:4vw; }
+  #leftinfo { top:calc(130px * var(--ui)); }
+}
 </style>
 </head>
 <body>
@@ -225,6 +266,7 @@ select { font-size:14px; padding:6px; border-radius:8px; }
       <button data-v="low">Низкая</button><button data-v="medium">Средняя</button><button data-v="high">Высокая</button><button data-v="ultra">Ультра</button></div></div>
     <div class="row"><label>Разрешение</label><select id="s-res">
       <option value="auto">Авто (экран)</option><option value="480">854×480</option><option value="540">960×540</option><option value="720">1280×720</option><option value="900">1600×900</option><option value="1080">1920×1080</option><option value="1440">2560×1440</option></select></div>
+    <div class="row"><label>Размер интерфейса <span id="s-uiScaleV"></span></label><input type="range" id="s-uiScale" min="60" max="150" step="5"></div>
     <div class="row"><label>Музыка</label><button class="tog" id="s-musicOn"></button></div>
     <div class="row"><label>Громкость музыки</label><input type="range" id="s-musicVol" min="0" max="100"></div>
     <div class="row"><label>Звуки</label><button class="tog" id="s-sfxOn"></button></div>

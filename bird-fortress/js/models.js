@@ -553,6 +553,31 @@ const Models = (() => {
         g.userData.perch = [new THREE.Vector3(0, 3.8, 0), new THREE.Vector3(-0.6, 1.25, 0.3)];
         break;
       }
+      case 'lantern': {
+        g = new THREE.Group();
+        cyl(0.07, 0.1, 2.4, 0x3a2a1c, 0, 1.2, 0, g, 6); box(0.36, 0.08, 0.36, 0x2a2a2e, 0, 0.04, 0, g);
+        box(0.5, 0.06, 0.06, 0x2a2a2e, 0.18, 2.35, 0, g, false);
+        const lamp = group(g, 0.4, 2.0, 0);
+        box(0.3, 0.38, 0.3, mat(0xffd27a, { emissive: 0xffa030, emissiveIntensity: 1.6 }), 0, 0, 0, lamp, false);
+        [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => box(0.04, 0.42, 0.04, 0x2a2a2e, sx * 0.15, 0, sz * 0.15, lamp, false));
+        cone(0.26, 0.2, 0x2a2a2e, 0, 0.29, 0, lamp, 4, false).rotation.y = Math.PI / 4;
+        cyl(0.02, 0.02, 0.2, 0x2a2a2e, 0, 0.32, 0, lamp, 4, false);
+        g.userData.lightPos = new THREE.Vector3(0.4, 2.0, 0); g.userData.lightPower = 1;
+        g.userData.perch = [new THREE.Vector3(0, 2.45, 0)];
+        break;
+      }
+      case 'torch': {
+        g = new THREE.Group();
+        cyl(0.45, 0.55, 0.5, 0x7a7a74, 0, 0.25, 0, g, 8);
+        cyl(0.15, 0.2, 1.8, 0x3a3a40, 0, 1.4, 0, g, 6);
+        cyl(0.5, 0.25, 0.35, mat(0x4a4a50, { metalness: 0.5, roughness: 0.5 }), 0, 2.45, 0, g, 8);
+        for (let i = 0; i < 5; i++) sph(0.22, 0.18, 0.22, 0x1a1a1a, Math.cos(i * 1.26) * 0.2, 2.62, Math.sin(i * 1.26) * 0.2, g, true, false);
+        const fire = group(g, 0, 2.7, 0); g.userData.fire = fire;
+        cone(0.32, 0.8, mat(0xff7a20, { emissive: 0xff5010, emissiveIntensity: 2 }), 0, 0.35, 0, fire, 6, false);
+        cone(0.18, 0.6, mat(0xffe070, { emissive: 0xffc040, emissiveIntensity: 2.2 }), 0.05, 0.3, 0.04, fire, 5, false);
+        g.userData.lightPos = new THREE.Vector3(0, 3.1, 0); g.userData.lightPower = 1.7;
+        break;
+      }
       case 'market': {
         g = new THREE.Group(); box(3.4, 0.9, 1.4, texMat(T.planks()), 0, 0.45, 0.4, g);
         [[-1.6, -1.1], [1.6, -1.1], [-1.6, 1.1], [1.6, 1.1]].forEach(([x, z]) => cyl(0.08, 0.08, 2.6, WOOD_D, x, 1.3, z, g, 6));

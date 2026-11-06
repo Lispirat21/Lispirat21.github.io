@@ -5,7 +5,7 @@ const RES_INFO = {
   wood:  { name: 'Дерево',  icon: '🪵' },
   stone: { name: 'Камень',  icon: '🪨' },
   iron:  { name: 'Железо',  icon: '🔩' },
-  coal:  { name: 'Уголь',   icon: '⚫' },
+  coal:  { name: 'Уголь',   icon: "<svg class=\"rico\" viewBox=\"0 0 24 24\"><path d=\"M3 15 6 7l6-3 7 3 2 8-5 5H8z\" fill=\"#2b2d33\" stroke=\"#b8bec8\" stroke-width=\"1.4\" stroke-linejoin=\"round\"/><path d=\"M6 7l6-3 7 3-6 3z\" fill=\"#5a5e68\"/><path d=\"M12 10l7-3 2 8-7 1z\" fill=\"#3c3f47\"/><path d=\"M3 15l3-8 6 3 2 6-6 4z\" fill=\"#1c1d21\"/><path d=\"M9 6.5l2.5-1M15 6l2 .8M5.5 11l1-2\" stroke=\"#c8ccd6\" stroke-width=\"1.1\" stroke-linecap=\"round\"/></svg>" },
   food:  { name: 'Еда',     icon: '🍖' },
   coins: { name: 'Монеты',  icon: '🪙' },
 };
@@ -70,6 +70,8 @@ const BUILD = {
   stonegate:  { name: 'Каменные ворота',    cat: 'gates',   cost: { stone: 25, wood: 8 },   hp: 950,  size: [4, 1.4], icon: '⛩️', desc: 'Очень прочные ворота.', req: 'stone' },
   birdhouse:  { name: 'Скворечник',         cat: 'houses',  cost: { wood: 12 },             hp: 120,  size: [1.6, 1.6], icon: '🏠', desc: '+3 места для птиц. Птицы прячутся тут.', cap: 3 },
   aviary:     { name: 'Птичник',            cat: 'houses',  cost: { wood: 30, stone: 10 },  hp: 350,  size: [3.4, 3.4], icon: '🏡', desc: '+6 мест для птиц.', cap: 6 },
+  lantern:    { name: 'Фонарь',             cat: 'light',   cost: { wood: 6 },              hp: 80,   size: [0.8, 0.8], icon: '🏮', desc: 'Освещает базу ночью. Птицы любят на нём сидеть.' },
+  torch:      { name: 'Большой фонарь',     cat: 'light',   cost: { wood: 10, coal: 2 },    hp: 150,  size: [1.2, 1.2], icon: '🔥', desc: 'Яркий угольный фонарь: светит дальше и сильнее.' },
   market:     { name: 'Птичий рынок',       cat: 'houses',  cost: { wood: 35, coins: 20 },  hp: 300,  size: [3.6, 2.6], icon: '🎪', desc: 'Открывает редких птиц для покупки.', unique: true },
   cannon:     { name: 'Пушка',              cat: 'defense', cost: { wood: 20, coins: 20 },  hp: 260,  size: [2.4, 2.4], icon: '💣', desc: 'Ставится на стену или на вышку. За пушку садится птица.' },
   spikes:     { name: 'Шипы',               cat: 'defense', cost: { wood: 8 },              hp: 120,  size: [2, 2],   icon: '📍', desc: 'Ранят зверей, которые по ним проходят.' },
@@ -81,7 +83,7 @@ const BUILD = {
   core:       { name: 'Великое гнездо',     cat: 'none',    cost: {},                       hp: 1200, size: [5, 5],   icon: '🪺', desc: 'Сердце базы. Если его разрушат — игра окончена.' },
 };
 const BUILD_CATS = [
-  ['walls', 'Стены'], ['towers', 'Башни'], ['gates', 'Ворота'], ['houses', 'Домики'], ['defense', 'Оборона'], ['prod', 'Производство'],
+  ['walls', 'Стены'], ['towers', 'Башни'], ['gates', 'Ворота'], ['houses', 'Домики'], ['light', 'Освещение'], ['defense', 'Оборона'], ['prod', 'Производство'],
 ];
 
 const TECH = {
@@ -125,3 +127,12 @@ const QUESTS = [
   { text: 'Изучите «Механизмы»', check: s => s.tech.mech, reward: 50 },
   { text: 'Продержитесь 10 волн', check: s => s.wave >= 11, reward: 100 },
 ];
+
+// Уровни сложности
+const DIFFICULTY = {
+  easy:       { name: 'Лёгкая',     icon: '🌱', hp: 0.65, dmg: 0.55, count: 0.7, timer: 1.4, reward: 1.25, start: 1.5, desc: 'Звери слабые и приходят реже. Для знакомства с игрой.' },
+  normal:     { name: 'Средняя',    icon: '🌳', hp: 1,    dmg: 1,    count: 1,   timer: 1,   reward: 1,    start: 1,   desc: 'Обычный баланс.' },
+  hard:       { name: 'Сложная',    icon: '🔥', hp: 1.4,  dmg: 1.4,  count: 1.35,timer: 0.8, reward: 0.9,  start: 0.8, desc: 'Больше сильных зверей, меньше времени на подготовку.' },
+  impossible: { name: 'Невозможная',icon: '💀', hp: 2.1,  dmg: 2,    count: 1.8, timer: 0.6, reward: 0.75, start: 0.6, desc: 'Огромные стаи, очень мало времени. Только для мастеров.' },
+};
+const DIFF_ORDER = ['easy', 'normal', 'hard', 'impossible'];
