@@ -190,6 +190,28 @@ select { font-size:14px; padding:6px; border-radius:8px; }
   .slot { width:52px; }
 }
 
+#crosshair { position:absolute; left:50%; top:50%; width:8px; height:8px; margin:-4px; border-radius:50%; background:#fff; box-shadow:0 0 0 2px #0008; display:none; }
+body.fp #crosshair { display:block; }
+.seedrow { display:flex; align-items:center; gap:6px; margin-top:8px; flex-wrap:wrap; }
+.seedrow input { width:120px; font-size:16px; padding:5px 8px; border-radius:8px; border:2px solid #c8a060; background:#fff; color:#3a2a14; font-family:inherit; user-select:text; -webkit-user-select:text; }
+.seedrow .biome { font-size:12px; font-weight:800; color:#2a6a2a; }
+#over .results { width:min(94vw,640px); max-height:92vh; overflow-y:auto; padding:14px 16px; text-align:center; touch-action:pan-y; }
+#over .results h1 { color:#c0301a; font-size:clamp(26px,6vw,40px); margin:0 0 4px; text-shadow:none; }
+.rsub { font-size:13px; opacity:.85; margin-bottom:10px; }
+.rgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:5px; text-align:left; }
+#over-menu { position:sticky; bottom:0; width:min(80vw,320px); }
+@media (max-height:430px) { #over .results { padding:8px 12px; } #over .results h1 { font-size:24px; } .rs { padding:3px 6px; font-size:12px; } .rs .ri { font-size:16px; } .rs b { font-size:14px; } .rnote { margin:6px 0; } .rsub { margin-bottom:6px; } }
+.rs { display:flex; align-items:center; gap:8px; background:#fff; border:2px solid #e0c890; border-radius:10px; padding:6px 8px; font-size:13px; }
+.rs .ri { font-size:20px; width:24px; text-align:center; } .rs .rl { flex:1; } .rs b { font-size:16px; color:#6a3a10; font-variant-numeric:tabular-nums; }
+.rnote { margin:10px 0; font-size:12px; color:#a04020; }
+.stb { display:flex; align-items:center; gap:4px; font-size:11px; margin-top:-2px; }
+.stbar { flex:1; height:6px; background:#0008; border-radius:3px; overflow:hidden; border:1px solid #fff6; }
+.stbar i { display:block; height:100%; width:100%; background:linear-gradient(90deg,#ffd24a,#ffe98a); }
+.stbar i.tired { background:#e0703a; }
+#btn-run.on { background:radial-gradient(circle at 40% 35%,#ffe066,#d89a10); border-color:#fff; }
+#daytxt small { font-size:10px; font-weight:700; opacity:.9; }
+#bossbar { margin:4px auto 0; width:90%; background:#3a0a0acc; border:2px solid #ff6a4a; border-radius:10px; padding:2px 8px 4px; font-size:12px; font-weight:900; }
+#bossbar .bb { height:8px; background:#0008; border-radius:4px; overflow:hidden; margin-top:2px; } #bossbar .bb i { display:block; height:100%; background:linear-gradient(90deg,#ff3a2a,#ff9a4a); }
 /* ---------- масштаб интерфейса (только GUI, мир не меняется) ---------- */
 :root { --ui: 1; }
 .rico { width:1.05em; height:1.05em; display:inline-block; vertical-align:-0.18em; }
@@ -216,7 +238,7 @@ select { font-size:14px; padding:6px; border-radius:8px; }
 #selNav { pointer-events:none; } #selNav > * { pointer-events:auto; }
 #heroCard .stats { display:grid; grid-template-columns:1fr 1fr; column-gap:10px; }
 #heroCard .stat b { width:66px; }
-@media (max-height:430px) { #heroCard { padding:8px 10px; width:min(50vw,390px); } #heroCard > p, #heroCard .ddesc { display:none; } .seg.diff { flex-wrap:nowrap; gap:3px; } .seg.diff button { padding:5px 4px; font-size:11px; white-space:nowrap; } #heroCard h3 { font-size:17px; } #heroCard p { font-size:12px; margin:2px 0; } #heroCard .stat { margin:1px 0; font-size:12px; } #heroCard .perk { font-size:12px; padding:4px 6px; margin-top:4px; } #dragHint { display:none; } }
+@media (max-height:430px) { #heroCard { padding:8px 10px; width:min(50vw,390px); } #heroCard > p, #heroCard .ddesc, #heroCard .perk { display:none; } .seedrow { margin-top:5px; } .seedrow input { width:100px; padding:3px 6px; } .seg.diff { flex-wrap:nowrap; gap:3px; } .seg.diff button { padding:5px 4px; font-size:11px; white-space:nowrap; } #heroCard h3 { font-size:17px; } #heroCard p { font-size:12px; margin:2px 0; } #heroCard .stat { margin:1px 0; font-size:12px; } #heroCard .perk { font-size:12px; padding:4px 6px; margin-top:4px; } #dragHint { display:none; } }
 #selNav { transform:scale(var(--ui)); transform-origin:bottom center; }
 #selTitle { transform:scale(var(--ui)); transform-origin:top center; }
 @media (max-height:430px) {
@@ -265,6 +287,7 @@ select { font-size:14px; padding:6px; border-radius:8px; }
       <button data-v="low">Низкая</button><button data-v="medium">Средняя</button><button data-v="high">Высокая</button><button data-v="ultra">Ультра</button></div></div>
     <div class="row"><label>Разрешение</label><select id="s-res">
       <option value="auto">Авто (экран)</option><option value="480">854×480</option><option value="540">960×540</option><option value="720">1280×720</option><option value="900">1600×900</option><option value="1080">1920×1080</option><option value="1440">2560×1440</option></select></div>
+    <div class="row"><label>Вид камеры</label><div class="seg" id="s-view"><button data-v="third">🎥 От 3-го лица</button><button data-v="first">👁 От 1-го лица</button></div></div>
     <div class="row"><label>Размер интерфейса <span id="s-uiScaleV"></span></label><input type="range" id="s-uiScale" min="60" max="150" step="5"></div>
     <div class="row"><label>Музыка</label><button class="tog" id="s-musicOn"></button></div>
     <div class="row"><label>Громкость музыки</label><input type="range" id="s-musicVol" min="0" max="100"></div>
@@ -297,20 +320,24 @@ select { font-size:14px; padding:6px; border-radius:8px; }
       <div class="lbl">🪺 ВЕЛИКОЕ ГНЕЗДО — здоровье базы</div>
       <div class="hpbar"><i id="basehp"></i><span id="basehptxt"></span></div>
       <div id="waveinfo"></div>
+      <div id="bossbar" class="hidden"><span id="bossname"></span><div class="bb"><i id="bosshp"></i></div></div>
     </div>
-    <div id="topright"><span id="daytxt"></span><button class="sq" id="btn-pause">⏸</button></div>
+    <div id="topright"><span id="daytxt"></span><button class="sq" id="btn-view" title="Вид: 1-е / 3-е лицо (V)">👁</button><button class="sq" id="btn-pause">⏸</button></div>
   </div>
   <div id="leftinfo">
     <div class="phb">❤️<div class="hpbar"><i id="php"></i><span id="phptxt"></span></div></div>
+    <div class="stb" title="Выносливость"><span>⚡</span><div class="stbar"><i id="pst"></i></div></div>
     <div id="quest"></div>
     <div id="birdcount"></div>
   </div>
   <div id="compass" class="hidden">➤</div>
+  <div id="crosshair"></div>
   <button id="btn-wave">⏩ Волна сейчас</button>
   <div id="prompt"></div>
   <div id="stickL" class="stick"><div class="lbl">ДВИЖЕНИЕ</div><div class="knob"></div></div>
   <div id="stickR" class="stick"><div class="lbl">КАМЕРА</div><div class="knob"></div></div>
   <div id="actions">
+    <button class="round" id="btn-run" title="Shift — бег">🏃</button>
     <button class="round" id="btn-use" title="E">✋</button>
     <button class="round bigr" id="btn-act" title="Пробел">🪓</button>
   </div>
@@ -351,12 +378,10 @@ select { font-size:14px; padding:6px; border-radius:8px; }
 </div>
 
 <div id="over" class="screen hidden">
-  <h1>База разрушена!</h1>
-  <div id="overtxt" style="margin-bottom:16px;font-size:18px;text-align:center"></div>
-  <div class="menu-col">
-    <button class="big blue" id="over-load">💾 ЗАГРУЗИТЬ СОХРАНЕНИЕ</button>
-    <button class="big" id="over-new">🌱 НОВАЯ ИГРА</button>
-    <button class="big gray" id="over-menu">🏠 ГЛАВНОЕ МЕНЮ</button>
+  <div class="card results">
+    <h1>🪺 База разрушена!</h1>
+    <div id="overtxt"></div>
+    <button class="big" id="over-menu">🏠 ГЛАВНОЕ МЕНЮ</button>
   </div>
 </div>
 
@@ -410,11 +435,11 @@ const BIRDS = {
 const BIRD_ORDER = ['sparrow', 'tit', 'bullfinch', 'guinea', 'woodpecker', 'loon', 'turkey', 'owl', 'parrot', 'eagle'];
 
 const HEROES = {
-  defender: { name: 'Лесной защитник', hp: 125, speed: 6.0, dmg: 18, atkRate: 1.7, gather: 1.0,  buildMul: 1.0,  coinMul: 1.0,
+  defender: { stamina: 100, name: 'Лесной защитник', hp: 125, speed: 6.0, dmg: 18, atkRate: 1.7, gather: 1.0,  buildMul: 1.0,  coinMul: 1.0,
               perk: 'Пушки бьют на 15% сильнее. Восстанавливает здоровье быстрее.', desc: 'Сбалансированный боец. Щит за спиной и зелёный плащ.' },
-  builder:  { name: 'Сильный строитель', hp: 155, speed: 5.3, dmg: 15, atkRate: 1.4, gather: 1.35, buildMul: 0.75, coinMul: 1.0,
+  builder:  { stamina: 85, name: 'Сильный строитель', hp: 155, speed: 5.3, dmg: 15, atkRate: 1.4, gather: 1.35, buildMul: 0.75, coinMul: 1.0,
               perk: 'Постройки и улучшения дешевле на 25%. Добыча +35%.', desc: 'Крепкий мастер в каске. Строит быстро и дёшево.' },
-  hunter:   { name: 'Быстрый охотник', hp: 95, speed: 7.5, dmg: 24, atkRate: 2.3, gather: 1.0,  buildMul: 1.0,  coinMul: 1.5,
+  hunter:   { stamina: 140, name: 'Быстрый охотник', hp: 95, speed: 7.5, dmg: 24, atkRate: 2.3, gather: 1.0,  buildMul: 1.0,  coinMul: 1.5,
               perk: 'Самый быстрый. +50% монет за победу над зверями.', desc: 'Ловкий следопыт с колчаном и шляпой с пером.' },
 };
 const HERO_ORDER = ['defender', 'builder', 'hunter'];
@@ -425,7 +450,14 @@ const ENEMIES = {
   boar:    { name: 'Кабан',         hp: 80,  speed: 3.7, dmg: 13, rate: 0.9, coins: 6,  food: 4, radius: 0.7, size: 1.0,  wave: 2 },
   bear:    { name: 'Медведь',       hp: 210, speed: 2.7, dmg: 26, rate: 0.7, coins: 15, food: 6, radius: 1.0, size: 1.5,  wave: 4 },
   lynx:    { name: 'Рысь',          hp: 60,  speed: 5.6, dmg: 10, rate: 1.3, coins: 8,  food: 0, radius: 0.55,size: 0.95, wave: 6 },
-  monster: { name: 'Лесное чудище', hp: 900, speed: 2.1, dmg: 55, rate: 0.6, coins: 70, food: 0, radius: 1.6, size: 2.4,  wave: 5 },
+  raccoon:   { name: 'Енот-воришка',  hp: 35,  speed: 5.4, dmg: 5,  rate: 1.4, coins: 6,  food: 0, radius: 0.5, size: 0.8,  wave: 3 },
+  wolverine: { name: 'Росомаха',      hp: 140, speed: 4.0, dmg: 18, rate: 1.1, coins: 12, food: 0, radius: 0.7, size: 1.0,  wave: 7 },
+  elk:       { name: 'Бешеный лось',  hp: 260, speed: 3.6, dmg: 32, rate: 0.6, coins: 18, food: 8, radius: 1.0, size: 1.6,  wave: 9 },
+  // боссы: приходят каждую 5-ю волну по очереди
+  monster:   { name: 'Лесное чудище',   hp: 900,  speed: 2.1, dmg: 55, rate: 0.6, coins: 70,  food: 0,  radius: 1.6, size: 2.4, wave: 5,  boss: true },
+  alpha:     { name: 'Вожак стаи',      hp: 1300, speed: 4.2, dmg: 45, rate: 1.1, coins: 110, food: 0,  radius: 1.3, size: 2.0, wave: 10, boss: true, desc: 'Призывает волков' },
+  bearking:  { name: 'Медведь-великан', hp: 2600, speed: 2.2, dmg: 120,rate: 0.5, coins: 160, food: 20, radius: 2.0, size: 3.2, wave: 15, boss: true, desc: 'Ломает стены с одного удара' },
+  treant:    { name: 'Древень',         hp: 3800, speed: 1.6, dmg: 80, rate: 0.6, coins: 220, food: 0,  radius: 2.0, size: 3.6, wave: 20, boss: true, desc: 'Восстанавливает здоровье' },
 };
 
 // Стены по уровням
@@ -445,6 +477,7 @@ const CANNON_LEVELS = [
 ];
 
 // Постройки. size = [ширина по X, глубина по Z] при повороте 0
+const BOSS_ORDER = ['monster', 'alpha', 'bearking', 'treant'];
 const BUILD = {
   fence:      { name: 'Забор',              cat: 'walls',   cost: { wood: 4 },              hp: 90,   size: [4, 0.5], icon: '🚧', desc: 'Дешёвое ограждение.' },
   wall:       { name: 'Стена',              cat: 'walls',   cost: { wood: 10 },             hp: 220,  size: [4, 1],   icon: '🧱', desc: 'Улучшается до 5 уровня. На стену можно поставить пушку.' },
@@ -514,10 +547,10 @@ const QUESTS = [
 
 // Уровни сложности
 const DIFFICULTY = {
-  easy:       { name: 'Лёгкая',     icon: '🌱', hp: 0.65, dmg: 0.55, count: 0.7, timer: 1.4, reward: 1.25, start: 1.5, desc: 'Звери слабые и приходят реже. Для знакомства с игрой.' },
-  normal:     { name: 'Средняя',    icon: '🌳', hp: 1,    dmg: 1,    count: 1,   timer: 1,   reward: 1,    start: 1,   desc: 'Обычный баланс.' },
-  hard:       { name: 'Сложная',    icon: '🔥', hp: 1.4,  dmg: 1.4,  count: 1.35,timer: 0.8, reward: 0.9,  start: 0.8, desc: 'Больше сильных зверей, меньше времени на подготовку.' },
-  impossible: { name: 'Невозможная',icon: '💀', hp: 2.1,  dmg: 2,    count: 1.8, timer: 0.6, reward: 0.75, start: 0.6, desc: 'Огромные стаи, очень мало времени. Только для мастеров.' },
+  easy:       { prep: 240, name: 'Лёгкая',     icon: '🌱', hp: 0.65, dmg: 0.55, count: 0.7, timer: 1.4, reward: 1.25, start: 1.5, desc: 'Звери слабые и приходят реже. Для знакомства с игрой.' },
+  normal:     { prep: 180, name: 'Средняя',    icon: '🌳', hp: 1,    dmg: 1,    count: 1,   timer: 1,   reward: 1,    start: 1,   desc: 'Обычный баланс.' },
+  hard:       { prep: 130, name: 'Сложная',    icon: '🔥', hp: 1.4,  dmg: 1.4,  count: 1.35,timer: 0.8, reward: 0.9,  start: 0.8, desc: 'Больше сильных зверей, меньше времени на подготовку.' },
+  impossible: { prep: 90, name: 'Невозможная',icon: '💀', hp: 2.1,  dmg: 2,    count: 1.8, timer: 0.6, reward: 0.75, start: 0.6, desc: 'Огромные стаи, очень мало времени. Только для мастеров.' },
 };
 const DIFF_ORDER = ['easy', 'normal', 'hard', 'impossible'];
 
@@ -1064,28 +1097,42 @@ const Models = (() => {
       bear:    { c: 0x5a3c24, c2: 0x3e2816, belly: 0x6a4a30, len: 1.7, h: 1.0, w: 0.95, legH: 0.6, head: 0.6 },
       lynx:    { c: 0xc8a272, c2: 0x8a6a48, belly: 0xece0cc, len: 1.0, h: 0.46, w: 0.38, legH: 0.5, head: 0.34 },
       monster: { c: 0x2e3f26, c2: 0x1a2416, belly: 0x4a5a30, len: 2.2, h: 1.5, w: 1.4, legH: 0.9, head: 0.85 },
+      raccoon: { c: 0x8a8a90, c2: 0x5a5a60, belly: 0xc8c8c8, len: 0.8, h: 0.42, w: 0.4, legH: 0.26, head: 0.32 },
+      wolverine: { c: 0x3a2a1e, c2: 0x2a1c12, belly: 0xa8885a, len: 1.0, h: 0.52, w: 0.5, legH: 0.32, head: 0.36 },
+      elk:     { c: 0x6a4a2e, c2: 0x4a3420, belly: 0x9a7a54, len: 1.8, h: 1.0, w: 0.8, legH: 1.15, head: 0.5 },
+      alpha:   { c: 0x1e1e24, c2: 0x101014, belly: 0x4a4a52, len: 1.9, h: 0.85, w: 0.75, legH: 0.8, head: 0.6 },
+      bearking:{ c: 0x4a2e18, c2: 0x2e1c0e, belly: 0x6a4428, len: 2.6, h: 1.6, w: 1.5, legH: 0.9, head: 0.9 },
+      treant:  { c: 0x5a4028, c2: 0x3e2c1a, belly: 0x6e5236, len: 2.4, h: 1.8, w: 1.3, legH: 1.1, head: 0.8 },
     })[type];
     const body = group(root, 0, d.legH + d.h / 2, 0); P.body = body;
-    const bodyMat = type === 'lynx' ? texMat(canvasTex('lynx', 128, 128, (g, w, h) => { g.fillStyle = '#c8a272'; g.fillRect(0, 0, w, h); g.fillStyle = '#6a4a2a'; const r = rnd(5); for (let i = 0; i < 120; i++) { g.beginPath(); g.arc(r() * w, r() * h, 2 + r() * 2, 0, 7); g.fill(); } })) : mat(d.c);
+    const bark = (type === 'treant') ? texMat(canvasTex('bark', 64, 128, (g, w, hh) => { g.fillStyle = '#5a4028'; g.fillRect(0, 0, w, hh); g.strokeStyle = '#2e1e10'; g.lineWidth = 3; for (let i = 0; i < 9; i++) { g.beginPath(); g.moveTo(i * 8, 0); g.lineTo(i * 8 + 4, hh); g.stroke(); } })) : null;
+    const bodyMat = bark ? bark : type === 'lynx' ? texMat(canvasTex('lynx', 128, 128, (g, w, h) => { g.fillStyle = '#c8a272'; g.fillRect(0, 0, w, h); g.fillStyle = '#6a4a2a'; const r = rnd(5); for (let i = 0; i < 120; i++) { g.beginPath(); g.arc(r() * w, r() * h, 2 + r() * 2, 0, 7); g.fill(); } })) : mat(d.c);
     sph(d.w, d.h, d.len, bodyMat, 0, 0, 0, body);
     sph(d.w * 0.95, d.h * 0.7, d.len * 0.55, d.c2, 0, d.h * 0.2, -d.len * 0.1, body, true);
     sph(d.w * 0.8, d.h * 0.6, d.len * 0.6, d.belly, 0, -d.h * 0.15, d.len * 0.08, body, true);
-    if (type === 'wolf' || type === 'monster') sph(d.w * 1.05, d.h * 1.0, d.len * 0.45, d.c, 0, 0.05, d.len * 0.25, body, true); // грива
+    if (type === 'wolf' || type === 'monster' || type === 'alpha') sph(d.w * 1.05, d.h * 1.0, d.len * 0.45, d.c, 0, 0.05, d.len * 0.25, body, true); // грива
     if (type === 'boar') for (let i = 0; i < 6; i++) cone(0.05, 0.22, 0x1a120c, 0, d.h * 0.5, d.len * 0.35 - i * 0.14, body, 4, false);
+    if (type === 'wolverine') box(d.w * 0.9, 0.06, d.len * 0.8, 0xc8a870, 0, d.h * 0.32, -d.len * 0.05, body, false);
+    if (type === 'alpha') for (let i = 0; i < 6; i++) { const sp = cone(0.08, 0.4, 0x3a3a44, 0, d.h * 0.48, d.len * 0.3 - i * 0.18, body, 4, false); sp.rotation.x = -0.5; }
+    if (type === 'bearking') { box(d.w * 1.05, d.h * 0.5, d.len * 0.55, mat(0x7a7e88, { metalness: 0.6, roughness: 0.4 }), 0, d.h * 0.3, -d.len * 0.05, body); for (let i = 0; i < 4; i++) cone(0.12, 0.4, mat(0xd8b040, { metalness: 0.7, roughness: 0.3 }), 0, d.h * 0.62, d.len * 0.15 - i * 0.25, body, 5, false); }
+    if (type === 'treant') { for (let i = 0; i < 6; i++) { const lf = sph(1.1 + (i % 3) * 0.3, 0.8, 1.1, i % 2 ? 0x3f7f32 : 0x4c8f3a, (i % 2 ? 0.4 : -0.4), d.h * 0.55 + (i % 3) * 0.2, d.len * 0.3 - i * 0.28, body, true); void lf; } for (let i = 0; i < 4; i++) { const br = cyl(0.06, 0.12, 1.2, 0x4a3420, (i % 2 ? 0.6 : -0.6), d.h * 0.7, d.len * 0.1 - i * 0.3, body, 5); br.rotation.z = (i % 2 ? -0.7 : 0.7); } }
+    if (type === 'raccoon') { for (let i = 0; i < 3; i++) { const r = cyl(0.13, 0.13, 0.08, 0x2a2a2e, 0, -0.05 - i * 0.02, -0.15 - i * 0.16, null, 8, false); void r; } }
     if (type === 'monster') for (let i = 0; i < 5; i++) { const sp = cone(0.14, 0.55, 0x5a6a3a, 0, d.h * 0.48, d.len * 0.3 - i * 0.32, body, 5); sp.rotation.x = -0.4; }
     // голова
     const head = group(body, 0, d.h * 0.25, d.len * 0.5); P.head = head;
     sph(d.head, d.head * 0.9, d.head * 1.05, d.c, 0, 0, 0, head);
-    const snoutL = type === 'bear' ? 0.3 : (type === 'boar' ? 0.32 : (type === 'lynx' ? 0.16 : 0.34));
+    const snoutL = type === 'treant' ? 0.2 : (type === 'bear' || type === 'bearking') ? 0.3 : type === 'elk' ? 0.45 : (type === 'boar' ? 0.32 : (type === 'lynx' ? 0.16 : 0.34));
     const sn = box(d.head * 0.5, d.head * 0.42, snoutL, type === 'fox' ? 0xf4f0e8 : d.c2, 0, -d.head * 0.12, d.head * 0.45 + snoutL / 2 - 0.05, head);
     if (type === 'boar') { box(d.head * 0.55, d.head * 0.45, 0.06, 0xd89a90, 0, -d.head * 0.12, d.head * 0.45 + snoutL, head, false); [-1, 1].forEach(sx => { const t = cone(0.04, 0.22, 0xf4ecd8, sx * 0.13, -d.head * 0.1, d.head * 0.55 + snoutL * 0.6, head, 5); t.rotation.x = -0.6; }); }
     else sph(0.08 * d.head / 0.35, 0.06 * d.head / 0.35, 0.06, 0x111111, 0, -d.head * 0.04, d.head * 0.45 + snoutL - 0.04, head, true, false);
     void sn;
-    const eyeMat = type === 'monster' ? mat(0xff3010, { emissive: 0xff2000, emissiveIntensity: 2 }) : mat(0x111111);
+    const eyeMat = (type === 'alpha' || type === 'bearking') ? mat(0xff2010, { emissive: 0xff1000, emissiveIntensity: 2.2 }) : type === 'treant' ? mat(0x9aff60, { emissive: 0x60ff20, emissiveIntensity: 2 }) : type === 'monster' ? mat(0xff3010, { emissive: 0xff2000, emissiveIntensity: 2 }) : mat(0x111111);
     [-1, 1].forEach(sx => {
       sph(d.head * 0.15, d.head * 0.15, d.head * 0.1, eyeMat, sx * d.head * 0.28, d.head * 0.12, d.head * 0.42, head, true, false);
       // уши
-      if (type === 'bear' || type === 'boar') sph(d.head * 0.3, d.head * 0.3, d.head * 0.12, d.c2, sx * d.head * 0.35, d.head * 0.42, -d.head * 0.05, head, true);
+      if (type === 'elk') { const ant = group(head, sx * d.head * 0.3, d.head * 0.45, -d.head * 0.1); const a1 = cyl(0.04, 0.06, 0.7, 0xd8c8a0, 0, 0.3, 0, ant, 5); a1.rotation.z = -sx * 0.6; const pal = box(0.6, 0.08, 0.35, 0xd8c8a0, sx * 0.45, 0.62, 0, ant); pal.rotation.z = -sx * 0.3; for (let k = 0; k < 3; k++) cone(0.04, 0.25, 0xd8c8a0, sx * (0.25 + k * 0.17), 0.78, 0, ant, 4, false); }
+      else if (type === 'treant') { const hb = cyl(0.05, 0.1, 0.9, 0x4a3420, sx * d.head * 0.4, d.head * 0.6, 0, head, 5); hb.rotation.z = -sx * 0.5; }
+      else if (type === 'bear' || type === 'boar' || type === 'bearking' || type === 'raccoon' && false) sph(d.head * 0.3, d.head * 0.3, d.head * 0.12, d.c2, sx * d.head * 0.35, d.head * 0.42, -d.head * 0.05, head, true);
       else if (type === 'monster') { const h = cone(0.12, 0.7, 0xd8ccb0, sx * d.head * 0.4, d.head * 0.5, 0, head, 6); h.rotation.z = -sx * 0.5; h.rotation.x = -0.3; }
       else {
         const e = cone(d.head * 0.22, d.head * 0.5, type === 'fox' ? 0x2a1a10 : d.c2, sx * d.head * 0.25, d.head * 0.5, -d.head * 0.05, head, 4); e.rotation.z = -sx * 0.15;
@@ -1102,13 +1149,18 @@ const Models = (() => {
     });
     // хвост
     const tail = group(body, 0, d.h * 0.2, -d.len * 0.48); P.tail = tail;
-    if (type === 'fox') { const t = sph(0.26, 0.26, 0.75, d.c, 0, -0.1, -0.35, tail); t.rotation.x = 0.5; sph(0.18, 0.18, 0.22, 0xffffff, 0, -0.27, -0.68, tail, true); }
+    if (type === 'raccoon') { [-1, 1].forEach(sx => box(0.14, 0.08, 0.04, 0x1a1a1a, sx * 0.09, d.head * 0.12, d.head * 0.44, head, false)); const t = sph(0.18, 0.18, 0.55, 0x8a8a90, 0, -0.08, -0.25, tail); t.rotation.x = 0.4; for (let i = 0; i < 3; i++) { const r = cyl(0.1, 0.1, 0.06, 0x2a2a2e, 0, -0.1 - i * 0.05, -0.12 - i * 0.14, tail, 8, false); r.rotation.x = Math.PI / 2 + 0.4; } }
+    else if (type === 'bearking') { const cr = group(head, 0, d.head * 0.55, 0); cyl(0.32, 0.36, 0.2, mat(0xd8b040, { metalness: 0.8, roughness: 0.3 }), 0, 0, 0, cr, 8); for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; cone(0.07, 0.25, mat(0xd8b040, { metalness: 0.8, roughness: 0.3 }), Math.cos(a) * 0.3, 0.2, Math.sin(a) * 0.3, cr, 4, false); } }
+    else if (type === 'alpha') { const t = sph(0.26, 0.26, 0.9, d.c2, 0, -0.15, -0.35, tail); t.rotation.x = 0.7; }
+    else if (type === 'elk') { const t = cyl(0.05, 0.08, 0.3, d.c2, 0, -0.05, -0.05, tail, 5); t.rotation.x = 0.5; }
+    else if (type === 'fox') { const t = sph(0.26, 0.26, 0.75, d.c, 0, -0.1, -0.35, tail); t.rotation.x = 0.5; sph(0.18, 0.18, 0.22, 0xffffff, 0, -0.27, -0.68, tail, true); }
     else if (type === 'wolf') { const t = sph(0.18, 0.18, 0.6, d.c2, 0, -0.15, -0.25, tail); t.rotation.x = 0.7; }
     else if (type === 'lynx') sph(0.12, 0.12, 0.22, 0x1a1a1a, 0, 0, -0.08, tail, true);
     else if (type === 'boar') { const t = cyl(0.025, 0.025, 0.3, d.c2, 0, -0.12, -0.05, tail, 4); t.rotation.x = 0.4; }
     else if (type === 'monster') { const t = cone(0.3, 1.2, d.c2, 0, -0.2, -0.5, tail, 6); t.rotation.x = -Math.PI / 2 - 0.4; }
     root.userData.parts = P; root.userData.d = d;
-    root.scale.setScalar(type === 'monster' ? 1.1 : 1);
+    root.userData.baseScale = { monster: 1.1, alpha: 1.15, bearking: 1.25, treant: 1.2 }[type] || 1;
+    root.scale.setScalar(root.userData.baseScale);
     return root;
   }
   function animEnemy(root, mode, t, speed) {
@@ -1407,26 +1459,30 @@ const Models = (() => {
     return out;
   }
   const mtx = (x, y, z, sx = 1, sy = 1, sz = 1, ry = 0, rx = 0, rz = 0) => new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz)), new THREE.Vector3(sx, sy, sz));
-  function treeGeos() {
+  // pal: цвета листвы для биома (лето, осень, тайга, цветущий луг)
+  function treeGeos(pal) {
+    const P = pal || {};
+    const pc = P.pine || [0x2f6e34, 0x3a8040, 0x46924a], oc = P.oak || [0x4f9a3a, 0x5aa844, 0x468a34, 0x62b04a], bc = P.birch || [0x8ac850, 0x9ad458];
     const pine = merge([
       [new THREE.CylinderGeometry(0.22, 0.32, 1.6, 6), 0x6a4426, mtx(0, 0.8, 0)],
-      [new THREE.ConeGeometry(1.7, 2.2, 7), 0x2f6e34, mtx(0, 2.4, 0)],
-      [new THREE.ConeGeometry(1.35, 1.9, 7), 0x3a8040, mtx(0, 3.5, 0, 1, 1, 1, 0.4)],
-      [new THREE.ConeGeometry(0.95, 1.6, 7), 0x46924a, mtx(0, 4.5, 0, 1, 1, 1, 0.8)],
+      [new THREE.ConeGeometry(1.7, 2.2, 7), pc[0], mtx(0, 2.4, 0)],
+      [new THREE.ConeGeometry(1.35, 1.9, 7), pc[1], mtx(0, 3.5, 0, 1, 1, 1, 0.4)],
+      [new THREE.ConeGeometry(0.95, 1.6, 7), pc[2], mtx(0, 4.5, 0, 1, 1, 1, 0.8)],
+      ...(P.snowy ? [[new THREE.ConeGeometry(0.5, 0.7, 7), 0xf4f6fa, mtx(0, 5.0, 0, 1, 1, 1, 0.8)]] : []),
     ]);
     const oak = merge([
       [new THREE.CylinderGeometry(0.28, 0.4, 2.2, 7), 0x6e4a2a, mtx(0, 1.1, 0)],
-      [new THREE.IcosahedronGeometry(1.5, 0), 0x4f9a3a, mtx(0, 3.0, 0)],
-      [new THREE.IcosahedronGeometry(1.1, 0), 0x5aa844, mtx(0.9, 2.6, 0.4)],
-      [new THREE.IcosahedronGeometry(1.1, 0), 0x468a34, mtx(-0.8, 2.7, -0.3)],
-      [new THREE.IcosahedronGeometry(1.0, 0), 0x62b04a, mtx(0.1, 3.8, -0.2)],
+      [new THREE.IcosahedronGeometry(1.5, 0), oc[0], mtx(0, 3.0, 0)],
+      [new THREE.IcosahedronGeometry(1.1, 0), oc[1], mtx(0.9, 2.6, 0.4)],
+      [new THREE.IcosahedronGeometry(1.1, 0), oc[2], mtx(-0.8, 2.7, -0.3)],
+      [new THREE.IcosahedronGeometry(1.0, 0), oc[3], mtx(0.1, 3.8, -0.2)],
     ]);
     const birch = merge([
       [new THREE.CylinderGeometry(0.16, 0.22, 3.2, 6), 0xeeeee6, mtx(0, 1.6, 0)],
       [new THREE.BoxGeometry(0.34, 0.08, 0.34), 0x2a2a2a, mtx(0, 1.0, 0)],
       [new THREE.BoxGeometry(0.3, 0.06, 0.3), 0x2a2a2a, mtx(0, 2.1, 0)],
-      [new THREE.IcosahedronGeometry(1.1, 0), 0x8ac850, mtx(0, 3.5, 0, 1, 1.3, 1)],
-      [new THREE.IcosahedronGeometry(0.8, 0), 0x9ad458, mtx(0.5, 2.9, 0.2)],
+      [new THREE.IcosahedronGeometry(1.1, 0), bc[0], mtx(0, 3.5, 0, 1, 1.3, 1)],
+      [new THREE.IcosahedronGeometry(0.8, 0), bc[1], mtx(0.5, 2.9, 0.2)],
     ]);
     return { pine, oak, birch };
   }
@@ -1449,7 +1505,8 @@ const Models = (() => {
 const World = (() => {
   function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
   const perm = new Uint8Array(512);
-  { const r = mulberry32(1337); const p = [...Array(256).keys()]; for (let i = 255; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [p[i], p[j]] = [p[j], p[i]]; } for (let i = 0; i < 512; i++) perm[i] = p[i & 255]; }
+  function shufflePerm(seed) { const r = mulberry32(seed); const p = [...Array(256).keys()]; for (let i = 255; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [p[i], p[j]] = [p[j], p[i]]; } for (let i = 0; i < 512; i++) perm[i] = p[i & 255]; }
+  shufflePerm(1337);
   const hash = (x, y) => perm[(perm[x & 255] + y) & 255] / 255;
   function vnoise(x, y) {
     const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
@@ -1461,44 +1518,82 @@ const World = (() => {
   const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
   const lerp = (a, b, t) => a + (b - a) * t;
 
+  // ---------- Биомы ----------
+  const BIOMES = [
+    { id: 'summer', name: 'Летний лес', grass: [0x5e9f38, 0x86b84a], trees: { pine: [0x2f6e34, 0x3a8040, 0x46924a], oak: [0x4f9a3a, 0x5aa844, 0x468a34, 0x62b04a], birch: [0x8ac850, 0x9ad458] }, mix: [0.55, 0.85], count: 430, dens: 0.42, flowers: 1, bush: 0x3f7f32, snow: 42 },
+    { id: 'autumn', name: 'Осенний лес', grass: [0x8a9a3a, 0xb4a648], trees: { pine: [0x2a5e30, 0x356e38, 0x407a40], oak: [0xd8742a, 0xe8a030, 0xc0482a, 0xf0b840], birch: [0xf0c838, 0xe8d860] }, mix: [0.3, 0.75], count: 420, dens: 0.42, flowers: 0.5, bush: 0xa86a2a, snow: 42 },
+    { id: 'taiga', name: 'Тайга', grass: [0x4a7a3a, 0x648c4a], trees: { pine: [0x1f5a34, 0x2a6a3a, 0x356f42], oak: [0x3f7a34, 0x4a8a3a, 0x3a6e30, 0x52923f], birch: [0x7ab048, 0x86bc50], snowy: true }, mix: [0.85, 0.9], count: 540, dens: 0.38, flowers: 0.3, bush: 0x2f6a30, snow: 26 },
+    { id: 'bloom', name: 'Цветущий луг', grass: [0x74b844, 0xa0d05a], trees: { pine: [0x2f6e34, 0x3a8040, 0x46924a], oak: [0xf0a8c8, 0xf8c0d8, 0xe890b8, 0xffd0e0], birch: [0x9ad458, 0xb0e060] }, mix: [0.25, 0.7], count: 300, dens: 0.5, flowers: 2.4, bush: 0x4c9a3a, snow: 42 },
+  ];
   const WATER_Y = -0.9;
-  const MINE = { x: 112, z: -72 };
-  const LAKE = { x: -88, z: 72, r: 24 };
-  const CAVE = { x: -112, z: -118 };
-  const BRIDGE = { z: -24, w: 3.4 };
-  const riverX = z => 72 + Math.sin(z * 0.025) * 18;
-  const mineLen = Math.hypot(MINE.x, MINE.z), mdx = -MINE.x / mineLen, mdz = -MINE.z / mineLen;
+  const MINE = { x: 112, z: -72 }, LAKE = { x: -88, z: 72, r: 24 }, CAVE = { x: -112, z: -118 };
+  const W = { seed: 1, biome: BIOMES[0], hScale: 14, hFreq: 0.012, mtn: 60, rA: 0, rC: 1, rS: 0, rOff: 72, rAmp: 18, rFreq: 0.025, river: true, bridge: null, mdx: -0.84, mdz: 0.54 };
+  const riverCoord = (x, z) => ({ u: x * W.rC + z * W.rS, v: -x * W.rS + z * W.rC });
+  const riverU = v => W.rOff + Math.sin(v * W.rFreq) * W.rAmp;
+  function riverSigned(x, z) { const c = riverCoord(x, z); return c.u - riverU(c.v); }
 
+  // Сид: число или любая строка
+  function seedFrom(str) {
+    const t = String(str == null ? '' : str).trim();
+    if (/^-?\d+$/.test(t)) return (parseInt(t, 10) >>> 0) || 1;
+    let h = 2166136261; for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return (h >>> 0) || 1;
+  }
+  function biomeOf(seed) { return BIOMES[Math.floor(mulberry32(seed ^ 0x9e3779b9)() * BIOMES.length)]; }
+  function setupSeed(seed) {
+    W.seed = seed; shufflePerm(seed);
+    const r = mulberry32(seed ^ 0x9e3779b9);
+    W.biome = BIOMES[Math.floor(r() * BIOMES.length)];
+    W.hScale = 8 + r() * 14; W.hFreq = 0.008 + r() * 0.009; W.mtn = 40 + r() * 45;
+    W.rA = r() * Math.PI; W.rC = Math.cos(W.rA); W.rS = Math.sin(W.rA);
+    W.rOff = (r() < 0.5 ? -1 : 1) * (58 + r() * 25); W.rAmp = 8 + r() * 18; W.rFreq = 0.015 + r() * 0.02; W.river = r() < 0.88;
+    const far = (x, z, d) => !W.river || Math.abs(riverSigned(x, z)) > d;
+    for (let i = 0; i < 40; i++) { const a = r() * Math.PI * 2, R = 112 + r() * 18; MINE.x = Math.cos(a) * R; MINE.z = Math.sin(a) * R; if (far(MINE.x, MINE.z, 34)) break; }
+    const ml = Math.hypot(MINE.x, MINE.z); W.mdx = -MINE.x / ml; W.mdz = -MINE.z / ml;
+    for (let i = 0; i < 60; i++) { const a = r() * Math.PI * 2, R = 75 + r() * 40; LAKE.x = Math.cos(a) * R; LAKE.z = Math.sin(a) * R; LAKE.r = 16 + r() * 14; if (far(LAKE.x, LAKE.z, LAKE.r + 18) && Math.hypot(LAKE.x - MINE.x, LAKE.z - MINE.z) > LAKE.r + 50) break; }
+    for (let i = 0; i < 60; i++) { const a = r() * Math.PI * 2, R = 158; CAVE.x = Math.cos(a) * R; CAVE.z = Math.sin(a) * R; if (Math.hypot(CAVE.x - MINE.x, CAVE.z - MINE.z) > 90 && Math.hypot(CAVE.x - LAKE.x, CAVE.z - LAKE.z) > 60 && far(CAVE.x, CAVE.z, 25)) break; }
+    // мост — там, где дорога от базы к карьеру пересекает реку
+    W.bridge = null;
+    if (W.river) {
+      let prev = riverSigned(0, 0);
+      for (let i = 1; i <= 200; i++) {
+        const t = i / 200, x = MINE.x * t, z = MINE.z * t, s = riverSigned(x, z);
+        if (Math.sign(s) !== Math.sign(prev)) { W.bridge = { x, z, ax: -W.mdx, az: -W.mdz, w: 3.4, len: 32 }; break; }
+        prev = s;
+      }
+    }
+  }
   function mineCarve(x, z) {
     const dx = x - MINE.x, dz = z - MINE.z, md = Math.hypot(dx, dz);
     const pit = 1 - smooth(14, 20, md);
-    const proj = dx * mdx + dz * mdz, perp = Math.abs(dx * -mdz + dz * mdx);
+    const proj = dx * W.mdx + dz * W.mdz, perp = Math.abs(dx * -W.mdz + dz * W.mdx);
     const canyon = (proj > 0 && proj < 42) ? (1 - smooth(4, 7.5, perp)) * (1 - smooth(36, 42, proj)) : 0;
     return { md, carve: Math.max(pit, canyon) };
   }
   function heightAt(x, z) {
     const d = Math.hypot(x, z);
-    let h = (fbm(x * 0.012 + 10, z * 0.012 - 5) - 0.5) * 14 + (fbm(x * 0.05, z * 0.05) - 0.5) * 2.5;
+    let h = (fbm(x * W.hFreq + 10, z * W.hFreq - 5) - 0.5) * W.hScale + (fbm(x * 0.05, z * 0.05) - 0.5) * 2.5;
     h *= smooth(28, 62, d);
-    const m = smooth(150, 215, d); h += m * m * 60 * (0.55 + 0.9 * fbm(x * 0.02, z * 0.02));
-    // карьер
+    const m = smooth(150, 215, d); h += m * m * W.mtn * (0.55 + 0.9 * fbm(x * 0.02, z * 0.02));
     const mc = mineCarve(x, z);
     const hill = 19 * Math.exp(-(mc.md * mc.md) / (2 * 25 * 25));
     h = lerp(h + hill, 0.4, mc.carve);
-    // пещера: холм
     const cd = Math.hypot(x - CAVE.x, z - CAVE.z); h += 14 * Math.exp(-(cd * cd) / (2 * 14 * 14));
-    // река
-    const rd = Math.abs(x - riverX(z)); h = lerp(-2.4, h, smooth(3.5, 11, rd));
-    // озеро
+    if (W.river) { const rd = Math.abs(riverSigned(x, z)); h = lerp(-2.4, h, smooth(3.5, 11, rd)); }
     const ld = Math.hypot(x - LAKE.x, z - LAKE.z); h = lerp(-2.7, h, smooth(LAKE.r - 9, LAKE.r + 4, ld));
     return h;
   }
-  function onBridge(x, z) { const rx = riverX(BRIDGE.z); return Math.abs(z - BRIDGE.z) < BRIDGE.w / 2 && Math.abs(x - rx) < 13; }
+  function onBridge(x, z) {
+    const b = W.bridge; if (!b) return false;
+    const dx = x - b.x, dz = z - b.z, along = dx * b.ax + dz * b.az, perp = Math.abs(-dx * b.az + dz * b.ax);
+    return Math.abs(along) < b.len / 2 && perp < b.w / 2;
+  }
   function groundAt(x, z) { const h = heightAt(x, z); if (onBridge(x, z)) return Math.max(h, 0.35); return h; }
   function inWater(x, z) { return !onBridge(x, z) && heightAt(x, z) < WATER_Y - 0.25; }
   function inMine(x, z) { return Math.hypot(x - MINE.x, z - MINE.z) < 19; }
 
   let scene, sun, hemi, sunMesh, moonMesh, stars, clouds = [], water, grassMesh, flowerMesh, flock = [];
+  let root = null, owned = [], quality = 'medium';
   const nodes = []; const nodeMeshes = {};
   const grid = new Map(); const CELL = 8;
   const key = (cx, cz) => cx * 10007 + cz;
@@ -1509,116 +1604,128 @@ const World = (() => {
     for (let cx = c0x; cx <= c1x; cx++) for (let cz = c0z; cz <= c1z; cz++) { const a = grid.get(key(cx, cz)); if (a) for (const n of a) out.push(n); }
     return out;
   }
+  const own = g => { owned.push(g); return g; };
+  const addR = o => { root.add(o); return o; };
 
-  function build(scn, quality) {
-    scene = scn;
+  function build(scn, q) {
+    scene = scn; quality = q;
+    buildSky();
+    generate(20240611);
+  }
+  // Полностью пересоздаёт мир по сиду
+  function generate(seed) {
+    if (root) { scene.remove(root); owned.forEach(g => g.dispose()); owned = []; }
+    nodes.length = 0; grid.clear();
+    root = new THREE.Group(); scene.add(root);
+    setupSeed(seed);
+    const BI = W.biome;
     // ----- Рельеф -----
     const SIZE = 460, SEG = 150;
-    const tg = new THREE.PlaneGeometry(SIZE, SIZE, SEG, SEG); tg.rotateX(-Math.PI / 2);
+    const tg = own(new THREE.PlaneGeometry(SIZE, SIZE, SEG, SEG)); tg.rotateX(-Math.PI / 2);
     const pos = tg.attributes.position; const cols = new Float32Array(pos.count * 3);
-    const cGrass1 = new THREE.Color(0x5e9f38), cGrass2 = new THREE.Color(0x86b84a), cDirt = new THREE.Color(0xc9a36a), cSand = new THREE.Color(0xd8c48a),
+    const cGrass1 = new THREE.Color(BI.grass[0]), cGrass2 = new THREE.Color(BI.grass[1]), cDirt = new THREE.Color(0xc9a36a), cSand = new THREE.Color(0xd8c48a),
       cRock = new THREE.Color(0x8a8780), cSnow = new THREE.Color(0xf4f6fa), cMud = new THREE.Color(0x7a6a50), cPit = new THREE.Color(0x857868), tmp = new THREE.Color();
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i), z = pos.getZ(i), h = heightAt(x, z); pos.setY(i, h);
       const d = Math.hypot(x, z);
       const slope = Math.abs(heightAt(x + 1.5, z) - h) + Math.abs(heightAt(x, z + 1.5) - h);
       tmp.copy(cGrass1).lerp(cGrass2, fbm(x * 0.03, z * 0.03));
-      tmp.lerp(cDirt, 1 - smooth(20, 27, d)); // утоптанная площадка базы
+      tmp.lerp(cDirt, 1 - smooth(20, 27, d));
       const mc = mineCarve(x, z); if (mc.carve > 0.2) tmp.lerp(cPit, mc.carve);
       if (h < -0.35) tmp.copy(cSand); if (h < -1.3) tmp.copy(cMud);
       if (slope > 2.2 || h > 12) tmp.lerp(cRock, Math.min(1, Math.max((slope - 2.2) / 2, (h - 12) / 6)));
-      if (h > 42) tmp.lerp(cSnow, Math.min(1, (h - 42) / 8));
+      if (h > BI.snow) tmp.lerp(cSnow, Math.min(1, (h - BI.snow) / 8));
       cols[i * 3] = tmp.r; cols[i * 3 + 1] = tmp.g; cols[i * 3 + 2] = tmp.b;
     }
     tg.setAttribute('color', new THREE.BufferAttribute(cols, 3));
     tg.computeVertexNormals();
-    const terrain = new THREE.Mesh(tg, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, flatShading: false }));
-    terrain.receiveShadow = true; scene.add(terrain);
+    const terrain = new THREE.Mesh(tg, own(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 })));
+    terrain.receiveShadow = true; addR(terrain);
 
     // ----- Вода -----
-    water = new THREE.Mesh(new THREE.PlaneGeometry(SIZE, SIZE, 1, 1).rotateX(-Math.PI / 2),
+    if (!water) water = new THREE.Mesh(new THREE.PlaneGeometry(SIZE, SIZE, 1, 1).rotateX(-Math.PI / 2),
       new THREE.MeshStandardMaterial({ color: 0x3a8ac8, transparent: true, opacity: 0.78, roughness: 0.15, metalness: 0.2 }));
-    water.position.y = WATER_Y; scene.add(water);
+    water.position.y = WATER_Y; addR(water);
 
     // ----- Мост -----
-    const bx = riverX(BRIDGE.z);
-    const bridge = new THREE.Group(); bridge.position.set(bx, 0.3, BRIDGE.z);
-    Models.box(26, 0.2, BRIDGE.w, Models.texMat(Models.T.planks()), 0, 0, 0, bridge);
-    for (let i = -6; i <= 6; i += 2) [-1, 1].forEach(s => Models.cyl(0.15, 0.15, 3.2, 0x6e4622, i * 2, -0.8, s * BRIDGE.w / 2, bridge, 6));
-    [-1, 1].forEach(s => Models.box(26, 0.12, 0.12, 0x6e4622, 0, 0.8, s * BRIDGE.w / 2, bridge));
-    scene.add(bridge);
+    if (W.bridge) {
+      const B = W.bridge, bridge = new THREE.Group(); bridge.position.set(B.x, 0.3, B.z); bridge.rotation.y = Math.atan2(B.az, B.ax) * -1;
+      Models.box(B.len, 0.2, B.w, Models.texMat(Models.T.planks()), 0, 0, 0, bridge);
+      for (let i = -7; i <= 7; i += 2) [-1, 1].forEach(s => Models.cyl(0.15, 0.15, 3.2, 0x6e4622, i * 2, -0.8, s * B.w / 2, bridge, 6));
+      [-1, 1].forEach(s => Models.box(B.len, 0.12, 0.12, 0x6e4622, 0, 0.8, s * B.w / 2, bridge));
+      addR(bridge);
+    }
 
     // ----- Горы вдали -----
     const mParts = [];
-    const rr = mulberry32(99);
+    const rr = mulberry32(seed + 99);
     for (let i = 0; i < 46; i++) {
-      const a = i / 46 * Math.PI * 2 + rr() * 0.1, R = 270 + rr() * 70, hgt = 60 + rr() * 80, rad = 35 + rr() * 30;
+      const a = i / 46 * Math.PI * 2 + rr() * 0.1, R = 270 + rr() * 70, hgt = 50 + rr() * 60 + W.mtn * 0.6, rad = 35 + rr() * 30;
       const x = Math.cos(a) * R, z = Math.sin(a) * R;
       mParts.push([new THREE.ConeGeometry(rad, hgt, 7), 0x6a7480, Models.mtx(x, hgt / 2 - 8, z, 1, 1, 1, rr() * 3)]);
       mParts.push([new THREE.ConeGeometry(rad * 0.36, hgt * 0.36, 7), 0xf2f4f8, Models.mtx(x, hgt - 8 - hgt * 0.18 + 0.5, z, 1, 1, 1, rr() * 3)]);
     }
-    const mountains = new THREE.Mesh(Models.merge(mParts), new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 1 }));
-    scene.add(mountains);
+    addR(new THREE.Mesh(own(Models.merge(mParts)), own(new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 1 }))));
 
     // ----- Ресурсы (деревья, камни, руда, ягоды) -----
-    const rnd = mulberry32(42);
+    const rnd = mulberry32(seed + 42);
     const occupied = (x, z, r) => { for (const n of nodesNear(x, z, r + 3)) if (Math.hypot(n.x - x, n.z - z) < r + n.r) return true; return false; };
     function addNode(kind, sub, x, z, scale) {
       const n = { kind, sub, x, z, y: groundAt(x, z), scale, r: (kind === 'tree' ? 0.45 : 0.95) * scale, hp: NODE_INFO[kind].hp, maxHp: NODE_INFO[kind].hp, alive: true, regrow: 0, rot: rnd() * 6.28, idx: nodes.length, acc: 0, shake: 0, grow: 1 };
       nodes.push(n); gridAdd(n); return n;
     }
+    const nearBridge = (x, z) => W.bridge && Math.hypot(x - W.bridge.x, z - W.bridge.z) < W.bridge.len / 2 + 4;
     const valid = (x, z, minD) => {
       const d = Math.hypot(x, z); if (d < minD || d > 172) return false;
       const h = heightAt(x, z); if (h < WATER_Y + 0.4 || h > 18) return false;
       const sl = Math.abs(heightAt(x + 1, z) - h) + Math.abs(heightAt(x, z + 1) - h); if (sl > 1.4) return false;
-      if (Math.abs(BRIDGE.z - z) < 5 && Math.abs(x - riverX(z)) < 20) return false;
+      if (nearBridge(x, z)) return false;
       return true;
     };
     let tries = 0, trees = 0;
-    while (trees < 430 && tries < 9000) {
+    while (trees < BI.count && tries < 10000) {
       tries++;
       const x = (rnd() - 0.5) * 360, z = (rnd() - 0.5) * 360;
       if (!valid(x, z, 33)) continue;
       if (mineCarve(x, z).md < 32) continue;
       const dens = fbm(x * 0.022 + 3, z * 0.022 + 7);
-      if (dens < 0.42 && Math.hypot(x, z) > 60) continue;
+      if (dens < BI.dens && Math.hypot(x, z) > 60) continue;
       const s = 0.8 + rnd() * 0.6;
       if (occupied(x, z, 1.6 * s)) continue;
-      const r = rnd(); addNode('tree', r < 0.55 ? 'pine' : (r < 0.85 ? 'oak' : 'birch'), x, z, s); trees++;
+      const r = rnd(); addNode('tree', r < BI.mix[0] ? 'pine' : (r < BI.mix[1] ? 'oak' : 'birch'), x, z, s); trees++;
     }
     const scatter = (kind, count, fx) => { let c = 0, t = 0; while (c < count && t < 3000) { t++; const p = fx(); if (!p) continue; const [x, z, s] = p; if (occupied(x, z, 1.2 * s)) continue; addNode(kind, kind, x, z, s); c++; } };
-    // камни по миру
     scatter('stone', 34, () => { const a = rnd() * 6.28, R = 34 + rnd() * 120, x = Math.cos(a) * R, z = Math.sin(a) * R; return valid(x, z, 32) ? [x, z, 0.8 + rnd() * 0.5] : null; });
-    // карьер: камень, уголь, железо
     const inPit = () => { const a = rnd() * 6.28, R = 3 + rnd() * 12; return [MINE.x + Math.cos(a) * R, MINE.z + Math.sin(a) * R, 0.8 + rnd() * 0.4]; };
     scatter('stone', 14, inPit); scatter('coal', 12, inPit); scatter('iron', 10, inPit);
-    // уголь у гор и железо у пещеры
     scatter('coal', 6, () => { const a = rnd() * 6.28, R = 135 + rnd() * 25, x = Math.cos(a) * R, z = Math.sin(a) * R; return valid(x, z, 120) ? [x, z, 0.9] : null; });
-    scatter('iron', 5, () => { const a = rnd() * 6.28, R = 4 + rnd() * 9; const x = CAVE.x + 12 + Math.cos(a) * R, z = CAVE.z + 12 + Math.sin(a) * R; return heightAt(x, z) > WATER_Y + 0.4 ? [x, z, 0.9] : null; });
-    // ягоды
+    const cl = Math.hypot(CAVE.x, CAVE.z), cix = -CAVE.x / cl, ciz = -CAVE.z / cl;
+    scatter('iron', 5, () => { const a = rnd() * 6.28, R = 2 + rnd() * 8; const x = CAVE.x + cix * 14 + Math.cos(a) * R, z = CAVE.z + ciz * 14 + Math.sin(a) * R; return heightAt(x, z) > WATER_Y + 0.4 ? [x, z, 0.9] : null; });
     scatter('berry', 30, () => { const a = rnd() * 6.28, R = 30 + rnd() * 90, x = Math.cos(a) * R, z = Math.sin(a) * R; return valid(x, z, 29) ? [x, z, 0.9 + rnd() * 0.3] : null; });
 
-    // Инстансинг
-    const tg2 = Models.treeGeos(), rg = Models.rockGeos();
-    const vMat = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.9 });
+    const tg2 = Models.treeGeos(BI.trees), rg = Models.rockGeos();
+    const vMat = own(new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.9 }));
     const geos = { pine: tg2.pine, oak: tg2.oak, birch: tg2.birch, stone: rg.stone, coal: rg.coal, iron: rg.iron, berry: rg.berry };
     for (const sub in geos) {
+      own(geos[sub]);
       const list = nodes.filter(n => n.sub === sub);
       const im = new THREE.InstancedMesh(geos[sub], vMat, Math.max(1, list.length));
       im.castShadow = true; im.receiveShadow = true;
       im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       list.forEach((n, i) => { n.im = im; n.ii = i; const c = new THREE.Color(1, 1, 1); c.offsetHSL((rnd() - 0.5) * 0.04, 0, (rnd() - 0.5) * 0.12); im.setColorAt(i, c); updateNodeMatrix(n); });
-      im.count = list.length; scene.add(im); nodeMeshes[sub] = im;
+      im.count = list.length; addR(im); nodeMeshes[sub] = im;
+      if (!list.length) im.visible = false;
     }
 
-    // ----- Трава, цветы и кусты (декор) -----
-    const blade = Models.merge([
-      [new THREE.ConeGeometry(0.06, 0.55, 3), 0x5a9a34, Models.mtx(0, 0.27, 0)],
-      [new THREE.ConeGeometry(0.05, 0.45, 3), 0x72b040, Models.mtx(0.08, 0.22, 0.03, 1, 1, 1, 0, 0, -0.3)],
-      [new THREE.ConeGeometry(0.05, 0.4, 3), 0x4a8a2c, Models.mtx(-0.07, 0.2, -0.02, 1, 1, 1, 0, 0.2, 0.3)],
-    ]);
+    // ----- Трава, цветы, кусты, камешки -----
+    const g1 = new THREE.Color(BI.grass[0]).multiplyScalar(0.95), g2 = new THREE.Color(BI.grass[1]);
+    const blade = own(Models.merge([
+      [new THREE.ConeGeometry(0.06, 0.55, 3), g1.getHex(), Models.mtx(0, 0.27, 0)],
+      [new THREE.ConeGeometry(0.05, 0.45, 3), g2.getHex(), Models.mtx(0.08, 0.22, 0.03, 1, 1, 1, 0, 0, -0.3)],
+      [new THREE.ConeGeometry(0.05, 0.4, 3), g1.clone().multiplyScalar(0.85).getHex(), Models.mtx(-0.07, 0.2, -0.02, 1, 1, 1, 0, 0.2, 0.3)],
+    ]));
     const GRASS_MAX = 16000;
-    const vMat2 = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.9 });
+    const vMat2 = own(new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.9 }));
     grassMesh = new THREE.InstancedMesh(blade, vMat2, GRASS_MAX); grassMesh.receiveShadow = true;
     const gm = new THREE.Matrix4(); let gi = 0, gt = 0;
     while (gi < GRASS_MAX && gt < GRASS_MAX * 4) {
@@ -1628,32 +1735,31 @@ const World = (() => {
       const s = 0.7 + rnd() * 0.9; gm.compose(new THREE.Vector3(x, h, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, rnd() * 6, 0)), new THREE.Vector3(s, s, s));
       grassMesh.setMatrixAt(gi++, gm);
     }
-    grassMesh.userData.max = gi; scene.add(grassMesh);
-    const flower = Models.merge([[new THREE.CylinderGeometry(0.02, 0.02, 0.4, 3), 0x3a7a2a, Models.mtx(0, 0.2, 0)], [new THREE.IcosahedronGeometry(0.1, 0), 0xffffff, Models.mtx(0, 0.42, 0)]]);
-    flowerMesh = new THREE.InstancedMesh(flower, vMat, 1500);
-    const fcols = [0xf8e040, 0xffffff, 0xc070e0, 0xf06080, 0x60a0f0];
-    for (let i = 0; i < 1500; i++) {
+    grassMesh.userData.max = gi; addR(grassMesh);
+    const flower = own(Models.merge([[new THREE.CylinderGeometry(0.02, 0.02, 0.4, 3), 0x3a7a2a, Models.mtx(0, 0.2, 0)], [new THREE.IcosahedronGeometry(0.1, 0), 0xffffff, Models.mtx(0, 0.42, 0)]]));
+    const FL = Math.round(1500 * BI.flowers);
+    flowerMesh = new THREE.InstancedMesh(flower, vMat, FL); flowerMesh.userData.max = FL;
+    const fcols = BI.id === 'autumn' ? [0xf0a030, 0xe06030, 0xf8e040, 0xffffff, 0xc07040] : [0xf8e040, 0xffffff, 0xc070e0, 0xf06080, 0x60a0f0];
+    for (let i = 0; i < FL; i++) {
       let x, z, h, t = 0; do { const a = rnd() * 6.28, R = 22 + rnd() * 120; x = Math.cos(a) * R; z = Math.sin(a) * R; h = heightAt(x, z); t++; } while ((h < WATER_Y + 0.4 || h > 12) && t < 20);
       gm.compose(new THREE.Vector3(x, h, z), new THREE.Quaternion(), new THREE.Vector3(1, 1, 1).multiplyScalar(0.8 + rnd() * 0.6));
       flowerMesh.setMatrixAt(i, gm); flowerMesh.setColorAt(i, new THREE.Color(fcols[i % 5]));
     }
-    scene.add(flowerMesh);
-    const bushG = Models.merge([[new THREE.IcosahedronGeometry(0.7, 0), 0x3f7f32, Models.mtx(0, 0.45, 0, 1.3, 0.8, 1.2)], [new THREE.IcosahedronGeometry(0.5, 0), 0x4c8f3a, Models.mtx(0.5, 0.35, 0.2)]]);
+    addR(flowerMesh);
+    const bushG = own(Models.merge([[new THREE.IcosahedronGeometry(0.7, 0), BI.bush, Models.mtx(0, 0.45, 0, 1.3, 0.8, 1.2)], [new THREE.IcosahedronGeometry(0.5, 0), new THREE.Color(BI.bush).multiplyScalar(1.15).getHex(), Models.mtx(0.5, 0.35, 0.2)]]));
     const bushes = new THREE.InstancedMesh(bushG, vMat2, 260); bushes.castShadow = true; bushes.receiveShadow = true;
     for (let i = 0; i < 260; i++) {
       let x, z, t = 0; do { const a = rnd() * 6.28, R = 32 + rnd() * 140; x = Math.cos(a) * R; z = Math.sin(a) * R; t++; } while (!valid(x, z, 30) && t < 20);
       gm.compose(new THREE.Vector3(x, heightAt(x, z), z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, rnd() * 6, 0)), new THREE.Vector3(1, 1, 1).multiplyScalar(0.7 + rnd() * 0.8));
       bushes.setMatrixAt(i, gm);
     }
-    scene.add(bushes);
-    // камешки
-    const pebG = Models.merge([[new THREE.DodecahedronGeometry(0.35, 0), 0x8a8a86, Models.mtx(0, 0.1, 0, 1, 0.6, 1)]]);
+    addR(bushes);
+    const pebG = own(Models.merge([[new THREE.DodecahedronGeometry(0.35, 0), 0x8a8a86, Models.mtx(0, 0.1, 0, 1, 0.6, 1)]]));
     const peb = new THREE.InstancedMesh(pebG, vMat2, 300);
     for (let i = 0; i < 300; i++) { const a = rnd() * 6.28, R = 25 + rnd() * 150, x = Math.cos(a) * R, z = Math.sin(a) * R; gm.compose(new THREE.Vector3(x, heightAt(x, z), z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rnd(), rnd() * 6, 0)), new THREE.Vector3(1, 1, 1).multiplyScalar(0.5 + rnd())); peb.setMatrixAt(i, gm); }
-    scene.add(peb);
+    addR(peb);
 
     buildMine(); buildCave(); buildNests(rnd);
-    buildSky();
     applyQuality(quality);
   }
 
@@ -1671,7 +1777,7 @@ const World = (() => {
   function buildMine() {
     const g = new THREE.Group();
     // вход в шахту в стене карьера
-    const a = Math.atan2(-mdz, -mdx); // направление от центра к дальней стене
+    const mdx = W.mdx, mdz = W.mdz;
     const ex = MINE.x - mdx * 17, ez = MINE.z - mdz * 17;
     const ent = new THREE.Group(); ent.position.set(ex, heightAt(ex, ez), ez); ent.rotation.y = Math.atan2(mdx, mdz);
     Models.box(4.2, 4.4, 2.5, 0x080808, 0, 1.6, -0.6, ent);
@@ -1694,21 +1800,21 @@ const World = (() => {
       g.add(post);
     }
     // указатель у базы
-    const sp = new THREE.Group(); sp.position.set(30, heightAt(30, -16), -16);
+    const spx = -W.mdx * 30 + W.mdz * 6, spz = -W.mdz * 30 - W.mdx * 6; const sp = new THREE.Group(); sp.position.set(spx, heightAt(spx, spz), spz); sp.rotation.y = Math.atan2(-W.mdx, -W.mdz) - Math.PI / 2;
     Models.cyl(0.1, 0.1, 2.2, 0x6e4622, 0, 1.1, 0, sp, 6);
     const arrow = Models.box(1.6, 0.4, 0.08, 0xc89a5e, 0.5, 1.9, 0, sp); arrow.rotation.y = 0.4;
     g.add(sp);
-    scene.add(g);
-    void a;
+    addR(g);
   }
   function buildCave() {
-    const g = new THREE.Group(); const cx = CAVE.x + 9, cz = CAVE.z + 9; const h = heightAt(cx, cz);
-    g.position.set(cx, h, cz); g.rotation.y = Math.atan2(1, 1);
+    const cl = Math.hypot(CAVE.x, CAVE.z), ix = -CAVE.x / cl, iz = -CAVE.z / cl;
+    const g = new THREE.Group(); const cx = CAVE.x + ix * 9, cz = CAVE.z + iz * 9; const h = heightAt(cx, cz);
+    g.position.set(cx, h, cz); g.rotation.y = Math.atan2(ix, iz);
     Models.sph(6, 5, 2.5, 0x070707, 0, 1.6, -0.6, g, false, false);
     for (let i = 0; i < 9; i++) { const a = Math.PI * (i / 8); const r = Models.sph(2 + (i % 3) * 0.5, 2, 2, 0x7a7670, Math.cos(a) * 3.6, Math.sin(a) * 3.6 + 0.3, 0.3, g, true); r.rotation.set(i, i * 2, 0); }
     // светящиеся кристаллы
     for (let i = 0; i < 5; i++) { const c = Models.cone(0.25, 1, Models.mat(0x60d0ff, { emissive: 0x2080ff, emissiveIntensity: 1.2 }), -2 + i, 0.4, -0.2, g, 5, false); c.rotation.z = (i - 2) * 0.2; }
-    scene.add(g);
+    addR(g);
   }
   function buildNests(rnd) {
     for (let i = 0; i < 7; i++) {
@@ -1724,7 +1830,7 @@ const World = (() => {
         const r = Models.cone(0.75, 0.55, 0x3a7ac0, 0, 3.15, 0, g, 4); r.rotation.y = Math.PI / 4;
         Models.cyl(0.13, 0.13, 0.05, 0x111111, 0, 2.6, 0.41, g, 8, false).rotation.x = Math.PI / 2;
       }
-      scene.add(g);
+      addR(g);
     }
   }
 
@@ -1794,17 +1900,18 @@ const World = (() => {
   }
 
   function applyQuality(q) {
+    quality = q;
     if (!grassMesh) return;
     const frac = { low: 0, medium: 0.3, high: 0.65, ultra: 1 }[q] ?? 0.3;
     grassMesh.count = Math.floor(grassMesh.userData.max * frac);
     grassMesh.visible = frac > 0;
-    flowerMesh.count = Math.floor(1500 * Math.max(0.2, frac));
+    flowerMesh.count = Math.floor(flowerMesh.userData.max * Math.max(0.2, frac));
     sun.castShadow = q !== 'low';
     const ms = { low: 512, medium: 1024, high: 2048, ultra: 4096 }[q] || 1024;
     if (sun.shadow.mapSize.x !== ms) { sun.shadow.mapSize.set(ms, ms); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
   }
 
-  return { build, heightAt, groundAt, inWater, inMine, nodes, nodesNear, updateNodeMatrix, updateSky, applyQuality, WATER_Y, MINE, LAKE, CAVE, riverX, get daylight() { return daylight; }, get sun() { return sun; } };
+  return { build, generate, seedFrom, biomeOf, heightAt, groundAt, inWater, inMine, nodes, nodesNear, updateNodeMatrix, updateSky, applyQuality, WATER_Y, MINE, LAKE, CAVE, BIOMES, get seed() { return W.seed; }, get biome() { return W.biome; }, get daylight() { return daylight; }, get sun() { return sun; } };
 })();
 
 </script>
@@ -1824,7 +1931,7 @@ const G = window.G = {};
   let build = null;                   // режим строительства
   let time = 0, menuBird = null;
   const lightPool = []; let lightT = 0;
-  const cam = { yaw: 0.7, pitch: 0.88, dist: 12, pos: new THREE.Vector3() };
+  const cam = { fp: -0.15, yaw: 0.7, pitch: 0.88, dist: 12, pos: new THREE.Vector3() };
   const input = G.input = { mx: 0, mz: 0, run: false, action: false, camX: 0, camY: 0 };
   const V = (x, y, z) => new THREE.Vector3(x, y, z);
   const tv = V(0, 0, 0), tv2 = V(0, 0, 0);
@@ -1886,8 +1993,8 @@ const G = window.G = {};
     return {
       v: 1, hero, diff: diff || 'normal', res: { wood: Math.round(30 * st), stone: 0, iron: 0, coal: 0, food: Math.round(10 * st), coins: Math.round(60 * st) },
       tools: { axe: 0, pick: -1 }, tech: { stone: false, metal: false, mech: false },
-      wave: 1, waveTimer: Math.round(110 * D.timer), waveActive: false, dayTime: 0.02, day: 1, quest: 0,
-      player: { x: 0, z: 6, hp: HEROES[hero].hp }, stats: { wood: 0, stone: 0, iron: 0, kills: 0, built: 0, boughtBirds: 0 },
+      wave: 1, waveTimer: Math.round(D.prep * 1.25), waveActive: false, dayTime: 0.02, day: 1, quest: 0,
+      player: { x: 0, z: 6, hp: HEROES[hero].hp }, stats: { wood: 0, stone: 0, iron: 0, coal: 0, food: 0, coins: 0, kills: 0, bosses: 0, built: 0, boughtBirds: 0, time: 0 },
     };
   }
   G.hero = () => S && HEROES[S.hero];
@@ -1913,9 +2020,11 @@ const G = window.G = {};
     nextId = 1;
   }
 
-  G.newGame = function (hero, diff) {
+  G.newGame = function (hero, diff, seed) {
     clearWorld();
-    S = newState(hero, diff);
+    seed = seed || 20240611;
+    if (World.seed !== seed) World.generate(seed);
+    S = newState(hero, diff); S.seed = seed;
     // стартовая база: кольцо из частокола, ворота, гнездо, скворечники, пушка
     addBuilding('core', 0, 0, 0);
     for (let i = -8; i <= 8; i += 4) {
@@ -1941,7 +2050,7 @@ const G = window.G = {};
     const h = HEROES[S.hero];
     const mesh = Models.makeHero(S.hero); mesh.traverse(o => { if (o.isMesh) o.castShadow = true; });
     scene.add(mesh);
-    P = { mesh, pos: V(S.player.x, 0, S.player.z), yaw: Math.PI, hp: S.player.hp, maxHp: h.hp, swing: 0, swingTarget: null, hitDone: false, atkCd: 0, dead: 0, lastHurt: -10, tool: null, toolTier: -2, moving: 0, hintT: 0, animT: 0 };
+    P = { mesh, pos: V(S.player.x, 0, S.player.z), yaw: Math.PI, hp: S.player.hp, maxHp: h.hp, st: h.stamina, maxSt: h.stamina, stRest: 0, tired: false, swing: 0, swingTarget: null, hitDone: false, atkCd: 0, dead: 0, lastHurt: -10, tool: null, toolTier: -2, moving: 0, hintT: 0, animT: 0 };
     P.pos.y = World.groundAt(P.pos.x, P.pos.z);
     setTool('axe');
   }
@@ -2209,11 +2318,11 @@ const G = window.G = {};
 
   // ---------------- Враги и волны ----------------
   function waveList(n) {
-    const types = Object.keys(ENEMIES).filter(t => t !== 'monster' && ENEMIES[t].wave <= n);
+    const types = Object.keys(ENEMIES).filter(t => !ENEMIES[t].boss && ENEMIES[t].wave <= n);
     const count = Math.max(1, Math.round((2 + Math.floor(n * 1.7)) * DF().count));
     const list = [];
     for (let i = 0; i < count; i++) list.push(types[Math.floor(Math.random() * types.length)]);
-    if (n % 5 === 0) for (let i = 0; i < n / 5; i++) list.push('monster');
+    if (n % 5 === 0) { const k = n / 5 - 1, boss = BOSS_ORDER[k % BOSS_ORDER.length]; for (let i = 0; i <= Math.floor(k / BOSS_ORDER.length); i++) list.push(boss); }
     return list;
   }
   function startWave() {
@@ -2230,7 +2339,7 @@ const G = window.G = {};
     const e = { type, d, mesh, pos: pos.clone(), vel: V(0, 0, 0), yaw: 0, hp: d.hp * hpMul, maxHp: d.hp * hpMul, dmg: d.dmg * (1 + (n - 1) * 0.06) * DF().dmg, atkCd: 0, target: null, tkind: null, retarget: 0, slow: 0, dying: 0, mode: 'walk', t: Math.random() * 10, hitT: 0, flee: false, stuck: 0 };
     mesh.position.copy(pos);
     E.push(e);
-    if (type === 'monster') { UI.toast('⚠️ Появилось Лесное чудище!', 'bad', 4000); Sound.play('growl', 1.6); }
+    if (d.boss) { UI.toast(`⚠️ БОСС: ${d.name}!${d.desc ? ' ' + d.desc + '.' : ''}`, 'bad', 4500); UI.banner('БОСС!'); Sound.play('growl', 1.6); e.summonT = 6; }
     return e;
   }
   function updateWaves(dt) {
@@ -2255,7 +2364,7 @@ const G = window.G = {};
       UI.toast(`✅ Волна ${S.wave} отбита! +${bonus} 🪙`, 'good', 3500);
       Sound.play('win'); Sound.setMode('calm');
       S.wave++; S.earlyBonus = false;
-      S.waveTimer = Math.max(60, 120 - S.wave * 3) * DF().timer;
+      S.waveTimer = Math.round(DF().prep * Math.max(0.75, 1 - (S.wave - 1) * 0.01));
       G.save();
     }
   }
@@ -2265,9 +2374,10 @@ const G = window.G = {};
     const near = (list, r, f) => { let best = null, bd = r; list.forEach(o => { if (f && !f(o)) return; const p = o.mesh.position; const d = Math.hypot(p.x - ep.x, p.z - ep.z); if (d < bd) { bd = d; best = o; } }); return best; };
     const groundBird = b => !b.hidden && !b.cannon && b.state !== 'perch' && b.mesh.position.y - World.groundAt(b.mesh.position.x, b.mesh.position.z) < 1;
     const playerNear = P && !P.dead && Math.hypot(P.pos.x - ep.x, P.pos.z - ep.z);
-    if (t === 'monster') return ['b', core];
-    if (t === 'bear' || t === 'boar') { const b = near(B.filter(x => !x.onWall), 60); if (playerNear && playerNear < 6) return ['p', P]; return b ? ['b', b] : ['b', core]; }
-    if (t === 'fox' || t === 'lynx') { const bd = near(BD, 45, groundBird); if (bd) return ['bird', bd]; if (playerNear && playerNear < 10) return ['p', P]; return ['b', core]; }
+    if (t === 'monster' || t === 'treant') return ['b', core];
+    if (t === 'alpha') { if (playerNear && playerNear < 18) return ['p', P]; return ['b', core]; }
+    if (t === 'bear' || t === 'boar' || t === 'wolverine' || t === 'elk' || t === 'bearking') { const b = near(B.filter(x => !x.onWall), 60); if (playerNear && playerNear < 6) return ['p', P]; return b ? ['b', b] : ['b', core]; }
+    if (t === 'fox' || t === 'lynx' || t === 'raccoon') { const bd = near(BD, 45, groundBird); if (bd) return ['bird', bd]; if (playerNear && playerNear < 10) return ['p', P]; return ['b', core]; }
     if (playerNear && playerNear < 14) return ['p', P];
     const bd = near(BD, 30, groundBird); if (bd) return ['bird', bd];
     return ['b', core];
@@ -2300,9 +2410,11 @@ const G = window.G = {};
         if (e.dying <= 0) { scene.remove(m); E.splice(i, 1); }
         continue;
       }
-      if (e.hitT > 0) { e.hitT -= dt; m.scale.setScalar((e.type === 'monster' ? 1.1 : 1) * (1 + e.hitT)); }
+      if (e.hitT > 0) { e.hitT -= dt; m.scale.setScalar(m.userData.baseScale * (1 + e.hitT)); }
       if (e.slow > 0) e.slow -= dt;
       e.atkCd -= dt;
+      if (e.type === 'alpha') { e.summonT -= dt; if (e.summonT <= 0 && E.length < 70) { e.summonT = 12; for (let k = 0; k < 2; k++) spawnEnemy('wolf', V(e.pos.x + rand(-3, 3), 0, e.pos.z + rand(-3, 3))); UI.floatText(e.pos.clone().add(V(0, 3, 0)), 'Ау-у-у!', '#ff8080'); Sound.play('growl', 1.2); } }
+      if (e.type === 'treant' && e.hp < e.maxHp) e.hp = Math.min(e.maxHp, e.hp + e.maxHp * 0.012 * dt);
       // бегство (лиса при малом здоровье)
       if (!e.flee && e.type === 'fox' && e.hp < e.maxHp * 0.3) { e.flee = true; UI.floatText(e.pos.clone().add(V(0, 1.5, 0)), 'Убегает!', '#ffd080'); }
       let tx, tz, reach = 0;
@@ -2331,7 +2443,7 @@ const G = window.G = {};
         }
       } else {
         e.mode = 'walk';
-        const spd = e.d.speed * (e.slow > 0 ? 0.5 : 1) * (World.inWater(e.pos.x, e.pos.z) ? 0.6 : 1) * (e.flee ? 1.3 : 1);
+        const spd = e.d.speed * (e.type === 'elk' && dist > 8 ? 1.6 : 1) * (e.slow > 0 ? 0.5 : 1) * (World.inWater(e.pos.x, e.pos.z) ? 0.6 : 1) * (e.flee ? 1.3 : 1);
         const nx = e.pos.x + dx / dist * spd * dt, nz = e.pos.z + dz / dist * spd * dt;
         tv.set(nx, 0, nz);
         // разведение с соседями
@@ -2358,7 +2470,8 @@ const G = window.G = {};
     if (e.dying > 0) return;
     e.hp -= dmg; if (!quiet) e.hitT = 0.15;
     if (e.hp <= 0) {
-      e.dying = 1.6; e.mesh.scale.setScalar(e.type === 'monster' ? 1.1 : 1);
+      e.dying = 1.6; e.mesh.scale.setScalar(e.mesh.userData.baseScale);
+      if (e.d.boss) { S.stats.bosses++; UI.toast(`🏆 Босс повержен: ${e.d.name}!`, 'good', 4000); }
       const c = Math.max(1, Math.round(e.d.coins * HEROES[S.hero].coinMul * (1 + S.wave * 0.03) * DF().reward));
       addRes('coins', c, e.pos.clone().add(V(0, 1.6, 0)));
       if (e.d.food) addRes('food', e.d.food, e.pos.clone().add(V(0, 2.3, 0)));
@@ -2591,17 +2704,21 @@ const G = window.G = {};
     let ix = input.mx, iz = input.mz; const mag = Math.min(1, Math.hypot(ix, iz));
     const fx = -Math.sin(cam.yaw), fz = -Math.cos(cam.yaw), rx = Math.cos(cam.yaw), rz = -Math.sin(cam.yaw);
     let mx = fx * iz + rx * ix, mz = fz * iz + rz * ix; const ml = Math.hypot(mx, mz);
-    const running = input.run || mag > 0.92;
+    const wantRun = input.run && mag > 0.1 && !P.tired;
+    if (wantRun) { P.st -= 28 * dt; P.stRest = 0.8; if (P.st <= 0) { P.st = 0; P.tired = true; input.run = false; UI.toast('Выдохся! Отдохните немного', 'warn'); } }
+    else { P.stRest -= dt; if (P.stRest <= 0) P.st = Math.min(P.maxSt, P.st + 20 * dt); if (P.tired && P.st > P.maxSt * 0.3) P.tired = false; }
+    const running = wantRun && P.st > 0;
     P.moving = 0;
     if (ml > 0.08) {
       mx /= ml; mz /= ml;
-      let spd = hero.speed * (running ? 1.35 : 1) * Math.max(0.35, mag);
+      let spd = hero.speed * (running ? 1.55 : 1) * Math.max(0.35, mag);
       if (World.inWater(P.pos.x, P.pos.z)) spd *= 0.55;
       if (P.swing > 0) spd *= 0.6;
       P.pos.x += mx * spd * dt; P.pos.z += mz * spd * dt;
-      if (P.swing <= 0) P.yaw = Math.atan2(mx, mz);
+      if (P.swing <= 0 && !isFP()) P.yaw = Math.atan2(mx, mz);
       P.moving = running ? 2 : 1;
     }
+    if (isFP() && P.swing <= 0) P.yaw = cam.yaw + Math.PI;
     // столкновения: постройки, деревья/камни, граница мира
     collideBuildings(P.pos, 0.45, false);
     for (const n of World.nodesNear(P.pos.x, P.pos.z, 3, nearTmp)) {
@@ -2838,10 +2955,47 @@ const G = window.G = {};
   G.questTarget = () => { const i = S.quest; if (i === 5 || i === 10) return World.MINE; return null; };
 
   // ---------------- Камера ----------------
-  G.camRotate = (dx, dy) => { cam.yaw -= dx; cam.pitch = clamp(cam.pitch + dy, 0.3, 1.3); };
+  const isFP = () => G.settings.view === 'first';
+  G.isFP = isFP;
+  G.camRotate = (dx, dy) => { cam.yaw -= dx; if (isFP()) cam.fp = clamp(cam.fp - dy * 1.2, -1.35, 1.2); else cam.pitch = clamp(cam.pitch + dy, 0.3, 1.3); };
+  // Вид от первого лица: руки с инструментом прикреплены к камере
+  let vm = null, vmKey = '';
+  function updateViewModel(dt) {
+    const fp = isFP();
+    if (!vm) { vm = new THREE.Group(); camera.add(vm); scene.add(camera); }
+    vm.visible = fp && !P.dead;
+    if (!fp) return;
+    const key = S.hero + P.tool + P.toolTier;
+    if (key !== vmKey) {
+      vmKey = key; while (vm.children.length) vm.remove(vm.children[0]);
+      const look = { defender: [0x3d7a3a, 0xf1c7a0], builder: [0xe8b890, 0xe8b890], hunter: [0x8a5a32, 0xf3cfa8] }[S.hero];
+      const arm = new THREE.Group(); vm.add(arm); vm.userData.arm = arm;
+      Models.box(0.09, 0.09, 0.34, look[0], 0, -0.02, 0.16, arm, false);
+      Models.sph(0.1, 0.1, 0.1, look[1], 0, 0, -0.02, arm, true, false);
+      const t = Models.makeTool(P.tool, P.toolTier); t.rotation.set(-0.5, 0, 0.75); t.position.set(0, -0.06, -0.02); t.scale.setScalar(0.6); arm.add(t);
+      arm.traverse(o => { if (o.isMesh) { o.castShadow = false; o.receiveShadow = false; } });
+    }
+    const arm = vm.userData.arm, sw = P.swing;
+    const bob = P.moving ? Math.sin(P.animT * 10) * 0.025 : Math.sin(P.animT * 2) * 0.006;
+    arm.position.set(0.32 + bob * 0.5, -0.34 + Math.abs(bob), -0.55);
+    if (sw > 0) { const k = sw < 0.4 ? sw / 0.4 : 1 - (sw - 0.4) / 0.6; arm.rotation.set(sw < 0.4 ? 0.9 * k : -1.3 * Math.sin(Math.min(1, (sw - 0.4) / 0.3) * Math.PI / 2) * (1 - (sw - 0.4) / 0.6) + 0.3 * k, -0.25, 0.1); }
+    else arm.rotation.set(0.1, -0.3, 0.15);
+  }
   G.camZoom = d => { cam.dist = clamp(cam.dist + d, 6, 24); };
   function updateCamera(dt) {
     cam.yaw -= input.camX * dt * 2.6;
+    updateViewModel(dt);
+    if (isFP()) {
+      cam.fp = clamp(cam.fp - input.camY * dt * 1.6, -1.35, 1.2);
+      P.mesh.visible = !!P.dead;
+      const bob = P.moving && !P.dead ? Math.abs(Math.sin(P.animT * 10)) * 0.06 : 0;
+      camera.position.set(P.pos.x, P.mesh.position.y + (P.dead ? 0.5 : 1.62) + bob, P.pos.z);
+      camera.rotation.set(cam.fp, cam.yaw, 0, 'YXZ');
+      if (camera.near !== 0.08) { camera.near = 0.08; camera.updateProjectionMatrix(); }
+      return;
+    }
+    P.mesh.visible = true;
+    if (camera.near !== 0.3) { camera.near = 0.3; camera.updateProjectionMatrix(); }
     cam.pitch = clamp(cam.pitch + input.camY * dt * 1.6, 0.3, 1.3);
     const tgt = tv.set(P.mesh.position.x, P.mesh.position.y + 1.4, P.mesh.position.z);
     const dist = cam.dist * (G.settings.camDist || 100) / 100;
@@ -2852,12 +3006,14 @@ const G = window.G = {};
     camera.lookAt(tgt);
   }
   G.camYaw = () => cam.yaw;
+  G.worldInfo = () => ({ seed: World.seed, biome: World.biome.name });
 
   // ---------------- Главный цикл ----------------
   let skyT = 0;
   G.frame = function (dt) {
     time += dt;
     if (G.state === 'menu' || G.state === 'loading' || G.state === 'bye') {
+      if (vm) vm.visible = false;
       // атмосферный пролёт камеры над лесом
       const a = time * 0.04;
       const c = V(-40, 0, 30);
@@ -2891,6 +3047,7 @@ const G = window.G = {};
     }
   };
   function update(dt) {
+    S.stats.time = (S.stats.time || 0) + dt;
     S.dayTime += dt / 300; if (S.dayTime >= 1) { S.dayTime -= 1; S.day++; UI.toast(`☀️ День ${S.day}`, 'info'); }
     const dl = World.updateSky(S.dayTime, V(P.pos.x, 0, P.pos.z), dt, time);
     Sound.setNight(dl < 0.2);
@@ -2925,12 +3082,15 @@ const G = window.G = {};
   };
   G.player = () => P;
   G.core = () => B.find(b => b.t === 'core');
+  G.boss = () => E.find(e => e.d.boss && !e.dying) || null;
+  G.dayClock = () => { const t = S.dayTime, night = t >= 0.5; return { night, left: Math.ceil(((night ? 1 : 0.5) - t) * 300) }; };
   G.enemiesLeft = () => E.filter(e => !e.dying && !e.flee).length + (S.spawnList ? S.spawnList.length : 0);
 
   // ---------------- Конец игры ----------------
   function gameOver() {
     G.state = 'over'; Sound.play('lose'); Sound.setMode('calm');
-    UI.gameOver({ wave: S.wave, kills: S.stats.kills, day: S.day });
+    G.deleteSave(); // поражение: прохождение начинается заново
+    UI.gameOver(Object.assign({ wave: S.wave, day: S.day, hero: S.hero, diff: S.diff, seed: S.seed, biome: World.biome.name }, S.stats));
   }
 
   // ---------------- Выбор героя ----------------
@@ -2990,9 +3150,12 @@ const G = window.G = {};
     try { data = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) { data = null; }
     if (!data) return false;
     clearWorld();
+    if (!data.seed) data.seed = 20240611;
+    if (World.seed !== data.seed) World.generate(data.seed);
     S = data; const blds = data.buildings, birds = data.birds, nodes = data.nodes;
     delete S.buildings; delete S.birds; delete S.nodes;
     if (!S.diff) S.diff = 'normal';
+    S.stats = Object.assign({ wood: 0, stone: 0, iron: 0, coal: 0, food: 0, coins: 0, kills: 0, bosses: 0, built: 0, boughtBirds: 0, time: 0 }, S.stats);
     S.res = Object.assign({ wood: 0, stone: 0, iron: 0, coal: 0, food: 0, coins: 0 }, S.res);
     S.waveActive = false;
     blds.filter(b => !b.w).forEach(b => addBuilding(b.t, b.x, b.z, b.r, b.l, b.hp, null, b.id));
@@ -3020,7 +3183,7 @@ const UI = window.UI = {};
   const $ = id => document.getElementById(id);
   const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
   const SKEY = 'birdfortress_settings_v1';
-  const DEF = { uiScale: 100, quality: isTouch ? 'medium' : 'high', resolution: 'auto', musicOn: true, musicVol: 60, sfxOn: true, sfxVol: 80, autoAct: true, camDist: 100, sens: 100 };
+  const DEF = { view: 'third', uiScale: 100, quality: isTouch ? 'medium' : 'high', resolution: 'auto', musicOn: true, musicVol: 60, sfxOn: true, sfxVol: 80, autoAct: true, camDist: 100, sens: 100 };
   let saved = {}; try { saved = JSON.parse(localStorage.getItem(SKEY)) || {}; } catch (e) { }
   G.settings = Object.assign({}, DEF, saved);
   const saveSettings = () => { try { localStorage.setItem(SKEY, JSON.stringify(G.settings)); } catch (e) { } };
@@ -3071,7 +3234,7 @@ const UI = window.UI = {};
     if (a === 'back') { $('m-play').classList.add('hidden'); $('m-main').classList.remove('hidden'); }
     if (a === 'settings') openSettings('menu');
     if (a === 'exit') exitGame();
-    if (a === 'continue') { if (G.load()) enterGame(); }
+    if (a === 'continue') { withLoading('Загружаем мир…', () => G.load()).then(ok => { if (ok) enterGame(); else show('menu'); }); }
     if (a === 'new') {
       if (G.hasSave() && !b.dataset.armed) { b.dataset.armed = '1'; b.innerHTML = '⚠️ ЕЩЁ РАЗ — НАЧАТЬ ЗАНОВО<small>текущее сохранение будет заменено</small>'; setTimeout(() => { delete b.dataset.armed; b.textContent = '🌱 НОВАЯ ИГРА'; }, 4000); return; }
       delete b.dataset.armed; b.textContent = '🌱 НОВАЯ ИГРА';
@@ -3092,11 +3255,12 @@ const UI = window.UI = {};
   function backToMain() { $('m-play').classList.add('hidden'); $('m-main').classList.remove('hidden'); Sound.setMode('menu'); }
 
   // ---------------- Настройки ----------------
-  function openSettings(from) { settingsFrom = from; renderSettings(); $('settings').classList.remove('hidden'); if (from === 'menu') $('menu').classList.add('hidden'); }
+  function openSettings(from) { settingsFrom = from; renderSettings(); $('settings').classList.remove('hidden'); if (from === 'menu') $('menu').classList.add('hidden'); if (from === 'pause') $('pause').classList.add('hidden'); }
   function renderSettings() {
     const s = G.settings;
     document.querySelectorAll('#s-quality button').forEach(b => b.classList.toggle('on', b.dataset.v === s.quality));
     $('s-res').value = s.resolution;
+    document.querySelectorAll('#s-view button').forEach(b => b.classList.toggle('on', b.dataset.v === s.view));
     $('s-musicOn').classList.toggle('on', s.musicOn); $('s-sfxOn').classList.toggle('on', s.sfxOn); $('s-autoAct').classList.toggle('on', s.autoAct);
     $('s-uiScale').value = s.uiScale; $('s-uiScaleV').textContent = s.uiScale + '%';
     $('s-musicVol').value = s.musicVol; $('s-sfxVol').value = s.sfxVol; $('s-camDist').value = s.camDist; $('s-sens').value = s.sens;
@@ -3106,7 +3270,10 @@ const UI = window.UI = {};
   ['musicOn', 'sfxOn', 'autoAct'].forEach(k => tap($('s-' + k), () => { G.settings[k] = !G.settings[k]; saveSettings(); renderSettings(); applyAudio(); }));
   ['musicVol', 'sfxVol', 'camDist', 'sens', 'uiScale'].forEach(k => $('s-' + k).addEventListener('input', e => { G.settings[k] = +e.target.value; saveSettings(); applyAudio(); applyUiScale(); $('s-uiScaleV').textContent = G.settings.uiScale + '%'; placeIdleSticks(); }));
   tap($('s-full'), toggleFullscreen);
-  tap($('s-back'), () => { $('settings').classList.add('hidden'); if (settingsFrom === 'menu') $('menu').classList.remove('hidden'); });
+  document.querySelectorAll('#s-view button').forEach(b => tap(b, () => setView(b.dataset.v)));
+  function setView(v) { G.settings.view = v; saveSettings(); renderSettings(); document.body.classList.toggle('fp', v === 'first'); }
+  document.body.classList.toggle('fp', G.settings.view === 'first');
+  tap($('s-back'), () => { $('settings').classList.add('hidden'); if (settingsFrom === 'menu') $('menu').classList.remove('hidden'); if (settingsFrom === 'pause' && G.state === 'play') $('pause').classList.remove('hidden'); });
   function toggleFullscreen() {
     const d = document, el = d.documentElement;
     if (d.fullscreenElement || d.webkitFullscreenElement) (d.exitFullscreen || d.webkitExitFullscreen).call(d);
@@ -3119,9 +3286,9 @@ const UI = window.UI = {};
   }
 
   // ---------------- Выбор героя ----------------
-  let selIdx = 0, selDiff = 'normal';
+  let selIdx = 0, selDiff = 'normal', selSeed = '';
   function openSelect() {
-    G.state = 'select'; show('select'); selIdx = 0; G.selRot = 0.4; renderHero(); goFullscreenMobile();
+    G.state = 'select'; show('select'); selIdx = 0; G.selRot = 0.4; selSeed = String(Math.floor(Math.random() * 1e9)); renderHero(); goFullscreenMobile();
   }
   function renderHero() {
     const id = HERO_ORDER[selIdx], d = HEROES[id];
@@ -3133,12 +3300,28 @@ const UI = window.UI = {};
       h('div', { cls: 'perk' }, '⭐ ' + d.perk));
     const seg = h('div', { cls: 'seg diff' });
     DIFF_ORDER.forEach(k => { const D = DIFFICULTY[k]; const b = h('button', { cls: (k === selDiff ? 'on ' : '') + 'd-' + k }, D.icon + ' ' + D.name); tap(b, () => { selDiff = k; renderHero(); }); seg.append(b); });
-    c.append(h('div', { style: 'margin-top:8px;font-weight:800' }, 'Сложность:'), seg, h('div', { cls: 'ddesc', style: 'font-size:12px;margin-top:3px;opacity:.85' }, DIFFICULTY[selDiff].desc));
+    c.append(h('div', { style: 'margin-top:8px;font-weight:800' }, 'Сложность:'), seg, h('div', { cls: 'ddesc', style: 'font-size:12px;margin-top:3px;opacity:.85' }, DIFFICULTY[selDiff].desc + ` Подготовка к волне: ${Math.floor(DIFFICULTY[selDiff].prep / 60)}:${String(DIFFICULTY[selDiff].prep % 60).padStart(2, '0')}.`));
+    // мир (сид) — как в Майнкрафте: одинаковый сид даёт одинаковую карту
+    const biomeLbl = h('span', { cls: 'biome' }, '🌍 ' + World.biomeOf(World.seedFrom(selSeed)).name);
+    const inp = h('input', { id: 'seedIn', type: 'text', inputmode: 'text', maxlength: '24', value: selSeed, placeholder: 'сид мира', autocomplete: 'off' });
+    inp.addEventListener('input', () => { selSeed = inp.value; biomeLbl.textContent = '🌍 ' + World.biomeOf(World.seedFrom(selSeed || '1')).name; });
+    const dice = h('button', { cls: 'btn blue', style: 'padding:6px 10px' }, '🎲');
+    tap(dice, () => { selSeed = String(Math.floor(Math.random() * 1e9)); inp.value = selSeed; biomeLbl.textContent = '🌍 ' + World.biomeOf(World.seedFrom(selSeed)).name; });
+    c.append(h('div', { cls: 'seedrow' }, h('b', null, 'Мир:'), inp, dice, biomeLbl));
   }
   tap($('sel-prev'), () => { selIdx = (selIdx + 2) % 3; renderHero(); });
   tap($('sel-next'), () => { selIdx = (selIdx + 1) % 3; renderHero(); });
   tap($('sel-back'), () => { G.state = 'menu'; show('menu'); });
-  tap($('sel-go'), () => { G.newGame(HERO_ORDER[selIdx], selDiff); enterGame(); toast('Добро пожаловать! Рубите деревья и защищайте птиц 🐦', 'good', 4000); });
+  tap($('sel-go'), async () => {
+    const seed = World.seedFrom(selSeed || String(Math.floor(Math.random() * 1e9)));
+    await withLoading('Создаём мир «' + World.biomeOf(seed).name + '»…', () => G.newGame(HERO_ORDER[selIdx], selDiff, seed));
+    enterGame(); toast(`Добро пожаловать! Мир: ${World.biome.name} (сид ${seed}). Рубите деревья и защищайте птиц 🐦`, 'good', 4500);
+  });
+  async function withLoading(text, fn) {
+    show('loading'); setLoad(60, text); await nextFrame(); await nextFrame();
+    let r; try { r = fn(); } catch (e) { console.error(e); }
+    setLoad(100, 'Готово!'); return r;
+  }
 
   // ---------------- Вход в игру ----------------
   function enterGame() {
@@ -3155,6 +3338,7 @@ const UI = window.UI = {};
   function openPause() { if (G.state !== 'play') return; G.paused = true; $('pause').classList.remove('hidden'); Sound.setMode('menu'); }
   function closePause() { $('pause').classList.add('hidden'); G.paused = modalOpen(); Sound.setMode(G.S().waveActive ? 'battle' : 'calm'); }
   tap($('btn-pause'), openPause);
+  tap($('btn-view'), () => { setView(G.settings.view === 'first' ? 'third' : 'first'); toast(G.settings.view === 'first' ? '👁 Вид от первого лица' : '🎥 Вид от третьего лица', 'info'); });
   document.querySelectorAll('#pause [data-p]').forEach(b => tap(b, () => {
     const a = b.dataset.p;
     if (a === 'resume') closePause();
@@ -3164,12 +3348,31 @@ const UI = window.UI = {};
   }));
   // Конец игры
   UI.gameOver = function (st) {
-    $('overtxt').innerHTML = `Вы продержались до волны <b>${st.wave}</b><br>Побеждено зверей: <b>${st.kills}</b> · Дней: <b>${st.day}</b>`;
-    $('over-load').disabled = !G.hasSave();
-    setTimeout(() => { $('over').classList.remove('hidden'); }, 1200);
+    const t = Math.floor(st.time || 0), hh = Math.floor(t / 3600), mm = Math.floor(t / 60) % 60, ss = t % 60;
+    const tstr = (hh ? hh + ':' + String(mm).padStart(2, '0') : mm) + ':' + String(ss).padStart(2, '0');
+    const D = DIFFICULTY[st.diff] || DIFFICULTY.normal;
+    const cell = (ic, lbl, v) => `<div class="rs"><span class="ri">${ic}</span><span class="rl">${lbl}</span><b>${v}</b></div>`;
+    $('overtxt').innerHTML = `
+      <div class="rnote">Сохранение удалено — новое прохождение начнётся с начала.</div>
+      <div class="rsub">${HEROES[st.hero] ? HEROES[st.hero].name : ''} · ${D.icon} ${D.name} · 🌍 ${st.biome} (сид ${st.seed})</div>
+      <div class="rgrid">
+        ${cell('🌊', 'Волн отбито', Math.max(0, st.wave - 1))}
+        ${cell('⏱️', 'Время игры', tstr)}
+        ${cell('📅', 'Дней прожито', st.day)}
+        ${cell('🐺', 'Побеждено зверей', st.kills)}
+        ${cell('☠️', 'Побеждено боссов', st.bosses || 0)}
+        ${cell('🔨', 'Построено', st.built)}
+        ${cell(RES_INFO.wood.icon, 'Добыто дерева', Math.floor(st.wood))}
+        ${cell(RES_INFO.stone.icon, 'Добыто камня', Math.floor(st.stone))}
+        ${cell(RES_INFO.coal.icon, 'Добыто угля', Math.floor(st.coal || 0))}
+        ${cell(RES_INFO.iron.icon, 'Добыто железа', Math.floor(st.iron))}
+        ${cell(RES_INFO.food.icon, 'Собрано еды', Math.floor(st.food || 0))}
+        ${cell(RES_INFO.coins.icon, 'Заработано монет', Math.floor(st.coins || 0))}
+        ${cell('🐦', 'Куплено птиц', st.boughtBirds)}
+      </div>
+`;
+    setTimeout(() => { $('over').classList.remove('hidden'); }, 1400);
   };
-  tap($('over-load'), () => { $('over').classList.add('hidden'); if (G.load()) enterGame(); });
-  tap($('over-new'), () => { $('over').classList.add('hidden'); openSelect(); });
   tap($('over-menu'), () => { $('over').classList.add('hidden'); G.state = 'menu'; show('menu'); backToMain(); clearFloats(); });
 
   // ---------------- HUD ----------------
@@ -3198,7 +3401,12 @@ const UI = window.UI = {};
       const ph = P.hp / P.maxHp; const pe = $('php'); pe.style.width = (ph * 100) + '%'; pe.className = ph < 0.3 ? 'low' : ph < 0.6 ? 'mid' : '';
       $('phptxt').textContent = P.dead ? 'ранен…' : `${Math.ceil(P.hp)}/${P.maxHp}`;
       const dl = World.daylight;
-      $('daytxt').textContent = `${dl > 0.3 ? '☀️' : '🌙'} День ${S.day} · ${G.diff().icon}`;
+      const dc = G.dayClock(), mmss = n => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`;
+      $('daytxt').innerHTML = `${dc.night ? '🌙' : '☀️'} День ${S.day} · ${G.diff().icon}<br><small>${dc.night ? '☀️ утро' : '🌙 ночь'} через ${mmss(dc.left)}</small>`;
+      const st = P.st / P.maxSt; $('pst').style.width = (st * 100) + '%'; $('pst').className = P.tired ? 'tired' : '';
+      $('btn-run').classList.toggle('on', !!G.input.run);
+      const boss = G.boss(); $('bossbar').classList.toggle('hidden', !boss);
+      if (boss) { $('bossname').textContent = '☠️ ' + boss.d.name; $('bosshp').style.width = (boss.hp / boss.maxHp * 100) + '%'; }
       $('quest').innerHTML = `<b>Задание:</b> ${G.questText()}`;
       const birds = G.birds();
       $('birdcount').textContent = `🐦 Птиц: ${birds.length}/${G.birdCap()} · у пушек: ${birds.filter(b => b.cannon).length}`;
@@ -3441,6 +3649,7 @@ const UI = window.UI = {};
           h('div', { style: 'margin-top:8px' }, `❤️ ${Math.ceil(P.hp)}/${P.maxHp} · 🏃 скорость ${hd.speed} · ⚔️ урон ${hd.dmg}`),
           h('div', { style: 'margin-top:8px' }, `Инструменты: ${AXES[S.tools.axe].name}, ${S.tools.pick >= 0 ? PICKS[S.tools.pick].name : 'кирки нет'}`),
           h('div', { style: 'margin-top:8px' }, `Технологии: ${Object.keys(TECH).filter(k => S.tech[k]).map(k => TECH[k].name).join(', ') || 'нет'}`),
+          h('div', { style: 'margin-top:8px' }, `Мир: ${G.worldInfo().biome} · сид ${G.worldInfo().seed} (введите его при новой игре, чтобы получить такую же карту)`),
           h('div', { style: 'margin-top:8px' }, `Статистика: волна ${S.wave}, день ${S.day}, побеждено зверей ${S.stats.kills}, построено ${S.stats.built}`)));
       }
     }, tab);
@@ -3491,6 +3700,7 @@ const UI = window.UI = {};
     if (k === 'birds') openBirds();
   }));
   tap($('btn-use'), () => openBuildingPanel(G.interactTarget()));
+  tap($('btn-run'), () => { const P = G.player(); if (P && P.tired) { toast('Нет сил бежать — восстановите выносливость', 'warn'); return; } G.input.run = !G.input.run; });
   tap($('btn-wave'), () => { G.startWaveNow(); toast('Звери идут раньше! +25% награды', 'warn'); });
   tap($('bb-rot'), () => G.rotateBuild());
   tap($('bb-place'), () => G.placeBuild());
@@ -3573,7 +3783,7 @@ const UI = window.UI = {};
     if (sticks.L.id !== null) return;
     G.input.mx = (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0);
     G.input.mz = (keys.w || keys.arrowup ? 1 : 0) - (keys.s || keys.arrowdown ? 1 : 0);
-    G.input.run = !!keys.shift;
+    if (keys.shift !== undefined) { if (keys.shift && !G.input._kRun) G.input.run = true; if (!keys.shift && G.input._kRun) G.input.run = false; G.input._kRun = !!keys.shift; }
   }
   const KEYMAP = { 'ц': 'w', 'ф': 'a', 'ы': 's', 'в': 'd', 'у': 'e', 'и': 'b', 'ш': 'i', 'з': 'p', 'к': 'r', 'а': 'f', 'т': 'n' };
   window.addEventListener('keydown', e => {
@@ -3583,7 +3793,7 @@ const UI = window.UI = {};
     Sound.init();
     if (k === 'escape') {
       if (G.state !== 'play') return;
-      if (modal) closeModal(); else if (G.building()) G.cancelBuild(); else if (!$('settings').classList.contains('hidden')) $('settings').classList.add('hidden'); else if ($('pause').classList.contains('hidden')) openPause(); else closePause();
+      if (modal) closeModal(); else if (G.building()) G.cancelBuild(); else if (!$('settings').classList.contains('hidden')) { $('settings').classList.add('hidden'); $('pause').classList.remove('hidden'); } else if ($('pause').classList.contains('hidden')) openPause(); else closePause();
       return;
     }
     if (G.state !== 'play' || G.paused) { if (modal && (k === 'b' || k === 'i' || k === 'p')) closeModal(); return; }
@@ -3595,6 +3805,7 @@ const UI = window.UI = {};
     if (k === 'p') openBirds();
     if (k === 'r') G.rotateBuild();
     if (k === 'f') G.eat();
+    if (k === 'v' || k === 'м') $('btn-view').click();
     if (k === 'n') G.startWaveNow();
     if (k === 'enter' && G.building()) G.placeBuild();
     if (k === '1') G.selectTool('axe'); if (k === '2') G.selectTool('pick');

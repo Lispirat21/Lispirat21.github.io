@@ -5,7 +5,7 @@ const UI = window.UI = {};
   const $ = id => document.getElementById(id);
   const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
   const SKEY = 'birdfortress_settings_v1';
-  const DEF = { uiScale: 100, quality: isTouch ? 'medium' : 'high', resolution: 'auto', musicOn: true, musicVol: 60, sfxOn: true, sfxVol: 80, autoAct: true, camDist: 100, sens: 100 };
+  const DEF = { view: 'third', uiScale: 100, quality: isTouch ? 'medium' : 'high', resolution: 'auto', musicOn: true, musicVol: 60, sfxOn: true, sfxVol: 80, autoAct: true, camDist: 100, sens: 100 };
   let saved = {}; try { saved = JSON.parse(localStorage.getItem(SKEY)) || {}; } catch (e) { }
   G.settings = Object.assign({}, DEF, saved);
   const saveSettings = () => { try { localStorage.setItem(SKEY, JSON.stringify(G.settings)); } catch (e) { } };
@@ -56,7 +56,7 @@ const UI = window.UI = {};
     if (a === 'back') { $('m-play').classList.add('hidden'); $('m-main').classList.remove('hidden'); }
     if (a === 'settings') openSettings('menu');
     if (a === 'exit') exitGame();
-    if (a === 'continue') { if (G.load()) enterGame(); }
+    if (a === 'continue') { withLoading('Загружаем мир…', () => G.load()).then(ok => { if (ok) enterGame(); else show('menu'); }); }
     if (a === 'new') {
       if (G.hasSave() && !b.dataset.armed) { b.dataset.armed = '1'; b.innerHTML = '⚠️ ЕЩЁ РАЗ — НАЧАТЬ ЗАНОВО<small>текущее сохранение будет заменено</small>'; setTimeout(() => { delete b.dataset.armed; b.textContent = '🌱 НОВАЯ ИГРА'; }, 4000); return; }
       delete b.dataset.armed; b.textContent = '🌱 НОВАЯ ИГРА';
@@ -77,11 +77,12 @@ const UI = window.UI = {};
   function backToMain() { $('m-play').classList.add('hidden'); $('m-main').classList.remove('hidden'); Sound.setMode('menu'); }
 
   // ---------------- Настройки ----------------
-  function openSettings(from) { settingsFrom = from; renderSettings(); $('settings').classList.remove('hidden'); if (from === 'menu') $('menu').classList.add('hidden'); }
+  function openSettings(from) { settingsFrom = from; renderSettings(); $('settings').classList.remove('hidden'); if (from === 'menu') $('menu').classList.add('hidden'); if (from === 'pause') $('pause').classList.add('hidden'); }
   function renderSettings() {
     const s = G.settings;
     document.querySelectorAll('#s-quality button').forEach(b => b.classList.toggle('on', b.dataset.v === s.quality));
     $('s-res').value = s.resolution;
+    document.querySelectorAll('#s-view button').forEach(b => b.classList.toggle('on', b.dataset.v === s.view));
     $('s-musicOn').classList.toggle('on', s.musicOn); $('s-sfxOn').classList.toggle('on', s.sfxOn); $('s-autoAct').classList.toggle('on', s.autoAct);
     $('s-uiScale').value = s.uiScale; $('s-uiScaleV').textContent = s.uiScale + '%';
     $('s-musicVol').value = s.musicVol; $('s-sfxVol').value = s.sfxVol; $('s-camDist').value = s.camDist; $('s-sens').value = s.sens;
@@ -91,7 +92,10 @@ const UI = window.UI = {};
   ['musicOn', 'sfxOn', 'autoAct'].forEach(k => tap($('s-' + k), () => { G.settings[k] = !G.settings[k]; saveSettings(); renderSettings(); applyAudio(); }));
   ['musicVol', 'sfxVol', 'camDist', 'sens', 'uiScale'].forEach(k => $('s-' + k).addEventListener('input', e => { G.settings[k] = +e.target.value; saveSettings(); applyAudio(); applyUiScale(); $('s-uiScaleV').textContent = G.settings.uiScale + '%'; placeIdleSticks(); }));
   tap($('s-full'), toggleFullscreen);
-  tap($('s-back'), () => { $('settings').classList.add('hidden'); if (settingsFrom === 'menu') $('menu').classList.remove('hidden'); });
+  document.querySelectorAll('#s-view button').forEach(b => tap(b, () => setView(b.dataset.v)));
+  function setView(v) { G.settings.view = v; saveSettings(); renderSettings(); document.body.classList.toggle('fp', v === 'first'); }
+  document.body.classList.toggle('fp', G.settings.view === 'first');
+  tap($('s-back'), () => { $('settings').classList.add('hidden'); if (settingsFrom === 'menu') $('menu').classList.remove('hidden'); if (settingsFrom === 'pause' && G.state === 'play') $('pause').classList.remove('hidden'); });
   function toggleFullscreen() {
     const d = document, el = d.documentElement;
     if (d.fullscreenElement || d.webkitFullscreenElement) (d.exitFullscreen || d.webkitExitFullscreen).call(d);
@@ -104,9 +108,9 @@ const UI = window.UI = {};
   }
 
   // ---------------- Выбор героя ----------------
-  let selIdx = 0, selDiff = 'normal';
+  let selIdx = 0, selDiff = 'normal', selSeed = '';
   function openSelect() {
-    G.state = 'select'; show('select'); selIdx = 0; G.selRot = 0.4; renderHero(); goFullscreenMobile();
+    G.state = 'select'; show('select'); selIdx = 0; G.selRot = 0.4; selSeed = String(Math.floor(Math.random() * 1e9)); renderHero(); goFullscreenMobile();
   }
   function renderHero() {
     const id = HERO_ORDER[selIdx], d = HEROES[id];
@@ -118,12 +122,28 @@ const UI = window.UI = {};
       h('div', { cls: 'perk' }, '⭐ ' + d.perk));
     const seg = h('div', { cls: 'seg diff' });
     DIFF_ORDER.forEach(k => { const D = DIFFICULTY[k]; const b = h('button', { cls: (k === selDiff ? 'on ' : '') + 'd-' + k }, D.icon + ' ' + D.name); tap(b, () => { selDiff = k; renderHero(); }); seg.append(b); });
-    c.append(h('div', { style: 'margin-top:8px;font-weight:800' }, 'Сложность:'), seg, h('div', { cls: 'ddesc', style: 'font-size:12px;margin-top:3px;opacity:.85' }, DIFFICULTY[selDiff].desc));
+    c.append(h('div', { style: 'margin-top:8px;font-weight:800' }, 'Сложность:'), seg, h('div', { cls: 'ddesc', style: 'font-size:12px;margin-top:3px;opacity:.85' }, DIFFICULTY[selDiff].desc + ` Подготовка к волне: ${Math.floor(DIFFICULTY[selDiff].prep / 60)}:${String(DIFFICULTY[selDiff].prep % 60).padStart(2, '0')}.`));
+    // мир (сид) — как в Майнкрафте: одинаковый сид даёт одинаковую карту
+    const biomeLbl = h('span', { cls: 'biome' }, '🌍 ' + World.biomeOf(World.seedFrom(selSeed)).name);
+    const inp = h('input', { id: 'seedIn', type: 'text', inputmode: 'text', maxlength: '24', value: selSeed, placeholder: 'сид мира', autocomplete: 'off' });
+    inp.addEventListener('input', () => { selSeed = inp.value; biomeLbl.textContent = '🌍 ' + World.biomeOf(World.seedFrom(selSeed || '1')).name; });
+    const dice = h('button', { cls: 'btn blue', style: 'padding:6px 10px' }, '🎲');
+    tap(dice, () => { selSeed = String(Math.floor(Math.random() * 1e9)); inp.value = selSeed; biomeLbl.textContent = '🌍 ' + World.biomeOf(World.seedFrom(selSeed)).name; });
+    c.append(h('div', { cls: 'seedrow' }, h('b', null, 'Мир:'), inp, dice, biomeLbl));
   }
   tap($('sel-prev'), () => { selIdx = (selIdx + 2) % 3; renderHero(); });
   tap($('sel-next'), () => { selIdx = (selIdx + 1) % 3; renderHero(); });
   tap($('sel-back'), () => { G.state = 'menu'; show('menu'); });
-  tap($('sel-go'), () => { G.newGame(HERO_ORDER[selIdx], selDiff); enterGame(); toast('Добро пожаловать! Рубите деревья и защищайте птиц 🐦', 'good', 4000); });
+  tap($('sel-go'), async () => {
+    const seed = World.seedFrom(selSeed || String(Math.floor(Math.random() * 1e9)));
+    await withLoading('Создаём мир «' + World.biomeOf(seed).name + '»…', () => G.newGame(HERO_ORDER[selIdx], selDiff, seed));
+    enterGame(); toast(`Добро пожаловать! Мир: ${World.biome.name} (сид ${seed}). Рубите деревья и защищайте птиц 🐦`, 'good', 4500);
+  });
+  async function withLoading(text, fn) {
+    show('loading'); setLoad(60, text); await nextFrame(); await nextFrame();
+    let r; try { r = fn(); } catch (e) { console.error(e); }
+    setLoad(100, 'Готово!'); return r;
+  }
 
   // ---------------- Вход в игру ----------------
   function enterGame() {
@@ -140,6 +160,7 @@ const UI = window.UI = {};
   function openPause() { if (G.state !== 'play') return; G.paused = true; $('pause').classList.remove('hidden'); Sound.setMode('menu'); }
   function closePause() { $('pause').classList.add('hidden'); G.paused = modalOpen(); Sound.setMode(G.S().waveActive ? 'battle' : 'calm'); }
   tap($('btn-pause'), openPause);
+  tap($('btn-view'), () => { setView(G.settings.view === 'first' ? 'third' : 'first'); toast(G.settings.view === 'first' ? '👁 Вид от первого лица' : '🎥 Вид от третьего лица', 'info'); });
   document.querySelectorAll('#pause [data-p]').forEach(b => tap(b, () => {
     const a = b.dataset.p;
     if (a === 'resume') closePause();
@@ -149,12 +170,31 @@ const UI = window.UI = {};
   }));
   // Конец игры
   UI.gameOver = function (st) {
-    $('overtxt').innerHTML = `Вы продержались до волны <b>${st.wave}</b><br>Побеждено зверей: <b>${st.kills}</b> · Дней: <b>${st.day}</b>`;
-    $('over-load').disabled = !G.hasSave();
-    setTimeout(() => { $('over').classList.remove('hidden'); }, 1200);
+    const t = Math.floor(st.time || 0), hh = Math.floor(t / 3600), mm = Math.floor(t / 60) % 60, ss = t % 60;
+    const tstr = (hh ? hh + ':' + String(mm).padStart(2, '0') : mm) + ':' + String(ss).padStart(2, '0');
+    const D = DIFFICULTY[st.diff] || DIFFICULTY.normal;
+    const cell = (ic, lbl, v) => `<div class="rs"><span class="ri">${ic}</span><span class="rl">${lbl}</span><b>${v}</b></div>`;
+    $('overtxt').innerHTML = `
+      <div class="rnote">Сохранение удалено — новое прохождение начнётся с начала.</div>
+      <div class="rsub">${HEROES[st.hero] ? HEROES[st.hero].name : ''} · ${D.icon} ${D.name} · 🌍 ${st.biome} (сид ${st.seed})</div>
+      <div class="rgrid">
+        ${cell('🌊', 'Волн отбито', Math.max(0, st.wave - 1))}
+        ${cell('⏱️', 'Время игры', tstr)}
+        ${cell('📅', 'Дней прожито', st.day)}
+        ${cell('🐺', 'Побеждено зверей', st.kills)}
+        ${cell('☠️', 'Побеждено боссов', st.bosses || 0)}
+        ${cell('🔨', 'Построено', st.built)}
+        ${cell(RES_INFO.wood.icon, 'Добыто дерева', Math.floor(st.wood))}
+        ${cell(RES_INFO.stone.icon, 'Добыто камня', Math.floor(st.stone))}
+        ${cell(RES_INFO.coal.icon, 'Добыто угля', Math.floor(st.coal || 0))}
+        ${cell(RES_INFO.iron.icon, 'Добыто железа', Math.floor(st.iron))}
+        ${cell(RES_INFO.food.icon, 'Собрано еды', Math.floor(st.food || 0))}
+        ${cell(RES_INFO.coins.icon, 'Заработано монет', Math.floor(st.coins || 0))}
+        ${cell('🐦', 'Куплено птиц', st.boughtBirds)}
+      </div>
+`;
+    setTimeout(() => { $('over').classList.remove('hidden'); }, 1400);
   };
-  tap($('over-load'), () => { $('over').classList.add('hidden'); if (G.load()) enterGame(); });
-  tap($('over-new'), () => { $('over').classList.add('hidden'); openSelect(); });
   tap($('over-menu'), () => { $('over').classList.add('hidden'); G.state = 'menu'; show('menu'); backToMain(); clearFloats(); });
 
   // ---------------- HUD ----------------
@@ -183,7 +223,12 @@ const UI = window.UI = {};
       const ph = P.hp / P.maxHp; const pe = $('php'); pe.style.width = (ph * 100) + '%'; pe.className = ph < 0.3 ? 'low' : ph < 0.6 ? 'mid' : '';
       $('phptxt').textContent = P.dead ? 'ранен…' : `${Math.ceil(P.hp)}/${P.maxHp}`;
       const dl = World.daylight;
-      $('daytxt').textContent = `${dl > 0.3 ? '☀️' : '🌙'} День ${S.day} · ${G.diff().icon}`;
+      const dc = G.dayClock(), mmss = n => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`;
+      $('daytxt').innerHTML = `${dc.night ? '🌙' : '☀️'} День ${S.day} · ${G.diff().icon}<br><small>${dc.night ? '☀️ утро' : '🌙 ночь'} через ${mmss(dc.left)}</small>`;
+      const st = P.st / P.maxSt; $('pst').style.width = (st * 100) + '%'; $('pst').className = P.tired ? 'tired' : '';
+      $('btn-run').classList.toggle('on', !!G.input.run);
+      const boss = G.boss(); $('bossbar').classList.toggle('hidden', !boss);
+      if (boss) { $('bossname').textContent = '☠️ ' + boss.d.name; $('bosshp').style.width = (boss.hp / boss.maxHp * 100) + '%'; }
       $('quest').innerHTML = `<b>Задание:</b> ${G.questText()}`;
       const birds = G.birds();
       $('birdcount').textContent = `🐦 Птиц: ${birds.length}/${G.birdCap()} · у пушек: ${birds.filter(b => b.cannon).length}`;
@@ -426,6 +471,7 @@ const UI = window.UI = {};
           h('div', { style: 'margin-top:8px' }, `❤️ ${Math.ceil(P.hp)}/${P.maxHp} · 🏃 скорость ${hd.speed} · ⚔️ урон ${hd.dmg}`),
           h('div', { style: 'margin-top:8px' }, `Инструменты: ${AXES[S.tools.axe].name}, ${S.tools.pick >= 0 ? PICKS[S.tools.pick].name : 'кирки нет'}`),
           h('div', { style: 'margin-top:8px' }, `Технологии: ${Object.keys(TECH).filter(k => S.tech[k]).map(k => TECH[k].name).join(', ') || 'нет'}`),
+          h('div', { style: 'margin-top:8px' }, `Мир: ${G.worldInfo().biome} · сид ${G.worldInfo().seed} (введите его при новой игре, чтобы получить такую же карту)`),
           h('div', { style: 'margin-top:8px' }, `Статистика: волна ${S.wave}, день ${S.day}, побеждено зверей ${S.stats.kills}, построено ${S.stats.built}`)));
       }
     }, tab);
@@ -476,6 +522,7 @@ const UI = window.UI = {};
     if (k === 'birds') openBirds();
   }));
   tap($('btn-use'), () => openBuildingPanel(G.interactTarget()));
+  tap($('btn-run'), () => { const P = G.player(); if (P && P.tired) { toast('Нет сил бежать — восстановите выносливость', 'warn'); return; } G.input.run = !G.input.run; });
   tap($('btn-wave'), () => { G.startWaveNow(); toast('Звери идут раньше! +25% награды', 'warn'); });
   tap($('bb-rot'), () => G.rotateBuild());
   tap($('bb-place'), () => G.placeBuild());
@@ -558,7 +605,7 @@ const UI = window.UI = {};
     if (sticks.L.id !== null) return;
     G.input.mx = (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0);
     G.input.mz = (keys.w || keys.arrowup ? 1 : 0) - (keys.s || keys.arrowdown ? 1 : 0);
-    G.input.run = !!keys.shift;
+    if (keys.shift !== undefined) { if (keys.shift && !G.input._kRun) G.input.run = true; if (!keys.shift && G.input._kRun) G.input.run = false; G.input._kRun = !!keys.shift; }
   }
   const KEYMAP = { 'ц': 'w', 'ф': 'a', 'ы': 's', 'в': 'd', 'у': 'e', 'и': 'b', 'ш': 'i', 'з': 'p', 'к': 'r', 'а': 'f', 'т': 'n' };
   window.addEventListener('keydown', e => {
@@ -568,7 +615,7 @@ const UI = window.UI = {};
     Sound.init();
     if (k === 'escape') {
       if (G.state !== 'play') return;
-      if (modal) closeModal(); else if (G.building()) G.cancelBuild(); else if (!$('settings').classList.contains('hidden')) $('settings').classList.add('hidden'); else if ($('pause').classList.contains('hidden')) openPause(); else closePause();
+      if (modal) closeModal(); else if (G.building()) G.cancelBuild(); else if (!$('settings').classList.contains('hidden')) { $('settings').classList.add('hidden'); $('pause').classList.remove('hidden'); } else if ($('pause').classList.contains('hidden')) openPause(); else closePause();
       return;
     }
     if (G.state !== 'play' || G.paused) { if (modal && (k === 'b' || k === 'i' || k === 'p')) closeModal(); return; }
@@ -580,6 +627,7 @@ const UI = window.UI = {};
     if (k === 'p') openBirds();
     if (k === 'r') G.rotateBuild();
     if (k === 'f') G.eat();
+    if (k === 'v' || k === 'м') $('btn-view').click();
     if (k === 'n') G.startWaveNow();
     if (k === 'enter' && G.building()) G.placeBuild();
     if (k === '1') G.selectTool('axe'); if (k === '2') G.selectTool('pick');

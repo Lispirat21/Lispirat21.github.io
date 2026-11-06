@@ -26,11 +26,11 @@ const BIRDS = {
 const BIRD_ORDER = ['sparrow', 'tit', 'bullfinch', 'guinea', 'woodpecker', 'loon', 'turkey', 'owl', 'parrot', 'eagle'];
 
 const HEROES = {
-  defender: { name: 'Лесной защитник', hp: 125, speed: 6.0, dmg: 18, atkRate: 1.7, gather: 1.0,  buildMul: 1.0,  coinMul: 1.0,
+  defender: { stamina: 100, name: 'Лесной защитник', hp: 125, speed: 6.0, dmg: 18, atkRate: 1.7, gather: 1.0,  buildMul: 1.0,  coinMul: 1.0,
               perk: 'Пушки бьют на 15% сильнее. Восстанавливает здоровье быстрее.', desc: 'Сбалансированный боец. Щит за спиной и зелёный плащ.' },
-  builder:  { name: 'Сильный строитель', hp: 155, speed: 5.3, dmg: 15, atkRate: 1.4, gather: 1.35, buildMul: 0.75, coinMul: 1.0,
+  builder:  { stamina: 85, name: 'Сильный строитель', hp: 155, speed: 5.3, dmg: 15, atkRate: 1.4, gather: 1.35, buildMul: 0.75, coinMul: 1.0,
               perk: 'Постройки и улучшения дешевле на 25%. Добыча +35%.', desc: 'Крепкий мастер в каске. Строит быстро и дёшево.' },
-  hunter:   { name: 'Быстрый охотник', hp: 95, speed: 7.5, dmg: 24, atkRate: 2.3, gather: 1.0,  buildMul: 1.0,  coinMul: 1.5,
+  hunter:   { stamina: 140, name: 'Быстрый охотник', hp: 95, speed: 7.5, dmg: 24, atkRate: 2.3, gather: 1.0,  buildMul: 1.0,  coinMul: 1.5,
               perk: 'Самый быстрый. +50% монет за победу над зверями.', desc: 'Ловкий следопыт с колчаном и шляпой с пером.' },
 };
 const HERO_ORDER = ['defender', 'builder', 'hunter'];
@@ -41,7 +41,14 @@ const ENEMIES = {
   boar:    { name: 'Кабан',         hp: 80,  speed: 3.7, dmg: 13, rate: 0.9, coins: 6,  food: 4, radius: 0.7, size: 1.0,  wave: 2 },
   bear:    { name: 'Медведь',       hp: 210, speed: 2.7, dmg: 26, rate: 0.7, coins: 15, food: 6, radius: 1.0, size: 1.5,  wave: 4 },
   lynx:    { name: 'Рысь',          hp: 60,  speed: 5.6, dmg: 10, rate: 1.3, coins: 8,  food: 0, radius: 0.55,size: 0.95, wave: 6 },
-  monster: { name: 'Лесное чудище', hp: 900, speed: 2.1, dmg: 55, rate: 0.6, coins: 70, food: 0, radius: 1.6, size: 2.4,  wave: 5 },
+  raccoon:   { name: 'Енот-воришка',  hp: 35,  speed: 5.4, dmg: 5,  rate: 1.4, coins: 6,  food: 0, radius: 0.5, size: 0.8,  wave: 3 },
+  wolverine: { name: 'Росомаха',      hp: 140, speed: 4.0, dmg: 18, rate: 1.1, coins: 12, food: 0, radius: 0.7, size: 1.0,  wave: 7 },
+  elk:       { name: 'Бешеный лось',  hp: 260, speed: 3.6, dmg: 32, rate: 0.6, coins: 18, food: 8, radius: 1.0, size: 1.6,  wave: 9 },
+  // боссы: приходят каждую 5-ю волну по очереди
+  monster:   { name: 'Лесное чудище',   hp: 900,  speed: 2.1, dmg: 55, rate: 0.6, coins: 70,  food: 0,  radius: 1.6, size: 2.4, wave: 5,  boss: true },
+  alpha:     { name: 'Вожак стаи',      hp: 1300, speed: 4.2, dmg: 45, rate: 1.1, coins: 110, food: 0,  radius: 1.3, size: 2.0, wave: 10, boss: true, desc: 'Призывает волков' },
+  bearking:  { name: 'Медведь-великан', hp: 2600, speed: 2.2, dmg: 120,rate: 0.5, coins: 160, food: 20, radius: 2.0, size: 3.2, wave: 15, boss: true, desc: 'Ломает стены с одного удара' },
+  treant:    { name: 'Древень',         hp: 3800, speed: 1.6, dmg: 80, rate: 0.6, coins: 220, food: 0,  radius: 2.0, size: 3.6, wave: 20, boss: true, desc: 'Восстанавливает здоровье' },
 };
 
 // Стены по уровням
@@ -61,6 +68,7 @@ const CANNON_LEVELS = [
 ];
 
 // Постройки. size = [ширина по X, глубина по Z] при повороте 0
+const BOSS_ORDER = ['monster', 'alpha', 'bearking', 'treant'];
 const BUILD = {
   fence:      { name: 'Забор',              cat: 'walls',   cost: { wood: 4 },              hp: 90,   size: [4, 0.5], icon: '🚧', desc: 'Дешёвое ограждение.' },
   wall:       { name: 'Стена',              cat: 'walls',   cost: { wood: 10 },             hp: 220,  size: [4, 1],   icon: '🧱', desc: 'Улучшается до 5 уровня. На стену можно поставить пушку.' },
@@ -130,9 +138,9 @@ const QUESTS = [
 
 // Уровни сложности
 const DIFFICULTY = {
-  easy:       { name: 'Лёгкая',     icon: '🌱', hp: 0.65, dmg: 0.55, count: 0.7, timer: 1.4, reward: 1.25, start: 1.5, desc: 'Звери слабые и приходят реже. Для знакомства с игрой.' },
-  normal:     { name: 'Средняя',    icon: '🌳', hp: 1,    dmg: 1,    count: 1,   timer: 1,   reward: 1,    start: 1,   desc: 'Обычный баланс.' },
-  hard:       { name: 'Сложная',    icon: '🔥', hp: 1.4,  dmg: 1.4,  count: 1.35,timer: 0.8, reward: 0.9,  start: 0.8, desc: 'Больше сильных зверей, меньше времени на подготовку.' },
-  impossible: { name: 'Невозможная',icon: '💀', hp: 2.1,  dmg: 2,    count: 1.8, timer: 0.6, reward: 0.75, start: 0.6, desc: 'Огромные стаи, очень мало времени. Только для мастеров.' },
+  easy:       { prep: 240, name: 'Лёгкая',     icon: '🌱', hp: 0.65, dmg: 0.55, count: 0.7, timer: 1.4, reward: 1.25, start: 1.5, desc: 'Звери слабые и приходят реже. Для знакомства с игрой.' },
+  normal:     { prep: 180, name: 'Средняя',    icon: '🌳', hp: 1,    dmg: 1,    count: 1,   timer: 1,   reward: 1,    start: 1,   desc: 'Обычный баланс.' },
+  hard:       { prep: 130, name: 'Сложная',    icon: '🔥', hp: 1.4,  dmg: 1.4,  count: 1.35,timer: 0.8, reward: 0.9,  start: 0.8, desc: 'Больше сильных зверей, меньше времени на подготовку.' },
+  impossible: { prep: 90, name: 'Невозможная',icon: '💀', hp: 2.1,  dmg: 2,    count: 1.8, timer: 0.6, reward: 0.75, start: 0.6, desc: 'Огромные стаи, очень мало времени. Только для мастеров.' },
 };
 const DIFF_ORDER = ['easy', 'normal', 'hard', 'impossible'];

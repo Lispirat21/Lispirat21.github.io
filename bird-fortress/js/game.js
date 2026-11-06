@@ -13,7 +13,7 @@ const G = window.G = {};
   let build = null;                   // режим строительства
   let time = 0, menuBird = null;
   const lightPool = []; let lightT = 0;
-  const cam = { yaw: 0.7, pitch: 0.88, dist: 12, pos: new THREE.Vector3() };
+  const cam = { fp: -0.15, yaw: 0.7, pitch: 0.88, dist: 12, pos: new THREE.Vector3() };
   const input = G.input = { mx: 0, mz: 0, run: false, action: false, camX: 0, camY: 0 };
   const V = (x, y, z) => new THREE.Vector3(x, y, z);
   const tv = V(0, 0, 0), tv2 = V(0, 0, 0);
@@ -75,8 +75,8 @@ const G = window.G = {};
     return {
       v: 1, hero, diff: diff || 'normal', res: { wood: Math.round(30 * st), stone: 0, iron: 0, coal: 0, food: Math.round(10 * st), coins: Math.round(60 * st) },
       tools: { axe: 0, pick: -1 }, tech: { stone: false, metal: false, mech: false },
-      wave: 1, waveTimer: Math.round(110 * D.timer), waveActive: false, dayTime: 0.02, day: 1, quest: 0,
-      player: { x: 0, z: 6, hp: HEROES[hero].hp }, stats: { wood: 0, stone: 0, iron: 0, kills: 0, built: 0, boughtBirds: 0 },
+      wave: 1, waveTimer: Math.round(D.prep * 1.25), waveActive: false, dayTime: 0.02, day: 1, quest: 0,
+      player: { x: 0, z: 6, hp: HEROES[hero].hp }, stats: { wood: 0, stone: 0, iron: 0, coal: 0, food: 0, coins: 0, kills: 0, bosses: 0, built: 0, boughtBirds: 0, time: 0 },
     };
   }
   G.hero = () => S && HEROES[S.hero];
@@ -102,9 +102,11 @@ const G = window.G = {};
     nextId = 1;
   }
 
-  G.newGame = function (hero, diff) {
+  G.newGame = function (hero, diff, seed) {
     clearWorld();
-    S = newState(hero, diff);
+    seed = seed || 20240611;
+    if (World.seed !== seed) World.generate(seed);
+    S = newState(hero, diff); S.seed = seed;
     // стартовая база: кольцо из частокола, ворота, гнездо, скворечники, пушка
     addBuilding('core', 0, 0, 0);
     for (let i = -8; i <= 8; i += 4) {
@@ -130,7 +132,7 @@ const G = window.G = {};
     const h = HEROES[S.hero];
     const mesh = Models.makeHero(S.hero); mesh.traverse(o => { if (o.isMesh) o.castShadow = true; });
     scene.add(mesh);
-    P = { mesh, pos: V(S.player.x, 0, S.player.z), yaw: Math.PI, hp: S.player.hp, maxHp: h.hp, swing: 0, swingTarget: null, hitDone: false, atkCd: 0, dead: 0, lastHurt: -10, tool: null, toolTier: -2, moving: 0, hintT: 0, animT: 0 };
+    P = { mesh, pos: V(S.player.x, 0, S.player.z), yaw: Math.PI, hp: S.player.hp, maxHp: h.hp, st: h.stamina, maxSt: h.stamina, stRest: 0, tired: false, swing: 0, swingTarget: null, hitDone: false, atkCd: 0, dead: 0, lastHurt: -10, tool: null, toolTier: -2, moving: 0, hintT: 0, animT: 0 };
     P.pos.y = World.groundAt(P.pos.x, P.pos.z);
     setTool('axe');
   }
@@ -398,11 +400,11 @@ const G = window.G = {};
 
   // ---------------- Враги и волны ----------------
   function waveList(n) {
-    const types = Object.keys(ENEMIES).filter(t => t !== 'monster' && ENEMIES[t].wave <= n);
+    const types = Object.keys(ENEMIES).filter(t => !ENEMIES[t].boss && ENEMIES[t].wave <= n);
     const count = Math.max(1, Math.round((2 + Math.floor(n * 1.7)) * DF().count));
     const list = [];
     for (let i = 0; i < count; i++) list.push(types[Math.floor(Math.random() * types.length)]);
-    if (n % 5 === 0) for (let i = 0; i < n / 5; i++) list.push('monster');
+    if (n % 5 === 0) { const k = n / 5 - 1, boss = BOSS_ORDER[k % BOSS_ORDER.length]; for (let i = 0; i <= Math.floor(k / BOSS_ORDER.length); i++) list.push(boss); }
     return list;
   }
   function startWave() {
@@ -419,7 +421,7 @@ const G = window.G = {};
     const e = { type, d, mesh, pos: pos.clone(), vel: V(0, 0, 0), yaw: 0, hp: d.hp * hpMul, maxHp: d.hp * hpMul, dmg: d.dmg * (1 + (n - 1) * 0.06) * DF().dmg, atkCd: 0, target: null, tkind: null, retarget: 0, slow: 0, dying: 0, mode: 'walk', t: Math.random() * 10, hitT: 0, flee: false, stuck: 0 };
     mesh.position.copy(pos);
     E.push(e);
-    if (type === 'monster') { UI.toast('⚠️ Появилось Лесное чудище!', 'bad', 4000); Sound.play('growl', 1.6); }
+    if (d.boss) { UI.toast(`⚠️ БОСС: ${d.name}!${d.desc ? ' ' + d.desc + '.' : ''}`, 'bad', 4500); UI.banner('БОСС!'); Sound.play('growl', 1.6); e.summonT = 6; }
     return e;
   }
   function updateWaves(dt) {
@@ -444,7 +446,7 @@ const G = window.G = {};
       UI.toast(`✅ Волна ${S.wave} отбита! +${bonus} 🪙`, 'good', 3500);
       Sound.play('win'); Sound.setMode('calm');
       S.wave++; S.earlyBonus = false;
-      S.waveTimer = Math.max(60, 120 - S.wave * 3) * DF().timer;
+      S.waveTimer = Math.round(DF().prep * Math.max(0.75, 1 - (S.wave - 1) * 0.01));
       G.save();
     }
   }
@@ -454,9 +456,10 @@ const G = window.G = {};
     const near = (list, r, f) => { let best = null, bd = r; list.forEach(o => { if (f && !f(o)) return; const p = o.mesh.position; const d = Math.hypot(p.x - ep.x, p.z - ep.z); if (d < bd) { bd = d; best = o; } }); return best; };
     const groundBird = b => !b.hidden && !b.cannon && b.state !== 'perch' && b.mesh.position.y - World.groundAt(b.mesh.position.x, b.mesh.position.z) < 1;
     const playerNear = P && !P.dead && Math.hypot(P.pos.x - ep.x, P.pos.z - ep.z);
-    if (t === 'monster') return ['b', core];
-    if (t === 'bear' || t === 'boar') { const b = near(B.filter(x => !x.onWall), 60); if (playerNear && playerNear < 6) return ['p', P]; return b ? ['b', b] : ['b', core]; }
-    if (t === 'fox' || t === 'lynx') { const bd = near(BD, 45, groundBird); if (bd) return ['bird', bd]; if (playerNear && playerNear < 10) return ['p', P]; return ['b', core]; }
+    if (t === 'monster' || t === 'treant') return ['b', core];
+    if (t === 'alpha') { if (playerNear && playerNear < 18) return ['p', P]; return ['b', core]; }
+    if (t === 'bear' || t === 'boar' || t === 'wolverine' || t === 'elk' || t === 'bearking') { const b = near(B.filter(x => !x.onWall), 60); if (playerNear && playerNear < 6) return ['p', P]; return b ? ['b', b] : ['b', core]; }
+    if (t === 'fox' || t === 'lynx' || t === 'raccoon') { const bd = near(BD, 45, groundBird); if (bd) return ['bird', bd]; if (playerNear && playerNear < 10) return ['p', P]; return ['b', core]; }
     if (playerNear && playerNear < 14) return ['p', P];
     const bd = near(BD, 30, groundBird); if (bd) return ['bird', bd];
     return ['b', core];
@@ -489,9 +492,11 @@ const G = window.G = {};
         if (e.dying <= 0) { scene.remove(m); E.splice(i, 1); }
         continue;
       }
-      if (e.hitT > 0) { e.hitT -= dt; m.scale.setScalar((e.type === 'monster' ? 1.1 : 1) * (1 + e.hitT)); }
+      if (e.hitT > 0) { e.hitT -= dt; m.scale.setScalar(m.userData.baseScale * (1 + e.hitT)); }
       if (e.slow > 0) e.slow -= dt;
       e.atkCd -= dt;
+      if (e.type === 'alpha') { e.summonT -= dt; if (e.summonT <= 0 && E.length < 70) { e.summonT = 12; for (let k = 0; k < 2; k++) spawnEnemy('wolf', V(e.pos.x + rand(-3, 3), 0, e.pos.z + rand(-3, 3))); UI.floatText(e.pos.clone().add(V(0, 3, 0)), 'Ау-у-у!', '#ff8080'); Sound.play('growl', 1.2); } }
+      if (e.type === 'treant' && e.hp < e.maxHp) e.hp = Math.min(e.maxHp, e.hp + e.maxHp * 0.012 * dt);
       // бегство (лиса при малом здоровье)
       if (!e.flee && e.type === 'fox' && e.hp < e.maxHp * 0.3) { e.flee = true; UI.floatText(e.pos.clone().add(V(0, 1.5, 0)), 'Убегает!', '#ffd080'); }
       let tx, tz, reach = 0;
@@ -520,7 +525,7 @@ const G = window.G = {};
         }
       } else {
         e.mode = 'walk';
-        const spd = e.d.speed * (e.slow > 0 ? 0.5 : 1) * (World.inWater(e.pos.x, e.pos.z) ? 0.6 : 1) * (e.flee ? 1.3 : 1);
+        const spd = e.d.speed * (e.type === 'elk' && dist > 8 ? 1.6 : 1) * (e.slow > 0 ? 0.5 : 1) * (World.inWater(e.pos.x, e.pos.z) ? 0.6 : 1) * (e.flee ? 1.3 : 1);
         const nx = e.pos.x + dx / dist * spd * dt, nz = e.pos.z + dz / dist * spd * dt;
         tv.set(nx, 0, nz);
         // разведение с соседями
@@ -547,7 +552,8 @@ const G = window.G = {};
     if (e.dying > 0) return;
     e.hp -= dmg; if (!quiet) e.hitT = 0.15;
     if (e.hp <= 0) {
-      e.dying = 1.6; e.mesh.scale.setScalar(e.type === 'monster' ? 1.1 : 1);
+      e.dying = 1.6; e.mesh.scale.setScalar(e.mesh.userData.baseScale);
+      if (e.d.boss) { S.stats.bosses++; UI.toast(`🏆 Босс повержен: ${e.d.name}!`, 'good', 4000); }
       const c = Math.max(1, Math.round(e.d.coins * HEROES[S.hero].coinMul * (1 + S.wave * 0.03) * DF().reward));
       addRes('coins', c, e.pos.clone().add(V(0, 1.6, 0)));
       if (e.d.food) addRes('food', e.d.food, e.pos.clone().add(V(0, 2.3, 0)));
@@ -780,17 +786,21 @@ const G = window.G = {};
     let ix = input.mx, iz = input.mz; const mag = Math.min(1, Math.hypot(ix, iz));
     const fx = -Math.sin(cam.yaw), fz = -Math.cos(cam.yaw), rx = Math.cos(cam.yaw), rz = -Math.sin(cam.yaw);
     let mx = fx * iz + rx * ix, mz = fz * iz + rz * ix; const ml = Math.hypot(mx, mz);
-    const running = input.run || mag > 0.92;
+    const wantRun = input.run && mag > 0.1 && !P.tired;
+    if (wantRun) { P.st -= 28 * dt; P.stRest = 0.8; if (P.st <= 0) { P.st = 0; P.tired = true; input.run = false; UI.toast('Выдохся! Отдохните немного', 'warn'); } }
+    else { P.stRest -= dt; if (P.stRest <= 0) P.st = Math.min(P.maxSt, P.st + 20 * dt); if (P.tired && P.st > P.maxSt * 0.3) P.tired = false; }
+    const running = wantRun && P.st > 0;
     P.moving = 0;
     if (ml > 0.08) {
       mx /= ml; mz /= ml;
-      let spd = hero.speed * (running ? 1.35 : 1) * Math.max(0.35, mag);
+      let spd = hero.speed * (running ? 1.55 : 1) * Math.max(0.35, mag);
       if (World.inWater(P.pos.x, P.pos.z)) spd *= 0.55;
       if (P.swing > 0) spd *= 0.6;
       P.pos.x += mx * spd * dt; P.pos.z += mz * spd * dt;
-      if (P.swing <= 0) P.yaw = Math.atan2(mx, mz);
+      if (P.swing <= 0 && !isFP()) P.yaw = Math.atan2(mx, mz);
       P.moving = running ? 2 : 1;
     }
+    if (isFP() && P.swing <= 0) P.yaw = cam.yaw + Math.PI;
     // столкновения: постройки, деревья/камни, граница мира
     collideBuildings(P.pos, 0.45, false);
     for (const n of World.nodesNear(P.pos.x, P.pos.z, 3, nearTmp)) {
@@ -1027,10 +1037,47 @@ const G = window.G = {};
   G.questTarget = () => { const i = S.quest; if (i === 5 || i === 10) return World.MINE; return null; };
 
   // ---------------- Камера ----------------
-  G.camRotate = (dx, dy) => { cam.yaw -= dx; cam.pitch = clamp(cam.pitch + dy, 0.3, 1.3); };
+  const isFP = () => G.settings.view === 'first';
+  G.isFP = isFP;
+  G.camRotate = (dx, dy) => { cam.yaw -= dx; if (isFP()) cam.fp = clamp(cam.fp - dy * 1.2, -1.35, 1.2); else cam.pitch = clamp(cam.pitch + dy, 0.3, 1.3); };
+  // Вид от первого лица: руки с инструментом прикреплены к камере
+  let vm = null, vmKey = '';
+  function updateViewModel(dt) {
+    const fp = isFP();
+    if (!vm) { vm = new THREE.Group(); camera.add(vm); scene.add(camera); }
+    vm.visible = fp && !P.dead;
+    if (!fp) return;
+    const key = S.hero + P.tool + P.toolTier;
+    if (key !== vmKey) {
+      vmKey = key; while (vm.children.length) vm.remove(vm.children[0]);
+      const look = { defender: [0x3d7a3a, 0xf1c7a0], builder: [0xe8b890, 0xe8b890], hunter: [0x8a5a32, 0xf3cfa8] }[S.hero];
+      const arm = new THREE.Group(); vm.add(arm); vm.userData.arm = arm;
+      Models.box(0.09, 0.09, 0.34, look[0], 0, -0.02, 0.16, arm, false);
+      Models.sph(0.1, 0.1, 0.1, look[1], 0, 0, -0.02, arm, true, false);
+      const t = Models.makeTool(P.tool, P.toolTier); t.rotation.set(-0.5, 0, 0.75); t.position.set(0, -0.06, -0.02); t.scale.setScalar(0.6); arm.add(t);
+      arm.traverse(o => { if (o.isMesh) { o.castShadow = false; o.receiveShadow = false; } });
+    }
+    const arm = vm.userData.arm, sw = P.swing;
+    const bob = P.moving ? Math.sin(P.animT * 10) * 0.025 : Math.sin(P.animT * 2) * 0.006;
+    arm.position.set(0.32 + bob * 0.5, -0.34 + Math.abs(bob), -0.55);
+    if (sw > 0) { const k = sw < 0.4 ? sw / 0.4 : 1 - (sw - 0.4) / 0.6; arm.rotation.set(sw < 0.4 ? 0.9 * k : -1.3 * Math.sin(Math.min(1, (sw - 0.4) / 0.3) * Math.PI / 2) * (1 - (sw - 0.4) / 0.6) + 0.3 * k, -0.25, 0.1); }
+    else arm.rotation.set(0.1, -0.3, 0.15);
+  }
   G.camZoom = d => { cam.dist = clamp(cam.dist + d, 6, 24); };
   function updateCamera(dt) {
     cam.yaw -= input.camX * dt * 2.6;
+    updateViewModel(dt);
+    if (isFP()) {
+      cam.fp = clamp(cam.fp - input.camY * dt * 1.6, -1.35, 1.2);
+      P.mesh.visible = !!P.dead;
+      const bob = P.moving && !P.dead ? Math.abs(Math.sin(P.animT * 10)) * 0.06 : 0;
+      camera.position.set(P.pos.x, P.mesh.position.y + (P.dead ? 0.5 : 1.62) + bob, P.pos.z);
+      camera.rotation.set(cam.fp, cam.yaw, 0, 'YXZ');
+      if (camera.near !== 0.08) { camera.near = 0.08; camera.updateProjectionMatrix(); }
+      return;
+    }
+    P.mesh.visible = true;
+    if (camera.near !== 0.3) { camera.near = 0.3; camera.updateProjectionMatrix(); }
     cam.pitch = clamp(cam.pitch + input.camY * dt * 1.6, 0.3, 1.3);
     const tgt = tv.set(P.mesh.position.x, P.mesh.position.y + 1.4, P.mesh.position.z);
     const dist = cam.dist * (G.settings.camDist || 100) / 100;
@@ -1041,12 +1088,14 @@ const G = window.G = {};
     camera.lookAt(tgt);
   }
   G.camYaw = () => cam.yaw;
+  G.worldInfo = () => ({ seed: World.seed, biome: World.biome.name });
 
   // ---------------- Главный цикл ----------------
   let skyT = 0;
   G.frame = function (dt) {
     time += dt;
     if (G.state === 'menu' || G.state === 'loading' || G.state === 'bye') {
+      if (vm) vm.visible = false;
       // атмосферный пролёт камеры над лесом
       const a = time * 0.04;
       const c = V(-40, 0, 30);
@@ -1080,6 +1129,7 @@ const G = window.G = {};
     }
   };
   function update(dt) {
+    S.stats.time = (S.stats.time || 0) + dt;
     S.dayTime += dt / 300; if (S.dayTime >= 1) { S.dayTime -= 1; S.day++; UI.toast(`☀️ День ${S.day}`, 'info'); }
     const dl = World.updateSky(S.dayTime, V(P.pos.x, 0, P.pos.z), dt, time);
     Sound.setNight(dl < 0.2);
@@ -1114,12 +1164,15 @@ const G = window.G = {};
   };
   G.player = () => P;
   G.core = () => B.find(b => b.t === 'core');
+  G.boss = () => E.find(e => e.d.boss && !e.dying) || null;
+  G.dayClock = () => { const t = S.dayTime, night = t >= 0.5; return { night, left: Math.ceil(((night ? 1 : 0.5) - t) * 300) }; };
   G.enemiesLeft = () => E.filter(e => !e.dying && !e.flee).length + (S.spawnList ? S.spawnList.length : 0);
 
   // ---------------- Конец игры ----------------
   function gameOver() {
     G.state = 'over'; Sound.play('lose'); Sound.setMode('calm');
-    UI.gameOver({ wave: S.wave, kills: S.stats.kills, day: S.day });
+    G.deleteSave(); // поражение: прохождение начинается заново
+    UI.gameOver(Object.assign({ wave: S.wave, day: S.day, hero: S.hero, diff: S.diff, seed: S.seed, biome: World.biome.name }, S.stats));
   }
 
   // ---------------- Выбор героя ----------------
@@ -1179,9 +1232,12 @@ const G = window.G = {};
     try { data = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) { data = null; }
     if (!data) return false;
     clearWorld();
+    if (!data.seed) data.seed = 20240611;
+    if (World.seed !== data.seed) World.generate(data.seed);
     S = data; const blds = data.buildings, birds = data.birds, nodes = data.nodes;
     delete S.buildings; delete S.birds; delete S.nodes;
     if (!S.diff) S.diff = 'normal';
+    S.stats = Object.assign({ wood: 0, stone: 0, iron: 0, coal: 0, food: 0, coins: 0, kills: 0, bosses: 0, built: 0, boughtBirds: 0, time: 0 }, S.stats);
     S.res = Object.assign({ wood: 0, stone: 0, iron: 0, coal: 0, food: 0, coins: 0 }, S.res);
     S.waveActive = false;
     blds.filter(b => !b.w).forEach(b => addBuilding(b.t, b.x, b.z, b.r, b.l, b.hp, null, b.id));

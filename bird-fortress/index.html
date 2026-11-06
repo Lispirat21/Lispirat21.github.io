@@ -191,6 +191,28 @@ select { font-size:14px; padding:6px; border-radius:8px; }
   .slot { width:52px; }
 }
 
+#crosshair { position:absolute; left:50%; top:50%; width:8px; height:8px; margin:-4px; border-radius:50%; background:#fff; box-shadow:0 0 0 2px #0008; display:none; }
+body.fp #crosshair { display:block; }
+.seedrow { display:flex; align-items:center; gap:6px; margin-top:8px; flex-wrap:wrap; }
+.seedrow input { width:120px; font-size:16px; padding:5px 8px; border-radius:8px; border:2px solid #c8a060; background:#fff; color:#3a2a14; font-family:inherit; user-select:text; -webkit-user-select:text; }
+.seedrow .biome { font-size:12px; font-weight:800; color:#2a6a2a; }
+#over .results { width:min(94vw,640px); max-height:92vh; overflow-y:auto; padding:14px 16px; text-align:center; touch-action:pan-y; }
+#over .results h1 { color:#c0301a; font-size:clamp(26px,6vw,40px); margin:0 0 4px; text-shadow:none; }
+.rsub { font-size:13px; opacity:.85; margin-bottom:10px; }
+.rgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:5px; text-align:left; }
+#over-menu { position:sticky; bottom:0; width:min(80vw,320px); }
+@media (max-height:430px) { #over .results { padding:8px 12px; } #over .results h1 { font-size:24px; } .rs { padding:3px 6px; font-size:12px; } .rs .ri { font-size:16px; } .rs b { font-size:14px; } .rnote { margin:6px 0; } .rsub { margin-bottom:6px; } }
+.rs { display:flex; align-items:center; gap:8px; background:#fff; border:2px solid #e0c890; border-radius:10px; padding:6px 8px; font-size:13px; }
+.rs .ri { font-size:20px; width:24px; text-align:center; } .rs .rl { flex:1; } .rs b { font-size:16px; color:#6a3a10; font-variant-numeric:tabular-nums; }
+.rnote { margin:10px 0; font-size:12px; color:#a04020; }
+.stb { display:flex; align-items:center; gap:4px; font-size:11px; margin-top:-2px; }
+.stbar { flex:1; height:6px; background:#0008; border-radius:3px; overflow:hidden; border:1px solid #fff6; }
+.stbar i { display:block; height:100%; width:100%; background:linear-gradient(90deg,#ffd24a,#ffe98a); }
+.stbar i.tired { background:#e0703a; }
+#btn-run.on { background:radial-gradient(circle at 40% 35%,#ffe066,#d89a10); border-color:#fff; }
+#daytxt small { font-size:10px; font-weight:700; opacity:.9; }
+#bossbar { margin:4px auto 0; width:90%; background:#3a0a0acc; border:2px solid #ff6a4a; border-radius:10px; padding:2px 8px 4px; font-size:12px; font-weight:900; }
+#bossbar .bb { height:8px; background:#0008; border-radius:4px; overflow:hidden; margin-top:2px; } #bossbar .bb i { display:block; height:100%; background:linear-gradient(90deg,#ff3a2a,#ff9a4a); }
 /* ---------- масштаб интерфейса (только GUI, мир не меняется) ---------- */
 :root { --ui: 1; }
 .rico { width:1.05em; height:1.05em; display:inline-block; vertical-align:-0.18em; }
@@ -217,7 +239,7 @@ select { font-size:14px; padding:6px; border-radius:8px; }
 #selNav { pointer-events:none; } #selNav > * { pointer-events:auto; }
 #heroCard .stats { display:grid; grid-template-columns:1fr 1fr; column-gap:10px; }
 #heroCard .stat b { width:66px; }
-@media (max-height:430px) { #heroCard { padding:8px 10px; width:min(50vw,390px); } #heroCard > p, #heroCard .ddesc { display:none; } .seg.diff { flex-wrap:nowrap; gap:3px; } .seg.diff button { padding:5px 4px; font-size:11px; white-space:nowrap; } #heroCard h3 { font-size:17px; } #heroCard p { font-size:12px; margin:2px 0; } #heroCard .stat { margin:1px 0; font-size:12px; } #heroCard .perk { font-size:12px; padding:4px 6px; margin-top:4px; } #dragHint { display:none; } }
+@media (max-height:430px) { #heroCard { padding:8px 10px; width:min(50vw,390px); } #heroCard > p, #heroCard .ddesc, #heroCard .perk { display:none; } .seedrow { margin-top:5px; } .seedrow input { width:100px; padding:3px 6px; } .seg.diff { flex-wrap:nowrap; gap:3px; } .seg.diff button { padding:5px 4px; font-size:11px; white-space:nowrap; } #heroCard h3 { font-size:17px; } #heroCard p { font-size:12px; margin:2px 0; } #heroCard .stat { margin:1px 0; font-size:12px; } #heroCard .perk { font-size:12px; padding:4px 6px; margin-top:4px; } #dragHint { display:none; } }
 #selNav { transform:scale(var(--ui)); transform-origin:bottom center; }
 #selTitle { transform:scale(var(--ui)); transform-origin:top center; }
 @media (max-height:430px) {
@@ -266,6 +288,7 @@ select { font-size:14px; padding:6px; border-radius:8px; }
       <button data-v="low">Низкая</button><button data-v="medium">Средняя</button><button data-v="high">Высокая</button><button data-v="ultra">Ультра</button></div></div>
     <div class="row"><label>Разрешение</label><select id="s-res">
       <option value="auto">Авто (экран)</option><option value="480">854×480</option><option value="540">960×540</option><option value="720">1280×720</option><option value="900">1600×900</option><option value="1080">1920×1080</option><option value="1440">2560×1440</option></select></div>
+    <div class="row"><label>Вид камеры</label><div class="seg" id="s-view"><button data-v="third">🎥 От 3-го лица</button><button data-v="first">👁 От 1-го лица</button></div></div>
     <div class="row"><label>Размер интерфейса <span id="s-uiScaleV"></span></label><input type="range" id="s-uiScale" min="60" max="150" step="5"></div>
     <div class="row"><label>Музыка</label><button class="tog" id="s-musicOn"></button></div>
     <div class="row"><label>Громкость музыки</label><input type="range" id="s-musicVol" min="0" max="100"></div>
@@ -298,20 +321,24 @@ select { font-size:14px; padding:6px; border-radius:8px; }
       <div class="lbl">🪺 ВЕЛИКОЕ ГНЕЗДО — здоровье базы</div>
       <div class="hpbar"><i id="basehp"></i><span id="basehptxt"></span></div>
       <div id="waveinfo"></div>
+      <div id="bossbar" class="hidden"><span id="bossname"></span><div class="bb"><i id="bosshp"></i></div></div>
     </div>
-    <div id="topright"><span id="daytxt"></span><button class="sq" id="btn-pause">⏸</button></div>
+    <div id="topright"><span id="daytxt"></span><button class="sq" id="btn-view" title="Вид: 1-е / 3-е лицо (V)">👁</button><button class="sq" id="btn-pause">⏸</button></div>
   </div>
   <div id="leftinfo">
     <div class="phb">❤️<div class="hpbar"><i id="php"></i><span id="phptxt"></span></div></div>
+    <div class="stb" title="Выносливость"><span>⚡</span><div class="stbar"><i id="pst"></i></div></div>
     <div id="quest"></div>
     <div id="birdcount"></div>
   </div>
   <div id="compass" class="hidden">➤</div>
+  <div id="crosshair"></div>
   <button id="btn-wave">⏩ Волна сейчас</button>
   <div id="prompt"></div>
   <div id="stickL" class="stick"><div class="lbl">ДВИЖЕНИЕ</div><div class="knob"></div></div>
   <div id="stickR" class="stick"><div class="lbl">КАМЕРА</div><div class="knob"></div></div>
   <div id="actions">
+    <button class="round" id="btn-run" title="Shift — бег">🏃</button>
     <button class="round" id="btn-use" title="E">✋</button>
     <button class="round bigr" id="btn-act" title="Пробел">🪓</button>
   </div>
@@ -352,12 +379,10 @@ select { font-size:14px; padding:6px; border-radius:8px; }
 </div>
 
 <div id="over" class="screen hidden">
-  <h1>База разрушена!</h1>
-  <div id="overtxt" style="margin-bottom:16px;font-size:18px;text-align:center"></div>
-  <div class="menu-col">
-    <button class="big blue" id="over-load">💾 ЗАГРУЗИТЬ СОХРАНЕНИЕ</button>
-    <button class="big" id="over-new">🌱 НОВАЯ ИГРА</button>
-    <button class="big gray" id="over-menu">🏠 ГЛАВНОЕ МЕНЮ</button>
+  <div class="card results">
+    <h1>🪺 База разрушена!</h1>
+    <div id="overtxt"></div>
+    <button class="big" id="over-menu">🏠 ГЛАВНОЕ МЕНЮ</button>
   </div>
 </div>
 
