@@ -21,6 +21,12 @@ const UI = window.UI = {};
     return e;
   }
   function tap(el, fn) { el.addEventListener('click', e => { e.stopPropagation(); Sound.init(); Sound.play('click'); fn(e); }); }
+  // Кнопки игрового HUD срабатывают в момент касания (pointerdown), а не по click:
+  // на телефоне второй палец (пока первый держит стик) не порождает click.
+  function press(el, fn) {
+    el.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); Sound.init(); Sound.play('click'); fn(e); });
+    el.addEventListener('click', e => { if (e.detail !== 0) { e.preventDefault(); e.stopPropagation(); } else { fn(e); } }); // клавиатура (Enter) — detail 0
+  }
   const screens = ['loading', 'menu', 'settings', 'select', 'hud', 'pause', 'over', 'bye'];
   function show(...ids) { screens.forEach(s => $(s).classList.toggle('hidden', !ids.includes(s))); }
 
@@ -160,7 +166,7 @@ const UI = window.UI = {};
   function openPause() { if (G.state !== 'play') return; G.paused = true; $('pause').classList.remove('hidden'); Sound.setMode('menu'); }
   function closePause() { $('pause').classList.add('hidden'); G.paused = modalOpen(); Sound.setMode(G.S().waveActive ? 'battle' : 'calm'); }
   tap($('btn-pause'), openPause);
-  tap($('btn-view'), () => { setView(G.settings.view === 'first' ? 'third' : 'first'); toast(G.settings.view === 'first' ? '👁 Вид от первого лица' : '🎥 Вид от третьего лица', 'info'); });
+  press($('btn-view'), () => { setView(G.settings.view === 'first' ? 'third' : 'first'); toast(G.settings.view === 'first' ? '👁 Вид от первого лица' : '🎥 Вид от третьего лица', 'info'); });
   document.querySelectorAll('#pause [data-p]').forEach(b => tap(b, () => {
     const a = b.dataset.p;
     if (a === 'resume') closePause();
@@ -514,19 +520,19 @@ const UI = window.UI = {};
   UI.openBirds = openBirds;
 
   // ---------------- Кнопки HUD ----------------
-  document.querySelectorAll('.slot').forEach(s => tap(s, () => {
+  document.querySelectorAll('.slot').forEach(s => press(s, () => {
     const k = s.dataset.slot;
     if (k === 'axe' || k === 'pick') G.selectTool(k);
     if (k === 'build') openBuildMenu();
     if (k === 'inv') openInventory();
     if (k === 'birds') openBirds();
   }));
-  tap($('btn-use'), () => openBuildingPanel(G.interactTarget()));
-  tap($('btn-run'), () => { const P = G.player(); if (P && P.tired) { toast('Нет сил бежать — восстановите выносливость', 'warn'); return; } G.input.run = !G.input.run; });
+  press($('btn-use'), () => openBuildingPanel(G.interactTarget()));
+  press($('btn-run'), () => { const P = G.player(); if (P && P.tired) { toast('Нет сил бежать — восстановите выносливость', 'warn'); return; } G.input.run = !G.input.run; });
   tap($('btn-wave'), () => { G.startWaveNow(); toast('Звери идут раньше! +25% награды', 'warn'); });
-  tap($('bb-rot'), () => G.rotateBuild());
-  tap($('bb-place'), () => G.placeBuild());
-  tap($('bb-cancel'), () => G.cancelBuild());
+  press($('bb-rot'), () => G.rotateBuild());
+  press($('bb-place'), () => G.placeBuild());
+  press($('bb-cancel'), () => G.cancelBuild());
   const act = $('btn-act');
   const actOn = e => { e.preventDefault(); e.stopPropagation(); Sound.init(); G.input.action = true; };
   const actOff = e => { e.preventDefault(); G.input.action = false; };
