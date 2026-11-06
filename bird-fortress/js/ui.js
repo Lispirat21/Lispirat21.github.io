@@ -44,7 +44,7 @@ const UI = window.UI = {};
   }
   window.addEventListener('load', boot);
   window.addEventListener('resize', () => { G.resize(); placeIdleSticks(); });
-  document.addEventListener('pointerdown', () => Sound.init(), { capture: true });
+  ['pointerdown', 'touchend', 'click', 'keydown'].forEach(ev => document.addEventListener(ev, () => Sound.init(), { capture: true }));
 
   // ---------------- Главное меню ----------------
   let settingsFrom = 'menu';
@@ -91,7 +91,7 @@ const UI = window.UI = {};
   function toggleFullscreen() {
     const d = document, el = d.documentElement;
     if (d.fullscreenElement || d.webkitFullscreenElement) (d.exitFullscreen || d.webkitExitFullscreen).call(d);
-    else { const r = el.requestFullscreen || el.webkitRequestFullscreen; if (r) r.call(el).catch?.(() => { }); else toast('Полный экран не поддерживается этим браузером', 'warn'); }
+    else { const r = el.requestFullscreen || el.webkitRequestFullscreen; if (r) { const pr = r.call(el); if (pr && pr.catch) pr.catch(() => { }); } else toast('Полный экран не поддерживается этим браузером', 'warn'); }
   }
   function goFullscreenMobile() {
     if (!isTouch) return;
