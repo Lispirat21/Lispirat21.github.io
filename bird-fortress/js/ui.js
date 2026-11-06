@@ -56,7 +56,8 @@ const UI = window.UI = {};
     if (a === 'exit') exitGame();
     if (a === 'continue') { if (G.load()) enterGame(); }
     if (a === 'new') {
-      if (G.hasSave() && !confirm('Начать новую игру? Текущее сохранение будет заменено.')) return;
+      if (G.hasSave() && !b.dataset.armed) { b.dataset.armed = '1'; b.innerHTML = '⚠️ ЕЩЁ РАЗ — НАЧАТЬ ЗАНОВО<small>текущее сохранение будет заменено</small>'; setTimeout(() => { delete b.dataset.armed; b.textContent = '🌱 НОВАЯ ИГРА'; }, 4000); return; }
+      delete b.dataset.armed; b.textContent = '🌱 НОВАЯ ИГРА';
       openSelect();
     }
   }));
