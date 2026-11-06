@@ -44,7 +44,7 @@ const UI = window.UI = {};
   }
   window.addEventListener('load', boot);
   window.addEventListener('resize', () => { G.resize(); placeIdleSticks(); });
-  ['pointerdown', 'touchend', 'click', 'keydown'].forEach(ev => document.addEventListener(ev, () => Sound.init(), { capture: true }));
+  ['pointerdown', 'pointerup', 'touchstart', 'touchend', 'mousedown', 'click', 'keydown'].forEach(ev => document.addEventListener(ev, () => Sound.init(), { capture: true, passive: true }));
 
   // ---------------- Главное меню ----------------
   let settingsFrom = 'menu';

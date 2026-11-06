@@ -6,12 +6,37 @@ const Sound = (() => {
   let mode = 'menu', nextTime = 0, step = 0, chordIdx = 0, timer = null;
   let lastSfx = {};
 
+  // Тихий WAV: проигрывание <audio> переводит iPhone в режим "воспроизведение",
+  // чтобы звук игры был слышен даже при включённом беззвучном переключателе.
+  let unlockEl = null;
+  function silentWav() {
+    const n = 800, b = new Uint8Array(44 + n), v = new DataView(b.buffer);
+    const w = (o, str) => { for (let i = 0; i < str.length; i++) b[o + i] = str.charCodeAt(i); };
+    w(0, 'RIFF'); v.setUint32(4, 36 + n, true); w(8, 'WAVE'); w(12, 'fmt '); v.setUint32(16, 16, true);
+    v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, 8000, true); v.setUint32(28, 8000, true);
+    v.setUint16(32, 1, true); v.setUint16(34, 8, true); w(36, 'data'); v.setUint32(40, n, true); b.fill(128, 44);
+    let bin = ''; b.forEach(x => bin += String.fromCharCode(x));
+    return 'data:audio/wav;base64,' + btoa(bin);
+  }
+  function unlock() {
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) { }
+    try {
+      if (!unlockEl) { unlockEl = document.createElement('audio'); unlockEl.src = silentWav(); unlockEl.loop = true; unlockEl.setAttribute('playsinline', ''); unlockEl.volume = 0.01; }
+      const p = unlockEl.play(); if (p && p.catch) p.catch(() => { });
+    } catch (e) { }
+    if (!ctx) return;
+    if (ctx.state !== 'running') { const p = ctx.resume(); if (p && p.catch) p.catch(() => { }); }
+    // короткий пустой буфер внутри жеста — классический способ разблокировки WebAudio на iOS
+    try { const src = ctx.createBufferSource(); src.buffer = ctx.createBuffer(1, 1, 22050); src.connect(ctx.destination); src.start(0); } catch (e) { }
+  }
   function init() {
-    if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return; }
+    if (ctx) { unlock(); return; }
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
-    ctx = new AC();
-    master = ctx.createGain(); master.connect(ctx.destination);
+    try { ctx = new AC({ latencyHint: 'interactive' }); } catch (e) { ctx = new AC(); }
+    master = ctx.createGain();
+    const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -10; comp.knee.value = 6; comp.ratio.value = 8;
+    master.connect(comp); comp.connect(ctx.destination); master.gain.value = 1.6;
     musicGain = ctx.createGain(); musicGain.connect(master);
     sfxGain = ctx.createGain(); sfxGain.connect(master);
     ambGain = ctx.createGain(); ambGain.connect(sfxGain);
@@ -22,11 +47,14 @@ const Sound = (() => {
     nextTime = ctx.currentTime + 0.1;
     timer = setInterval(scheduler, 60);
     startWind();
+    unlock();
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && ctx && ctx.state !== 'running') { const p = ctx.resume(); if (p && p.catch) p.catch(() => { }); } });
   }
+  const state = () => ctx ? ctx.state : 'none';
   function apply() {
     if (!ctx) return;
-    musicGain.gain.value = cfg.musicOn ? cfg.musicVol * 0.32 : 0;
-    sfxGain.gain.value = cfg.sfxOn ? cfg.sfxVol * 0.9 : 0;
+    musicGain.gain.value = cfg.musicOn ? cfg.musicVol * 0.55 : 0;
+    sfxGain.gain.value = cfg.sfxOn ? cfg.sfxVol * 1.2 : 0;
   }
   function set(o) { Object.assign(cfg, o); apply(); }
   function setMode(m) { if (m !== mode) { mode = m; step = 0; } }
@@ -51,6 +79,7 @@ const Sound = (() => {
     if (!ctx || ctx.state !== 'running') return;
     const battle = mode === 'battle';
     const stepDur = battle ? 0.17 : (mode === 'menu' ? 0.32 : 0.28);
+    if (nextTime < ctx.currentTime) nextTime = ctx.currentTime + 0.05; // после паузы не играть «накопившиеся» ноты разом
     while (nextTime < ctx.currentTime + 0.35) {
       playStep(step, nextTime, stepDur, battle);
       nextTime += stepDur; step++;
@@ -183,5 +212,5 @@ const Sound = (() => {
       case 'lose': [392, 349, 311, 262].forEach((f, i) => tone(f, t + i * 0.25, 0.5, 'triangle', 0.14, sfxGain)); break;
     }
   }
-  return { init, set, cfg, setMode, play, setNight, chirp };
+  return { init, set, cfg, setMode, play, setNight, chirp, state };
 })();
