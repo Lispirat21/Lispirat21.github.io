@@ -1,0 +1,9 @@
+{
+  "name": "Птичья Крепость",
+  "short_name": "Птичья Крепость",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#0e1a10",
+  "theme_color": "#1d3a24"
+}

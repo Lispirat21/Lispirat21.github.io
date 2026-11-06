@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1d3a24">
+<title>Птичья Крепость</title>
+<link rel="manifest" href="manifest.json">
+<style>
+:root { --gold:#ffd24a; --green:#4caf50; --dark:rgba(18,28,20,.86); --panel:#f6ecd4; --wood:#8a5a2a; --red:#e04a3a; }
+* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { margin:0; height:100%; overflow:hidden; background:#000; font-family:'Trebuchet MS','Segoe UI',Roboto,Arial,sans-serif; color:#fff;
+  user-select:none; -webkit-user-select:none; touch-action:none; overscroll-behavior:none; }
+canvas#c { position:fixed; inset:0; width:100vw; height:100vh; height:100dvh; display:block; }
+.hidden { display:none !important; }
+button { font-family:inherit; cursor:pointer; touch-action:manipulation; }
+.screen { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:20; padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+
+/* ---------- загрузка ---------- */
+#loading { background:radial-gradient(circle at 50% 40%,#2e5a34,#0e1a10); z-index:50; }
+#loading .logo { font-size:clamp(28px,7vw,54px); font-weight:900; color:var(--gold); text-shadow:0 4px 0 #6a3a10, 0 8px 20px #000; margin-bottom:24px; }
+.lbar { width:min(70vw,420px); height:16px; background:#0006; border-radius:10px; overflow:hidden; border:2px solid #fff4; }
+.lbar i { display:block; height:100%; width:0; background:linear-gradient(90deg,#8ad04a,#ffd24a); transition:width .2s; }
+#loadtxt { margin-top:10px; opacity:.8; font-size:14px; }
+
+/* ---------- главное меню ---------- */
+#menu { background:linear-gradient(90deg,rgba(0,0,0,.55),rgba(0,0,0,0) 60%); align-items:flex-start; padding-left:max(6vw,env(safe-area-inset-left)); }
+.title { margin:0; font-size:clamp(34px,8vw,76px); line-height:.95; font-weight:900; color:var(--gold); letter-spacing:1px;
+  text-shadow:0 3px 0 #7a4512,0 6px 0 #4a2a0a,0 10px 24px rgba(0,0,0,.6); }
+.sub { margin:8px 0 18px; font-size:clamp(13px,2.4vw,18px); opacity:.9; text-shadow:0 2px 4px #000; }
+.menu-col { display:flex; flex-direction:column; gap:12px; width:min(78vw,340px); }
+.big { font-size:clamp(17px,3.4vw,24px); font-weight:900; letter-spacing:1px; color:#fff; padding:14px 18px; border:none; border-radius:14px;
+  background:linear-gradient(#6cc04a,#3a8a2a); box-shadow:0 5px 0 #24561a,0 8px 18px rgba(0,0,0,.4); text-shadow:0 2px 0 #24561a; transition:transform .08s; }
+.big:active { transform:translateY(4px); box-shadow:0 1px 0 #24561a; }
+.big.blue { background:linear-gradient(#4aa8e0,#2a6ab0); box-shadow:0 5px 0 #1a3a6a,0 8px 18px rgba(0,0,0,.4); text-shadow:0 2px 0 #1a3a6a; }
+.big.red { background:linear-gradient(#e86a4a,#b03a2a); box-shadow:0 5px 0 #6a1a10,0 8px 18px rgba(0,0,0,.4); text-shadow:0 2px 0 #6a1a10; }
+.big.gray { background:linear-gradient(#9a9a9a,#666); box-shadow:0 5px 0 #333,0 8px 18px rgba(0,0,0,.4); text-shadow:0 2px 0 #333; }
+.big:disabled { filter:grayscale(1) brightness(.7); }
+.big small { display:block; font-size:12px; font-weight:400; opacity:.9; letter-spacing:0; }
+.ver { position:fixed; right:12px; bottom:8px; font-size:11px; opacity:.6; }
+
+/* ---------- панели ---------- */
+.card { background:var(--panel); color:#3a2a14; border-radius:18px; border:4px solid #c8a060; box-shadow:0 10px 40px rgba(0,0,0,.6); }
+#settings .card { width:min(94vw,560px); max-height:92vh; overflow:auto; padding:16px 18px; touch-action:pan-y; }
+.card h2 { margin:0 0 10px; text-align:center; color:#6a3a10; font-size:24px; }
+.row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px dashed #c8a06088; flex-wrap:wrap; }
+.row label { font-weight:700; }
+.seg { display:flex; gap:4px; flex-wrap:wrap; }
+.seg button { border:none; border-radius:8px; padding:8px 10px; background:#d8c49a; color:#4a3014; font-weight:700; font-size:13px; }
+.seg button.on { background:#4caf50; color:#fff; }
+input[type=range] { width:min(46vw,220px); accent-color:#4caf50; touch-action:pan-x; }
+select { font-size:14px; padding:6px; border-radius:8px; }
+.tog { width:56px; height:30px; border-radius:15px; border:none; background:#aaa; position:relative; }
+.tog::after { content:''; position:absolute; top:3px; left:3px; width:24px; height:24px; border-radius:50%; background:#fff; transition:left .15s; }
+.tog.on { background:#4caf50; } .tog.on::after { left:29px; }
+
+/* ---------- выбор героя ---------- */
+#select { background:none; justify-content:flex-end; align-items:stretch; pointer-events:none; }
+#select > * { pointer-events:auto; }
+#selTitle { position:fixed; top:max(10px,env(safe-area-inset-top)); left:0; right:0; text-align:center; font-size:clamp(22px,4.5vw,36px); font-weight:900; color:var(--gold); text-shadow:0 3px 0 #6a3a10,0 6px 12px #000; pointer-events:none; }
+#heroCard { position:fixed; left:max(14px,env(safe-area-inset-left)); top:50%; transform:translateY(-50%); width:min(42vw,320px); padding:14px; }
+#heroCard h3 { margin:0 0 4px; font-size:22px; color:#6a3a10; }
+#heroCard p { margin:4px 0; font-size:14px; }
+.stat { display:flex; align-items:center; gap:8px; font-size:13px; margin:4px 0; }
+.stat b { width:84px; } .stat .sb { flex:1; height:9px; background:#0002; border-radius:5px; overflow:hidden; } .stat .sb i { display:block; height:100%; background:#4caf50; }
+.perk { background:#fff8; border-radius:8px; padding:6px 8px; font-size:13px; margin-top:6px; border-left:4px solid #e0a020; }
+#selNav { position:fixed; bottom:max(14px,env(safe-area-inset-bottom)); left:0; right:0; display:flex; justify-content:center; align-items:center; gap:12px; }
+.arrow { width:60px; height:60px; border-radius:50%; border:none; font-size:28px; font-weight:900; color:#fff; background:linear-gradient(#e0a020,#a86a10); box-shadow:0 4px 0 #6a3a08; }
+#dragHint { position:fixed; bottom:96px; left:0; right:0; text-align:center; font-size:13px; opacity:.8; pointer-events:none; text-shadow:0 1px 3px #000; }
+@media (orientation:portrait) { #heroCard { top:auto; bottom:150px; left:50%; transform:translateX(-50%); width:min(92vw,420px); } }
+
+/* ---------- HUD ---------- */
+#hud { position:fixed; inset:0; z-index:10; pointer-events:none; }
+#hud button, #hud .slot { pointer-events:auto; }
+#touch { position:fixed; inset:0; z-index:9; touch-action:none; }
+#topbar { position:absolute; top:max(6px,env(safe-area-inset-top)); left:max(6px,env(safe-area-inset-left)); right:max(6px,env(safe-area-inset-right)); display:flex; justify-content:space-between; align-items:flex-start; gap:6px; }
+#res { display:flex; flex-wrap:wrap; gap:4px; max-width:34vw; }
+.chip { background:var(--dark); border-radius:16px; padding:3px 9px 3px 5px; font-weight:800; font-size:14px; display:flex; align-items:center; gap:3px; border:2px solid #ffffff22; min-width:58px; }
+.chip .ic { font-size:15px; } .chip.full { color:#ffb070; } .chip.coins { color:var(--gold); border-color:#ffd24a66; }
+#basebox { flex:1; max-width:440px; text-align:center; }
+#basebox .lbl { font-size:12px; font-weight:800; text-shadow:0 1px 3px #000; }
+.hpbar { position:relative; height:20px; background:#0009; border:2px solid #fff; border-radius:10px; overflow:hidden; box-shadow:0 3px 8px #0006; }
+.hpbar i { display:block; height:100%; width:100%; background:linear-gradient(#7ee05a,#2e9a2a); transition:width .25s; }
+.hpbar i.mid { background:linear-gradient(#ffd24a,#d89a10); } .hpbar i.low { background:linear-gradient(#ff7a5a,#c02a1a); }
+.hpbar span { position:absolute; inset:0; font-size:12px; font-weight:900; line-height:16px; text-shadow:0 1px 2px #000; }
+#waveinfo { margin-top:3px; display:inline-block; background:var(--dark); border-radius:10px; padding:2px 10px; font-size:13px; font-weight:800; }
+#waveinfo.alarm { background:#b02a1aee; animation:pulse 1s infinite; }
+@keyframes pulse { 50% { transform:scale(1.06); } }
+#topright { display:flex; gap:6px; align-items:center; }
+#daytxt { background:var(--dark); border-radius:12px; padding:4px 8px; font-size:13px; font-weight:800; }
+.sq { width:44px; height:44px; border-radius:12px; border:2px solid #fff6; background:var(--dark); font-size:20px; color:#fff; }
+#leftinfo { position:absolute; left:max(8px,env(safe-area-inset-left)); top:calc(max(6px,env(safe-area-inset-top)) + 64px); width:min(34vw,240px); display:flex; flex-direction:column; gap:5px; }
+.phb { display:flex; align-items:center; gap:4px; font-size:14px; } .phb .hpbar { flex:1; height:14px; } .phb .hpbar span { line-height:11px; font-size:10px; }
+#quest { background:var(--dark); border-radius:10px; padding:5px 8px; font-size:12px; border-left:4px solid var(--gold); }
+#quest b { color:var(--gold); }
+#birdcount { background:var(--dark); border-radius:10px; padding:3px 8px; font-size:12px; align-self:flex-start; }
+#compass { position:absolute; top:42%; left:50%; width:44px; height:44px; margin:-22px; font-size:34px; color:var(--gold); text-shadow:0 0 6px #000; display:flex; align-items:center; justify-content:center; }
+#btn-wave { position:absolute; right:max(8px,env(safe-area-inset-right)); top:calc(max(6px,env(safe-area-inset-top)) + 54px); border:none; border-radius:12px; padding:8px 10px; font-weight:800; font-size:12px; color:#fff; background:linear-gradient(#e08a2a,#a85a10); box-shadow:0 3px 0 #6a3a08; }
+#prompt { position:absolute; left:50%; bottom:calc(max(10px,env(safe-area-inset-bottom)) + 84px); transform:translateX(-50%); }
+#prompt button { border:none; border-radius:14px; padding:10px 16px; font-size:15px; font-weight:800; color:#3a2a14; background:linear-gradient(#fff3c8,#f0c860); box-shadow:0 4px 0 #a07020,0 6px 14px #0006; white-space:nowrap; }
+#toolbar { position:absolute; left:50%; transform:translateX(-50%); bottom:max(8px,env(safe-area-inset-bottom)); display:flex; gap:6px; background:#0007; padding:5px; border-radius:16px; }
+.slot { width:58px; height:62px; border-radius:12px; border:2px solid #ffffff33; background:linear-gradient(#3a4a3a,#1e2a1e); color:#fff; font-size:26px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0; }
+.slot small { font-size:10px; font-weight:700; opacity:.9; margin-top:1px; }
+.slot.on { border-color:var(--gold); box-shadow:0 0 0 2px var(--gold) inset; }
+.slot.locked { opacity:.45; }
+.stick { position:absolute; width:130px; height:130px; margin:-65px; border-radius:50%; background:radial-gradient(circle,#ffffff22,#ffffff0a); border:3px solid #ffffff55; pointer-events:none; opacity:.55; transition:opacity .15s; }
+.stick.active { opacity:1; }
+.stick .knob { position:absolute; left:50%; top:50%; width:58px; height:58px; margin:-29px; border-radius:50%; background:radial-gradient(circle at 35% 35%,#fff,#bbb); box-shadow:0 3px 8px #0008; }
+.stick .lbl { position:absolute; top:-20px; width:100%; text-align:center; font-size:11px; font-weight:700; opacity:.85; text-shadow:0 1px 2px #000; }
+#actions { position:absolute; right:max(14px,env(safe-area-inset-right)); bottom:calc(max(10px,env(safe-area-inset-bottom)) + 76px); display:flex; flex-direction:column; align-items:flex-end; gap:10px; }
+.round { width:64px; height:64px; border-radius:50%; border:3px solid #fff8; font-size:28px; color:#fff; background:radial-gradient(circle at 40% 35%,#6a8a6a,#253525); box-shadow:0 4px 10px #0008; }
+.round.bigr { width:84px; height:84px; font-size:38px; background:radial-gradient(circle at 40% 35%,#ff9a5a,#b04a1a); }
+.round:active { transform:scale(.92); }
+#buildbar { position:absolute; left:50%; transform:translateX(-50%); bottom:calc(max(8px,env(safe-area-inset-bottom)) + 76px); display:flex; gap:8px; align-items:center; background:var(--dark); padding:8px; border-radius:16px; border:2px solid var(--gold); }
+#buildbar button { border:none; border-radius:12px; padding:10px 12px; font-weight:800; font-size:14px; color:#fff; }
+#bb-place { background:linear-gradient(#6cc04a,#3a8a2a); } #bb-rot { background:linear-gradient(#4aa8e0,#2a6ab0); } #bb-cancel { background:linear-gradient(#e86a4a,#b03a2a); }
+#bb-info { font-size:12px; max-width:150px; line-height:1.25; }
+#bb-info .bad { color:#ff8a7a; }
+#bars { position:fixed; inset:0; pointer-events:none; z-index:8; }
+.wbar { position:absolute; width:44px; height:6px; margin-left:-22px; background:#000a; border-radius:3px; overflow:hidden; border:1px solid #0008; }
+.wbar i { display:block; height:100%; }
+#floats { position:fixed; inset:0; pointer-events:none; z-index:12; }
+.ft { position:absolute; font-weight:900; font-size:18px; text-shadow:0 2px 0 #000,0 0 6px #000; white-space:nowrap; transform:translate(-50%,-50%); }
+#toasts { position:fixed; top:calc(max(6px,env(safe-area-inset-top)) + 84px); left:50%; transform:translateX(-50%); z-index:30; display:flex; flex-direction:column; align-items:center; gap:5px; pointer-events:none; width:min(40vw,460px); }
+@media (orientation:portrait) { #toasts { width:92vw; top:auto; bottom:170px; } }
+.toast { background:var(--dark); border-radius:12px; padding:6px 12px; font-weight:700; font-size:13px; border-left:5px solid #8ab4f8; animation:tin .25s; text-align:center; }
+.toast.good { border-color:#6ad04a; } .toast.bad { border-color:#ff5a4a; } .toast.warn { border-color:#ffc04a; }
+@keyframes tin { from { opacity:0; transform:translateY(-10px); } }
+#banner { position:fixed; top:34%; left:0; right:0; text-align:center; font-size:clamp(40px,10vw,86px); font-weight:900; color:#ff6a4a; text-shadow:0 4px 0 #5a1008,0 8px 24px #000; z-index:25; pointer-events:none; animation:ban 2.2s forwards; }
+@keyframes ban { 0% { transform:scale(2); opacity:0; } 15% { transform:scale(1); opacity:1; } 80% { opacity:1; } 100% { opacity:0; transform:scale(.9); } }
+#flash { position:fixed; inset:0; background:radial-gradient(circle,transparent 50%,rgba(255,0,0,.5)); opacity:0; pointer-events:none; z-index:11; transition:opacity .3s; }
+#saveic { position:fixed; right:12px; bottom:12px; font-size:20px; opacity:0; transition:opacity .4s; z-index:30; pointer-events:none; }
+
+/* ---------- модальные окна ---------- */
+#modal { position:fixed; inset:0; z-index:40; background:#0008; display:flex; align-items:center; justify-content:center; padding:max(8px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left)); }
+#modal .card { width:min(96vw,760px); max-height:94vh; display:flex; flex-direction:column; overflow:hidden; }
+.mhead { display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:linear-gradient(#c8904a,#a06a2a); color:#fff; font-weight:900; font-size:19px; text-shadow:0 2px 0 #5a3a10; }
+.mhead button { width:40px; height:40px; border-radius:10px; border:none; background:#e04a3a; color:#fff; font-size:20px; font-weight:900; box-shadow:0 3px 0 #7a1a10; }
+#mtabs { display:flex; gap:4px; padding:6px 8px 0; overflow-x:auto; flex-shrink:0; touch-action:pan-x; }
+#mtabs button { border:none; border-radius:10px 10px 0 0; padding:8px 10px; font-weight:800; font-size:13px; background:#d8c49a; color:#5a3a14; white-space:nowrap; }
+#mtabs button.on { background:#fffaf0; }
+#mbody { padding:10px; overflow-y:auto; background:#fffaf0; flex:1; touch-action:pan-y; -webkit-overflow-scrolling:touch; }
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; }
+.item { background:#fff; border:2px solid #e0c890; border-radius:12px; padding:8px; display:flex; flex-direction:column; gap:4px; color:#3a2a14; text-align:left; font-size:13px; }
+.item .nm { font-weight:900; font-size:14px; } .item .ico { font-size:28px; } .item .ds { font-size:11px; opacity:.8; flex:1; }
+.item.lock { opacity:.55; }
+.cost { font-weight:800; font-size:13px; } .cost .no { color:#d0301a; }
+.btn { border:none; border-radius:10px; padding:9px 12px; font-weight:800; font-size:14px; color:#fff; background:linear-gradient(#6cc04a,#3a8a2a); box-shadow:0 3px 0 #24561a; }
+.btn.blue { background:linear-gradient(#4aa8e0,#2a6ab0); box-shadow:0 3px 0 #1a3a6a; } .btn.red { background:linear-gradient(#e86a4a,#b03a2a); box-shadow:0 3px 0 #6a1a10; }
+.btn.gold { background:linear-gradient(#ffd24a,#d89a10); color:#4a2a08; box-shadow:0 3px 0 #8a5a08; }
+.btn:disabled { filter:grayscale(1); opacity:.6; }
+.sect { margin:6px 0 10px; } .sect h4 { margin:0 0 6px; color:#6a3a10; font-size:15px; }
+.binfo { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+.binfo .ico { font-size:44px; }
+.hpline { height:12px; background:#0002; border-radius:6px; overflow:hidden; width:200px; } .hpline i { display:block; height:100%; background:#4caf50; }
+.acts { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.bird-pic { width:84px; height:84px; border-radius:12px; background:radial-gradient(circle,#e8f4d8,#a8c890); object-fit:contain; align-self:center; }
+.bird-row { display:flex; gap:10px; align-items:center; background:#fff; border:2px solid #e0c890; border-radius:12px; padding:6px; margin-bottom:6px; color:#3a2a14; font-size:13px; flex-wrap:wrap; }
+.bird-row .bird-pic { width:56px; height:56px; }
+.bird-row .info { flex:1; min-width:120px; }
+.tag { display:inline-block; font-size:11px; padding:1px 6px; border-radius:6px; background:#e8d8b0; margin-left:4px; }
+.tag.g { background:#c8f0b0; } .tag.r { background:#ffd0c0; }
+
+/* ---------- пауза / конец ---------- */
+#pause, #over, #bye { background:rgba(0,0,0,.6); z-index:45; }
+#over h1 { color:#ff6a4a; font-size:clamp(32px,8vw,64px); margin:0 0 8px; text-shadow:0 4px 0 #5a1008; }
+#bye h1 { color:var(--gold); }
+#rotate { position:fixed; inset:0; z-index:60; background:#0e1a10f0; display:none; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px; gap:14px; font-size:18px; }
+#rotate .ph { font-size:64px; animation:rot 2s infinite; }
+@keyframes rot { 50% { transform:rotate(90deg); } }
+@media (orientation:portrait) and (pointer:coarse) { body.ask-rotate #rotate { display:flex; } }
+
+/* компактнее на маленьких экранах */
+@media (max-height:430px) {
+  .chip { font-size:12px; padding:2px 7px 2px 4px; min-width:50px; } .chip .ic { font-size:13px; }
+  .slot { width:50px; height:52px; font-size:22px; } .slot small { font-size:9px; }
+  .round { width:56px; height:56px; font-size:24px; } .round.bigr { width:74px; height:74px; font-size:32px; }
+  #leftinfo { top:calc(max(6px,env(safe-area-inset-top)) + 54px); }
+  #actions { bottom:calc(max(8px,env(safe-area-inset-bottom)) + 66px); }
+  #prompt { bottom:calc(max(8px,env(safe-area-inset-bottom)) + 70px); }
+  #buildbar { bottom:calc(max(8px,env(safe-area-inset-bottom)) + 66px); }
+  .big { padding:10px 16px; }
+  .menu-col { gap:9px; }
+}
+@media (orientation:portrait) {
+  #res { max-width:60vw; } #basebox { position:absolute; top:62px; left:0; right:0; margin:auto; max-width:80vw; }
+  #leftinfo { top:130px; }
+  .slot { width:52px; }
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="touch"></div>
+
+<div id="loading" class="screen">
+  <div class="logo">🪺 Птичья Крепость</div>
+  <div class="lbar"><i id="loadbar"></i></div>
+  <div id="loadtxt">Загрузка…</div>
+</div>
+
+<div id="menu" class="screen hidden">
+  <h1 class="title">Птичья<br>Крепость</h1>
+  <div class="sub">Построй крепость и защити птиц от зверей!</div>
+  <div class="menu-col" id="m-main">
+    <button class="big" data-act="play">▶ ИГРАТЬ</button>
+    <button class="big blue" data-act="settings">⚙ НАСТРОЙКИ</button>
+    <button class="big red" data-act="exit">✖ ВЫЙТИ ИЗ ИГРЫ</button>
+  </div>
+  <div class="menu-col hidden" id="m-play">
+    <button class="big" data-act="new">🌱 НОВАЯ ИГРА</button>
+    <button class="big blue" data-act="continue" id="btn-continue">💾 ПРОДОЛЖИТЬ<small id="saveinfo"></small></button>
+    <button class="big gray" data-act="back">◀ НАЗАД</button>
+  </div>
+  <div class="ver">v1.0 · управление: стики на телефоне или WASD + мышь</div>
+</div>
+
+<div id="settings" class="screen hidden" style="background:rgba(0,0,0,.55)">
+  <div class="card">
+    <h2>⚙ Настройки</h2>
+    <div class="row"><label>Графика</label><div class="seg" id="s-quality">
+      <button data-v="low">Низкая</button><button data-v="medium">Средняя</button><button data-v="high">Высокая</button><button data-v="ultra">Ультра</button></div></div>
+    <div class="row"><label>Разрешение</label><select id="s-res">
+      <option value="auto">Авто (экран)</option><option value="480">854×480</option><option value="540">960×540</option><option value="720">1280×720</option><option value="900">1600×900</option><option value="1080">1920×1080</option><option value="1440">2560×1440</option></select></div>
+    <div class="row"><label>Музыка</label><button class="tog" id="s-musicOn"></button></div>
+    <div class="row"><label>Громкость музыки</label><input type="range" id="s-musicVol" min="0" max="100"></div>
+    <div class="row"><label>Звуки</label><button class="tog" id="s-sfxOn"></button></div>
+    <div class="row"><label>Громкость звуков</label><input type="range" id="s-sfxVol" min="0" max="100"></div>
+    <div class="row"><label>Авто-добыча и атака</label><button class="tog" id="s-autoAct"></button></div>
+    <div class="row"><label>Дальность камеры</label><input type="range" id="s-camDist" min="60" max="160"></div>
+    <div class="row"><label>Чувствительность камеры</label><input type="range" id="s-sens" min="30" max="200"></div>
+    <div class="row"><label>Полный экран</label><button class="btn blue" id="s-full">⛶ Вкл/выкл</button></div>
+    <div style="text-align:center;margin-top:12px"><button class="big gray" id="s-back" style="width:220px">◀ НАЗАД</button></div>
+  </div>
+</div>
+
+<div id="select" class="screen hidden">
+  <div id="selTitle">Выберите героя</div>
+  <div id="heroCard" class="card"></div>
+  <div id="dragHint">👆 Проведите пальцем по экрану, чтобы вращать героя</div>
+  <div id="selNav">
+    <button class="big gray" id="sel-back" style="padding:12px 16px">◀</button>
+    <button class="arrow" id="sel-prev">‹</button>
+    <button class="big" id="sel-go">НАЧАТЬ ИГРУ</button>
+    <button class="arrow" id="sel-next">›</button>
+  </div>
+</div>
+
+<div id="hud" class="hidden">
+  <div id="topbar">
+    <div id="res"></div>
+    <div id="basebox">
+      <div class="lbl">🪺 ВЕЛИКОЕ ГНЕЗДО — здоровье базы</div>
+      <div class="hpbar"><i id="basehp"></i><span id="basehptxt"></span></div>
+      <div id="waveinfo"></div>
+    </div>
+    <div id="topright"><span id="daytxt"></span><button class="sq" id="btn-pause">⏸</button></div>
+  </div>
+  <div id="leftinfo">
+    <div class="phb">❤️<div class="hpbar"><i id="php"></i><span id="phptxt"></span></div></div>
+    <div id="quest"></div>
+    <div id="birdcount"></div>
+  </div>
+  <div id="compass" class="hidden">➤</div>
+  <button id="btn-wave">⏩ Волна сейчас</button>
+  <div id="prompt"></div>
+  <div id="stickL" class="stick"><div class="lbl">ДВИЖЕНИЕ</div><div class="knob"></div></div>
+  <div id="stickR" class="stick"><div class="lbl">КАМЕРА</div><div class="knob"></div></div>
+  <div id="actions">
+    <button class="round" id="btn-use" title="E">✋</button>
+    <button class="round bigr" id="btn-act" title="Пробел">🪓</button>
+  </div>
+  <div id="buildbar" class="hidden">
+    <div id="bb-info"></div>
+    <button id="bb-rot">↻</button>
+    <button id="bb-place">✔ Поставить</button>
+    <button id="bb-cancel">✖</button>
+  </div>
+  <div id="toolbar">
+    <button class="slot" data-slot="axe">🪓<small>Топор</small></button>
+    <button class="slot" data-slot="pick">⛏️<small>Кирка</small></button>
+    <button class="slot" data-slot="build">🔨<small>Стройка</small></button>
+    <button class="slot" data-slot="inv">🎒<small>Инвентарь</small></button>
+    <button class="slot" data-slot="birds">🐦<small>Птицы</small></button>
+  </div>
+</div>
+<div id="bars"></div>
+<div id="floats"></div>
+<div id="toasts"></div>
+<div id="flash"></div>
+<div id="saveic">💾</div>
+
+<div id="modal" class="hidden"><div class="card">
+  <div class="mhead"><span id="mtitle"></span><button id="mclose">✕</button></div>
+  <div id="mtabs"></div>
+  <div id="mbody"></div>
+</div></div>
+
+<div id="pause" class="screen hidden">
+  <h1 class="title" style="font-size:48px;margin-bottom:16px">Пауза</h1>
+  <div class="menu-col">
+    <button class="big" data-p="resume">▶ ПРОДОЛЖИТЬ</button>
+    <button class="big blue" data-p="save">💾 СОХРАНИТЬ</button>
+    <button class="big blue" data-p="settings">⚙ НАСТРОЙКИ</button>
+    <button class="big red" data-p="menu">🏠 ГЛАВНОЕ МЕНЮ</button>
+  </div>
+</div>
+
+<div id="over" class="screen hidden">
+  <h1>База разрушена!</h1>
+  <div id="overtxt" style="margin-bottom:16px;font-size:18px;text-align:center"></div>
+  <div class="menu-col">
+    <button class="big blue" id="over-load">💾 ЗАГРУЗИТЬ СОХРАНЕНИЕ</button>
+    <button class="big" id="over-new">🌱 НОВАЯ ИГРА</button>
+    <button class="big gray" id="over-menu">🏠 ГЛАВНОЕ МЕНЮ</button>
+  </div>
+</div>
+
+<div id="bye" class="screen hidden">
+  <h1 class="title">Спасибо за игру!</h1>
+  <p>Прогресс сохранён. Можно закрыть вкладку.</p>
+  <button class="big" id="bye-back" style="width:260px">◀ В МЕНЮ</button>
+</div>
+
+<div id="rotate">
+  <div class="ph">📱</div>
+  <div>Поверните телефон <b>горизонтально</b> — так удобнее играть</div>
+  <button class="big" id="rot-ok" style="width:240px">Играть так</button>
+</div>
+
+<script src="js/three.min.js"></script>
+<script src="js/data.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/models.js"></script>
+<script src="js/world.js"></script>
+<script src="js/game.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>
