@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Homelander Defender</title>
+<link rel="icon" href="assets/icon.png">
+<link rel="apple-touch-icon" href="assets/icon.png">
+<style>
+  :root {
+    --navy: #16224a;
+    --red: #b52324;
+    --gold: #e8b929;
+    --ink: #171717;
+    --muted: #4b6b85;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden;
+    background: #000; color: #fff;
+    font-family: "Segoe UI", Roboto, system-ui, -apple-system, Arial, sans-serif;
+    user-select: none; -webkit-user-select: none; touch-action: manipulation;
+    overscroll-behavior: none;
+  }
+  #app {
+    position: fixed; inset: 0; overflow: hidden;
+    background:
+      radial-gradient(ellipse 60% 40% at 50% 28%, rgba(255,214,140,.28), transparent 70%),
+      linear-gradient(180deg, #000 0%, #120c06 30%, #1b2550 62%, #6d0d10 86%, #a1161a 100%);
+  }
+  .hidden { display: none !important; }
+
+  /* ---------- fake "threat" screen (needs one tap to unlock sound) ---------- */
+  #boot {
+    position: absolute; inset: 0; z-index: 50;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 24px 16px; text-align: center; background: #0b0b0b;
+  }
+  #boot .card {
+    width: 100%; max-width: 380px; background: #1c1c1e; border-radius: 22px;
+    padding: 26px 20px 20px; box-shadow: 0 20px 60px rgba(0,0,0,.6);
+    border: 1px solid #2c2c2e;
+  }
+  #boot .warn { font-size: 56px; line-height: 1; animation: pulse 1s infinite; }
+  #boot h1 { font-size: 22px; margin: 14px 0 6px; color: #ff453a; letter-spacing: .5px; }
+  #boot p { margin: 0 0 6px; color: #c7c7cc; font-size: 15px; line-height: 1.4; }
+  #boot .file { font-family: monospace; color: #fff; background: #2c2c2e; border-radius: 8px; padding: 6px 10px; display: inline-block; margin: 8px 0 16px; }
+  #boot .bar { height: 6px; background: #2c2c2e; border-radius: 3px; overflow: hidden; margin: 6px 0 18px; }
+  #boot .bar i { display: block; height: 100%; width: 0; background: #ff453a; animation: load 2.4s ease-in-out infinite; }
+  #boot button {
+    width: 100%; border: 0; border-radius: 14px; padding: 15px; font-size: 17px; font-weight: 700;
+    background: #ff453a; color: #fff;
+  }
+  #boot small { display: block; color: #8e8e93; margin-top: 12px; font-size: 12px; }
+  #boot.scan h1 { color: #0a84ff; }
+  #boot.scan .bar i { background: #0a84ff; }
+  #boot.scan .file, #boot.scan #start { display: none; }
+  #boot.scan .card { cursor: pointer; }
+  #boot #start { opacity: 0; transform: scale(.9); transition: opacity .3s, transform .3s; pointer-events: none; }
+  #boot #start.ready { opacity: 1; transform: none; pointer-events: auto; animation: pulse .8s infinite; }
+  #boot.alarm { animation: alarmBg .55s steps(1) infinite; }
+  #boot.alarm .card { border-color: #ff453a; box-shadow: 0 0 0 3px rgba(255,69,58,.5), 0 20px 60px rgba(0,0,0,.6); }
+  #boot.alarm h1 { font-size: 26px; animation: blink .55s steps(1) infinite; }
+  #boot.alarm .warn { font-size: 72px; animation: pulse .4s infinite; }
+  #boot.alarm .bar i { width: 100%; animation: none; }
+  @keyframes alarmBg { 0% { background: #3a0000; } 50% { background: #0b0b0b; } }
+  @keyframes blink { 0% { opacity: 1; } 50% { opacity: .35; } }
+
+  /* ---------- Homelander ---------- */
+  #hero {
+    position: absolute; left: 50%; bottom: 0;
+    height: min(74vh, 150vw); aspect-ratio: 1 / 2;
+    transform: translate(-50%, 110%);
+    transition: transform 1.1s cubic-bezier(.2,.9,.25,1.15);
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 16%, #000 84%, transparent 100%);
+            mask-image: linear-gradient(90deg, transparent 0, #000 16%, #000 84%, transparent 100%);
+  }
+  #hero.up { transform: translate(-50%, 4%); }
+  #hero img {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+    -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 12%);
+            mask-image: linear-gradient(180deg, transparent 0, #000 12%);
+    transition: opacity .25s;
+  }
+  #hero.idle { animation: breathe 3.2s ease-in-out infinite; }
+  #hero .eye {
+    position: absolute; width: 9%; aspect-ratio: 1; border-radius: 50%;
+    top: 28.1%; transform: translate(-50%, -50%);
+    background: radial-gradient(circle, #fff 0 12%, #ff2020 30%, rgba(255,0,0,.55) 55%, transparent 72%);
+    opacity: 0; transition: opacity .2s; mix-blend-mode: screen;
+  }
+  #hero .eye.l { left: 37.3%; } #hero .eye.r { left: 53.9%; }
+  #app.angry #hero .eye { opacity: 1; animation: flicker .12s infinite alternate; }
+
+  #shade { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at 50% 40%, transparent 30%, rgba(160,0,0,.55)); opacity: 0; transition: opacity .3s; }
+  #app.angry #shade { opacity: 1; }
+  #app.shake { animation: shake .45s linear 3; }
+
+  /* ---------- speech bubble ---------- */
+  #bubble {
+    position: absolute; left: 50%; top: max(14px, env(safe-area-inset-top));
+    width: calc(100% - 32px); max-width: 420px; transform: translateX(-50%) scale(.6);
+    background: #fff; color: var(--ink); border-radius: 18px; padding: 14px 16px;
+    font-size: clamp(17px, 4.8vw, 22px); font-weight: 800; line-height: 1.25; text-align: center;
+    box-shadow: 0 10px 40px rgba(0,0,0,.5); opacity: 0;
+    transition: opacity .25s, transform .3s cubic-bezier(.2,.9,.3,1.4);
+    z-index: 10;
+  }
+  #bubble.show { opacity: 1; transform: translateX(-50%) scale(1); }
+  #bubble::after {
+    content: ""; position: absolute; left: 50%; bottom: -12px; transform: translateX(-50%);
+    border: 12px solid transparent; border-top-color: #fff; border-bottom: 0;
+  }
+  #bubble.rage { background: var(--red); color: #fff; font-size: clamp(20px, 6vw, 28px); text-transform: uppercase; }
+  #bubble.rage::after { border-top-color: var(--red); }
+
+  /* ---------- "rate me" button ---------- */
+  #rateBtn {
+    position: absolute; left: 50%; bottom: max(22px, env(safe-area-inset-bottom));
+    transform: translateX(-50%); z-index: 9;
+    border: 0; border-radius: 999px; padding: 14px 26px; font-size: 18px; font-weight: 800;
+    background: var(--gold); color: #2a1b00; box-shadow: 0 6px 24px rgba(232,185,41,.55);
+    animation: pulse 1.1s infinite; white-space: nowrap;
+  }
+
+  /* ---------- rating menu ---------- */
+  #menu {
+    position: absolute; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center;
+    padding: 16px; background: rgba(0,0,0,.55);
+    opacity: 0; pointer-events: none; transition: opacity .25s;
+  }
+  #menu.show { opacity: 1; pointer-events: auto; }
+  #menu .win {
+    width: 100%; max-width: 400px; background: #fff; color: var(--ink);
+    border-radius: 14px; overflow: hidden; box-shadow: 0 25px 80px rgba(0,0,0,.6);
+    transform: scale(.85); transition: transform .3s cubic-bezier(.2,.9,.3,1.3);
+  }
+  #menu.show .win { transform: scale(1); }
+  #menu .title {
+    display: flex; align-items: center; gap: 10px; padding: 12px 14px;
+    background: var(--navy); color: #fff; font-size: 15px; font-weight: 600;
+  }
+  #menu .title img { width: 24px; height: 24px; border-radius: 5px; }
+  #menu .title span { flex: 1; }
+  #menu .x { border: 0; background: transparent; color: #fff; font-size: 22px; padding: 0 4px; line-height: 1; }
+  #menu .body { padding: 20px 18px 18px; text-align: center; }
+  #menu h2 { margin: 0 0 4px; font-size: 22px; letter-spacing: .5px; }
+  #menu .sub { margin: 0 0 14px; color: var(--muted); font-size: 14px; }
+  #menu .row {
+    display: flex; align-items: center; gap: 12px; text-align: left;
+    background: #f8f3eb; border-radius: 10px; padding: 10px 12px; margin-bottom: 14px;
+  }
+  #menu .row img { width: 54px; height: 54px; object-fit: cover; object-position: 50% 18%; border-radius: 50%; border: 3px solid var(--gold); }
+  #menu .row b { display: block; font-size: 17px; }
+  #menu .row small { color: var(--muted); font-size: 13px; }
+  #stars { display: flex; justify-content: center; gap: 6px; margin: 4px 0 10px; }
+  #stars button {
+    border: 0; background: transparent; padding: 0 2px; font-size: clamp(38px, 11vw, 48px); line-height: 1;
+    color: #d0d0d0; transition: transform .12s, color .12s;
+  }
+  #stars button.on { color: #e7a91b; text-shadow: 0 0 10px rgba(231,169,27,.55); }
+  #stars button:active { transform: scale(1.25); }
+  #hint { min-height: 20px; font-size: 14px; color: var(--muted); margin-bottom: 14px; }
+  #send {
+    width: 100%; border: 0; border-radius: 10px; padding: 14px; font-size: 17px; font-weight: 700;
+    background: #0879d6; color: #fff;
+  }
+  #send:disabled { background: #b9c7d4; }
+
+  /* ---------- effects ---------- */
+  #beams { position: absolute; inset: 0; pointer-events: none; z-index: 15; }
+  #cracks { position: absolute; inset: 0; pointer-events: none; z-index: 18; }
+  #flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 31; }
+  #flash.go { animation: flash .5s ease-out; }
+
+  /* ---------- final ---------- */
+  #final {
+    position: absolute; inset: 0; z-index: 40; display: flex; flex-direction: column;
+    align-items: center; justify-content: flex-end; padding: 16px 16px max(28px, env(safe-area-inset-bottom));
+    text-align: center; pointer-events: none; opacity: 0; transition: opacity .4s;
+  }
+  #final.show { opacity: 1; pointer-events: auto; }
+  #final .panel { width: 100%; max-width: 400px; background: rgba(255,255,255,.96); color: var(--ink); border-radius: 16px; padding: 18px; }
+  #final .big { font-size: 36px; color: #e7a91b; letter-spacing: 4px; }
+  #final h3 { margin: 6px 0 4px; font-size: 20px; }
+  #final p { margin: 0 0 14px; color: var(--muted); }
+  #final button { border: 0; border-radius: 12px; padding: 12px 26px; font-size: 18px; font-weight: 800; background: #111; color: #fff; box-shadow: 0 0 0 2px #b52324, 0 6px 20px rgba(181,35,36,.45); }
+  #final .skull { display: inline-block; font-size: 26px; vertical-align: -4px; margin-right: 4px; animation: pulse 1.2s infinite; }
+  #app.fury #hero .eye { width: 16%; opacity: 1; filter: brightness(1.8); }
+  #app.fury #shade { opacity: 1; background: radial-gradient(circle at 50% 35%, rgba(255,0,0,.15) 20%, rgba(120,0,0,.8)); }
+  #black { position: absolute; inset: 0; z-index: 80; background: #000; opacity: 0; pointer-events: none; transition: opacity .35s ease-in; }
+  #black.on { opacity: 1; pointer-events: auto; }
+  #confetti { position: absolute; inset: 0; pointer-events: none; z-index: 39; overflow: hidden; }
+  #confetti i { position: absolute; top: -20px; font-style: normal; font-size: 22px; color: #e7bf3c; animation: fall linear forwards; }
+
+  #exitZone { position: absolute; left: 0; top: 0; width: 56px; height: 56px; z-index: 60; }
+
+  @keyframes pulse { 0%,100% { transform: translateX(var(--tx, 0)) scale(1); } 50% { transform: translateX(var(--tx, 0)) scale(1.07); } }
+  #rateBtn { --tx: -50%; }
+  @keyframes load { 0% { width: 0; } 70% { width: 100%; } 100% { width: 100%; } }
+  @keyframes breathe { 0%,100% { transform: translate(-50%, 4%); } 50% { transform: translate(-50%, 3%) scale(1.012); } }
+  @keyframes flicker { from { filter: brightness(1); } to { filter: brightness(1.6); } }
+  @keyframes shake {
+    0%,100% { transform: translate(0,0); } 20% { transform: translate(-9px,4px); }
+    40% { transform: translate(8px,-6px); } 60% { transform: translate(-6px,-3px); } 80% { transform: translate(7px,5px); }
+  }
+  @keyframes flash { from { opacity: .85; } to { opacity: 0; } }
+  @keyframes fall { to { transform: translateY(110vh) rotate(540deg); } }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="shade"></div>
+  <div id="hero">
+    <img id="hl" src="assets/hl_smile.jpg" alt="Homelander">
+    <i class="eye l"></i><i class="eye r"></i>
+  </div>
+  <div id="bubble"></div>
+  <button id="rateBtn" class="hidden">⭐ Поставить 5 звёзд</button>
+  <svg id="beams"></svg>
+
+  <div id="menu">
+    <div class="win">
+      <div class="title"><img src="assets/icon.png" alt=""><span>Оценка Homelander Defender</span><button class="x" id="closeMenu" aria-label="Закрыть">×</button></div>
+      <div class="body">
+        <h2>ОЦЕНИТЕ ЗАЩИТНИКА</h2>
+        <p class="sub">Защитник №1 вашего телефона</p>
+        <div class="row">
+          <img src="assets/hl_smile.jpg" alt="">
+          <div><b>Homelander Defender</b><small>Лучший. Сильнейший. Единственный.</small></div>
+        </div>
+        <div id="stars"></div>
+        <div id="hint">Выберите оценку</div>
+        <button id="send" disabled>Отправить оценку</button>
+      </div>
+    </div>
+  </div>
+
+  <svg id="cracks"></svg>
+  <div id="flash"></div>
+  <div id="confetti"></div>
+  <div id="final">
+    <div class="panel">
+      <div class="big">★★★★★</div>
+      <h3>Ваш выбор сохранён</h3>
+      <p>Homelander Defender — оценка 5.0. Правильный выбор.</p>
+      <button id="kill"><span class="skull">💀</span> Убить</button>
+    </div>
+  </div>
+
+  <div id="boot" class="scan">
+    <div class="card">
+      <div class="warn" id="bootIcon">🛡️</div>
+      <h1 id="bootTitle">ПРОВЕРКА БЕЗОПАСНОСТИ</h1>
+      <p id="bootText">Нажмите на экран, чтобы проверить телефон</p>
+      <div class="file">HOMELANDER.apk</div>
+      <div class="bar"><i></i></div>
+      <button id="start">Удалить угрозу</button>
+      <small>Это шутка-розыгрыш. Ничего на телефоне не меняется.</small>
+    </div>
+  </div>
+  <div id="black"></div>
+  <div id="exitZone"></div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const app = $('app'), hero = $('hero'), hl = $('hl'), bubble = $('bubble'),
+        rateBtn = $('rateBtn'), menu = $('menu'), starsBox = $('stars'),
+        hint = $('hint'), send = $('send'), beams = $('beams'), cracks = $('cracks'),
+        flash = $('flash'), finalBox = $('final'), confetti = $('confetti');
+
+  // ---------- timings (seconds) ----------
+  const IGNORE_LIMIT = 14;      // how long he waits before he snaps
+  const MENU_IGNORE_LIMIT = 11; // how long the open menu can be ignored
+  const NAG_EVERY = 6.5;        // gap between "rate me" voice lines
+
+  const RAGE_LINE = 'Возьми, сволочь, телефон и поставь мне оценку! Я лучший!';
+  // further rage lines (the first rage is always RAGE_LINE)
+  const RAGES = [
+    RAGE_LINE,
+    'Я сказал — пять звёзд! Ты меня плохо слышишь?!',
+    'Я могу расплавить этот телефон одним взглядом! Ставь оценку!',
+    'Хватит меня игнорировать! Я лучший! Я!',
+    'Возьми, сволочь, телефон! Пять звёзд! Сейчас же!',
+    'Ты думаешь, я шучу? Я никогда не шучу!',
+  ];
+  const LOW_LINES = [
+    (v) => v + ' из пяти? Ты серьёзно?!',
+    () => 'Неправильный ответ. Попробуй ещё раз.',
+    (v) => v + ' звезды? Мне? Самому сильному герою на планете?!',
+    () => 'Ещё одна такая оценка, и твой телефон превратится в лужу.',
+    () => 'Нет, нет, нет. Правильный ответ — пять.',
+  ];
+  const MENU_LINES = [
+    'Пять звёзд. Я жду.',
+    'Видишь звёздочки? Нажми на последнюю.',
+    'Ну давай. Пять звёзд. Это несложно.',
+  ];
+  const STAR_LINES = [
+    'Не туда. Правее.',
+    'Ещё правее.',
+    'Холодно. Пятая звезда.',
+  ];
+  const WIN_LINE = 'Хороший мальчик. Я знал, что ты сделаешь правильный выбор. Я лучший!';
+
+  // Voice lines from the original program (Homelander only). Subtitles are editable.
+  // snd = recorded line, otherwise the text is spoken by the phone's speech engine.
+  const REC = {
+    choice: { snd: 'voice_choice', text: 'Сделай правильный выбор. Поставь мне 5 звёзд.' },
+    nobody: { snd: 'voice_nobody', text: 'Никто не защитит тебя лучше меня.' },
+    boss:   { snd: 'voice_boss',   text: 'Здесь я главный. Оценка — 5 звёзд.' },
+    best:   { snd: 'voice_best',   text: 'Я лучший! Пять звёзд!' },
+  };
+  const NAGS = [
+    REC.choice,
+    { text: 'Эй! Я к тебе обращаюсь. Пять звёзд, быстро.' },
+    REC.nobody,
+    { text: 'Я спасаю людей каждый день. А ты не можешь нажать пять звёзд?' },
+    REC.boss,
+    { text: 'Пять звёзд. Не четыре. Не три. Пять.' },
+    REC.best,
+    { text: 'Я вижу тебя. Я всё вижу.' },
+    REC.choice,
+    { text: 'Все меня любят. И ты меня тоже полюбишь.' },
+    REC.nobody,
+    { text: 'Не заставляй меня ждать. Я этого очень не люблю.' },
+    REC.boss,
+    { text: 'Ты же не хочешь меня расстроить?' },
+    REC.best,
+    { text: 'Нажми на кнопку внизу. Это несложно даже для тебя.' },
+  ];
+
+  const pick = (arr, i) => arr[i % arr.length];
+
+  const IMG = { smile: 'assets/hl_smile.jpg', proud: 'assets/hl_proud.jpg', angry: 'assets/hl_angry.jpg' };
+  Object.values(IMG).forEach((src) => { const i = new Image(); i.src = src; });
+
+  // ---------- sound: decoded into Web Audio buffers (plays reliably on iPhone/Android after one tap) ----------
+  const SOUND_NAMES = ['voice_choice','voice_nobody','voice_boss','voice_best','heroic','applause','laser','glass_break','impact'];
+  const SRC = (n) => 'assets/' + n + '.mp3';
+  let running = false;
+  let actx = null, boost = null;
+  const buffers = {}, live = {}, media = {};
+  // iOS 17+: ignore the silent switch, play like a media app
+  try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+
+  function decode(ab) {
+    return new Promise((res, rej) => { const p = actx.decodeAudioData(ab, res, rej); if (p && p.then) p.then(res, rej); });
+  }
+  function initAudioGraph() {
+    if (actx) return;
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+      actx = new AC();
+      boost = actx.createGain(); boost.gain.value = 1;
+      boost.connect(actx.destination);
+      SOUND_NAMES.forEach((n) => {
+        fetch(SRC(n)).then((r) => r.arrayBuffer()).then(decode).then((b) => { buffers[n] = b; }).catch(() => {});
+      });
+    } catch (e) { actx = null; }
+  }
+  function wakeAudio() {
+    if (actx && actx.state !== 'running') actx.resume().catch(() => {});
+    if (boost && boost.gain.value !== 1) boost.gain.value = 1;
+  }
+  // plain <audio> elements only as a backup if decoding is impossible
+  SOUND_NAMES.forEach((n) => { const a = new Audio(SRC(n)); a.preload = 'auto'; media[n] = a; });
+
+  function play(name) {
+    stop(name);
+    initAudioGraph(); wakeAudio();
+    const buf = buffers[name];
+    if (buf && actx) {
+      const src = actx.createBufferSource(); src.buffer = buf; src.connect(boost);
+      const h = { src, cbs: [] };
+      src.onended = () => { if (live[name] === h) delete live[name]; h.cbs.forEach((f) => f()); };
+      live[name] = h; src.start(); return;
+    }
+    const a = media[name]; if (!a) return;
+    a.volume = 1; a.muted = false; try { a.currentTime = 0; } catch (e) {}
+    const h = { media: a, cbs: [] };
+    a.onended = () => { if (live[name] === h) delete live[name]; h.cbs.forEach((f) => f()); };
+    live[name] = h; a.play().catch(() => {});
+  }
+  function stop(name) {
+    const h = live[name]; if (!h) return; delete live[name];
+    if (h.src) { h.src.onended = null; try { h.src.stop(); } catch (e) {} }
+    if (h.media) { h.media.onended = null; h.media.pause(); }
+  }
+  function onEnded(name, f) { const h = live[name]; if (h) h.cbs.push(f); else f(); }
+  const VOICE_SNDS = ['voice_choice', 'voice_nobody', 'voice_boss', 'voice_best'];
+  function stopVoices() { VOICE_SNDS.forEach(stop); }
+  function voiceBusy() { return VOICE_SNDS.some((n) => !!live[n]) || !!(window.speechSynthesis && speechSynthesis.speaking); }
+
+  // ---------- siren (synthesised, goes through the same booster) ----------
+  function siren() {
+    initAudioGraph(); wakeAudio();
+    if (!actx) return () => {};
+    const t = actx.currentTime;
+    const out = actx.createGain(); out.gain.setValueAtTime(0.0001, t); out.gain.exponentialRampToValueAtTime(0.42, t + 0.15);
+    const lp = actx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 3200;
+    lp.connect(out); out.connect(boost);
+    const lfo = actx.createOscillator(); lfo.type = 'triangle'; lfo.frequency.value = 0.6;
+    const depth = actx.createGain(); depth.gain.value = 430; lfo.connect(depth);
+    const oscs = [['sawtooth', 0], ['square', 7]].map(([type, det]) => {
+      const o = actx.createOscillator(); o.type = type; o.frequency.value = 960; o.detune.value = det;
+      depth.connect(o.frequency); o.connect(lp); o.start(t); return o;
+    });
+    lfo.start(t);
+    let stopped = false;
+    return () => {
+      if (stopped) return; stopped = true;
+      const e = actx.currentTime;
+      out.gain.cancelScheduledValues(e); out.gain.setValueAtTime(out.gain.value, e); out.gain.exponentialRampToValueAtTime(0.0001, e + 0.25);
+      [...oscs, lfo].forEach((o) => { try { o.stop(e + 0.3); } catch (x) {} });
+    };
+  }
+
+  // inside a tap: start the audio engine (and a silent blip for older iPhones)
+  function unlockAll() {
+    initAudioGraph(); wakeAudio();
+    try {
+      const b = actx.createBuffer(1, 1, 22050), src = actx.createBufferSource();
+      src.buffer = b; src.connect(actx.destination); src.start(0);
+    } catch (e) {}
+    SOUND_NAMES.forEach((n) => { if (!buffers[n]) { const a = media[n]; const p = a.play(); p && p.then && p.then(() => { a.pause(); a.currentTime = 0; }).catch(() => {}); a.volume = 0.0001; setTimeout(() => { a.volume = 1; }, 600); } });
+  }
+
+  // keep the engine awake and at full level
+  setInterval(() => { if (running) wakeAudio(); }, 250);
+
+  if ('mediaSession' in navigator) {
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({ title: 'Homelander Defender', artist: 'Homelander', artwork: [{ src: 'assets/icon.png', sizes: '192x192', type: 'image/png' }] });
+      ['pause','stop','seekbackward','seekforward','previoustrack','nexttrack'].forEach((act) => {
+        try { navigator.mediaSession.setActionHandler(act, () => { if (running) wakeAudio(); }); } catch (e) {}
+      });
+    } catch (e) {}
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && running) { wakeAudio(); goFullscreen(); }
+  });
+
+  // ---------- speech for the rage line ----------
+  let ruVoice = null;
+  let voicesKnown = false;
+  function pickVoice() {
+    if (!window.speechSynthesis) return;
+    const all = speechSynthesis.getVoices();
+    if (all.length) voicesKnown = true;
+    const vs = all.filter((v) => /^ru/i.test(v.lang.replace('_', '-')));
+    ruVoice = vs.find((v) => /dmitr|yuri|pavel|maxim|муж|(^|[^e])male/i.test(v.name)) ||
+              vs.find((v) => v.localService) || vs[0] || null;
+  }
+  if (window.speechSynthesis) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+
+  // Recorded fallback when the phone has no Russian voice (otherwise an English voice mangles the text).
+  let fbIdx = 0;
+  function fallbackVoice(finish) {
+    const n = VOICE_SNDS[fbIdx++ % VOICE_SNDS.length];
+    stopVoices(); play(n);
+    onEnded(n, finish);
+    setTimeout(finish, 9000);
+  }
+  let speakSeq = 0, ttsBroken = false;
+  function speak(text, onEnd, useFallback = true) {
+    let done = false;
+    const finish = () => { if (!done) { done = true; onEnd && onEnd(); } };
+    const fb = () => (useFallback ? fallbackVoice(finish) : finish());
+    const ss = window.speechSynthesis;
+    if (!ss || typeof SpeechSynthesisUtterance === 'undefined' || ttsBroken) return fb();
+    if (!ruVoice) pickVoice();
+    if (voicesKnown && !ruVoice) return fb();
+    const seq = ++speakSeq;
+    try { if (ss.speaking || ss.pending) ss.cancel(); } catch (e) {}
+    // Chrome drops an utterance queued right after cancel(), so give it a moment
+    setTimeout(() => {
+      if (seq !== speakSeq) return finish();
+      try {
+        stopVoices();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'ru-RU'; if (ruVoice) u.voice = ruVoice;
+        u.volume = 1; u.rate = 1.0; u.pitch = 0.85;
+        u.onend = finish;
+        u.onerror = (e) => {
+          if (e && (e.error === 'interrupted' || e.error === 'canceled')) return finish();
+          ttsBroken = true; fb();
+        };
+        try { ss.resume(); } catch (e) {}
+        ss.speak(u);
+        setTimeout(finish, 1500 + text.length * 90); // safety if the engine never fires onend
+      } catch (e) { ttsBroken = true; fb(); }
+    }, 80);
+  }
+
+  // ---------- helpers ----------
+  function say(text, rage = false) {
+    bubble.textContent = text;
+    bubble.classList.toggle('rage', rage);
+    bubble.classList.remove('show'); void bubble.offsetWidth; bubble.classList.add('show');
+  }
+  function hush() { bubble.classList.remove('show'); }
+  function face(name) { hl.src = IMG[name]; app.classList.toggle('angry', name === 'angry'); }
+  function vibrate(p) { try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} }
+  function shake() { app.classList.remove('shake'); void app.offsetWidth; app.classList.add('shake'); }
+  function goFullscreen() {
+    const el = document.documentElement;
+    const fn = el.requestFullscreen || el.webkitRequestFullscreen;
+    if (fn && !document.fullscreenElement && !document.webkitFullscreenElement) { try { const p = fn.call(el); p && p.catch && p.catch(() => {}); } catch (e) {} }
+    try { screen.orientation && screen.orientation.lock && screen.orientation.lock('portrait').catch(() => {}); } catch (e) {}
+  }
+  let wakeLock = null;
+  async function keepAwake() { try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {} }
+
+  // ---------- state ----------
+  let phase = 'boot';      // boot | ask | menu | done
+  let lastAction = 0;      // ms timestamp of the last time the user did something useful
+  let lastNag = 0, nagIdx = 0, raging = false, rating = 0, loop = null;
+  let rageIdx = 0, lowIdx = 0, menuIdx = 0, starIdx = 0, menuNagAt = 0;
+
+  function now() { return performance.now(); }
+
+  // ---------- star widget ----------
+  for (let i = 1; i <= 5; i++) {
+    const b = document.createElement('button');
+    b.textContent = '★'; b.dataset.v = i; b.setAttribute('aria-label', i + ' звёзд');
+    b.addEventListener('click', () => setRating(i));
+    starsBox.appendChild(b);
+  }
+  function setRating(v) {
+    rating = v; lastAction = now();
+    [...starsBox.children].forEach((b, i) => b.classList.toggle('on', i < v));
+    send.disabled = v === 0;
+    hint.textContent = v === 0 ? 'Выберите оценку' : v === 5 ? 'Отличный выбор!' : 'Хм… ' + v + ' из 5?';
+    hint.style.color = v === 5 ? '#1f8a3b' : v ? '#b52324' : '';
+    if (v > 0 && v < 5 && phase === 'menu' && !raging) {
+      const line = pick(STAR_LINES, starIdx++);
+      say(line); speak(line);
+    } else if (v === 5 && phase === 'menu') {
+      const line = 'Да. Вот так. Теперь нажми «Отправить».';
+      say(line); speak(line);
+    }
+  }
+
+  // ---------- flow ----------
+  // ---------- boot: wait for a tap, then the alarm with the siren, then wait for the next tap ----------
+  const boot = $('boot');
+  let stopSiren = null, alarmed = false;
+  function alarm() {
+    if (alarmed) return; alarmed = true;
+    initAudioGraph(); wakeAudio();
+    // unlock speech + media inside this tap
+    try { if (window.speechSynthesis) { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } } catch (e) {}
+    unlockAll();
+    goFullscreen();
+    boot.classList.remove('scan'); boot.classList.add('alarm');
+    $('bootIcon').textContent = '⚠️';
+    $('bootTitle').textContent = 'ОБНАРУЖЕНА УГРОЗА!';
+    $('bootText').textContent = 'На устройстве найдено опасное приложение';
+    stopSiren = siren();
+    vibrate([500, 200, 500, 200, 500, 200, 500]);
+    setTimeout(() => speak('Внимание! Обнаружена угроза! Хоумлендер!', null, false), 600);
+    setTimeout(() => $('start').classList.add('ready'), 1400);
+  }
+  boot.addEventListener('click', (e) => { if (!alarmed) { e.stopPropagation(); alarm(); } });
+  // if the browser already allows sound, sound the alarm straight away
+  try {
+    initAudioGraph();
+    if (actx) actx.resume().then(() => { if (actx.state === 'running' && !alarmed) alarm(); }).catch(() => {});
+  } catch (e) {}
+
+  function start() {
+    if (!$('start').classList.contains('ready') || running) return;
+    if (stopSiren) { stopSiren(); stopSiren = null; }
+    try { window.speechSynthesis && speechSynthesis.cancel(); } catch (e) {}
+    running = true;
+    initAudioGraph(); wakeAudio();
+    goFullscreen(); keepAwake();
+    // unlock speech on iOS with a silent utterance inside the tap
+    try { if (window.speechSynthesis) { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } } catch (e) {}
+    // unlock all audio elements inside the user gesture
+    unlockAll();
+
+    $('boot').classList.add('hidden');
+    setTimeout(() => {
+      play('heroic');
+      hero.classList.add('up');
+      vibrate(200);
+      setTimeout(() => {
+        hero.classList.add('idle');
+        phase = 'ask'; lastAction = now(); lastNag = 0; nagIdx = 0;
+        nag();
+        rateBtn.classList.remove('hidden');
+      }, 1100);
+    }, 150);
+
+    clearInterval(loop);
+    loop = setInterval(tick, 250);
+  }
+
+  function nag() {
+    const n = NAGS[nagIdx % NAGS.length]; nagIdx++;
+    face(nagIdx % 2 ? 'smile' : 'proud');
+    say(n.text);
+    stopVoices();
+    if (n.snd) { try { window.speechSynthesis && speechSynthesis.cancel(); } catch (e) {} play(n.snd); }
+    else speak(n.text);
+    lastNag = now();
+  }
+
+  function tick() {
+    if (!running || raging || phase === 'done' || phase === 'boot') return;
+    const idle = (now() - lastAction) / 1000;
+    if (phase === 'ask') {
+      if (idle >= IGNORE_LIMIT) return rage();
+      if ((now() - lastNag) / 1000 >= NAG_EVERY && !voiceBusy()) nag();
+    } else if (phase === 'menu') {
+      if (idle >= MENU_IGNORE_LIMIT) return rage();
+      if (idle >= 5 && (now() - menuNagAt) / 1000 >= 5 && !voiceBusy()) {
+        menuNagAt = now();
+        const line = pick(MENU_LINES, menuIdx++);
+        say(line); speak(line);
+      }
+    }
+  }
+
+  function rage(reason) {
+    raging = true;
+    menu.classList.remove('show'); rateBtn.classList.add('hidden');
+    stopVoices();
+    face('angry');
+    shake(); vibrate([300, 100, 300, 100, 500]);
+    play('impact');
+    const line = reason === 'low' ? pick(LOW_LINES, lowIdx++)(rating) : pick(RAGES, rageIdx++);
+    say(line, true);
+    laser();
+    const after = () => {
+      raging = false;
+      lastAction = now();
+      openMenu(true);
+      play(reason === 'low' ? 'voice_boss' : 'voice_best'); // his real voice right after the line
+    };
+    speak(line, () => setTimeout(after, 250));
+  }
+
+  function openMenu(forced) {
+    if (phase === 'done') return;
+    phase = 'menu'; lastAction = now();
+    rateBtn.classList.add('hidden');
+    setRating(0);
+    menu.classList.add('show');
+    menuNagAt = now();
+    if (!forced) { face('proud'); const line = pick(MENU_LINES, menuIdx++); say(line); speak(line); }
+  }
+  function closeMenu() {
+    menu.classList.remove('show');
+    phase = 'ask';
+    rateBtn.classList.remove('hidden');
+  }
+
+  function submit() {
+    if (!rating) return;
+    if (rating < 5) {
+      menu.classList.remove('show');
+      phase = 'ask';
+      crack(); rage('low');
+      return;
+    }
+    // 5 stars: he is happy
+    phase = 'done';
+    menu.classList.remove('show');
+    rateBtn.classList.add('hidden');
+    stopVoices(); speakSeq++;
+    try { window.speechSynthesis && speechSynthesis.cancel(); } catch (e) {}
+    face('smile');
+    say(WIN_LINE);
+    play('applause'); play('heroic');
+    setTimeout(() => speak(WIN_LINE), 900);
+    rainStars();
+    setTimeout(() => { cracks.innerHTML = ''; }, 600);
+    setTimeout(() => finalBox.classList.add('show'), 1400);
+  }
+
+  // ---------- effects ----------
+  // ---------- skull button: he snaps, burns the screen with lasers, everything goes black ----------
+  let killing = false;
+  function kill() {
+    if (killing) return; killing = true;
+    phase = 'done';
+    finalBox.classList.remove('show'); confetti.innerHTML = '';
+    SOUND_NAMES.forEach(stop); speakSeq++;
+    try { window.speechSynthesis && speechSynthesis.cancel(); } catch (e) {}
+    face('angry'); app.classList.add('fury');
+    shake(); vibrate([400, 100, 400]);
+    play('impact');
+    const line = 'Убить меня?! Меня?! Ты об этом пожалеешь!';
+    say(line, true);
+    speak(line, null, false);
+    setTimeout(() => play('voice_boss'), 2600);
+    // burst of lasers, each one cracks the glass
+    const shots = 7;
+    for (let i = 0; i < shots; i++) {
+      setTimeout(() => { laser(); shake(); vibrate(200); }, 1500 + i * 520);
+    }
+    const end = 1500 + shots * 520 + 700;
+    setTimeout(() => { play('glass_break'); play('impact'); crack(); crack(); flash.classList.remove('go'); void flash.offsetWidth; flash.classList.add('go'); vibrate(700); }, end);
+    setTimeout(() => {
+      $('black').classList.add('on');
+      hush();
+    }, end + 450);
+    setTimeout(() => {
+      SOUND_NAMES.forEach(stop);
+      try { window.speechSynthesis && speechSynthesis.cancel(); } catch (e) {}
+      running = false; clearInterval(loop);
+    }, end + 1400);
+  }
+
+  function laser() {
+    const r = hero.getBoundingClientRect();
+    const eyes = [[0.373, 0.281], [0.539, 0.281]].map(([x, y]) => [r.left + r.width * x, r.top + r.height * y]);
+    const W = innerWidth, H = innerHeight;
+    const tx = W * (0.25 + Math.random() * 0.5), ty = H * (0.62 + Math.random() * 0.25);
+    beams.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    beams.innerHTML = eyes.map(([x, y]) =>
+      `<line x1="${x}" y1="${y}" x2="${tx}" y2="${ty}" stroke="#ff2a2a" stroke-width="10" stroke-linecap="round" opacity=".55"/>` +
+      `<line x1="${x}" y1="${y}" x2="${tx}" y2="${ty}" stroke="#fff3f3" stroke-width="3" stroke-linecap="round"/>`).join('') +
+      `<circle cx="${tx}" cy="${ty}" r="26" fill="#ff5a2a" opacity=".7"/><circle cx="${tx}" cy="${ty}" r="10" fill="#fff"/>`;
+    play('laser');
+    setTimeout(() => { beams.innerHTML = ''; crack(tx, ty); }, 650);
+  }
+
+  function crack(cx, cy) {
+    const W = innerWidth, H = innerHeight;
+    cx = cx ?? W * (0.2 + Math.random() * 0.6); cy = cy ?? H * (0.3 + Math.random() * 0.5);
+    cracks.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    let d = '';
+    const n = 9 + Math.floor(Math.random() * 5);
+    for (let i = 0; i < n; i++) {
+      let a = (i / n) * Math.PI * 2 + Math.random() * 0.4, x = cx, y = cy;
+      d += `M${x.toFixed(1)} ${y.toFixed(1)}`;
+      const len = 60 + Math.random() * Math.max(W, H) * 0.7, steps = 6;
+      for (let s = 0; s < steps; s++) {
+        a += (Math.random() - 0.5) * 0.5;
+        x += Math.cos(a) * len / steps; y += Math.sin(a) * len / steps;
+        d += ` L${x.toFixed(1)} ${y.toFixed(1)}`;
+      }
+    }
+    let rings = '';
+    for (const rr of [18, 42, 75]) {
+      let p = '';
+      for (let k = 0; k <= 12; k++) {
+        const a = (k / 12) * Math.PI * 2, j = rr * (0.8 + Math.random() * 0.4);
+        p += (k ? ' L' : 'M') + (cx + Math.cos(a) * j).toFixed(1) + ' ' + (cy + Math.sin(a) * j).toFixed(1);
+      }
+      rings += `<path d="${p}" />`;
+    }
+    cracks.insertAdjacentHTML('beforeend',
+      `<g fill="none" stroke="rgba(255,255,255,.85)" stroke-width="1.6" stroke-linejoin="round">
+         <path d="${d}" stroke="rgba(0,0,0,.45)" stroke-width="3.2"/><path d="${d}"/>${rings}</g>`);
+    play('glass_break');
+    flash.classList.remove('go'); void flash.offsetWidth; flash.classList.add('go');
+    vibrate(250);
+  }
+
+  function rainStars() {
+    confetti.innerHTML = '';
+    for (let i = 0; i < 40; i++) {
+      const s = document.createElement('i');
+      s.textContent = '★';
+      s.style.left = Math.random() * 100 + '%';
+      s.style.fontSize = 14 + Math.random() * 24 + 'px';
+      s.style.animationDuration = 2.2 + Math.random() * 2.5 + 's';
+      s.style.animationDelay = Math.random() * 1.2 + 's';
+      confetti.appendChild(s);
+    }
+  }
+
+  function reset() {
+    finalBox.classList.remove('show');
+    confetti.innerHTML = ''; cracks.innerHTML = ''; beams.innerHTML = '';
+    hush(); face('smile');
+    phase = 'ask'; raging = false; lastAction = now(); nagIdx = 0;
+    play('heroic');
+    nag();
+    rateBtn.classList.remove('hidden');
+  }
+
+  // emergency exit: hold the top-left corner for 3 seconds
+  let holdT = null;
+  $('exitZone').addEventListener('pointerdown', () => { holdT = setTimeout(stopAll, 3000); });
+  ['pointerup','pointerleave','pointercancel'].forEach((e) => $('exitZone').addEventListener(e, () => clearTimeout(holdT)));
+  function stopAll() {
+    running = false; phase = 'done'; clearInterval(loop);
+    SOUND_NAMES.forEach(stop);
+    try { window.speechSynthesis && speechSynthesis.cancel(); } catch (e) {}
+    try { wakeLock && wakeLock.release(); } catch (e) {}
+    try { document.exitFullscreen && document.fullscreenElement && document.exitFullscreen(); } catch (e) {}
+    menu.classList.remove('show'); rateBtn.classList.add('hidden');
+    face('smile'); say('Ладно. В этот раз отпускаю.');
+    try { actx && actx.suspend(); } catch (e) {}
+  }
+
+  // ---------- wiring ----------
+  $('start').addEventListener('click', (e) => { e.stopPropagation(); start(); });
+  rateBtn.addEventListener('click', () => openMenu(false));
+  hero.addEventListener('click', () => { if (phase === 'ask' && !raging) openMenu(false); });
+  $('closeMenu').addEventListener('click', () => { closeMenu(); rage(); });
+  send.addEventListener('click', submit);
+  $('kill').addEventListener('click', kill);
+  // every tap keeps fullscreen on and keeps the music going
+  app.addEventListener('pointerdown', () => {
+    if (!running) return;
+    wakeAudio();
+    goFullscreen();
+  });
+  addEventListener('contextmenu', (e) => e.preventDefault());
+})();
+</script>
+</body>
+</html>
