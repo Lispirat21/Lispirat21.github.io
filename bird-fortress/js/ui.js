@@ -65,8 +65,8 @@ const UI = window.UI = {};
   let last = 0;
   function loop(t) {
     const dt = Math.min(0.05, (t - last) / 1000 || 0.016); last = t;
-    G.frame(dt);
-    requestAnimationFrame(loop);
+    requestAnimationFrame(loop); // следующий кадр планируем заранее: одна ошибка не должна останавливать игру
+    try { G.frame(dt); } catch (e) { if (!loop.err) { loop.err = true; console.error(e); } }
   }
   window.addEventListener('load', boot);
   window.addEventListener('resize', () => { G.resize(); placeIdleSticks(); });
