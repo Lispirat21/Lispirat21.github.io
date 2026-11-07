@@ -187,7 +187,12 @@
   #final .big { font-size: 36px; color: #e7a91b; letter-spacing: 4px; }
   #final h3 { margin: 6px 0 4px; font-size: 20px; }
   #final p { margin: 0 0 14px; color: var(--muted); }
-  #final button { border: 0; border-radius: 10px; padding: 12px 22px; font-size: 16px; font-weight: 700; background: var(--navy); color: #fff; }
+  #final button { border: 0; border-radius: 12px; padding: 12px 26px; font-size: 18px; font-weight: 800; background: #111; color: #fff; box-shadow: 0 0 0 2px #b52324, 0 6px 20px rgba(181,35,36,.45); }
+  #final .skull { display: inline-block; font-size: 26px; vertical-align: -4px; margin-right: 4px; animation: pulse 1.2s infinite; }
+  #app.fury #hero .eye { width: 16%; opacity: 1; filter: brightness(1.8); }
+  #app.fury #shade { opacity: 1; background: radial-gradient(circle at 50% 35%, rgba(255,0,0,.15) 20%, rgba(120,0,0,.8)); }
+  #black { position: absolute; inset: 0; z-index: 80; background: #000; opacity: 0; pointer-events: none; transition: opacity .35s ease-in; }
+  #black.on { opacity: 1; pointer-events: auto; }
   #confetti { position: absolute; inset: 0; pointer-events: none; z-index: 39; overflow: hidden; }
   #confetti i { position: absolute; top: -20px; font-style: normal; font-size: 22px; color: #e7bf3c; animation: fall linear forwards; }
 
@@ -242,7 +247,7 @@
       <div class="big">★★★★★</div>
       <h3>Ваш выбор сохранён</h3>
       <p>Homelander Defender — оценка 5.0. Правильный выбор.</p>
-      <button id="again">Ещё раз</button>
+      <button id="kill"><span class="skull">💀</span> Убить</button>
     </div>
   </div>
 
@@ -257,6 +262,7 @@
       <small>Это шутка-розыгрыш. Ничего на телефоне не меняется.</small>
     </div>
   </div>
+  <div id="black"></div>
   <div id="exitZone"></div>
 </div>
 
@@ -682,6 +688,39 @@
   }
 
   // ---------- effects ----------
+  // ---------- skull button: he snaps, burns the screen with lasers, everything goes black ----------
+  let killing = false;
+  function kill() {
+    if (killing) return; killing = true;
+    phase = 'done';
+    finalBox.classList.remove('show'); confetti.innerHTML = '';
+    SOUND_NAMES.forEach(stop); speakSeq++;
+    try { window.speechSynthesis && speechSynthesis.cancel(); } catch (e) {}
+    face('angry'); app.classList.add('fury');
+    shake(); vibrate([400, 100, 400]);
+    play('impact');
+    const line = 'Убить меня?! Меня?! Ты об этом пожалеешь!';
+    say(line, true);
+    speak(line, null, false);
+    setTimeout(() => play('voice_boss'), 2600);
+    // burst of lasers, each one cracks the glass
+    const shots = 7;
+    for (let i = 0; i < shots; i++) {
+      setTimeout(() => { laser(); shake(); vibrate(200); }, 1500 + i * 520);
+    }
+    const end = 1500 + shots * 520 + 700;
+    setTimeout(() => { play('glass_break'); play('impact'); crack(); crack(); flash.classList.remove('go'); void flash.offsetWidth; flash.classList.add('go'); vibrate(700); }, end);
+    setTimeout(() => {
+      $('black').classList.add('on');
+      hush();
+    }, end + 450);
+    setTimeout(() => {
+      SOUND_NAMES.forEach(stop);
+      try { window.speechSynthesis && speechSynthesis.cancel(); } catch (e) {}
+      running = false; clearInterval(loop);
+    }, end + 1400);
+  }
+
   function laser() {
     const r = hero.getBoundingClientRect();
     const eyes = [[0.373, 0.281], [0.539, 0.281]].map(([x, y]) => [r.left + r.width * x, r.top + r.height * y]);
@@ -773,7 +812,7 @@
   hero.addEventListener('click', () => { if (phase === 'ask' && !raging) openMenu(false); });
   $('closeMenu').addEventListener('click', () => { closeMenu(); rage(); });
   send.addEventListener('click', submit);
-  $('again').addEventListener('click', reset);
+  $('kill').addEventListener('click', kill);
   // every tap keeps fullscreen on and keeps the music going
   app.addEventListener('pointerdown', () => {
     if (!running) return;
