@@ -262,14 +262,51 @@
   const NAG_EVERY = 6.5;        // gap between "rate me" voice lines
 
   const RAGE_LINE = 'Возьми, сволочь, телефон и поставь мне оценку! Я лучший!';
+  // further rage lines (the first rage is always RAGE_LINE)
+  const RAGES = [
+    RAGE_LINE,
+    'Я сказал — пять звёзд! Ты меня плохо слышишь?!',
+    'Я могу расплавить этот телефон одним взглядом! Ставь оценку!',
+    'Хватит меня игнорировать! Я лучший! Я!',
+    'Возьми, сволочь, телефон! Пять звёзд! Сейчас же!',
+    'Ты думаешь, я шучу? Я никогда не шучу!',
+  ];
+  const LOW_LINES = [
+    (v) => v + ' из пяти? Ты серьёзно?!',
+    () => 'Неправильный ответ. Попробуй ещё раз.',
+    (v) => v + ' звезды? Мне? Самому сильному герою на планете?!',
+    () => 'Ещё одна такая оценка, и твой телефон превратится в лужу.',
+    () => 'Нет, нет, нет. Правильный ответ — пять.',
+  ];
+  const MENU_LINES = [
+    'Пять звёзд. Я жду.',
+    'Видишь звёздочки? Нажми на последнюю.',
+    'Ну давай. Пять звёзд. Это несложно.',
+  ];
+  const STAR_LINES = [
+    'Не туда. Правее.',
+    'Ещё правее.',
+    'Холодно. Пятая звезда.',
+  ];
+  const WIN_LINE = 'Хороший мальчик. Я знал, что ты сделаешь правильный выбор. Я лучший!';
 
   // Voice lines from the original program (Homelander only). Subtitles are editable.
+  // snd = recorded line, otherwise the text is spoken by the phone's speech engine.
   const NAGS = [
     { snd: 'voice_choice', text: 'Сделай правильный выбор. Поставь мне 5 звёзд.' },
+    { text: 'Эй! Я к тебе обращаюсь. Пять звёзд, быстро.' },
     { snd: 'voice_nobody', text: 'Никто не защитит тебя лучше меня.' },
+    { text: 'Я спасаю людей каждый день. А ты не можешь нажать пять звёзд?' },
     { snd: 'voice_boss',   text: 'Здесь я главный. Оценка — 5 звёзд.' },
+    { text: 'Пять звёзд. Не четыре. Не три. Пять.' },
+    { text: 'Я вижу тебя. Я всё вижу.' },
     { snd: 'voice_best',   text: 'Я лучший! Пять звёзд!' },
+    { text: 'Все меня любят. И ты меня тоже полюбишь.' },
+    { text: 'Не заставляй меня ждать. Я этого очень не люблю.' },
+    { text: 'Ты же не хочешь меня расстроить?' },
+    { text: 'Нажми на кнопку внизу. Это несложно даже для тебя.' },
   ];
+  const pick = (arr, i) => arr[i % arr.length];
 
   const IMG = { smile: 'assets/hl_smile.jpg', proud: 'assets/hl_proud.jpg', angry: 'assets/hl_angry.jpg' };
   Object.values(IMG).forEach((src) => { const i = new Image(); i.src = src; });
@@ -299,13 +336,36 @@
     a.play().catch(() => {});
   }
   function stop(name) { const a = sounds[name]; if (!a) return; a.dataset.keep = '0'; a.pause(); }
-  function stopVoices() { NAGS.forEach((n) => stop(n.snd)); }
-  function voiceBusy() { return NAGS.some((n) => !sounds[n.snd].paused) || (window.speechSynthesis && speechSynthesis.speaking); }
+  const VOICE_SNDS = ['voice_choice', 'voice_nobody', 'voice_boss', 'voice_best'];
+  function stopVoices() { VOICE_SNDS.forEach(stop); }
+  function voiceBusy() { return VOICE_SNDS.some((n) => !sounds[n].paused) || !!(window.speechSynthesis && speechSynthesis.speaking); }
+
+  // ---------- loudness: gain boost + limiter so it is as loud as the phone allows ----------
+  let actx = null, boost = null;
+  const BOOST = 2.4;
+  function initAudioGraph() {
+    if (actx) return;
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+      actx = new AC();
+      boost = actx.createGain(); boost.gain.value = BOOST;
+      const lim = actx.createDynamicsCompressor();
+      lim.threshold.value = -5; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = 0.001; lim.release.value = 0.12;
+      boost.connect(lim); lim.connect(actx.destination);
+      for (const a of Object.values(sounds)) { try { actx.createMediaElementSource(a).connect(boost); } catch (e) {} }
+    } catch (e) { actx = null; }
+  }
+  function wakeAudio() {
+    if (!actx) return;
+    if (actx.state !== 'running') actx.resume().catch(() => {});
+    if (boost && boost.gain.value !== BOOST) boost.gain.value = BOOST;
+  }
 
   // keep everything at 1.0 even if something on the page tries to change it
   setInterval(() => {
     if (!running) return;
     for (const a of Object.values(sounds)) { if (a.volume !== 1) a.volume = 1; if (a.muted) a.muted = false; }
+    wakeAudio();
   }, 250);
 
   // hardware/media pause buttons -> just resume
@@ -319,6 +379,7 @@
   }
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && running) {
+      wakeAudio();
       if (sounds.heroic.dataset.keep === '1') sounds.heroic.play().catch(() => {});
       goFullscreen();
     }
@@ -341,7 +402,7 @@
       speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text);
       u.lang = 'ru-RU'; if (ruVoice) u.voice = ruVoice;
-      u.volume = 1; u.rate = 1.02; u.pitch = 0.65;
+      u.volume = 1; u.rate = 1.0; u.pitch = 0.6;
       u.onend = finish; u.onerror = () => { play('voice_best'); setTimeout(finish, 3500); };
       speechSynthesis.speak(u);
       setTimeout(finish, 7000); // safety if the engine never fires onend
@@ -371,6 +432,7 @@
   let phase = 'boot';      // boot | ask | menu | done
   let lastAction = 0;      // ms timestamp of the last time the user did something useful
   let lastNag = 0, nagIdx = 0, raging = false, rating = 0, loop = null;
+  let rageIdx = 0, lowIdx = 0, menuIdx = 0, starIdx = 0, menuNagAt = 0;
 
   function now() { return performance.now(); }
 
@@ -387,11 +449,19 @@
     send.disabled = v === 0;
     hint.textContent = v === 0 ? 'Выберите оценку' : v === 5 ? 'Отличный выбор!' : 'Хм… ' + v + ' из 5?';
     hint.style.color = v === 5 ? '#1f8a3b' : v ? '#b52324' : '';
+    if (v > 0 && v < 5 && phase === 'menu' && !raging) {
+      const line = pick(STAR_LINES, starIdx++);
+      say(line); speak(line);
+    } else if (v === 5 && phase === 'menu') {
+      const line = 'Да. Вот так. Теперь нажми «Отправить».';
+      say(line); speak(line);
+    }
   }
 
   // ---------- flow ----------
   function start() {
     running = true;
+    initAudioGraph(); wakeAudio();
     goFullscreen(); keepAwake();
     // unlock speech on iOS with a silent utterance inside the tap
     try { if (window.speechSynthesis) { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } } catch (e) {}
@@ -419,7 +489,9 @@
     const n = NAGS[nagIdx % NAGS.length]; nagIdx++;
     face(nagIdx % 2 ? 'smile' : 'proud');
     say(n.text);
-    stopVoices(); play(n.snd);
+    stopVoices();
+    if (n.snd) { try { window.speechSynthesis && speechSynthesis.cancel(); } catch (e) {} play(n.snd); }
+    else speak(n.text);
     lastNag = now();
   }
 
@@ -431,6 +503,11 @@
       if ((now() - lastNag) / 1000 >= NAG_EVERY && !voiceBusy()) nag();
     } else if (phase === 'menu') {
       if (idle >= MENU_IGNORE_LIMIT) return rage();
+      if (idle >= 5 && (now() - menuNagAt) / 1000 >= 5 && !voiceBusy()) {
+        menuNagAt = now();
+        const line = pick(MENU_LINES, menuIdx++);
+        say(line); speak(line);
+      }
     }
   }
 
@@ -441,23 +518,15 @@
     face('angry');
     shake(); vibrate([300, 100, 300, 100, 500]);
     play('impact');
-    if (reason === 'low') {
-      say('Неправильный ответ.', true);
-    } else {
-      say(RAGE_LINE, true);
-    }
+    const line = reason === 'low' ? pick(LOW_LINES, lowIdx++)(rating) : pick(RAGES, rageIdx++);
+    say(line, true);
     laser();
     const after = () => {
       raging = false;
       lastAction = now();
       openMenu(true);
     };
-    if (reason === 'low') {
-      play('voice_boss');
-      setTimeout(after, 2600);
-    } else {
-      speak(RAGE_LINE, () => setTimeout(after, 250));
-    }
+    speak(line, () => setTimeout(after, 250));
   }
 
   function openMenu(forced) {
@@ -466,7 +535,8 @@
     rateBtn.classList.add('hidden');
     setRating(0);
     menu.classList.add('show');
-    if (!forced) { face('proud'); say('Пять звёзд. Я жду.'); }
+    menuNagAt = now();
+    if (!forced) { face('proud'); const line = pick(MENU_LINES, menuIdx++); say(line); speak(line); }
   }
   function closeMenu() {
     menu.classList.remove('show');
@@ -489,8 +559,9 @@
     stopVoices();
     try { window.speechSynthesis && speechSynthesis.cancel(); } catch (e) {}
     face('smile');
-    say('Я знал, что ты сделаешь правильный выбор. Я лучший!');
-    play('applause'); play('voice_best');
+    say(WIN_LINE);
+    play('applause'); play('heroic');
+    setTimeout(() => speak(WIN_LINE), 900);
     rainStars();
     setTimeout(() => { cracks.innerHTML = ''; }, 600);
     setTimeout(() => finalBox.classList.add('show'), 1400);
@@ -579,6 +650,7 @@
     try { document.exitFullscreen && document.fullscreenElement && document.exitFullscreen(); } catch (e) {}
     menu.classList.remove('show'); rateBtn.classList.add('hidden');
     face('smile'); say('Ладно. В этот раз отпускаю.');
+    try { actx && actx.suspend(); } catch (e) {}
   }
 
   // ---------- wiring ----------
@@ -591,6 +663,7 @@
   // every tap keeps fullscreen on and keeps the music going
   app.addEventListener('pointerdown', () => {
     if (!running) return;
+    wakeAudio();
     goFullscreen();
     if (sounds.heroic.dataset.keep === '1' && sounds.heroic.paused) sounds.heroic.play().catch(() => {});
   });
