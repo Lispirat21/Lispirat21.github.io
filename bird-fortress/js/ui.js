@@ -106,6 +106,7 @@ const UI = window.UI = {};
     if (a === 'exit') exitGame();
     if (a === 'continue') openSlots('load');
     if (a === 'new') openSlots('new');
+    if (a === 'mp' && Net.SANDBOXED) { toast(tr('mp_sandbox'), 'warn', 9000); return; }
     if (a === 'mp') { $('m-play').classList.add('hidden'); $('m-mp').classList.remove('hidden'); }
     if (a === 'mp-back') { $('m-mp').classList.add('hidden'); $('m-play').classList.remove('hidden'); }
     if (a === 'mp-create') { mpMode = 'host'; $('m-mp').classList.add('hidden'); openSlots('new'); }
@@ -241,9 +242,9 @@ const UI = window.UI = {};
     enterGame(); toast(tr('welcome', { biome: World.biome.name, seed }), 'good', 4500);
   });
   // ---------------- Лобби совместной игры ----------------
-  let pendingStart = null, lobbyMode = null;
+  let pendingStart = null, lobbyMode = null, lbStatus = '';
   function openLobby(mode) {
-    lobbyMode = mode; $('lobby').classList.remove('hidden');
+    lobbyMode = mode; lbStatus = mode === 'join' ? tr('mp_st_p2p') : ''; $('lobby').classList.remove('hidden');
     $('lb-code').textContent = mode === 'join' ? joinCode : '…';
     UI.lobbyUpdate();
   }
@@ -251,16 +252,17 @@ const UI = window.UI = {};
     if (code && lobbyMode) $('lb-code').textContent = code;
     if (!lobbyMode) { updateMpBadge(); return; }
     const L = G.lobby(), inGame = G.state === 'play';
-    $('lb-players').textContent = tr('lobby_players', { n: Math.max(1, L.length) });
+    $('lb-players').textContent = lobbyMode === 'join' && !L.length ? '' : tr('lobby_players', { n: Math.max(1, L.length) });
     const list = $('lb-list'); list.innerHTML = '';
-    (L.length ? L : [{ pid: 0, hero: HERO_ORDER[selIdx] }]).forEach(l => {
+    // гость до подключения не видит «чужого» лобби: показываем только статус соединения
+    (L.length ? L : (lobbyMode === 'join' ? [] : [{ pid: 0, hero: HERO_ORDER[selIdx] }])).forEach(l => {
       const me = Net.isClient ? l.pid === G.mpPid() : l.pid === 0;
       list.append(h('div', { cls: 'lb-p' }, h('b', null, (l.pid + 1) + '.'), h('span', null, HEROES[l.hero] ? HEROES[l.hero].name : '?'),
         l.pid === 0 ? h('span', { cls: 'tag g' }, tr('host_tag')) : null, me ? h('span', { cls: 'tag' }, tr('you_tag')) : null));
     });
     const isHost = lobbyMode === 'host' || lobbyMode === 'ingame';
     $('lb-note').textContent = tr('lobby_note', { n: Math.max(2, L.length) });
-    $('lb-wait').textContent = !Net.active ? tr('lobby_conn') : tr('lobby_wait');
+    $('lb-wait').textContent = lobbyMode === 'join' ? (lbStatus || tr('lobby_conn')) : (!Net.active ? tr('lobby_conn') : tr('lobby_wait'));
     $('lb-wait').classList.toggle('hidden', isHost && Net.active);
     $('lb-start').classList.toggle('hidden', lobbyMode !== 'host');
     $('lb-back').classList.toggle('hidden', lobbyMode !== 'ingame');
@@ -268,6 +270,10 @@ const UI = window.UI = {};
     if (!Net.active && lobbyMode === 'join' && $('lb-code').textContent !== '…') { /* ошибка — показываем кнопку выхода */ }
     updateMpBadge();
     void inGame;
+  };
+  UI.lobbyStatus = function (st, msg) {
+    lbStatus = st === 'p2p' ? tr('mp_st_p2p') : st === 'relay' ? tr('mp_st_relay') : st === 'ok' ? tr('mp_st_ok') : st === 'fail' ? '❌ ' + msg : '';
+    UI.lobbyUpdate();
   };
   function updateMpBadge() {
     const b = $('mpbadge'); b.classList.toggle('hidden', !Net.active);
