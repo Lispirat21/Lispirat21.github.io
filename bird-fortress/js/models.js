@@ -11,6 +11,15 @@ const Models = (() => {
   const G_BOX = new THREE.BoxGeometry(1, 1, 1);
   const G_SPH = new THREE.SphereGeometry(0.5, 12, 9);
   const G_SPH_LO = new THREE.SphereGeometry(0.5, 7, 5);
+  // Графика «ПК»: гладкие высокополигональные формы и дополнительные детали у птиц и зверей
+  const G_SPH_HI = new THREE.SphereGeometry(0.5, 28, 20);
+  let HI = false; const smoothCache = new Map();
+  function setDetail(on) { HI = !!on; }
+  function smooth(m) {
+    if (!HI || !m.flatShading) return m;
+    if (!smoothCache.has(m)) { const c = m.clone(); c.flatShading = false; smoothCache.set(m, c); }
+    return smoothCache.get(m);
+  }
   function M(material) { return typeof material === 'object' ? material : mat(material); }
   function add(m, parent, x, y, z, shadow = true) {
     m.position.set(x || 0, y || 0, z || 0);
@@ -19,7 +28,7 @@ const Models = (() => {
     return m;
   }
   function box(w, h, d, c, x, y, z, p, shadow) { const m = add(new THREE.Mesh(G_BOX, M(c)), p, x, y, z, shadow); m.scale.set(w, h, d); return m; }
-  function sph(w, h, d, c, x, y, z, p, lo, shadow) { const m = add(new THREE.Mesh(lo ? G_SPH_LO : G_SPH, M(c)), p, x, y, z, shadow); m.scale.set(w, h, d); return m; }
+  function sph(w, h, d, c, x, y, z, p, lo, shadow) { const m = add(new THREE.Mesh(HI ? G_SPH_HI : (lo ? G_SPH_LO : G_SPH), HI ? smooth(M(c)) : M(c)), p, x, y, z, shadow); m.scale.set(w, h, d); return m; }
   function cyl(rt, rb, h, c, x, y, z, p, seg = 8, shadow) {
     const g = geo('c' + rt + '_' + rb + '_' + h + '_' + seg, () => new THREE.CylinderGeometry(rt, rb, h, seg));
     return add(new THREE.Mesh(g, M(c)), p, x, y, z, shadow);
@@ -160,6 +169,16 @@ const Models = (() => {
     if (id === 'parrot') { sph(0.08, bodyS[1] * 0.4, bodyS[2] * 0.6, 0xf0c020, -0.04, -bodyS[1] * 0.12, 0, wingL); sph(0.08, bodyS[1] * 0.4, bodyS[2] * 0.6, 0xf0c020, 0.04, -bodyS[1] * 0.12, 0, wingR); }
     if (id === 'bullfinch') { box(0.11, 0.05, 0.3, 0xf0f0f0, -0.03, -0.12, 0, wingL, false); box(0.11, 0.05, 0.3, 0xf0f0f0, 0.03, -0.12, 0, wingR, false); }
     P.wingL = wingL; P.wingR = wingR; wl.rotation.x = 0.15; wr.rotation.x = 0.15;
+    if (HI) {
+      // маховые перья веером на концах крыльев, блик в глазах, перья на груди
+      const fc = new THREE.Color(wingMat.color || 0x6a4a2a).multiplyScalar(0.7).getHex();
+      [[wingL, -1], [wingR, 1]].forEach(([wg, sx]) => {
+        for (let i = 0; i < 5; i++) { const f = box(0.025, 0.07, bodyS[2] * (0.42 - i * 0.04), fc, sx * 0.03, -bodyS[1] * (0.45 + i * 0.07), -bodyS[2] * 0.42, wg, false); f.rotation.x = 0.35 + i * 0.12; }
+        for (let i = 0; i < 3; i++) { const cv = box(0.03, 0.05, bodyS[2] * 0.5, wingMat, sx * 0.05, -bodyS[1] * (0.12 + i * 0.1), -0.02, wg, false); cv.rotation.x = 0.2; }
+      });
+      [-1, 1].forEach(sx => sph(0.03, 0.03, 0.02, 0xffffff, sx * headS * 0.33, headS * 0.17, headS * (id === 'owl' ? 0.48 : 0.33), head, true, false));
+      for (let i = 0; i < 6; i++) { const a = (i - 2.5) * 0.28; sph(0.13, 0.08, 0.06, bellyMat, Math.sin(a) * bodyS[0] * 0.32, legH + bodyS[1] * (0.25 + (i % 2) * 0.12), bodyS[2] * 0.36 + Math.cos(a) * 0.02, b, true, false); }
+    }
     // хвост
     const tail = group(b, 0, legH + bodyS[1] * 0.55, -bodyS[2] * 0.45); P.tail = tail;
     if (id === 'peacock') {
@@ -493,6 +512,14 @@ const Models = (() => {
     else if (type === 'lynx') sph(0.12, 0.12, 0.22, 0x1a1a1a, 0, 0, -0.08, tail, true);
     else if (type === 'boar') { const t = cyl(0.025, 0.025, 0.3, d.c2, 0, -0.12, -0.05, tail, 4); t.rotation.x = 0.4; }
     else if (type === 'monster') { const t = cone(0.3, 1.2, d.c2, 0, -0.2, -0.5, tail, 6); t.rotation.x = -Math.PI / 2 - 0.4; }
+    if (HI) {
+      // шерсть клочьями, когти, клыки, блики в глазах
+      const furC = new THREE.Color(d.c).multiplyScalar(0.85).getHex();
+      for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2; const f = cone(d.w * 0.09, d.h * 0.32, furC, Math.cos(a) * d.w * 0.46, Math.sin(a) * d.h * 0.42, d.len * 0.22, body, 4, false); f.rotation.set(Math.PI / 2 - 0.6, 0, -a + Math.PI / 2); }
+      for (let i = 0; i < 6; i++) { const f = cone(d.w * 0.07, d.h * 0.25, d.c2, (i % 2 ? 1 : -1) * d.w * 0.12, d.h * 0.47, d.len * 0.25 - i * d.len * 0.1, body, 4, false); f.rotation.x = -0.9; }
+      P.legs.forEach(l => { for (let k = -1; k <= 1; k++) { const cl = cone(0.025 * d.w / 0.42 + 0.01, 0.1, 0xe8e0d0, k * d.w * 0.08, -(d.legH + d.h * 0.2) + 0.03, d.w * 0.22, l, 4, false); cl.rotation.x = Math.PI / 2; } });
+      [-1, 1].forEach(sx => { const tth = cone(0.025, 0.1, 0xf4f0e4, sx * d.head * 0.12, -d.head * 0.3, d.head * 0.62, head, 4, false); tth.rotation.x = Math.PI; sph(d.head * 0.05, d.head * 0.05, d.head * 0.03, 0xffffff, sx * d.head * 0.24, d.head * 0.17, d.head * 0.48, head, true, false); });
+    }
     root.userData.parts = P; root.userData.d = d;
     root.userData.baseScale = { monster: 1.1, alpha: 1.15, bearking: 1.25, treant: 1.2, troll: 1.1 }[type] || 1;
     root.scale.setScalar(root.userData.baseScale);
@@ -906,5 +933,5 @@ const Models = (() => {
     return { stone, coal, iron, berry };
   }
 
-  return { makeHelicopter, setGear, mat, texMat, T, box, sph, cyl, cone, torus, group, makeBird, animBird, makeHero, makeTool, animHero, makeEnemy, animEnemy, makeBuilding, makeCannon, merge, mtx, treeGeos, rockGeos, WALL_H: l => WALL_LEVELS[l - 1].h };
+  return { setDetail, get detail() { return HI; }, makeHelicopter, setGear, mat, texMat, T, box, sph, cyl, cone, torus, group, makeBird, animBird, makeHero, makeTool, animHero, makeEnemy, animEnemy, makeBuilding, makeCannon, merge, mtx, treeGeos, rockGeos, WALL_H: l => WALL_LEVELS[l - 1].h };
 })();
