@@ -735,6 +735,11 @@ const GEAR = {
   lamp:   { name: 'Ручная лампа',          icon: '🪔', cost: { wood: 10, coal: 3, coins: 30 },   desc: 'Слабо светит вокруг героя в темноте.' },
   helmet: { name: 'Каска с прожектором',   icon: '⛑️', cost: { iron: 8, coal: 6, coins: 120 },  desc: 'Мощный луч света туда, куда смотрит герой.' },
 };
+// Броня героя: уменьшает получаемый урон
+const ARMOR = {
+  leather: { icon: '🦺', red: 0.2, cost: { wood: 10, food: 12, coins: 40 } },
+  iron:    { icon: '🛡️', red: 0.4, cost: { iron: 20, coal: 10, coins: 120 }, req: 'metal' },
+};
 
 </script>
 <script>
@@ -1235,6 +1240,7 @@ function applyDataLang() {
   PICKS.forEach((a, i) => a.name = tr('pk' + i));
   for (const k in NODE_INFO) NODE_INFO[k].name = tr('n.' + k);
   for (const k in GEAR) { GEAR[k].name = tr('g.' + k); GEAR[k].desc = tr('gd.' + k); }
+  if (typeof ARMOR !== 'undefined') for (const k in ARMOR) { ARMOR[k].name = tr('a.' + k); ARMOR[k].desc = tr('ad.' + k); }
   for (const k in DIFFICULTY) { DIFFICULTY[k].name = tr('d.' + k); DIFFICULTY[k].desc = tr('dd.' + k); }
   QUESTS.forEach((q, i) => q.text = tr('q' + i));
   if (typeof World !== 'undefined' && World.BIOMES) World.BIOMES.forEach(b => b.name = tr('bio.' + b.id));
@@ -1365,6 +1371,15 @@ Object.assign(TR_UI, {
   mp_st_ok:    ["✔ Connected! Waiting for the host to start…", "✔ Подключено! Ждём, пока хост начнёт…", "✔ ¡Conectado! Esperando al anfitrión…", "✔ Conectado! Esperando o anfitrião…", "✔ Connecté ! En attente de l'hôte…", "✔ Verbunden! Warte auf den Host…", "✔ 已连接！等待房主开始…", "✔ 接続しました！ホストを待っています…", "✔ जुड़ गए! होस्ट का इंतज़ार…", "✔ تم الاتصال! بانتظار المضيف…"],
   mp_server:   ["Could not reach the connection server. Check your internet or try Wi-Fi.", "Не удалось связаться с сервером соединения. Проверьте интернет или попробуйте через Wi-Fi.", "No se pudo contactar el servidor de conexión. Revisa internet o prueba Wi-Fi.", "Não foi possível alcançar o servidor. Verifique a internet ou use Wi-Fi.", "Serveur de connexion injoignable. Vérifiez internet ou essayez le Wi-Fi.", "Verbindungsserver nicht erreichbar. Internet prüfen oder WLAN nutzen.", "无法连接服务器，请检查网络或改用 Wi-Fi。", "接続サーバーに届きません。ネットかWi-Fiを確認してください。", "कनेक्शन सर्वर तक नहीं पहुँचे। इंटरनेट जाँचें या Wi-Fi आज़माएँ।", "تعذّر الوصول لخادم الاتصال. تحقق من الإنترنت أو جرّب Wi-Fi."],
   mp_sandbox:  ["Multiplayer does not work on this page (network is blocked here). Open the game on the site: lispirat21.github.io/bird-fortress", "Совместная игра не работает на этой странице (здесь запрещена сеть). Откройте игру на сайте: lispirat21.github.io/bird-fortress", "El multijugador no funciona en esta página. Abre el juego en: lispirat21.github.io/bird-fortress", "O multijogador não funciona nesta página. Abra o jogo em: lispirat21.github.io/bird-fortress", "Le multijoueur ne marche pas sur cette page. Ouvrez le jeu sur : lispirat21.github.io/bird-fortress", "Mehrspieler funktioniert hier nicht. Öffne das Spiel auf: lispirat21.github.io/bird-fortress", "此页面无法多人游戏（网络被禁用）。请在网站打开：lispirat21.github.io/bird-fortress", "このページではマルチプレイ不可。サイトで開いてください：lispirat21.github.io/bird-fortress", "इस पेज पर मल्टीप्लेयर नहीं चलता। साइट पर खोलें: lispirat21.github.io/bird-fortress", "اللعب الجماعي لا يعمل هنا. افتح اللعبة على: lispirat21.github.io/bird-fortress"],
+});
+Object.assign(TR_DATA, {
+  'a.leather':  ["Leather Armor", "Кожаная броня", "Armadura de cuero", "Armadura de couro", "Armure de cuir", "Lederrüstung", "皮甲", "革の鎧", "चमड़े का कवच", "درع جلدي"],
+  'ad.leather': ["Vest, shoulder pads and bracers. −20% damage taken.", "Жилет, наплечники и наручи. −20% получаемого урона.", "Chaleco, hombreras y brazales. −20% de daño recibido.", "Colete, ombreiras e braçadeiras. −20% de dano recebido.", "Gilet, épaulettes et brassards. −20 % de dégâts subis.", "Weste, Schulterpolster und Armschienen. −20 % Schaden.", "背心、护肩和护腕。受到伤害−20%。", "ベスト、肩当て、籠手。被ダメージ−20%。", "बनियान, कंधे और कलाई रक्षक। −20% नुकसान।", "صدرية وواقيات أكتاف وسواعد. −20% من الضرر."],
+  'a.iron':     ["Iron Armor", "Железная броня", "Armadura de hierro", "Armadura de ferro", "Armure de fer", "Eisenrüstung", "铁甲", "鉄の鎧", "लोहे का कवच", "درع حديدي"],
+  'ad.iron':    ["Steel breastplate, pauldrons and greaves. −40% damage taken.", "Стальной нагрудник, наплечники и поножи. −40% получаемого урона.", "Peto de acero, hombreras y grebas. −40% de daño recibido.", "Peitoral de aço, ombreiras e grevas. −40% de dano recebido.", "Plastron d'acier, spalières et jambières. −40 % de dégâts subis.", "Stahlbrustplatte, Schulterplatten und Beinschienen. −40 % Schaden.", "钢制胸甲、肩甲和护腿。受到伤害−40%。", "鋼の胸当て、肩鎧、すね当て。被ダメージ−40%。", "इस्पात का सीना, कंधे और पैर कवच। −40% नुकसान।", "صدرية فولاذية وواقيات أكتاف وسيقان. −40% من الضرر."],
+});
+Object.assign(TR_UI, {
+  armor_title: ["🛡 Armor — less damage", "🛡 Броня — меньше урона", "🛡 Armadura — menos daño", "🛡 Armadura — menos dano", "🛡 Armure — moins de dégâts", "🛡 Rüstung — weniger Schaden", "🛡 护甲 — 减少伤害", "🛡 鎧 — ダメージ軽減", "🛡 कवच — कम नुकसान", "🛡 الدروع — ضرر أقل"],
 });
 
 </script>
@@ -1848,7 +1863,7 @@ const Models = (() => {
   function makeHero(type) {
     const L = HERO_LOOK[type]; const root = new THREE.Group(); const P = { root };
     const hips = group(root, 0, 0.92, 0); P.hips = hips;
-    const torso = group(hips, 0, 0, 0); P.torso = torso;
+    const torso = group(hips, 0, 0, 0); P.torso = torso; P.torsoW = L.width;
     box(L.width, 0.62, 0.32, L.shirt, 0, 0.36, 0, torso);
     box(L.width + 0.02, 0.1, 0.34, 0x3a2614, 0, 0.06, 0, torso); // пояс
     box(0.12, 0.08, 0.05, 0xd8b040, 0, 0.06, 0.18, torso, false);
@@ -1964,6 +1979,42 @@ const Models = (() => {
       const lamp = cyl(0.08, 0.1, 0.1, 0x3a3a40, 0, 0.18, 0.2, hd, 10); lamp.rotation.x = Math.PI / 2;
       const glass = cyl(0.075, 0.075, 0.02, mat(0xffffff, { emissive: 0xfff4c0, emissiveIntensity: 2.5 }), 0, 0.18, 0.26, hd, 10, false); glass.rotation.x = Math.PI / 2;
     }
+  }
+  // Броня: кожаная (жилет, наплечники, наручи) или железная (нагрудник, наплечники, поножи)
+  function setArmor(root, id) {
+    const P = root.userData.parts;
+    if (P.armor) { P.armor.forEach(o => o.parent && o.parent.remove(o)); }
+    P.armor = [];
+    if (!id) return;
+    const iron = id === 'iron';
+    const m1 = iron ? mat(0xd4dae2, { metalness: 0.3, roughness: 0.3 }) : mat(0x7a4a24, { roughness: 0.85 });
+    const m2 = iron ? mat(0x9aa2ae, { metalness: 0.3, roughness: 0.4 }) : mat(0x4a2c14, { roughness: 0.9 });
+    const rim = iron ? mat(0xd8b040, { metalness: 0.6, roughness: 0.35 }) : mat(0xc8a070);
+    const w = (P.torsoW || 0.56) + 0.06;
+    const t = group(P.torso, 0, 0, 0); P.armor.push(t);
+    box(w, 0.5, 0.38, m1, 0, 0.4, 0, t);                       // корпус
+    if (iron) {
+      box(w * 0.7, 0.3, 0.04, m2, 0, 0.48, 0.2, t);             // выпуклая пластина
+      box(w + 0.02, 0.05, 0.4, rim, 0, 0.66, 0, t, false);
+      box(w + 0.02, 0.05, 0.4, rim, 0, 0.16, 0, t, false);
+      box(0.24, 0.12, 0.3, m1, 0, 0.72, 0, t);                  // горжет
+    } else {
+      [-1, 1].forEach(sx => { const st = box(0.06, 0.62, 0.02, m2, sx * w * 0.22, 0.4, 0.2, t, false); st.rotation.z = sx * 0.5; });
+      box(0.08, 0.06, 0.02, rim, 0, 0.4, 0.21, t, false);       // пряжка
+      box(w + 0.02, 0.06, 0.4, m2, 0, 0.18, 0, t, false);
+    }
+    P.arms.forEach((a, i) => {
+      const sx = i ? 1 : -1;
+      const g = group(a, 0, 0, 0); P.armor.push(g);
+      const sh = sph(0.27, iron ? 0.2 : 0.16, 0.27, m1, sx * 0.02, 0.02, 0, g, true); // наплечник
+      if (iron) box(0.22, 0.04, 0.24, rim, sx * 0.02, -0.06, 0, g, false);
+      box(0.18, 0.18, 0.2, iron ? m1 : m2, 0, -0.44, 0, g);     // наруч
+    });
+    P.legs.forEach(l => {
+      const g = group(l, 0, 0, 0); P.armor.push(g);
+      if (iron) { box(0.24, 0.3, 0.26, m1, 0, -0.5, 0.01, g); sph(0.12, 0.1, 0.1, m2, 0, -0.36, 0.12, g, true); }
+      else box(0.24, 0.16, 0.26, m2, 0, -0.06, 0, g);           // кожаная юбка
+    });
   }
   function makeTool(kind, tier) {
     const g = new THREE.Group();
@@ -2526,7 +2577,7 @@ const Models = (() => {
     return { stone, coal, iron, berry };
   }
 
-  return { setDetail, get detail() { return HI; }, makeHelicopter, setGear, mat, texMat, T, box, sph, cyl, cone, torus, group, makeBird, animBird, makeHero, makeTool, animHero, makeEnemy, animEnemy, makeBuilding, makeCannon, merge, mtx, treeGeos, rockGeos, WALL_H: l => WALL_LEVELS[l - 1].h };
+  return { setDetail, get detail() { return HI; }, makeHelicopter, setGear, setArmor, mat, texMat, T, box, sph, cyl, cone, torus, group, makeBird, animBird, makeHero, makeTool, animHero, makeEnemy, animEnemy, makeBuilding, makeCannon, merge, mtx, treeGeos, rockGeos, WALL_H: l => WALL_LEVELS[l - 1].h };
 })();
 
 </script>
@@ -3248,7 +3299,7 @@ const G = window.G = {};
     if (P && S) {
       const fresh = Models.makeHero(S.hero); fresh.traverse(o => { if (o.isMesh) o.castShadow = true; });
       P.mesh = swap(P.mesh, fresh); P.tool = null; P.toolTier = -9; setTool('axe');
-      if (S.gear) Models.setGear(P.mesh, S.gear.eq);
+      if (S.gear) { Models.setGear(P.mesh, S.gear.eq); Models.setArmor(P.mesh, S.gear.armor); }
     }
   }
 
@@ -3323,7 +3374,7 @@ const G = window.G = {};
     P.pos.y = World.groundAt(P.pos.x, P.pos.z);
     setTool('axe');
     if (!S.gear) S.gear = { own: {}, eq: null };
-    Models.setGear(mesh, S.gear.eq);
+    Models.setGear(mesh, S.gear.eq); Models.setArmor(mesh, S.gear.armor);
   }
   function setTool(kind) {
     if (kind === 'pick' && S.tools.pick < 0) kind = 'axe';
@@ -3886,7 +3937,8 @@ const G = window.G = {};
   // ---------------- Игрок ----------------
   function hurtPlayer(dmg) {
     if (P.dead) return;
-    P.hp -= dmg * (HEROES[S.hero].armor || 1); P.lastHurt = time;
+    const ar = S.gear && S.gear.armor && ARMOR[S.gear.armor];
+    P.hp -= dmg * (HEROES[S.hero].armor || 1) * (ar ? 1 - ar.red : 1); P.lastHurt = time;
     Sound.play('hurt'); UI.flash();
     if (P.hp <= 0) {
       P.hp = 0; P.dead = 5; P.mesh.rotation.x = -Math.PI / 2;
@@ -4072,6 +4124,20 @@ const G = window.G = {};
   G.equipGear = function (id) {
     S.gear.eq = S.gear.eq === id ? null : id;
     Models.setGear(P.mesh, S.gear.eq); Sound.play('click');
+    return true;
+  };
+  // Броня: покупка один раз, носится одна
+  G.buyArmor = function (id) {
+    if (!S.gear) S.gear = { own: {}, eq: null };
+    const a = ARMOR[id]; if (!a) return false;
+    if (!S.gear.own['a_' + id]) {
+      if (a.req && !S.tech[a.req]) { UI.toast(tr('need_tech_t', { name: TECH[a.req].name }), 'warn'); Sound.play('error'); return false; }
+      if (Net.isClient) { if (!G.canAfford(a.cost)) { UI.toast(tr('not_enough') + G.missing(a.cost), 'warn'); return false; } Net.toHost({ c: 'spend', cost: a.cost }); }
+      else if (!tryPay(a.cost)) return false;
+      S.gear.own['a_' + id] = true; Sound.play('upgrade'); UI.toast(tr('gear_bought', { name: a.name }), 'good');
+    } else Sound.play('click');
+    S.gear.armor = S.gear.armor === id ? null : id;
+    Models.setArmor(P.mesh, S.gear.armor);
     return true;
   };
   G.eat = function () {
@@ -4668,6 +4734,7 @@ const G = window.G = {};
     const pp = { pid, hero, mesh, pos: V(2 * pid, 0, 6), tgt: V(2 * pid, 0, 6), yaw: 0, anim: 0, swing: 0, dead: false, animT: Math.random() * 5, hp: HEROES[hero].hp };
     puppets.set(pid, pp); return pp;
   }
+  function setPupArmor(pp, ar) { ar = ARMOR[ar] ? ar : 0; if (pp.ar === ar) return; pp.ar = ar; Models.setArmor(pp.mesh, ar); }
   function removePuppet(pid) { const pp = puppets.get(pid); if (pp) { scene.remove(pp.mesh); puppets.delete(pid); } }
   function updatePuppets(dt) {
     puppets.forEach(pp => {
@@ -4678,7 +4745,7 @@ const G = window.G = {};
       pp.animT += dt; Models.animHero(m, ['idle', 'walk', 'run'][pp.anim] || 'idle', pp.animT, HEROES[pp.hero].speed / 6, pp.swing);
     });
   }
-  const myState = () => ({ c: 'me', x: +P.pos.x.toFixed(2), z: +P.pos.z.toFixed(2), y: +P.yaw.toFixed(2), a: P.moving || 0, s: +P.swing.toFixed(2), d: P.dead ? 1 : 0, h: S.hero });
+  const myState = () => ({ c: 'me', x: +P.pos.x.toFixed(2), z: +P.pos.z.toFixed(2), y: +P.yaw.toFixed(2), a: P.moving || 0, s: +P.swing.toFixed(2), d: P.dead ? 1 : 0, h: S.hero, ar: (S.gear && S.gear.armor) || 0 });
 
   // ---------- хост: снимок мира ----------
   const birdCode = b => b.hidden ? 3 : b.state === 'fly' ? 1 : b.state === 'gunner' ? 2 : b.state === 'walk' ? 0 : 4;
@@ -4692,8 +4759,8 @@ const G = window.G = {};
     s.bd = BD.map(b => { const m = b.mesh.position; return [b.id, b.sp, r1(m.x), +m.y.toFixed(2), r1(m.z), +b.mesh.rotation.y.toFixed(2), birdCode(b), b.cannon ? b.cannon.id : 0, Math.round(b.hp)]; });
     const dead = World.nodes.filter(n => !n.alive).map(n => n.idx); const dKey = dead.length + ':' + dead.reduce((a, v) => a + v, 0);
     if (full || dKey !== lastDead) s.dead = dead;
-    s.pl = [[0, S.hero, r1(P.pos.x), r1(P.pos.z), +P.yaw.toFixed(2), P.moving || 0, +P.swing.toFixed(2), P.dead ? 1 : 0]];
-    puppets.forEach(pp => s.pl.push([pp.pid, pp.hero, r1(pp.tgt.x), r1(pp.tgt.z), pp.yaw, pp.anim, pp.swing, pp.dead ? 1 : 0]));
+    s.pl = [[0, S.hero, r1(P.pos.x), r1(P.pos.z), +P.yaw.toFixed(2), P.moving || 0, +P.swing.toFixed(2), P.dead ? 1 : 0, (S.gear && S.gear.armor) || 0]];
+    puppets.forEach(pp => s.pl.push([pp.pid, pp.hero, r1(pp.tgt.x), r1(pp.tgt.z), pp.yaw, pp.anim, pp.swing, pp.dead ? 1 : 0, pp.ar || 0]));
     s.fx = fxQueue.splice(0);
     return { s, blKey, dKey };
   }
@@ -4729,7 +4796,7 @@ const G = window.G = {};
     if (!L || G.state !== 'play') return;
     if (m.c === 'me') {
       let pp = puppets.get(L.pid) || makePuppet(L.pid, m.h || L.hero);
-      pp.tgt.set(m.x, 0, m.z); pp.yaw = m.y; pp.anim = m.a; pp.swing = m.s; pp.dead = !!m.d;
+      pp.tgt.set(m.x, 0, m.z); pp.yaw = m.y; pp.anim = m.a; pp.swing = m.s; pp.dead = !!m.d; setPupArmor(pp, m.ar);
     } else if (m.c === 'hitNode') { const n = World.nodes[m.i]; if (n && n.alive) hostHitNode(n, Math.min(6, +m.p || 1), V(n.x, n.y + 1.6, n.z)); }
     else if (m.c === 'hitEnemy') { const e = E.find(x => x.id === m.id); if (e) hurtEnemy(e, Math.min(400, +m.dmg || 0)); }
     else if (m.c === 'place') { if (BUILD[m.t]) doPlace(m.t, +m.x, +m.z, (m.r | 0) % 4, m.w | 0); }
@@ -4824,9 +4891,9 @@ const G = window.G = {};
     if (s.dead) { const dead = new Set(s.dead); World.nodes.forEach(n => { const a = !dead.has(n.idx); if (a !== n.alive) { if (!a && n.kind === 'tree' && Math.hypot(n.x - P.pos.x, n.z - P.pos.z) < 30) fellTree(n); n.alive = a; n.grow = a ? 0.05 : 1; World.updateNodeMatrix(n); } }); }
     // другие игроки
     const seenP = new Set();
-    s.pl.forEach(([pid, hero, x, z, yaw, anim, sw, dead]) => {
+    s.pl.forEach(([pid, hero, x, z, yaw, anim, sw, dead, ar]) => {
       if (pid === guestPid) return; seenP.add(pid);
-      const pp = puppets.get(pid) || makePuppet(pid, hero); pp.tgt.set(x, 0, z); pp.yaw = yaw; pp.anim = anim; pp.swing = sw; pp.dead = !!dead;
+      const pp = puppets.get(pid) || makePuppet(pid, hero); pp.tgt.set(x, 0, z); pp.yaw = yaw; pp.anim = anim; pp.swing = sw; pp.dead = !!dead; setPupArmor(pp, ar);
     });
     puppets.forEach((_, pid) => { if (!seenP.has(pid)) removePuppet(pid); });
     // выстрелы — только картинка
@@ -5524,6 +5591,16 @@ const UI = window.UI = {};
       gg.append(h('div', { cls: 'item' }, h('div', { cls: 'ico' }, d.icon), h('div', { cls: 'nm' }, d.name + (on ? ' ✔' : '')), h('div', { cls: 'ds' }, d.desc), own ? null : h('div', { cls: 'cost', html: costHtml(d.cost) }), btn));
     });
     gear.append(gg); body.append(gear);
+    const arm = h('div', { cls: 'sect' }, h('h4', null, tr('armor_title')));
+    const ag = h('div', { cls: 'grid' });
+    Object.keys(ARMOR).forEach(id => {
+      const d = ARMOR[id], own = G2.own['a_' + id], on = G2.armor === id, locked = d.req && !S.tech[d.req];
+      const btn = h('button', { cls: 'btn' + (own ? (on ? ' red' : ' blue') : ' gold') }, own ? (on ? tr('take_off2') : tr('put_on')) : tr('buy'));
+      if (!own && locked) btn.disabled = true;
+      tap(btn, () => { G.buyArmor(id); renderModal(); });
+      ag.append(h('div', { cls: 'item' }, h('div', { cls: 'ico' }, d.icon), h('div', { cls: 'nm' }, d.name + (on ? ' ✔' : '')), h('div', { cls: 'ds' }, d.desc), own ? null : h('div', { cls: 'cost', html: costHtml(d.cost) }), (!own && locked) ? h('div', { cls: 'ds' }, `🔒 ${TECH[d.req].name}`) : null, btn));
+    });
+    arm.append(ag); body.append(arm);
     const tools = h('div', { cls: 'sect' }, h('h4', null, tr('tools')));
     const g1 = h('div', { cls: 'grid' });
     [['axe', AXES, '🪓'], ['pick', PICKS, '⛏️']].forEach(([k, list, ic]) => {

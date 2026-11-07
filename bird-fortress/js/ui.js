@@ -601,6 +601,16 @@ const UI = window.UI = {};
       gg.append(h('div', { cls: 'item' }, h('div', { cls: 'ico' }, d.icon), h('div', { cls: 'nm' }, d.name + (on ? ' ✔' : '')), h('div', { cls: 'ds' }, d.desc), own ? null : h('div', { cls: 'cost', html: costHtml(d.cost) }), btn));
     });
     gear.append(gg); body.append(gear);
+    const arm = h('div', { cls: 'sect' }, h('h4', null, tr('armor_title')));
+    const ag = h('div', { cls: 'grid' });
+    Object.keys(ARMOR).forEach(id => {
+      const d = ARMOR[id], own = G2.own['a_' + id], on = G2.armor === id, locked = d.req && !S.tech[d.req];
+      const btn = h('button', { cls: 'btn' + (own ? (on ? ' red' : ' blue') : ' gold') }, own ? (on ? tr('take_off2') : tr('put_on')) : tr('buy'));
+      if (!own && locked) btn.disabled = true;
+      tap(btn, () => { G.buyArmor(id); renderModal(); });
+      ag.append(h('div', { cls: 'item' }, h('div', { cls: 'ico' }, d.icon), h('div', { cls: 'nm' }, d.name + (on ? ' ✔' : '')), h('div', { cls: 'ds' }, d.desc), own ? null : h('div', { cls: 'cost', html: costHtml(d.cost) }), (!own && locked) ? h('div', { cls: 'ds' }, `🔒 ${TECH[d.req].name}`) : null, btn));
+    });
+    arm.append(ag); body.append(arm);
     const tools = h('div', { cls: 'sect' }, h('h4', null, tr('tools')));
     const g1 = h('div', { cls: 'grid' });
     [['axe', AXES, '🪓'], ['pick', PICKS, '⛏️']].forEach(([k, list, ic]) => {

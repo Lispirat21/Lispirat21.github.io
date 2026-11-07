@@ -185,3 +185,8 @@ const GEAR = {
   lamp:   { name: 'Ручная лампа',          icon: '🪔', cost: { wood: 10, coal: 3, coins: 30 },   desc: 'Слабо светит вокруг героя в темноте.' },
   helmet: { name: 'Каска с прожектором',   icon: '⛑️', cost: { iron: 8, coal: 6, coins: 120 },  desc: 'Мощный луч света туда, куда смотрит герой.' },
 };
+// Броня героя: уменьшает получаемый урон
+const ARMOR = {
+  leather: { icon: '🦺', red: 0.2, cost: { wood: 10, food: 12, coins: 40 } },
+  iron:    { icon: '🛡️', red: 0.4, cost: { iron: 20, coal: 10, coins: 120 }, req: 'metal' },
+};

@@ -87,7 +87,7 @@ const G = window.G = {};
     if (P && S) {
       const fresh = Models.makeHero(S.hero); fresh.traverse(o => { if (o.isMesh) o.castShadow = true; });
       P.mesh = swap(P.mesh, fresh); P.tool = null; P.toolTier = -9; setTool('axe');
-      if (S.gear) Models.setGear(P.mesh, S.gear.eq);
+      if (S.gear) { Models.setGear(P.mesh, S.gear.eq); Models.setArmor(P.mesh, S.gear.armor); }
     }
   }
 
@@ -162,7 +162,7 @@ const G = window.G = {};
     P.pos.y = World.groundAt(P.pos.x, P.pos.z);
     setTool('axe');
     if (!S.gear) S.gear = { own: {}, eq: null };
-    Models.setGear(mesh, S.gear.eq);
+    Models.setGear(mesh, S.gear.eq); Models.setArmor(mesh, S.gear.armor);
   }
   function setTool(kind) {
     if (kind === 'pick' && S.tools.pick < 0) kind = 'axe';
@@ -725,7 +725,8 @@ const G = window.G = {};
   // ---------------- Игрок ----------------
   function hurtPlayer(dmg) {
     if (P.dead) return;
-    P.hp -= dmg * (HEROES[S.hero].armor || 1); P.lastHurt = time;
+    const ar = S.gear && S.gear.armor && ARMOR[S.gear.armor];
+    P.hp -= dmg * (HEROES[S.hero].armor || 1) * (ar ? 1 - ar.red : 1); P.lastHurt = time;
     Sound.play('hurt'); UI.flash();
     if (P.hp <= 0) {
       P.hp = 0; P.dead = 5; P.mesh.rotation.x = -Math.PI / 2;
@@ -911,6 +912,20 @@ const G = window.G = {};
   G.equipGear = function (id) {
     S.gear.eq = S.gear.eq === id ? null : id;
     Models.setGear(P.mesh, S.gear.eq); Sound.play('click');
+    return true;
+  };
+  // Броня: покупка один раз, носится одна
+  G.buyArmor = function (id) {
+    if (!S.gear) S.gear = { own: {}, eq: null };
+    const a = ARMOR[id]; if (!a) return false;
+    if (!S.gear.own['a_' + id]) {
+      if (a.req && !S.tech[a.req]) { UI.toast(tr('need_tech_t', { name: TECH[a.req].name }), 'warn'); Sound.play('error'); return false; }
+      if (Net.isClient) { if (!G.canAfford(a.cost)) { UI.toast(tr('not_enough') + G.missing(a.cost), 'warn'); return false; } Net.toHost({ c: 'spend', cost: a.cost }); }
+      else if (!tryPay(a.cost)) return false;
+      S.gear.own['a_' + id] = true; Sound.play('upgrade'); UI.toast(tr('gear_bought', { name: a.name }), 'good');
+    } else Sound.play('click');
+    S.gear.armor = S.gear.armor === id ? null : id;
+    Models.setArmor(P.mesh, S.gear.armor);
     return true;
   };
   G.eat = function () {
@@ -1507,6 +1522,7 @@ const G = window.G = {};
     const pp = { pid, hero, mesh, pos: V(2 * pid, 0, 6), tgt: V(2 * pid, 0, 6), yaw: 0, anim: 0, swing: 0, dead: false, animT: Math.random() * 5, hp: HEROES[hero].hp };
     puppets.set(pid, pp); return pp;
   }
+  function setPupArmor(pp, ar) { ar = ARMOR[ar] ? ar : 0; if (pp.ar === ar) return; pp.ar = ar; Models.setArmor(pp.mesh, ar); }
   function removePuppet(pid) { const pp = puppets.get(pid); if (pp) { scene.remove(pp.mesh); puppets.delete(pid); } }
   function updatePuppets(dt) {
     puppets.forEach(pp => {
@@ -1517,7 +1533,7 @@ const G = window.G = {};
       pp.animT += dt; Models.animHero(m, ['idle', 'walk', 'run'][pp.anim] || 'idle', pp.animT, HEROES[pp.hero].speed / 6, pp.swing);
     });
   }
-  const myState = () => ({ c: 'me', x: +P.pos.x.toFixed(2), z: +P.pos.z.toFixed(2), y: +P.yaw.toFixed(2), a: P.moving || 0, s: +P.swing.toFixed(2), d: P.dead ? 1 : 0, h: S.hero });
+  const myState = () => ({ c: 'me', x: +P.pos.x.toFixed(2), z: +P.pos.z.toFixed(2), y: +P.yaw.toFixed(2), a: P.moving || 0, s: +P.swing.toFixed(2), d: P.dead ? 1 : 0, h: S.hero, ar: (S.gear && S.gear.armor) || 0 });
 
   // ---------- хост: снимок мира ----------
   const birdCode = b => b.hidden ? 3 : b.state === 'fly' ? 1 : b.state === 'gunner' ? 2 : b.state === 'walk' ? 0 : 4;
@@ -1531,8 +1547,8 @@ const G = window.G = {};
     s.bd = BD.map(b => { const m = b.mesh.position; return [b.id, b.sp, r1(m.x), +m.y.toFixed(2), r1(m.z), +b.mesh.rotation.y.toFixed(2), birdCode(b), b.cannon ? b.cannon.id : 0, Math.round(b.hp)]; });
     const dead = World.nodes.filter(n => !n.alive).map(n => n.idx); const dKey = dead.length + ':' + dead.reduce((a, v) => a + v, 0);
     if (full || dKey !== lastDead) s.dead = dead;
-    s.pl = [[0, S.hero, r1(P.pos.x), r1(P.pos.z), +P.yaw.toFixed(2), P.moving || 0, +P.swing.toFixed(2), P.dead ? 1 : 0]];
-    puppets.forEach(pp => s.pl.push([pp.pid, pp.hero, r1(pp.tgt.x), r1(pp.tgt.z), pp.yaw, pp.anim, pp.swing, pp.dead ? 1 : 0]));
+    s.pl = [[0, S.hero, r1(P.pos.x), r1(P.pos.z), +P.yaw.toFixed(2), P.moving || 0, +P.swing.toFixed(2), P.dead ? 1 : 0, (S.gear && S.gear.armor) || 0]];
+    puppets.forEach(pp => s.pl.push([pp.pid, pp.hero, r1(pp.tgt.x), r1(pp.tgt.z), pp.yaw, pp.anim, pp.swing, pp.dead ? 1 : 0, pp.ar || 0]));
     s.fx = fxQueue.splice(0);
     return { s, blKey, dKey };
   }
@@ -1568,7 +1584,7 @@ const G = window.G = {};
     if (!L || G.state !== 'play') return;
     if (m.c === 'me') {
       let pp = puppets.get(L.pid) || makePuppet(L.pid, m.h || L.hero);
-      pp.tgt.set(m.x, 0, m.z); pp.yaw = m.y; pp.anim = m.a; pp.swing = m.s; pp.dead = !!m.d;
+      pp.tgt.set(m.x, 0, m.z); pp.yaw = m.y; pp.anim = m.a; pp.swing = m.s; pp.dead = !!m.d; setPupArmor(pp, m.ar);
     } else if (m.c === 'hitNode') { const n = World.nodes[m.i]; if (n && n.alive) hostHitNode(n, Math.min(6, +m.p || 1), V(n.x, n.y + 1.6, n.z)); }
     else if (m.c === 'hitEnemy') { const e = E.find(x => x.id === m.id); if (e) hurtEnemy(e, Math.min(400, +m.dmg || 0)); }
     else if (m.c === 'place') { if (BUILD[m.t]) doPlace(m.t, +m.x, +m.z, (m.r | 0) % 4, m.w | 0); }
@@ -1663,9 +1679,9 @@ const G = window.G = {};
     if (s.dead) { const dead = new Set(s.dead); World.nodes.forEach(n => { const a = !dead.has(n.idx); if (a !== n.alive) { if (!a && n.kind === 'tree' && Math.hypot(n.x - P.pos.x, n.z - P.pos.z) < 30) fellTree(n); n.alive = a; n.grow = a ? 0.05 : 1; World.updateNodeMatrix(n); } }); }
     // другие игроки
     const seenP = new Set();
-    s.pl.forEach(([pid, hero, x, z, yaw, anim, sw, dead]) => {
+    s.pl.forEach(([pid, hero, x, z, yaw, anim, sw, dead, ar]) => {
       if (pid === guestPid) return; seenP.add(pid);
-      const pp = puppets.get(pid) || makePuppet(pid, hero); pp.tgt.set(x, 0, z); pp.yaw = yaw; pp.anim = anim; pp.swing = sw; pp.dead = !!dead;
+      const pp = puppets.get(pid) || makePuppet(pid, hero); pp.tgt.set(x, 0, z); pp.yaw = yaw; pp.anim = anim; pp.swing = sw; pp.dead = !!dead; setPupArmor(pp, ar);
     });
     puppets.forEach((_, pid) => { if (!seenP.has(pid)) removePuppet(pid); });
     // выстрелы — только картинка

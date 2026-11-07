@@ -255,7 +255,7 @@ const Models = (() => {
   function makeHero(type) {
     const L = HERO_LOOK[type]; const root = new THREE.Group(); const P = { root };
     const hips = group(root, 0, 0.92, 0); P.hips = hips;
-    const torso = group(hips, 0, 0, 0); P.torso = torso;
+    const torso = group(hips, 0, 0, 0); P.torso = torso; P.torsoW = L.width;
     box(L.width, 0.62, 0.32, L.shirt, 0, 0.36, 0, torso);
     box(L.width + 0.02, 0.1, 0.34, 0x3a2614, 0, 0.06, 0, torso); // пояс
     box(0.12, 0.08, 0.05, 0xd8b040, 0, 0.06, 0.18, torso, false);
@@ -371,6 +371,42 @@ const Models = (() => {
       const lamp = cyl(0.08, 0.1, 0.1, 0x3a3a40, 0, 0.18, 0.2, hd, 10); lamp.rotation.x = Math.PI / 2;
       const glass = cyl(0.075, 0.075, 0.02, mat(0xffffff, { emissive: 0xfff4c0, emissiveIntensity: 2.5 }), 0, 0.18, 0.26, hd, 10, false); glass.rotation.x = Math.PI / 2;
     }
+  }
+  // Броня: кожаная (жилет, наплечники, наручи) или железная (нагрудник, наплечники, поножи)
+  function setArmor(root, id) {
+    const P = root.userData.parts;
+    if (P.armor) { P.armor.forEach(o => o.parent && o.parent.remove(o)); }
+    P.armor = [];
+    if (!id) return;
+    const iron = id === 'iron';
+    const m1 = iron ? mat(0xd4dae2, { metalness: 0.3, roughness: 0.3 }) : mat(0x7a4a24, { roughness: 0.85 });
+    const m2 = iron ? mat(0x9aa2ae, { metalness: 0.3, roughness: 0.4 }) : mat(0x4a2c14, { roughness: 0.9 });
+    const rim = iron ? mat(0xd8b040, { metalness: 0.6, roughness: 0.35 }) : mat(0xc8a070);
+    const w = (P.torsoW || 0.56) + 0.06;
+    const t = group(P.torso, 0, 0, 0); P.armor.push(t);
+    box(w, 0.5, 0.38, m1, 0, 0.4, 0, t);                       // корпус
+    if (iron) {
+      box(w * 0.7, 0.3, 0.04, m2, 0, 0.48, 0.2, t);             // выпуклая пластина
+      box(w + 0.02, 0.05, 0.4, rim, 0, 0.66, 0, t, false);
+      box(w + 0.02, 0.05, 0.4, rim, 0, 0.16, 0, t, false);
+      box(0.24, 0.12, 0.3, m1, 0, 0.72, 0, t);                  // горжет
+    } else {
+      [-1, 1].forEach(sx => { const st = box(0.06, 0.62, 0.02, m2, sx * w * 0.22, 0.4, 0.2, t, false); st.rotation.z = sx * 0.5; });
+      box(0.08, 0.06, 0.02, rim, 0, 0.4, 0.21, t, false);       // пряжка
+      box(w + 0.02, 0.06, 0.4, m2, 0, 0.18, 0, t, false);
+    }
+    P.arms.forEach((a, i) => {
+      const sx = i ? 1 : -1;
+      const g = group(a, 0, 0, 0); P.armor.push(g);
+      const sh = sph(0.27, iron ? 0.2 : 0.16, 0.27, m1, sx * 0.02, 0.02, 0, g, true); // наплечник
+      if (iron) box(0.22, 0.04, 0.24, rim, sx * 0.02, -0.06, 0, g, false);
+      box(0.18, 0.18, 0.2, iron ? m1 : m2, 0, -0.44, 0, g);     // наруч
+    });
+    P.legs.forEach(l => {
+      const g = group(l, 0, 0, 0); P.armor.push(g);
+      if (iron) { box(0.24, 0.3, 0.26, m1, 0, -0.5, 0.01, g); sph(0.12, 0.1, 0.1, m2, 0, -0.36, 0.12, g, true); }
+      else box(0.24, 0.16, 0.26, m2, 0, -0.06, 0, g);           // кожаная юбка
+    });
   }
   function makeTool(kind, tier) {
     const g = new THREE.Group();
@@ -933,5 +969,5 @@ const Models = (() => {
     return { stone, coal, iron, berry };
   }
 
-  return { setDetail, get detail() { return HI; }, makeHelicopter, setGear, mat, texMat, T, box, sph, cyl, cone, torus, group, makeBird, animBird, makeHero, makeTool, animHero, makeEnemy, animEnemy, makeBuilding, makeCannon, merge, mtx, treeGeos, rockGeos, WALL_H: l => WALL_LEVELS[l - 1].h };
+  return { setDetail, get detail() { return HI; }, makeHelicopter, setGear, setArmor, mat, texMat, T, box, sph, cyl, cone, torus, group, makeBird, animBird, makeHero, makeTool, animHero, makeEnemy, animEnemy, makeBuilding, makeCannon, merge, mtx, treeGeos, rockGeos, WALL_H: l => WALL_LEVELS[l - 1].h };
 })();

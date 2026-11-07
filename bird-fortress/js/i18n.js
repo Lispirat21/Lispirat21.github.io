@@ -292,6 +292,7 @@ function applyDataLang() {
   PICKS.forEach((a, i) => a.name = tr('pk' + i));
   for (const k in NODE_INFO) NODE_INFO[k].name = tr('n.' + k);
   for (const k in GEAR) { GEAR[k].name = tr('g.' + k); GEAR[k].desc = tr('gd.' + k); }
+  if (typeof ARMOR !== 'undefined') for (const k in ARMOR) { ARMOR[k].name = tr('a.' + k); ARMOR[k].desc = tr('ad.' + k); }
   for (const k in DIFFICULTY) { DIFFICULTY[k].name = tr('d.' + k); DIFFICULTY[k].desc = tr('dd.' + k); }
   QUESTS.forEach((q, i) => q.text = tr('q' + i));
   if (typeof World !== 'undefined' && World.BIOMES) World.BIOMES.forEach(b => b.name = tr('bio.' + b.id));
