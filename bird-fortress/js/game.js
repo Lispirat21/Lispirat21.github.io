@@ -1283,7 +1283,7 @@ const G = window.G = {};
       const prev = menuBird.position.clone(); menuBird.position.copy(bp); menuBird.visible = true;
       const dir = bp.clone().sub(prev); if (dir.lengthSq() > 1e-6) menuBird.lookAt(bp.clone().add(dir)); menuBird.rotateY(0);
       menuBird.rotation.z += Math.cos(bt) * 0.25;
-      Models.animBird(menuBird, Math.sin(time * 0.8) > -0.3 ? 'fly' : 'glide', time);
+      Models.animBird(menuBird, 'fly', time);
       skyT = 0.18 + Math.sin(time * 0.01) * 0.04;
       World.updateSky(skyT, camera.position.clone().setY(0), dt, time);
       renderer.render(scene, camera);

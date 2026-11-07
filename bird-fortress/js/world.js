@@ -434,7 +434,7 @@ const World = (() => {
     flock.forEach((b, i) => {
       const f = b.userData.fl, ang = time * f.sp + f.ph;
       b.position.set(f.cx + Math.cos(ang) * f.r, f.h + Math.sin(time * 0.7 + i) * 2, f.cz + Math.sin(ang) * f.r);
-      b.rotation.y = -ang; Models.animBird(b, (Math.sin(time * 0.5 + i) > -0.2) ? 'fly' : 'glide', time, i);
+      b.rotation.y = -ang; Models.animBird(b, 'fly', time, i);
     });
     return daylight;
   }
