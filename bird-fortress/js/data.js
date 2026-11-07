@@ -103,7 +103,7 @@ const BUILD = {
   workshop:   { max: 1, name: 'Мастерская',         cat: 'prod',    cost: { wood: 40 },             hp: 350,  size: [3.6, 3],   icon: '⚒️', desc: 'Инструменты и технологии.', unique: true },
   farm:       { max: 4, name: 'Ферма',              cat: 'prod',    cost: { wood: 25 },             hp: 200,  size: [4, 4],   icon: '🌾', desc: 'Производит еду.' },
   mineshaft:  { max: 3, name: 'Своя шахта',         cat: 'prod',    cost: { wood: 50, stone: 30 },  hp: 500,  size: [3.4, 3.4], icon: '🕳️', desc: 'Ставится где угодно. Сама добывает камень, уголь и железо. Улучшается до 3 уровня.', req: 'stone' },
-  minelift:   { max: 2, name: 'Шахтный подъёмник',  cat: 'prod',    cost: { wood: 40, stone: 20 },  hp: 400,  size: [3, 3],   icon: '⛏️', desc: 'Ставится в карьере. Сам добывает камень, уголь и железо.', req: 'stone' },
+  minelift:   { max: 2, name: 'Шахтный подъёмник',  cat: 'prod',    cost: { wood: 40, stone: 20 },  hp: 400,  size: [3, 3],   icon: '⛏️', desc: 'Ставится в карьере. Сам добывает камень и уголь, после улучшений — железо и рубины.', req: 'stone' },
   core:       { max: 1, name: 'Великое гнездо',     cat: 'none',    cost: {},                       hp: 1200, size: [5, 5],   icon: '🪺', desc: 'Сердце базы. Если его разрушат — игра окончена.' },
 };
 const BUILD_CATS = [
@@ -121,12 +121,14 @@ const AXES = [
   { name: 'Каменный топор',   power: 2,   cost: { wood: 15, stone: 10 } },
   { name: 'Железный топор',   power: 3.5, cost: { wood: 15, iron: 10, coal: 5 }, req: 'metal' },
   { name: 'Рубиновый топор',  power: 6,   cost: { ruby: 6, iron: 6, coal: 6 }, req: 'metal' },
+  { name: 'Бензопила',        power: 10,  cost: { ruby: 20, iron: 40, coal: 30, coins: 500 }, req: 'mech' },
 ];
 const PICKS = [
   { name: 'Кирка',            power: 1,   cost: { wood: 20 } },
   { name: 'Улучшенная кирка', power: 1.8, cost: { wood: 10, stone: 20 } },
   { name: 'Железная кирка',   power: 3,   cost: { iron: 12, coal: 8 }, req: 'metal' },
   { name: 'Рубиновая кирка',  power: 5,   cost: { ruby: 6, iron: 6, coal: 6 }, req: 'metal' },
+  { name: 'Отбойный молоток', power: 9,   cost: { ruby: 20, iron: 40, coal: 30, coins: 500 }, req: 'mech' },
 ];
 // Мечи: mul — множитель урона героя по врагам
 const SWORDS = [
@@ -186,6 +188,12 @@ const BALLISTA_LEVELS = [
   { name: 'Ракетница',      kind: 'rocket', dmg: 75, rate: 0.8, range: 32, splash: 3.6, hp: 900, cost: { iron: 35, coal: 25, coins: 300 } },
 ];
 // Уровни своей шахты: секунды на 1 единицу ресурса
+// Шахтный подъёмник (карьерный добытчик): 0 — не добывает этот ресурс
+const LIFT_LEVELS = [
+  { name: 'Подъёмник',            hp: 400,  stone: 6, coal: 14, iron: 0,  ruby: 0,  cost: { wood: 40, stone: 20 } },
+  { name: 'Усиленный подъёмник',  hp: 650,  stone: 4, coal: 10, iron: 20, ruby: 0,  cost: { wood: 40, stone: 50, iron: 10 } },
+  { name: 'Рубиновый подъёмник',  hp: 1000, stone: 3, coal: 6,  iron: 12, ruby: 60, cost: { stone: 60, iron: 40, coal: 25, coins: 200 }, req: 'metal' },
+];
 const SHAFT_LEVELS = [
   { name: 'Шахта',              hp: 500,  stone: 9, coal: 20, iron: 34, cost: { wood: 50, stone: 30 } },
   { name: 'Глубокая шахта',     hp: 750,  stone: 6, coal: 13, iron: 22, cost: { wood: 40, stone: 50, iron: 10 } },
@@ -200,4 +208,5 @@ const GEAR = {
 const ARMOR = {
   leather: { icon: '🦺', red: 0.2, cost: { wood: 10, food: 12, coins: 40 } },
   iron:    { icon: '🛡️', red: 0.4, cost: { iron: 20, coal: 10, coins: 120 }, req: 'metal' },
+  ruby:    { icon: '💎', red: 0.6, cost: { ruby: 15, iron: 15, coins: 300 }, req: 'metal' },
 };

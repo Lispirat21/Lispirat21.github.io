@@ -287,6 +287,7 @@ function applyDataLang() {
   GATE_LEVELS.forEach((l, i) => l.name = tr('gl' + (i + 1)));
   BALLISTA_LEVELS.forEach((l, i) => l.name = tr('bl' + (i + 1)));
   SHAFT_LEVELS.forEach((l, i) => l.name = tr('sl' + (i + 1)));
+  if (typeof LIFT_LEVELS !== 'undefined') LIFT_LEVELS.forEach((l, i) => l.name = tr('ll' + (i + 1)));
   for (const k in TECH) { TECH[k].name = tr('t.' + k); TECH[k].desc = tr('td.' + k); }
   AXES.forEach((a, i) => a.name = tr('ax' + i));
   PICKS.forEach((a, i) => a.name = tr('pk' + i));

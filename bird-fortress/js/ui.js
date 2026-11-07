@@ -544,7 +544,7 @@ const UI = window.UI = {};
     if (b.t === 'ballista') { const L = BALLISTA_LEVELS[b.lvl - 1]; sect.append(h('div', { style: 'margin-top:6px;font-size:13px' }, tr('turret_info', { name: L.name, d: L.dmg, r: L.rate, g: L.range, s: L.splash ? tr('blast', { s: L.splash }) : '' }))); }
     if (b.t === 'mineshaft') { const L = SHAFT_LEVELS[b.lvl - 1]; sect.append(h('div', { style: 'margin-top:6px', html: tr('mine_info', { a: RES_INFO.stone.icon, x: L.stone, b: RES_INFO.coal.icon, y: L.coal, c: RES_INFO.iron.icon, z: L.iron }) })); }
     if (b.t === 'gate') sect.append(h('div', { style: 'margin-top:6px;font-size:13px' }, tr('gate_info')));
-    if (b.t === 'minelift') sect.append(h('div', { html: tr('mine_info', { a: RES_INFO.stone.icon, x: 6, b: RES_INFO.coal.icon, y: 14, c: RES_INFO.iron.icon, z: 24 }) }));
+    if (b.t === 'minelift') { const L = LIFT_LEVELS[(b.lvl || 1) - 1]; sect.append(h('div', { style: 'margin-top:6px', html: tr('mine_head') + ' ' + ['stone', 'coal', 'iron', 'ruby'].filter(k => L[k]).map(k => tr('mine_each', { a: RES_INFO[k].icon, x: L[k] })).join(', ') + '.' })); }
     if (b.t === 'storage') sect.append(h('div', null, tr('cap_info', { n: G.cap() })));
     if (d.cap) sect.append(h('div', null, tr('bird_slots', { n: d.cap, t: G.birdCap() })));
     const acts = h('div', { cls: 'acts' });

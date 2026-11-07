@@ -654,7 +654,7 @@ const BUILD = {
   workshop:   { max: 1, name: 'Мастерская',         cat: 'prod',    cost: { wood: 40 },             hp: 350,  size: [3.6, 3],   icon: '⚒️', desc: 'Инструменты и технологии.', unique: true },
   farm:       { max: 4, name: 'Ферма',              cat: 'prod',    cost: { wood: 25 },             hp: 200,  size: [4, 4],   icon: '🌾', desc: 'Производит еду.' },
   mineshaft:  { max: 3, name: 'Своя шахта',         cat: 'prod',    cost: { wood: 50, stone: 30 },  hp: 500,  size: [3.4, 3.4], icon: '🕳️', desc: 'Ставится где угодно. Сама добывает камень, уголь и железо. Улучшается до 3 уровня.', req: 'stone' },
-  minelift:   { max: 2, name: 'Шахтный подъёмник',  cat: 'prod',    cost: { wood: 40, stone: 20 },  hp: 400,  size: [3, 3],   icon: '⛏️', desc: 'Ставится в карьере. Сам добывает камень, уголь и железо.', req: 'stone' },
+  minelift:   { max: 2, name: 'Шахтный подъёмник',  cat: 'prod',    cost: { wood: 40, stone: 20 },  hp: 400,  size: [3, 3],   icon: '⛏️', desc: 'Ставится в карьере. Сам добывает камень и уголь, после улучшений — железо и рубины.', req: 'stone' },
   core:       { max: 1, name: 'Великое гнездо',     cat: 'none',    cost: {},                       hp: 1200, size: [5, 5],   icon: '🪺', desc: 'Сердце базы. Если его разрушат — игра окончена.' },
 };
 const BUILD_CATS = [
@@ -672,12 +672,14 @@ const AXES = [
   { name: 'Каменный топор',   power: 2,   cost: { wood: 15, stone: 10 } },
   { name: 'Железный топор',   power: 3.5, cost: { wood: 15, iron: 10, coal: 5 }, req: 'metal' },
   { name: 'Рубиновый топор',  power: 6,   cost: { ruby: 6, iron: 6, coal: 6 }, req: 'metal' },
+  { name: 'Бензопила',        power: 10,  cost: { ruby: 20, iron: 40, coal: 30, coins: 500 }, req: 'mech' },
 ];
 const PICKS = [
   { name: 'Кирка',            power: 1,   cost: { wood: 20 } },
   { name: 'Улучшенная кирка', power: 1.8, cost: { wood: 10, stone: 20 } },
   { name: 'Железная кирка',   power: 3,   cost: { iron: 12, coal: 8 }, req: 'metal' },
   { name: 'Рубиновая кирка',  power: 5,   cost: { ruby: 6, iron: 6, coal: 6 }, req: 'metal' },
+  { name: 'Отбойный молоток', power: 9,   cost: { ruby: 20, iron: 40, coal: 30, coins: 500 }, req: 'mech' },
 ];
 // Мечи: mul — множитель урона героя по врагам
 const SWORDS = [
@@ -737,6 +739,12 @@ const BALLISTA_LEVELS = [
   { name: 'Ракетница',      kind: 'rocket', dmg: 75, rate: 0.8, range: 32, splash: 3.6, hp: 900, cost: { iron: 35, coal: 25, coins: 300 } },
 ];
 // Уровни своей шахты: секунды на 1 единицу ресурса
+// Шахтный подъёмник (карьерный добытчик): 0 — не добывает этот ресурс
+const LIFT_LEVELS = [
+  { name: 'Подъёмник',            hp: 400,  stone: 6, coal: 14, iron: 0,  ruby: 0,  cost: { wood: 40, stone: 20 } },
+  { name: 'Усиленный подъёмник',  hp: 650,  stone: 4, coal: 10, iron: 20, ruby: 0,  cost: { wood: 40, stone: 50, iron: 10 } },
+  { name: 'Рубиновый подъёмник',  hp: 1000, stone: 3, coal: 6,  iron: 12, ruby: 60, cost: { stone: 60, iron: 40, coal: 25, coins: 200 }, req: 'metal' },
+];
 const SHAFT_LEVELS = [
   { name: 'Шахта',              hp: 500,  stone: 9, coal: 20, iron: 34, cost: { wood: 50, stone: 30 } },
   { name: 'Глубокая шахта',     hp: 750,  stone: 6, coal: 13, iron: 22, cost: { wood: 40, stone: 50, iron: 10 } },
@@ -751,6 +759,7 @@ const GEAR = {
 const ARMOR = {
   leather: { icon: '🦺', red: 0.2, cost: { wood: 10, food: 12, coins: 40 } },
   iron:    { icon: '🛡️', red: 0.4, cost: { iron: 20, coal: 10, coins: 120 }, req: 'metal' },
+  ruby:    { icon: '💎', red: 0.6, cost: { ruby: 15, iron: 15, coins: 300 }, req: 'metal' },
 };
 
 </script>
@@ -1247,6 +1256,7 @@ function applyDataLang() {
   GATE_LEVELS.forEach((l, i) => l.name = tr('gl' + (i + 1)));
   BALLISTA_LEVELS.forEach((l, i) => l.name = tr('bl' + (i + 1)));
   SHAFT_LEVELS.forEach((l, i) => l.name = tr('sl' + (i + 1)));
+  if (typeof LIFT_LEVELS !== 'undefined') LIFT_LEVELS.forEach((l, i) => l.name = tr('ll' + (i + 1)));
   for (const k in TECH) { TECH[k].name = tr('t.' + k); TECH[k].desc = tr('td.' + k); }
   AXES.forEach((a, i) => a.name = tr('ax' + i));
   PICKS.forEach((a, i) => a.name = tr('pk' + i));
@@ -1410,6 +1420,20 @@ Object.assign(TR_UI, {
   sword_dmg: ["Damage ×{n}", "Урон ×{n}", "Daño ×{n}", "Dano ×{n}", "Dégâts ×{n}", "Schaden ×{n}", "伤害 ×{n}", "ダメージ ×{n}", "नुकसान ×{n}", "الضرر ×{n}"],
   sword_need: ["Hits enemies much harder than an axe", "Бьёт врагов гораздо сильнее топора", "Golpea mucho más fuerte que un hacha", "Bate muito mais forte que um machado", "Frappe bien plus fort qu'une hache", "Trifft viel härter als eine Axt", "比斧头伤害高得多", "斧よりずっと強く敵を斬る", "कुल्हाड़ी से कहीं ज़्यादा नुकसान", "يضرب الأعداء أقوى بكثير من الفأس"],
   need_pick3: ["Rubies need an iron pickaxe", "Для рубинов нужна железная кирка", "Los rubíes requieren pico de hierro", "Rubis exigem picareta de ferro", "Les rubis exigent une pioche en fer", "Rubine brauchen eine Eisenspitzhacke", "红宝石需要铁镐", "ルビーには鉄のツルハシが必要", "माणिक के लिए लोहे की कुदाल चाहिए", "الياقوت يحتاج معولًا حديديًا"],
+});
+Object.assign(TR_DATA, {
+  'Bd.minelift': ["Only in the quarry. Mines stone and coal; upgrades add iron, then rubies.", "Ставится в карьере. Добывает камень и уголь, после улучшений — железо, а потом рубины.", "Solo en la cantera. Extrae piedra y carbón; mejoras: hierro y rubíes.", "Só na pedreira. Extrai pedra e carvão; melhorias: ferro e rubis.", "Seulement dans la carrière. Pierre et charbon ; améliorations : fer puis rubis.", "Nur im Steinbruch. Stein und Kohle; Upgrades: Eisen, dann Rubine.", "仅限采石场。开采石头和煤，升级后开采铁和红宝石。", "採石場専用。石と石炭、強化で鉄とルビーも。", "केवल खदान में। पत्थर और कोयला; उन्नयन से लोहा, फिर माणिक।", "في المحجر فقط. حجر وفحم، وبالتطوير حديد ثم ياقوت."],
+  'll1': ["Mine Hoist", "Подъёмник", "Montacargas", "Elevador", "Chevalement", "Förderturm", "矿井升降机", "巻き上げ機", "खदान लिफ्ट", "رافعة المنجم"],
+  'll2': ["Reinforced Hoist", "Усиленный подъёмник", "Montacargas reforzado", "Elevador reforçado", "Chevalement renforcé", "Verstärkter Förderturm", "加固升降机", "強化巻き上げ機", "मज़बूत लिफ्ट", "رافعة معززة"],
+  'll3': ["Ruby Hoist", "Рубиновый подъёмник", "Montacargas de rubí", "Elevador de rubi", "Chevalement à rubis", "Rubin-Förderturm", "红宝石升降机", "ルビー巻き上げ機", "माणिक लिफ्ट", "رافعة الياقوت"],
+  'ax4': ["Chainsaw", "Бензопила", "Motosierra", "Motosserra", "Tronçonneuse", "Kettensäge", "电锯", "チェーンソー", "चेनसॉ", "منشار آلي"],
+  'pk4': ["Jackhammer", "Отбойный молоток", "Martillo neumático", "Britadeira", "Marteau-piqueur", "Presslufthammer", "风镐", "削岩機", "जैकहैमर", "مطرقة هوائية"],
+  'a.ruby': ["Ruby Armor", "Рубиновая броня", "Armadura de rubí", "Armadura de rubi", "Armure de rubis", "Rubinrüstung", "红宝石甲", "ルビーの鎧", "माणिक कवच", "درع الياقوت"],
+  'ad.ruby': ["Glowing ruby plates. −60% damage taken.", "Сияющие рубиновые латы. −60% получаемого урона.", "Placas de rubí brillantes. −60% de daño recibido.", "Placas de rubi brilhantes. −60% de dano recebido.", "Plaques de rubis lumineuses. −60 % de dégâts subis.", "Leuchtende Rubinplatten. −60 % Schaden.", "闪耀的红宝石甲片。受到伤害−60%。", "輝くルビーの鎧。被ダメージ−60%。", "चमकती माणिक प्लेटें। −60% नुकसान।", "صفائح ياقوت لامعة. −60% من الضرر."],
+});
+Object.assign(TR_UI, {
+  mine_head: ["Mines:", "Добывает:", "Extrae:", "Extrai:", "Extrait :", "Fördert:", "开采：", "採掘：", "निकालता है:", "يستخرج:"],
+  mine_each: ["{a} every {x}s", "{a} раз в {x}с", "{a} cada {x}s", "{a} a cada {x}s", "{a} toutes les {x}s", "{a} alle {x}s", "{a} 每{x}秒", "{a} {x}秒ごと", "{a} हर {x}से", "{a} كل {x}ث"],
 });
 
 </script>
@@ -2016,9 +2040,9 @@ const Models = (() => {
     if (P.armor) { P.armor.forEach(o => o.parent && o.parent.remove(o)); }
     P.armor = [];
     if (!id) return;
-    const iron = id === 'iron';
-    const m1 = iron ? mat(0xd4dae2, { metalness: 0.3, roughness: 0.3 }) : mat(0x7a4a24, { roughness: 0.85 });
-    const m2 = iron ? mat(0x9aa2ae, { metalness: 0.3, roughness: 0.4 }) : mat(0x4a2c14, { roughness: 0.9 });
+    const ruby = id === 'ruby', iron = id === 'iron' || ruby;
+    const m1 = ruby ? mat(0xe0204a, { emissive: 0x900018, emissiveIntensity: 0.6, roughness: 0.25 }) : iron ? mat(0xd4dae2, { metalness: 0.3, roughness: 0.3 }) : mat(0x7a4a24, { roughness: 0.85 });
+    const m2 = ruby ? mat(0x8a1028, { roughness: 0.35 }) : iron ? mat(0x9aa2ae, { metalness: 0.3, roughness: 0.4 }) : mat(0x4a2c14, { roughness: 0.9 });
     const rim = iron ? mat(0xd8b040, { metalness: 0.6, roughness: 0.35 }) : mat(0xc8a070);
     const w = (P.torsoW || 0.56) + 0.06;
     const t = group(P.torso, 0, 0, 0); P.armor.push(t);
@@ -2051,7 +2075,23 @@ const Models = (() => {
     const headC = [0x8a6a44, 0x8a8a8a, 0xd8dce4, 0xe0204a][Math.max(0, tier)] || 0x8a6a44;
     const metal = tier >= 3 ? { emissive: 0xa00020, emissiveIntensity: 0.7, roughness: 0.25 } : tier >= 2 ? { metalness: 0.6, roughness: 0.35 } : undefined;
     cyl(0.035, 0.035, 0.75, 0x6a4424, 0, 0.25, 0, g, 6);
-    if (kind === 'axe') {
+    if (kind === 'axe' && tier >= 4) { // бензопила
+      g.children[0].visible = false;
+      box(0.07, 0.14, 0.12, 0x2a2a2a, 0, 0.0, 0, g);                     // рукоять
+      box(0.2, 0.24, 0.36, 0xf08a10, 0, 0.18, -0.04, g);                  // корпус
+      box(0.21, 0.08, 0.2, 0x2a2a2a, 0, 0.33, -0.08, g, false);
+      box(0.04, 0.8, 0.14, mat(0xc8ccd4, { metalness: 0.6, roughness: 0.35 }), 0, 0.68, 0.06, g);  // шина
+      cyl(0.07, 0.07, 0.05, 0xc8ccd4, 0, 1.08, 0.06, g, 10).rotation.z = Math.PI / 2;
+      for (let i = 0; i < 8; i++) box(0.06, 0.04, 0.18, 0x3a3a3a, 0, 0.33 + i * 0.1, 0.06, g, false); // цепь
+    } else if (kind === 'pick' && tier >= 4) { // отбойный молоток
+      g.children[0].visible = false;
+      box(0.36, 0.06, 0.06, 0x2a2a2a, 0, -0.02, 0, g);                   // поперечная рукоять
+      box(0.18, 0.4, 0.18, 0xf2c41a, 0, 0.22, 0, g);                      // корпус
+      box(0.2, 0.06, 0.2, 0x2a2a2a, 0, 0.44, 0, g, false);
+      cyl(0.06, 0.07, 0.24, 0x5a5a62, 0, 0.56, 0, g, 8);
+      const bit = mat(0xe0204a, { emissive: 0x900018, emissiveIntensity: 0.6, roughness: 0.25 });
+      cyl(0.03, 0.03, 0.34, bit, 0, 0.82, 0, g, 6); cone(0.04, 0.1, bit, 0, 1.02, 0, g, 6, false);
+    } else if (kind === 'axe') {
       box(0.06, 0.2, 0.24, mat(headC, metal), 0, 0.52, 0.1, g);
       box(0.04, 0.24, 0.05, mat(tier >= 3 ? 0xff5070 : tier >= 1 ? 0xcfd2d8 : 0x6a4a2a, metal), 0, 0.52, 0.23, g, false);
     } else if (kind === 'pick') {
@@ -2531,6 +2571,16 @@ const Models = (() => {
         const wh = torus(0.7, 0.07, 0x5a5a62, 0, 4.4, 0, g, 16); g.userData.spin = wh;
         cyl(0.03, 0.03, 4.2, 0x2a2a2a, 0, 2.2, 0, g, 4, false);
         box(0.8, 0.5, 0.6, 0x5a5a62, 1.6, 0.5, 0, g); for (let i = 0; i < 3; i++) sph(0.25, 0.2, 0.25, 0x606060, 1.5 + i * 0.12, 0.85, 0, g, true);
+        if (lvl >= 2) { // железные распорки и вагонетка с рудой
+          [-1, 1].forEach(sx => box(0.1, 0.1, 1.4, 0x8a8f98, sx * 0.9, 2.6, 0, g));
+          box(0.9, 0.5, 0.7, 0x6a6e76, -1.6, 0.45, 0, g); for (let i = 0; i < 3; i++) sph(0.22, 0.18, 0.22, 0xc87a40, -1.7 + i * 0.12, 0.8, 0, g, true);
+          box(1.9, 0.12, 1.5, 0x8a8f98, 0, 4.05, 0, g);
+        }
+        if (lvl >= 3) { // рубины на крыше и в вагонетке
+          const rm = mat(0xe8204a, { emissive: 0xb00024, emissiveIntensity: 0.9, roughness: 0.25 });
+          [[-0.7, 0.55], [0.7, -0.55], [0, 0]].forEach(([x, z], i) => { const c = new THREE.Mesh(new THREE.OctahedronGeometry(0.28, 0), rm); c.scale.set(0.8, 1.6, 0.8); c.position.set(x, 4.45 + (i === 2 ? 0.95 : 0), z); g.add(c); });
+          for (let i = 0; i < 3; i++) sph(0.18, 0.16, 0.18, rm, 1.5 + i * 0.12, 1.0, 0.1, g, true);
+        }
         break;
       }
       case 'core': {
@@ -3444,11 +3494,11 @@ const G = window.G = {};
   const PASS_ENEMY = { spikes: 1, farm: 1 };
   const WALLISH = { wall: 1, fence: 1, gate: 1, stonegate: 1 };
   function footprint(t, rot) { const s = BUILD[t].size; return rot % 2 ? [s[1], s[0]] : [s[0], s[1]]; }
-  const LEVELS = { wall: WALL_LEVELS, cannon: CANNON_LEVELS, gate: GATE_LEVELS, ballista: BALLISTA_LEVELS, mineshaft: SHAFT_LEVELS };
+  const LEVELS = { wall: WALL_LEVELS, cannon: CANNON_LEVELS, gate: GATE_LEVELS, ballista: BALLISTA_LEVELS, mineshaft: SHAFT_LEVELS, minelift: LIFT_LEVELS };
   G.LEVELS = LEVELS;
   function maxHpOf(b) {
     if (b.t === 'core') return Math.round(BUILD.core.hp * (DF().core || 1));
-    if (b.t === 'wall' || b.t === 'gate' || b.t === 'ballista' || b.t === 'mineshaft') return LEVELS[b.t][b.lvl - 1].hp;
+    if (b.t === 'wall' || b.t === 'gate' || b.t === 'ballista' || b.t === 'mineshaft' || b.t === 'minelift') return LEVELS[b.t][b.lvl - 1].hp;
     if (b.t === 'cannon') return BUILD.cannon.hp + (b.lvl - 1) * 110;
     return BUILD[b.t].hp;
   }
@@ -4416,11 +4466,13 @@ const G = window.G = {};
         if (b.mesh.userData.gear) b.mesh.userData.gear.rotation.y += dt * 3;
       }
       if (b.t === 'minelift') {
-        b.prodT += dt; b.prod2 += dt; b.prod3 += dt;
+        const L = LIFT_LEVELS[(b.lvl || 1) - 1];
+        b.prodT += dt; b.prod2 += dt; b.prod3 += dt; b.prod4 = (b.prod4 || 0) + dt;
         const near = Math.hypot(P.pos.x - b.x, P.pos.z - b.z) < 25;
-        if (b.prodT >= 6) { b.prodT = 0; addRes('stone', 1, near ? V(b.x, b.y + 2, b.z) : null); }
-        if (b.prod2 >= 14) { b.prod2 = 0; addRes('coal', 1, near ? V(b.x, b.y + 2.6, b.z) : null); }
-        if (b.prod3 >= 24) { b.prod3 = 0; addRes('iron', 1, near ? V(b.x, b.y + 3.2, b.z) : null); }
+        if (b.prodT >= L.stone) { b.prodT = 0; addRes('stone', 1, near ? V(b.x, b.y + 2, b.z) : null); }
+        if (b.prod2 >= L.coal) { b.prod2 = 0; addRes('coal', 1, near ? V(b.x, b.y + 2.6, b.z) : null); }
+        if (L.iron && b.prod3 >= L.iron) { b.prod3 = 0; addRes('iron', 1, near ? V(b.x, b.y + 3.2, b.z) : null); }
+        if (L.ruby && b.prod4 >= L.ruby) { b.prod4 = 0; addRes('ruby', 1, near ? V(b.x, b.y + 3.8, b.z) : null); }
         if (b.mesh.userData.spin) b.mesh.userData.spin.rotation.z += dt * 2;
       }
       if (S.hero === 'engineer' && b.hp < b.maxHp && Math.hypot(P.pos.x - b.x, P.pos.z - b.z) < 15) b.hp = Math.min(b.maxHp, b.hp + b.maxHp * 0.015 * dt);
@@ -5586,7 +5638,7 @@ const UI = window.UI = {};
     if (b.t === 'ballista') { const L = BALLISTA_LEVELS[b.lvl - 1]; sect.append(h('div', { style: 'margin-top:6px;font-size:13px' }, tr('turret_info', { name: L.name, d: L.dmg, r: L.rate, g: L.range, s: L.splash ? tr('blast', { s: L.splash }) : '' }))); }
     if (b.t === 'mineshaft') { const L = SHAFT_LEVELS[b.lvl - 1]; sect.append(h('div', { style: 'margin-top:6px', html: tr('mine_info', { a: RES_INFO.stone.icon, x: L.stone, b: RES_INFO.coal.icon, y: L.coal, c: RES_INFO.iron.icon, z: L.iron }) })); }
     if (b.t === 'gate') sect.append(h('div', { style: 'margin-top:6px;font-size:13px' }, tr('gate_info')));
-    if (b.t === 'minelift') sect.append(h('div', { html: tr('mine_info', { a: RES_INFO.stone.icon, x: 6, b: RES_INFO.coal.icon, y: 14, c: RES_INFO.iron.icon, z: 24 }) }));
+    if (b.t === 'minelift') { const L = LIFT_LEVELS[(b.lvl || 1) - 1]; sect.append(h('div', { style: 'margin-top:6px', html: tr('mine_head') + ' ' + ['stone', 'coal', 'iron', 'ruby'].filter(k => L[k]).map(k => tr('mine_each', { a: RES_INFO[k].icon, x: L[k] })).join(', ') + '.' })); }
     if (b.t === 'storage') sect.append(h('div', null, tr('cap_info', { n: G.cap() })));
     if (d.cap) sect.append(h('div', null, tr('bird_slots', { n: d.cap, t: G.birdCap() })));
     const acts = h('div', { cls: 'acts' });

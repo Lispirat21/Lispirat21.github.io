@@ -139,3 +139,17 @@ Object.assign(TR_UI, {
   sword_need: ["Hits enemies much harder than an axe", "Бьёт врагов гораздо сильнее топора", "Golpea mucho más fuerte que un hacha", "Bate muito mais forte que um machado", "Frappe bien plus fort qu'une hache", "Trifft viel härter als eine Axt", "比斧头伤害高得多", "斧よりずっと強く敵を斬る", "कुल्हाड़ी से कहीं ज़्यादा नुकसान", "يضرب الأعداء أقوى بكثير من الفأس"],
   need_pick3: ["Rubies need an iron pickaxe", "Для рубинов нужна железная кирка", "Los rubíes requieren pico de hierro", "Rubis exigem picareta de ferro", "Les rubis exigent une pioche en fer", "Rubine brauchen eine Eisenspitzhacke", "红宝石需要铁镐", "ルビーには鉄のツルハシが必要", "माणिक के लिए लोहे की कुदाल चाहिए", "الياقوت يحتاج معولًا حديديًا"],
 });
+Object.assign(TR_DATA, {
+  'Bd.minelift': ["Only in the quarry. Mines stone and coal; upgrades add iron, then rubies.", "Ставится в карьере. Добывает камень и уголь, после улучшений — железо, а потом рубины.", "Solo en la cantera. Extrae piedra y carbón; mejoras: hierro y rubíes.", "Só na pedreira. Extrai pedra e carvão; melhorias: ferro e rubis.", "Seulement dans la carrière. Pierre et charbon ; améliorations : fer puis rubis.", "Nur im Steinbruch. Stein und Kohle; Upgrades: Eisen, dann Rubine.", "仅限采石场。开采石头和煤，升级后开采铁和红宝石。", "採石場専用。石と石炭、強化で鉄とルビーも。", "केवल खदान में। पत्थर और कोयला; उन्नयन से लोहा, फिर माणिक।", "في المحجر فقط. حجر وفحم، وبالتطوير حديد ثم ياقوت."],
+  'll1': ["Mine Hoist", "Подъёмник", "Montacargas", "Elevador", "Chevalement", "Förderturm", "矿井升降机", "巻き上げ機", "खदान लिफ्ट", "رافعة المنجم"],
+  'll2': ["Reinforced Hoist", "Усиленный подъёмник", "Montacargas reforzado", "Elevador reforçado", "Chevalement renforcé", "Verstärkter Förderturm", "加固升降机", "強化巻き上げ機", "मज़बूत लिफ्ट", "رافعة معززة"],
+  'll3': ["Ruby Hoist", "Рубиновый подъёмник", "Montacargas de rubí", "Elevador de rubi", "Chevalement à rubis", "Rubin-Förderturm", "红宝石升降机", "ルビー巻き上げ機", "माणिक लिफ्ट", "رافعة الياقوت"],
+  'ax4': ["Chainsaw", "Бензопила", "Motosierra", "Motosserra", "Tronçonneuse", "Kettensäge", "电锯", "チェーンソー", "चेनसॉ", "منشار آلي"],
+  'pk4': ["Jackhammer", "Отбойный молоток", "Martillo neumático", "Britadeira", "Marteau-piqueur", "Presslufthammer", "风镐", "削岩機", "जैकहैमर", "مطرقة هوائية"],
+  'a.ruby': ["Ruby Armor", "Рубиновая броня", "Armadura de rubí", "Armadura de rubi", "Armure de rubis", "Rubinrüstung", "红宝石甲", "ルビーの鎧", "माणिक कवच", "درع الياقوت"],
+  'ad.ruby': ["Glowing ruby plates. −60% damage taken.", "Сияющие рубиновые латы. −60% получаемого урона.", "Placas de rubí brillantes. −60% de daño recibido.", "Placas de rubi brilhantes. −60% de dano recebido.", "Plaques de rubis lumineuses. −60 % de dégâts subis.", "Leuchtende Rubinplatten. −60 % Schaden.", "闪耀的红宝石甲片。受到伤害−60%。", "輝くルビーの鎧。被ダメージ−60%。", "चमकती माणिक प्लेटें। −60% नुकसान।", "صفائح ياقوت لامعة. −60% من الضرر."],
+});
+Object.assign(TR_UI, {
+  mine_head: ["Mines:", "Добывает:", "Extrae:", "Extrai:", "Extrait :", "Fördert:", "开采：", "採掘：", "निकालता है:", "يستخرج:"],
+  mine_each: ["{a} every {x}s", "{a} раз в {x}с", "{a} cada {x}s", "{a} a cada {x}s", "{a} toutes les {x}s", "{a} alle {x}s", "{a} 每{x}秒", "{a} {x}秒ごと", "{a} हर {x}से", "{a} كل {x}ث"],
+});

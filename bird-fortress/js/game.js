@@ -196,11 +196,11 @@ const G = window.G = {};
   const PASS_ENEMY = { spikes: 1, farm: 1 };
   const WALLISH = { wall: 1, fence: 1, gate: 1, stonegate: 1 };
   function footprint(t, rot) { const s = BUILD[t].size; return rot % 2 ? [s[1], s[0]] : [s[0], s[1]]; }
-  const LEVELS = { wall: WALL_LEVELS, cannon: CANNON_LEVELS, gate: GATE_LEVELS, ballista: BALLISTA_LEVELS, mineshaft: SHAFT_LEVELS };
+  const LEVELS = { wall: WALL_LEVELS, cannon: CANNON_LEVELS, gate: GATE_LEVELS, ballista: BALLISTA_LEVELS, mineshaft: SHAFT_LEVELS, minelift: LIFT_LEVELS };
   G.LEVELS = LEVELS;
   function maxHpOf(b) {
     if (b.t === 'core') return Math.round(BUILD.core.hp * (DF().core || 1));
-    if (b.t === 'wall' || b.t === 'gate' || b.t === 'ballista' || b.t === 'mineshaft') return LEVELS[b.t][b.lvl - 1].hp;
+    if (b.t === 'wall' || b.t === 'gate' || b.t === 'ballista' || b.t === 'mineshaft' || b.t === 'minelift') return LEVELS[b.t][b.lvl - 1].hp;
     if (b.t === 'cannon') return BUILD.cannon.hp + (b.lvl - 1) * 110;
     return BUILD[b.t].hp;
   }
@@ -1168,11 +1168,13 @@ const G = window.G = {};
         if (b.mesh.userData.gear) b.mesh.userData.gear.rotation.y += dt * 3;
       }
       if (b.t === 'minelift') {
-        b.prodT += dt; b.prod2 += dt; b.prod3 += dt;
+        const L = LIFT_LEVELS[(b.lvl || 1) - 1];
+        b.prodT += dt; b.prod2 += dt; b.prod3 += dt; b.prod4 = (b.prod4 || 0) + dt;
         const near = Math.hypot(P.pos.x - b.x, P.pos.z - b.z) < 25;
-        if (b.prodT >= 6) { b.prodT = 0; addRes('stone', 1, near ? V(b.x, b.y + 2, b.z) : null); }
-        if (b.prod2 >= 14) { b.prod2 = 0; addRes('coal', 1, near ? V(b.x, b.y + 2.6, b.z) : null); }
-        if (b.prod3 >= 24) { b.prod3 = 0; addRes('iron', 1, near ? V(b.x, b.y + 3.2, b.z) : null); }
+        if (b.prodT >= L.stone) { b.prodT = 0; addRes('stone', 1, near ? V(b.x, b.y + 2, b.z) : null); }
+        if (b.prod2 >= L.coal) { b.prod2 = 0; addRes('coal', 1, near ? V(b.x, b.y + 2.6, b.z) : null); }
+        if (L.iron && b.prod3 >= L.iron) { b.prod3 = 0; addRes('iron', 1, near ? V(b.x, b.y + 3.2, b.z) : null); }
+        if (L.ruby && b.prod4 >= L.ruby) { b.prod4 = 0; addRes('ruby', 1, near ? V(b.x, b.y + 3.8, b.z) : null); }
         if (b.mesh.userData.spin) b.mesh.userData.spin.rotation.z += dt * 2;
       }
       if (S.hero === 'engineer' && b.hp < b.maxHp && Math.hypot(P.pos.x - b.x, P.pos.z - b.z) < 15) b.hp = Math.min(b.maxHp, b.hp + b.maxHp * 0.015 * dt);
