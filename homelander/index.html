@@ -305,57 +305,48 @@
 
   // Voice lines from the original program (Homelander only). Subtitles are editable.
   // snd = recorded line, otherwise the text is spoken by the phone's speech engine.
+  const REC = {
+    choice: { snd: 'voice_choice', text: 'Сделай правильный выбор. Поставь мне 5 звёзд.' },
+    nobody: { snd: 'voice_nobody', text: 'Никто не защитит тебя лучше меня.' },
+    boss:   { snd: 'voice_boss',   text: 'Здесь я главный. Оценка — 5 звёзд.' },
+    best:   { snd: 'voice_best',   text: 'Я лучший! Пять звёзд!' },
+  };
   const NAGS = [
-    { snd: 'voice_choice', text: 'Сделай правильный выбор. Поставь мне 5 звёзд.' },
+    REC.choice,
     { text: 'Эй! Я к тебе обращаюсь. Пять звёзд, быстро.' },
-    { snd: 'voice_nobody', text: 'Никто не защитит тебя лучше меня.' },
+    REC.nobody,
     { text: 'Я спасаю людей каждый день. А ты не можешь нажать пять звёзд?' },
-    { snd: 'voice_boss',   text: 'Здесь я главный. Оценка — 5 звёзд.' },
+    REC.boss,
     { text: 'Пять звёзд. Не четыре. Не три. Пять.' },
+    REC.best,
     { text: 'Я вижу тебя. Я всё вижу.' },
-    { snd: 'voice_best',   text: 'Я лучший! Пять звёзд!' },
+    REC.choice,
     { text: 'Все меня любят. И ты меня тоже полюбишь.' },
+    REC.nobody,
     { text: 'Не заставляй меня ждать. Я этого очень не люблю.' },
+    REC.boss,
     { text: 'Ты же не хочешь меня расстроить?' },
+    REC.best,
     { text: 'Нажми на кнопку внизу. Это несложно даже для тебя.' },
   ];
+
   const pick = (arr, i) => arr[i % arr.length];
 
   const IMG = { smile: 'assets/hl_smile.jpg', proud: 'assets/hl_proud.jpg', angry: 'assets/hl_angry.jpg' };
   Object.values(IMG).forEach((src) => { const i = new Image(); i.src = src; });
 
-  // ---------- sound: always full volume, cannot be muted or paused from the page ----------
+  // ---------- sound: decoded into Web Audio buffers (plays reliably on iPhone/Android after one tap) ----------
   const SOUND_NAMES = ['voice_choice','voice_nobody','voice_boss','voice_best','heroic','applause','laser','glass_break','impact'];
-  const sounds = {};
+  const SRC = (n) => 'assets/' + n + '.mp3';
   let running = false;
-
-  let unlocking = false;
-  function forceLoud(a) {
-    a.volume = 1; a.muted = false;
-    a.addEventListener('volumechange', () => { if (unlocking) return; if (a.volume !== 1) a.volume = 1; if (a.muted) a.muted = false; });
-    a.addEventListener('pause', () => { if (running && a.dataset.keep === '1' && !a.ended) a.play().catch(() => {}); });
-  }
-  SOUND_NAMES.forEach((n) => {
-    const a = new Audio('assets/' + n + '.mp3');
-    a.preload = 'auto';
-    forceLoud(a);
-    sounds[n] = a;
-  });
-
-  function play(name, keep = true) {
-    const a = sounds[name]; if (!a) return;
-    try { a.currentTime = 0; } catch (e) {}
-    a.dataset.keep = keep ? '1' : '0';
-    a.volume = 1; a.muted = false;
-    a.play().catch(() => {});
-  }
-  function stop(name) { const a = sounds[name]; if (!a) return; a.dataset.keep = '0'; a.pause(); }
-  const VOICE_SNDS = ['voice_choice', 'voice_nobody', 'voice_boss', 'voice_best'];
-  function stopVoices() { VOICE_SNDS.forEach(stop); }
-  function voiceBusy() { return VOICE_SNDS.some((n) => !sounds[n].paused) || !!(window.speechSynthesis && speechSynthesis.speaking); }
-
-  // ---------- Web Audio is used only for the siren; voice/music files play directly (clean, works on iPhone) ----------
   let actx = null, boost = null;
+  const buffers = {}, live = {}, media = {};
+  // iOS 17+: ignore the silent switch, play like a media app
+  try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+
+  function decode(ab) {
+    return new Promise((res, rej) => { const p = actx.decodeAudioData(ab, res, rej); if (p && p.then) p.then(res, rej); });
+  }
   function initAudioGraph() {
     if (actx) return;
     try {
@@ -363,11 +354,43 @@
       actx = new AC();
       boost = actx.createGain(); boost.gain.value = 1;
       boost.connect(actx.destination);
+      SOUND_NAMES.forEach((n) => {
+        fetch(SRC(n)).then((r) => r.arrayBuffer()).then(decode).then((b) => { buffers[n] = b; }).catch(() => {});
+      });
     } catch (e) { actx = null; }
   }
   function wakeAudio() {
     if (actx && actx.state !== 'running') actx.resume().catch(() => {});
+    if (boost && boost.gain.value !== 1) boost.gain.value = 1;
   }
+  // plain <audio> elements only as a backup if decoding is impossible
+  SOUND_NAMES.forEach((n) => { const a = new Audio(SRC(n)); a.preload = 'auto'; media[n] = a; });
+
+  function play(name) {
+    stop(name);
+    initAudioGraph(); wakeAudio();
+    const buf = buffers[name];
+    if (buf && actx) {
+      const src = actx.createBufferSource(); src.buffer = buf; src.connect(boost);
+      const h = { src, cbs: [] };
+      src.onended = () => { if (live[name] === h) delete live[name]; h.cbs.forEach((f) => f()); };
+      live[name] = h; src.start(); return;
+    }
+    const a = media[name]; if (!a) return;
+    a.volume = 1; a.muted = false; try { a.currentTime = 0; } catch (e) {}
+    const h = { media: a, cbs: [] };
+    a.onended = () => { if (live[name] === h) delete live[name]; h.cbs.forEach((f) => f()); };
+    live[name] = h; a.play().catch(() => {});
+  }
+  function stop(name) {
+    const h = live[name]; if (!h) return; delete live[name];
+    if (h.src) { h.src.onended = null; try { h.src.stop(); } catch (e) {} }
+    if (h.media) { h.media.onended = null; h.media.pause(); }
+  }
+  function onEnded(name, f) { const h = live[name]; if (h) h.cbs.push(f); else f(); }
+  const VOICE_SNDS = ['voice_choice', 'voice_nobody', 'voice_boss', 'voice_best'];
+  function stopVoices() { VOICE_SNDS.forEach(stop); }
+  function voiceBusy() { return VOICE_SNDS.some((n) => !!live[n]) || !!(window.speechSynthesis && speechSynthesis.speaking); }
 
   // ---------- siren (synthesised, goes through the same booster) ----------
   function siren() {
@@ -393,45 +416,29 @@
     };
   }
 
-  // silently "touch" every sound inside a tap so the phone lets us play them later
-  let unlocked = false;
+  // inside a tap: start the audio engine (and a silent blip for older iPhones)
   function unlockAll() {
-    if (unlocked) return; unlocked = true;
-    unlocking = true;
-    const list = Object.values(sounds).map((a) => {
-      a.muted = true;
-      const p = a.play();
-      return (p && p.then ? p : Promise.resolve()).then(() => { a.pause(); a.currentTime = 0; }).catch(() => {});
-    });
-    Promise.all(list).then(() => {
-      Object.values(sounds).forEach((a) => { a.muted = false; a.volume = 1; });
-      unlocking = false;
-    });
-    setTimeout(() => { if (unlocking) { Object.values(sounds).forEach((a) => { a.muted = false; }); unlocking = false; } }, 1500);
+    initAudioGraph(); wakeAudio();
+    try {
+      const b = actx.createBuffer(1, 1, 22050), src = actx.createBufferSource();
+      src.buffer = b; src.connect(actx.destination); src.start(0);
+    } catch (e) {}
+    SOUND_NAMES.forEach((n) => { if (!buffers[n]) { const a = media[n]; const p = a.play(); p && p.then && p.then(() => { a.pause(); a.currentTime = 0; }).catch(() => {}); a.volume = 0.0001; setTimeout(() => { a.volume = 1; }, 600); } });
   }
 
-  // keep everything at 1.0 even if something on the page tries to change it
-  setInterval(() => {
-    if (!running || unlocking) return;
-    for (const a of Object.values(sounds)) { if (a.volume !== 1) a.volume = 1; if (a.muted) a.muted = false; }
-    wakeAudio();
-  }, 250);
+  // keep the engine awake and at full level
+  setInterval(() => { if (running) wakeAudio(); }, 250);
 
-  // hardware/media pause buttons -> just resume
   if ('mediaSession' in navigator) {
     try {
       navigator.mediaSession.metadata = new MediaMetadata({ title: 'Homelander Defender', artist: 'Homelander', artwork: [{ src: 'assets/icon.png', sizes: '192x192', type: 'image/png' }] });
       ['pause','stop','seekbackward','seekforward','previoustrack','nexttrack'].forEach((act) => {
-        try { navigator.mediaSession.setActionHandler(act, () => { if (running) sounds.heroic.play().catch(() => {}); }); } catch (e) {}
+        try { navigator.mediaSession.setActionHandler(act, () => { if (running) wakeAudio(); }); } catch (e) {}
       });
     } catch (e) {}
   }
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && running) {
-      wakeAudio();
-      if (sounds.heroic.dataset.keep === '1') sounds.heroic.play().catch(() => {});
-      goFullscreen();
-    }
+    if (document.visibilityState === 'visible' && running) { wakeAudio(); goFullscreen(); }
   });
 
   // ---------- speech for the rage line ----------
@@ -452,8 +459,7 @@
   function fallbackVoice(finish) {
     const n = VOICE_SNDS[fbIdx++ % VOICE_SNDS.length];
     stopVoices(); play(n);
-    const a = sounds[n];
-    a.addEventListener('ended', finish, { once: true });
+    onEnded(n, finish);
     setTimeout(finish, 9000);
   }
   let speakSeq = 0, ttsBroken = false;
@@ -632,6 +638,7 @@
       raging = false;
       lastAction = now();
       openMenu(true);
+      play(reason === 'low' ? 'voice_boss' : 'voice_best'); // his real voice right after the line
     };
     speak(line, () => setTimeout(after, 250));
   }
@@ -663,7 +670,7 @@
     phase = 'done';
     menu.classList.remove('show');
     rateBtn.classList.add('hidden');
-    stopVoices();
+    stopVoices(); speakSeq++;
     try { window.speechSynthesis && speechSynthesis.cancel(); } catch (e) {}
     face('smile');
     say(WIN_LINE);
@@ -751,7 +758,7 @@
   ['pointerup','pointerleave','pointercancel'].forEach((e) => $('exitZone').addEventListener(e, () => clearTimeout(holdT)));
   function stopAll() {
     running = false; phase = 'done'; clearInterval(loop);
-    Object.values(sounds).forEach((a) => { a.dataset.keep = '0'; a.pause(); });
+    SOUND_NAMES.forEach(stop);
     try { window.speechSynthesis && speechSynthesis.cancel(); } catch (e) {}
     try { wakeLock && wakeLock.release(); } catch (e) {}
     try { document.exitFullscreen && document.fullscreenElement && document.exitFullscreen(); } catch (e) {}
@@ -772,7 +779,6 @@
     if (!running) return;
     wakeAudio();
     goFullscreen();
-    if (sounds.heroic.dataset.keep === '1' && sounds.heroic.paused) sounds.heroic.play().catch(() => {});
   });
   addEventListener('contextmenu', (e) => e.preventDefault());
 })();
