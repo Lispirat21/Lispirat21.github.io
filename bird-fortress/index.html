@@ -248,6 +248,7 @@ body.fp #crosshair { display:block; }
 .slotbtn.warn { background:linear-gradient(#e8a03a,#b0661a); }
 .slotbtn:disabled { filter:grayscale(1) brightness(.7); }
 .slotdel { border:none; border-radius:12px; padding:0 10px; background:linear-gradient(#e86a4a,#b03a2a); color:#fff; font-weight:800; font-size:12px; box-shadow:0 4px 0 #6a1a10; }
+@media (max-height:500px) { #menu.slots-open .title, #menu.slots-open .sub { display:none; } .slotbtn { padding:6px 10px; font-size:14px; } #slotList { gap:6px; } }
 /* ---------- Золотые птицы ---------- */
 .gbi { width:1.25em; height:1.25em; vertical-align:-0.3em; display:inline-block; }
 #gbBadge { position:fixed; right:calc(max(12px,env(safe-area-inset-right)) + 58px); top:max(16px,env(safe-area-inset-top)); background:#0008; border:2px solid #ffd24a88; border-radius:20px; padding:6px 12px; font-size:18px; color:#ffd24a; }

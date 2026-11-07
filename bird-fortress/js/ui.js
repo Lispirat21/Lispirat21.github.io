@@ -106,7 +106,7 @@ const UI = window.UI = {};
     if (a === 'exit') exitGame();
     if (a === 'continue') openSlots('load');
     if (a === 'new') openSlots('new');
-    if (a === 'slots-back') { $('m-slots').classList.add('hidden'); $('m-play').classList.remove('hidden'); refreshContinue(); }
+    if (a === 'slots-back') { $('m-slots').classList.add('hidden'); $('menu').classList.remove('slots-open'); $('m-play').classList.remove('hidden'); refreshContinue(); }
   }));
   function refreshContinue() {
     const n = G.saveCount();
@@ -117,7 +117,7 @@ const UI = window.UI = {};
   UI.refreshGB = refreshGB;
   let selSlot = 1;
   function openSlots(mode) {
-    $('m-play').classList.add('hidden'); $('m-main').classList.add('hidden'); $('m-slots').classList.remove('hidden');
+    $('m-play').classList.add('hidden'); $('m-main').classList.add('hidden'); $('m-slots').classList.remove('hidden'); $('menu').classList.add('slots-open');
     $('slotsTitle').textContent = tr(mode === 'new' ? 'slots_new' : 'slots_load');
     const list = $('slotList'); list.innerHTML = '';
     [1, 2, 3].forEach(n => {
@@ -147,7 +147,7 @@ const UI = window.UI = {};
     try { window.close(); } catch (e) { }
   }
   tap($('bye-back'), () => { G.state = 'menu'; show('menu'); backToMain(); });
-  function backToMain() { $('m-play').classList.add('hidden'); $('m-main').classList.remove('hidden'); Sound.setMode('menu'); }
+  function backToMain() { $('m-play').classList.add('hidden'); $('m-slots').classList.add('hidden'); $('menu').classList.remove('slots-open'); $('m-main').classList.remove('hidden'); Sound.setMode('menu'); }
 
   // ---------------- Настройки ----------------
   function openSettings(from) { settingsFrom = from; renderSettings(); $('settings').classList.remove('hidden'); if (from === 'menu') $('menu').classList.add('hidden'); if (from === 'pause') $('pause').classList.add('hidden'); }
@@ -215,7 +215,7 @@ const UI = window.UI = {};
   }
   tap($('sel-prev'), () => { selIdx = (selIdx + HERO_ORDER.length - 1) % HERO_ORDER.length; renderHero(); });
   tap($('sel-next'), () => { selIdx = (selIdx + 1) % HERO_ORDER.length; renderHero(); });
-  tap($('sel-back'), () => { G.state = 'menu'; show('menu'); refreshGB(); });
+  tap($('sel-back'), () => { G.state = 'menu'; show('menu'); backToMain(); refreshGB(); });
   tap($('sel-go'), async () => {
     const hid = HERO_ORDER[selIdx];
     if (!G.heroUnlocked(hid)) { if (G.buyHero(hid)) { renderHero(); refreshGB(); } return; }
