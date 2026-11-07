@@ -1100,24 +1100,31 @@ const G = window.G = {};
     if (key !== vmKey) {
       vmKey = key; while (vm.children.length) vm.remove(vm.children[0]);
       const look = { defender: [0x3d7a3a, 0xf1c7a0], builder: [0xe8b890, 0xe8b890], hunter: [0x8a5a32, 0xf3cfa8] }[S.hero];
-      const arm = new THREE.Group(); vm.add(arm); vm.userData.arm = arm;
-      Models.box(0.09, 0.09, 0.34, look[0], 0, -0.02, 0.16, arm, false);
-      Models.sph(0.1, 0.1, 0.1, look[1], 0, 0, -0.02, arm, true, false);
-      const t = Models.makeTool(P.tool, P.toolTier); t.rotation.set(-0.5, 0, 0.75); t.position.set(0, -0.06, -0.02); t.scale.setScalar(0.6); arm.add(t); vm.userData.tool = t;
+      // Та же рука, что у героя от 3-го лица: плечо → рука → кисть с инструментом.
+      // rig развёрнут на 180°, чтобы «вперёд» героя совпадало со взглядом камеры.
+      const rig = new THREE.Group(); rig.rotation.y = Math.PI; vm.add(rig); vm.userData.rig = rig;
+      const arm = new THREE.Group(); rig.add(arm); vm.userData.arm = arm;
+      Models.box(0.16, 0.36, 0.18, look[0], 0, -0.16, 0, arm, false);
+      Models.box(0.14, 0.26, 0.16, S.hero === 'builder' ? look[1] : look[0], 0, -0.44, 0, arm, false);
+      Models.sph(0.15, 0.15, 0.15, look[1], 0, -0.6, 0, arm, true, false);
+      const hand = Models.group(arm, 0, -0.62, 0.02); hand.rotation.set(-0.75, 0, -0.35);
+      hand.add(Models.makeTool(P.tool, P.toolTier));
       arm.traverse(o => { if (o.isMesh) { o.castShadow = false; o.receiveShadow = false; } });
     }
-    const arm = vm.userData.arm, sw = P.swing;
+    const rig = vm.userData.rig, arm = vm.userData.arm, sw = P.swing;
     const bob = P.moving ? Math.sin(P.animT * 10) * 0.025 : Math.sin(P.animT * 2) * 0.006;
-    // Удар от 1-го лица в стиле Майнкрафта: рука с инструментом резко уходит вперёд-вниз к центру экрана
-    // (от игрока) и возвращается по дуге. Пик удара — в середине взмаха, когда засчитывается попадание.
-    const u = sw > 0 ? Math.min(1, sw) : 0;
-    const a = Math.sin(u * Math.PI);            // вперёд и обратно
-    const b = Math.sin(Math.sqrt(u) * Math.PI); // быстрый выброс руки в начале
-    const arc = Math.sin(u * Math.PI * 2);      // дуга: сначала чуть вверх, потом вниз
-    const still = sw > 0 ? 0.3 : 1;
-    arm.position.set(0.32 - 0.2 * b + bob * 0.5 * still, -0.34 + 0.07 * arc - 0.05 * a + Math.abs(bob) * still, -0.55 - 0.22 * a);
-    arm.rotation.set(0.1 - 0.35 * b, -0.3 - 0.45 * a, 0.15 - 0.35 * b);
-    if (vm.userData.tool) vm.userData.tool.rotation.set(-0.5 + 1.15 * a, 0, 0.75 - 0.3 * a);
+    // Удар копирует анимацию героя от 3-го лица (Models.animHero): замах инструментом над головой
+    // до 40% взмаха, затем резкий удар вниз. Базовый наклон держит руку с инструментом в кадре.
+    let ax = 0, twist = 0;
+    if (sw > 0) {
+      const s1 = sw < 0.4 ? sw / 0.4 : 1 - (sw - 0.4) / 0.6;
+      ax = sw < 0.4 ? -2.6 * s1 : -2.6 + 3.2 * Math.min(1, (sw - 0.4) / 0.25);
+      twist = sw < 0.4 ? -0.3 * s1 : 0.3 * (1 - s1);
+    }
+    const BASE = -1.15;
+    rig.position.set(0.46 + bob * 0.5, -0.6 + Math.abs(bob), -0.62);
+    rig.rotation.set(0, Math.PI + twist * 0.6, 0);
+    arm.rotation.set(BASE + ax * 0.6, 0, 0.22);
     // лёгкая отдача камеры в момент удара
     const kick = sw > 0.5 && sw < 0.7 ? Math.sin((sw - 0.5) / 0.2 * Math.PI) * 0.02 : 0;
     vm.userData.kick = kick;
