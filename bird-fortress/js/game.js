@@ -1494,7 +1494,7 @@ const G = window.G = {};
   let mpCount = 1;                     // игроков в игре (на гостях — из снимка хоста)
   const fxQueue = [];                  // выстрелы для отрисовки у гостей
   let lobby = [];                      // [{ pid, id, hero }]
-  let snapT = 0, meT = 0, fullFor = new Set(), lastBl = '', lastDead = '', pidSeq = 1;
+  let tickN = 0, snapT = 0, meT = 0, fullFor = new Set(), lastBl = '', lastDead = '', pidSeq = 1;
   G.mpN = () => Net.isClient ? mpCount : (Net.isHost ? 1 + Net.conns.size : 1);
   G.maxOf = t => { const m = BUILD[t].max || 99; return m === 1 ? 1 : m * G.mpN(); };
   G.lobby = () => lobby;
@@ -1541,7 +1541,8 @@ const G = window.G = {};
     if (!Net.conns.size) { fxQueue.length = 0; return; }
     const { s, blKey, dKey } = snapshot(false);
     const sFull = fullFor.size ? snapshot(true).s : null;
-    lobby.forEach(l => { if (!Net.conns.has(l.id)) return; Net.send(l.id, fullFor.has(l.id) ? sFull : s); });
+    tickN++;
+    lobby.forEach(l => { const c = Net.conns.get(l.id); if (!c) return; if (c.relay && tickN % 2 && !fullFor.has(l.id)) return; Net.send(l.id, fullFor.has(l.id) ? sFull : s); });
     fullFor.clear(); lastBl = blKey; lastDead = dKey;
   }
   // ---------- хост: команды гостей ----------
@@ -1588,7 +1589,7 @@ const G = window.G = {};
       onConn: () => { },
       onData: onHostData,
       onClose: id => { const L = lobby.find(l => l.id === id); lobby = lobby.filter(l => l.id !== id); if (L) { removePuppet(L.pid); UI.toast(tr('mp_left', { name: HEROES[L.hero].name }), 'warn'); } Net.broadcast({ ev: 'lobby', players: lobby.map(l => ({ pid: l.pid, hero: l.hero })) }); UI.lobbyUpdate && UI.lobbyUpdate(); },
-      onError: e => UI.toast(tr('mp_error') + ' (' + (e.type || e.message || e) + ')', 'bad', 5000),
+      onError: e => UI.toast(e && e.type === 'server' ? tr('mp_server') : tr('mp_error') + ' (' + (e.type || e.message || e) + ')', 'bad', 6000),
     });
   };
   G.mpStartHosted = function () { lobby.forEach(l => { if (l.pid !== 0) startGuest(l); }); };
@@ -1599,10 +1600,11 @@ const G = window.G = {};
   G.mpJoin = function (code, hero) {
     guestHero = hero; lobby = [];
     return Net.join(code, {
-      onOpen: () => Net.toHost({ c: 'hello', hero }),
+      onOpen: () => { Net.toHost({ c: 'hello', hero }); UI.lobbyStatus && UI.lobbyStatus('ok'); },
+      onStatus: st => UI.lobbyStatus && UI.lobbyStatus(st),
       onData: (_, m) => onGuestData(m),
       onClose: () => { if (Net.isClient) { UI.toast(tr('mp_host_gone'), 'bad', 5000); G.mpLeave(); UI.toMenu(); } },
-      onError: e => { UI.toast(e && e.type === 'peer-unavailable' || e && e.type === 'timeout' ? tr('mp_notfound') : tr('mp_error') + ' (' + (e.type || e.message || e) + ')', 'bad', 5000); G.mpLeave(); UI.lobbyUpdate && UI.lobbyUpdate(); },
+      onError: e => { const msg = e && e.type === 'server' ? tr('mp_server') : e && (e.type === 'peer-unavailable' || e.type === 'timeout') ? tr('mp_notfound') : tr('mp_error') + ' (' + (e.type || e.message || e) + ')'; UI.toast(msg, 'bad', 6000); G.mpLeave(); UI.lobbyStatus && UI.lobbyStatus('fail', msg); },
     });
   };
   function onGuestData(m) {

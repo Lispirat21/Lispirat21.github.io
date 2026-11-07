@@ -1359,6 +1359,13 @@ Object.assign(TR_UI, {
   mp_full:     ["The lobby is full (3/3)", "Лобби заполнено (3/3)", "La sala está llena (3/3)", "A sala está cheia (3/3)", "Le salon est plein (3/3)", "Die Lobby ist voll (3/3)", "房间已满（3/3）", "ロビーは満員です（3/3）", "लॉबी भर गई (3/3)", "الغرفة ممتلئة (3/3)"],
   mp_badge:    ["👥 {code} · {n}/3", "👥 {code} · {n}/3", "👥 {code} · {n}/3", "👥 {code} · {n}/3", "👥 {code} · {n}/3", "👥 {code} · {n}/3", "👥 {code} · {n}/3", "👥 {code} · {n}/3", "👥 {code} · {n}/3", "👥 {code} · {n}/3"],
 });
+Object.assign(TR_UI, {
+  mp_st_p2p:   ["Connecting directly…", "Подключаемся напрямую…", "Conectando directamente…", "Conectando diretamente…", "Connexion directe…", "Direkte Verbindung…", "正在直连…", "直接接続中…", "सीधे जुड़ रहे हैं…", "اتصال مباشر…"],
+  mp_st_relay: ["Direct connection failed — trying the backup server…", "Напрямую не вышло — пробуем через запасной сервер…", "Sin conexión directa — probando el servidor de respaldo…", "Sem conexão direta — tentando o servidor reserva…", "Pas de connexion directe — essai du serveur de secours…", "Keine Direktverbindung — versuche Ersatzserver…", "直连失败，尝试备用服务器…", "直接接続できず — 予備サーバーを試しています…", "सीधे नहीं जुड़ा — बैकअप सर्वर से कोशिश…", "فشل الاتصال المباشر — نجرب الخادم الاحتياطي…"],
+  mp_st_ok:    ["✔ Connected! Waiting for the host to start…", "✔ Подключено! Ждём, пока хост начнёт…", "✔ ¡Conectado! Esperando al anfitrión…", "✔ Conectado! Esperando o anfitrião…", "✔ Connecté ! En attente de l'hôte…", "✔ Verbunden! Warte auf den Host…", "✔ 已连接！等待房主开始…", "✔ 接続しました！ホストを待っています…", "✔ जुड़ गए! होस्ट का इंतज़ार…", "✔ تم الاتصال! بانتظار المضيف…"],
+  mp_server:   ["Could not reach the connection server. Check your internet or try Wi-Fi.", "Не удалось связаться с сервером соединения. Проверьте интернет или попробуйте через Wi-Fi.", "No se pudo contactar el servidor de conexión. Revisa internet o prueba Wi-Fi.", "Não foi possível alcançar o servidor. Verifique a internet ou use Wi-Fi.", "Serveur de connexion injoignable. Vérifiez internet ou essayez le Wi-Fi.", "Verbindungsserver nicht erreichbar. Internet prüfen oder WLAN nutzen.", "无法连接服务器，请检查网络或改用 Wi-Fi。", "接続サーバーに届きません。ネットかWi-Fiを確認してください。", "कनेक्शन सर्वर तक नहीं पहुँचे। इंटरनेट जाँचें या Wi-Fi आज़माएँ।", "تعذّر الوصول لخادم الاتصال. تحقق من الإنترنت أو جرّب Wi-Fi."],
+  mp_sandbox:  ["Multiplayer does not work on this page (network is blocked here). Open the game on the site: lispirat21.github.io/bird-fortress", "Совместная игра не работает на этой странице (здесь запрещена сеть). Откройте игру на сайте: lispirat21.github.io/bird-fortress", "El multijugador no funciona en esta página. Abre el juego en: lispirat21.github.io/bird-fortress", "O multijogador não funciona nesta página. Abra o jogo em: lispirat21.github.io/bird-fortress", "Le multijoueur ne marche pas sur cette page. Ouvrez le jeu sur : lispirat21.github.io/bird-fortress", "Mehrspieler funktioniert hier nicht. Öffne das Spiel auf: lispirat21.github.io/bird-fortress", "此页面无法多人游戏（网络被禁用）。请在网站打开：lispirat21.github.io/bird-fortress", "このページではマルチプレイ不可。サイトで開いてください：lispirat21.github.io/bird-fortress", "इस पेज पर मल्टीप्लेयर नहीं चलता। साइट पर खोलें: lispirat21.github.io/bird-fortress", "اللعب الجماعي لا يعمل هنا. افتح اللعبة على: lispirat21.github.io/bird-fortress"],
+});
 
 </script>
 <script>
@@ -2990,28 +2997,52 @@ const World = (() => {
 </script>
 <script>
 'use strict';
-// ============ Сеть: хост и до 2 гостей. Соединение напрямую через PeerJS (WebRTC) ============
-// ?net=local — тестовый режим без интернета: окна одного браузера общаются через BroadcastChannel.
+// ============ Сеть: хост и до 2 гостей ============
+// Основной путь — прямое соединение через PeerJS (WebRTC). Запасной — ретранслятор через
+// публичный MQTT-сервер (если PeerJS недоступен в стране или сеть мешает прямому соединению).
+// Хост слушает оба пути сразу; гость пробует PeerJS, а через ~8 с переключается на ретранслятор.
+// ?net=local — тестовый режим без интернета (окна одного браузера, BroadcastChannel).
 const Net = (() => {
-  const N = { active: false, isHost: false, isClient: false, pid: 0, code: '', conns: new Map() };
+  const N = { active: false, isHost: false, isClient: false, pid: 0, code: '', conns: new Map(), via: '' };
   const LOCAL = new URLSearchParams(location.search).get('net') === 'local';
-  let peer = null, bc = null, hostSend = null, cb = null, myId = '';
+  const SANDBOXED = /claude\.ai|claudeusercontent|claude\.site/i.test(location.hostname);
+  const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt', 'wss://test.mosquitto.org:8081/mqtt'];
+  let peer = null, bc = null, mq = null, hostSend = null, cb = null, myId = '', watchdog = null, gen = 0;
   const ID = code => 'birdwars-v1-' + code;
+  const T = code => 'birdwars/v1/' + code;
 
-  function loadPeer() {
-    if (window.Peer) return Promise.resolve();
+  function loadScript(src, globalName) {
+    if (window[globalName]) return Promise.resolve();
     return new Promise((res, rej) => {
-      const s = document.createElement('script');
-      s.src = 'https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js';
-      s.onload = () => res(); s.onerror = () => rej(new Error('peerjs'));
-      document.head.append(s);
+      const s = document.createElement('script'); s.src = src;
+      s.onload = () => window[globalName] ? res() : rej(new Error(globalName));
+      s.onerror = () => rej(new Error(globalName)); document.head.append(s);
     });
   }
+  const loadPeer = () => loadScript('https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js', 'Peer');
+  const loadMqtt = () => loadScript('https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js', 'mqtt');
   function genCode() { const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let c = ''; for (let i = 0; i < 5; i++) c += A[Math.floor(Math.random() * A.length)]; return c; }
+  // Подключение к первому доступному MQTT-серверу
+  async function mqttConnect() {
+    await loadMqtt();
+    for (const url of BROKERS) {
+      const c = await new Promise(res => {
+        let done = false;
+        const cl = mqtt.connect(url, { clientId: 'bw' + Math.random().toString(36).slice(2, 10), clean: true, connectTimeout: 6000, reconnectPeriod: 0 });
+        cl.on('connect', () => { if (!done) { done = true; res(cl); } });
+        cl.on('error', () => { if (!done) { done = true; try { cl.end(true); } catch (e) { } res(null); } });
+        setTimeout(() => { if (!done) { done = true; try { cl.end(true); } catch (e) { } res(null); } }, 7000);
+      });
+      if (c) return c;
+    }
+    throw new Error('mqtt');
+  }
+  const pack = o => JSON.stringify(o);
+  const unpack = b => { try { return JSON.parse(typeof b === 'string' ? b : new TextDecoder().decode(b)); } catch (e) { return null; } };
 
-  // Хост: ждёт гостей. handlers: onOpen(code), onConn(id), onData(id, msg), onClose(id), onError(err)
+  // ---------- хост ----------
   async function host(handlers) {
-    close(); cb = handlers; N.code = genCode(); N.active = true; N.isHost = true; N.isClient = false;
+    close(); const my = ++gen; cb = handlers; N.code = genCode(); N.active = true; N.isHost = true; N.isClient = false;
     if (LOCAL) {
       bc = new BroadcastChannel('bwnet-' + N.code);
       bc.onmessage = ev => {
@@ -3023,19 +3054,44 @@ const Net = (() => {
       setTimeout(() => cb.onOpen(N.code), 0);
       return;
     }
-    await loadPeer();
-    peer = new Peer(ID(N.code), { debug: 0 });
-    peer.on('open', () => cb.onOpen(N.code));
-    peer.on('error', e => { if (e.type === 'unavailable-id') { peer.destroy(); host(handlers); return; } cb.onError(e); });
-    peer.on('connection', c => {
-      c.on('open', () => { if (N.conns.size >= 2) { c.send({ ev: 'full' }); setTimeout(() => c.close(), 300); return; } N.conns.set(c.peer, c); cb.onConn(c.peer); });
-      c.on('data', d => cb.onData(c.peer, d));
-      c.on('close', () => { if (N.conns.delete(c.peer)) cb.onClose(c.peer); });
-    });
+    let opened = false;
+    const ready = () => { if (!opened && my === gen) { opened = true; cb.onOpen(N.code); } };
+    // 1) PeerJS
+    loadPeer().then(() => {
+      if (my !== gen) return;
+      peer = new Peer(ID(N.code), { debug: 0 });
+      peer.on('open', ready);
+      peer.on('error', e => { if (e.type === 'unavailable-id' && my === gen) { N.code = genCode(); } });
+      peer.on('connection', c => {
+        c.on('open', () => { if (N.conns.size >= 2) { c.send({ ev: 'full' }); setTimeout(() => c.close(), 300); return; } N.conns.set(c.peer, { send: d => c.send(d), via: 'p2p' }); cb.onConn(c.peer); });
+        c.on('data', d => cb && cb.onData(c.peer, d));
+        c.on('close', () => { if (N.conns.delete(c.peer) && cb) cb.onClose(c.peer); });
+      });
+    }).catch(() => { });
+    // 2) запасной ретранслятор MQTT
+    mqttConnect().then(cl => {
+      if (my !== gen) { cl.end(true); return; }
+      mq = cl; mq.subscribe(T(N.code) + '/h');
+      const lastSeen = new Map();
+      mq.on('message', (topic, buf) => {
+        const m = unpack(buf); if (!m || !m.from) return;
+        lastSeen.set(m.from, Date.now());
+        if (m.hello && !N.conns.has(m.from)) {
+          if (N.conns.size >= 2) { mq.publish(T(N.code) + '/g/' + m.from, pack({ ev: 'full' })); return; }
+          N.conns.set(m.from, { send: d => mq && mq.publish(T(N.code) + '/g/' + m.from, pack(d)), via: 'relay', relay: true }); cb.onConn(m.from);
+        }
+        if (m.bye) { if (N.conns.delete(m.from)) cb.onClose(m.from); return; }
+        if (m.d !== undefined && N.conns.has(m.from)) cb.onData(m.from, m.d);
+      });
+      watchdog = setInterval(() => { const now = Date.now(); N.conns.forEach((c, id) => { if (c.relay && now - (lastSeen.get(id) || now) > 12000) { N.conns.delete(id); cb && cb.onClose(id); } }); }, 3000);
+      ready();
+    }).catch(() => { });
+    setTimeout(() => { if (!opened && my === gen && cb) cb.onError({ type: 'server' }); }, 16000);
   }
-  // Гость: подключается к хосту по коду. handlers: onOpen(), onData('host', msg), onClose(), onError(err)
+
+  // ---------- гость ----------
   async function join(code, handlers) {
-    close(); cb = handlers; N.code = code.toUpperCase().trim(); N.active = true; N.isHost = false; N.isClient = true;
+    close(); const my = ++gen; cb = handlers; N.code = code.toUpperCase().trim(); N.active = true; N.isHost = false; N.isClient = true;
     if (LOCAL) {
       myId = 'g' + Math.random().toString(36).slice(2, 8);
       bc = new BroadcastChannel('bwnet-' + N.code);
@@ -3045,29 +3101,60 @@ const Net = (() => {
       setTimeout(() => cb.onOpen(), 50);
       return;
     }
-    await loadPeer();
-    peer = new Peer({ debug: 0 });
-    let opened = false;
-    peer.on('open', () => {
-      const c = peer.connect(ID(N.code), { reliable: true, serialization: 'json' });
-      c.on('open', () => { opened = true; hostSend = d => c.send(d); cb.onOpen(); });
-      c.on('data', d => cb.onData('host', d));
-      c.on('close', () => cb.onClose());
+    let connected = false;
+    const status = s => cb && cb.onStatus && cb.onStatus(s);
+    // 1) прямое соединение
+    status('p2p');
+    const p2p = new Promise(res => {
+      loadPeer().then(() => {
+        if (my !== gen) return res(false);
+        peer = new Peer({ debug: 0 });
+        peer.on('open', () => {
+          const c = peer.connect(ID(N.code), { reliable: true, serialization: 'json' });
+          c.on('open', () => { if (my !== gen || connected) return; connected = true; N.via = 'p2p'; hostSend = d => c.send(d); res(true); cb.onOpen(); });
+          c.on('data', d => cb && cb.onData('host', d));
+          c.on('close', () => { if (N.via === 'p2p' && cb) cb.onClose(); });
+        });
+        peer.on('error', () => res(false));
+      }).catch(() => res(false));
+      setTimeout(() => res(false), 8000);
     });
-    peer.on('error', e => cb.onError(e));
-    setTimeout(() => { if (!opened && N.isClient && cb) cb.onError({ type: 'timeout' }); }, 15000);
+    if (await p2p) return;
+    if (my !== gen) return;
+    try { if (peer) peer.destroy(); } catch (e) { } peer = null;
+    // 2) ретранслятор
+    status('relay');
+    try {
+      const cl = await mqttConnect(); if (my !== gen) { cl.end(true); return; }
+      mq = cl; myId = 'g' + Math.random().toString(36).slice(2, 9);
+      let lastHost = Date.now();
+      mq.subscribe(T(N.code) + '/g/' + myId);
+      mq.on('message', (topic, buf) => {
+        const m = unpack(buf); if (!m) return; lastHost = Date.now();
+        if (!connected) { connected = true; N.via = 'relay'; cb.onOpen(); }
+        cb.onData('host', m);
+      });
+      hostSend = d => mq && mq.publish(T(N.code) + '/h', pack({ from: myId, d }));
+      mq.publish(T(N.code) + '/h', pack({ from: myId, hello: true }));
+      setTimeout(() => { if (!connected && my === gen && cb) cb.onError({ type: 'peer-unavailable' }); }, 9000);
+      watchdog = setInterval(() => { if (connected && Date.now() - lastHost > 12000 && cb) { const f = cb.onClose; close(); f && f(); } }, 3000);
+    } catch (e) { if (my === gen && cb) cb.onError({ type: 'server' }); }
   }
   const send = (id, msg) => { const c = N.conns.get(id); if (c) try { c.send(msg); } catch (e) { } };
   const broadcast = msg => N.conns.forEach(c => { try { c.send(msg); } catch (e) { } });
   const toHost = msg => { if (hostSend) try { hostSend(msg); } catch (e) { } };
   function close() {
+    gen++;
     if (LOCAL && bc && N.isClient) try { bc.postMessage({ to: 'host', from: myId, bye: true }); } catch (e) { }
+    if (mq && N.isClient && myId) try { mq.publish(T(N.code) + '/h', pack({ from: myId, bye: true })); } catch (e) { }
     try { if (peer) peer.destroy(); } catch (e) { }
     try { if (bc) bc.close(); } catch (e) { }
-    peer = null; bc = null; hostSend = null; cb = null;
-    N.conns.clear(); N.active = false; N.isHost = false; N.isClient = false; N.code = '';
+    try { if (mq) setTimeout((m => () => m.end(true))(mq), 200); } catch (e) { }
+    if (watchdog) clearInterval(watchdog);
+    peer = null; bc = null; mq = null; hostSend = null; cb = null; watchdog = null; myId = '';
+    N.conns.clear(); N.active = false; N.isHost = false; N.isClient = false; N.code = ''; N.via = '';
   }
-  return Object.assign(N, { host, join, send, broadcast, toHost, close, LOCAL });
+  return Object.assign(N, { host, join, send, broadcast, toHost, close, LOCAL, SANDBOXED });
 })();
 
 </script>
@@ -4568,7 +4655,7 @@ const G = window.G = {};
   let mpCount = 1;                     // игроков в игре (на гостях — из снимка хоста)
   const fxQueue = [];                  // выстрелы для отрисовки у гостей
   let lobby = [];                      // [{ pid, id, hero }]
-  let snapT = 0, meT = 0, fullFor = new Set(), lastBl = '', lastDead = '', pidSeq = 1;
+  let tickN = 0, snapT = 0, meT = 0, fullFor = new Set(), lastBl = '', lastDead = '', pidSeq = 1;
   G.mpN = () => Net.isClient ? mpCount : (Net.isHost ? 1 + Net.conns.size : 1);
   G.maxOf = t => { const m = BUILD[t].max || 99; return m === 1 ? 1 : m * G.mpN(); };
   G.lobby = () => lobby;
@@ -4615,7 +4702,8 @@ const G = window.G = {};
     if (!Net.conns.size) { fxQueue.length = 0; return; }
     const { s, blKey, dKey } = snapshot(false);
     const sFull = fullFor.size ? snapshot(true).s : null;
-    lobby.forEach(l => { if (!Net.conns.has(l.id)) return; Net.send(l.id, fullFor.has(l.id) ? sFull : s); });
+    tickN++;
+    lobby.forEach(l => { const c = Net.conns.get(l.id); if (!c) return; if (c.relay && tickN % 2 && !fullFor.has(l.id)) return; Net.send(l.id, fullFor.has(l.id) ? sFull : s); });
     fullFor.clear(); lastBl = blKey; lastDead = dKey;
   }
   // ---------- хост: команды гостей ----------
@@ -4662,7 +4750,7 @@ const G = window.G = {};
       onConn: () => { },
       onData: onHostData,
       onClose: id => { const L = lobby.find(l => l.id === id); lobby = lobby.filter(l => l.id !== id); if (L) { removePuppet(L.pid); UI.toast(tr('mp_left', { name: HEROES[L.hero].name }), 'warn'); } Net.broadcast({ ev: 'lobby', players: lobby.map(l => ({ pid: l.pid, hero: l.hero })) }); UI.lobbyUpdate && UI.lobbyUpdate(); },
-      onError: e => UI.toast(tr('mp_error') + ' (' + (e.type || e.message || e) + ')', 'bad', 5000),
+      onError: e => UI.toast(e && e.type === 'server' ? tr('mp_server') : tr('mp_error') + ' (' + (e.type || e.message || e) + ')', 'bad', 6000),
     });
   };
   G.mpStartHosted = function () { lobby.forEach(l => { if (l.pid !== 0) startGuest(l); }); };
@@ -4673,10 +4761,11 @@ const G = window.G = {};
   G.mpJoin = function (code, hero) {
     guestHero = hero; lobby = [];
     return Net.join(code, {
-      onOpen: () => Net.toHost({ c: 'hello', hero }),
+      onOpen: () => { Net.toHost({ c: 'hello', hero }); UI.lobbyStatus && UI.lobbyStatus('ok'); },
+      onStatus: st => UI.lobbyStatus && UI.lobbyStatus(st),
       onData: (_, m) => onGuestData(m),
       onClose: () => { if (Net.isClient) { UI.toast(tr('mp_host_gone'), 'bad', 5000); G.mpLeave(); UI.toMenu(); } },
-      onError: e => { UI.toast(e && e.type === 'peer-unavailable' || e && e.type === 'timeout' ? tr('mp_notfound') : tr('mp_error') + ' (' + (e.type || e.message || e) + ')', 'bad', 5000); G.mpLeave(); UI.lobbyUpdate && UI.lobbyUpdate(); },
+      onError: e => { const msg = e && e.type === 'server' ? tr('mp_server') : e && (e.type === 'peer-unavailable' || e.type === 'timeout') ? tr('mp_notfound') : tr('mp_error') + ' (' + (e.type || e.message || e) + ')'; UI.toast(msg, 'bad', 6000); G.mpLeave(); UI.lobbyStatus && UI.lobbyStatus('fail', msg); },
     });
   };
   function onGuestData(m) {
@@ -4940,6 +5029,7 @@ const UI = window.UI = {};
     if (a === 'exit') exitGame();
     if (a === 'continue') openSlots('load');
     if (a === 'new') openSlots('new');
+    if (a === 'mp' && Net.SANDBOXED) { toast(tr('mp_sandbox'), 'warn', 9000); return; }
     if (a === 'mp') { $('m-play').classList.add('hidden'); $('m-mp').classList.remove('hidden'); }
     if (a === 'mp-back') { $('m-mp').classList.add('hidden'); $('m-play').classList.remove('hidden'); }
     if (a === 'mp-create') { mpMode = 'host'; $('m-mp').classList.add('hidden'); openSlots('new'); }
@@ -5075,9 +5165,9 @@ const UI = window.UI = {};
     enterGame(); toast(tr('welcome', { biome: World.biome.name, seed }), 'good', 4500);
   });
   // ---------------- Лобби совместной игры ----------------
-  let pendingStart = null, lobbyMode = null;
+  let pendingStart = null, lobbyMode = null, lbStatus = '';
   function openLobby(mode) {
-    lobbyMode = mode; $('lobby').classList.remove('hidden');
+    lobbyMode = mode; lbStatus = mode === 'join' ? tr('mp_st_p2p') : ''; $('lobby').classList.remove('hidden');
     $('lb-code').textContent = mode === 'join' ? joinCode : '…';
     UI.lobbyUpdate();
   }
@@ -5085,16 +5175,17 @@ const UI = window.UI = {};
     if (code && lobbyMode) $('lb-code').textContent = code;
     if (!lobbyMode) { updateMpBadge(); return; }
     const L = G.lobby(), inGame = G.state === 'play';
-    $('lb-players').textContent = tr('lobby_players', { n: Math.max(1, L.length) });
+    $('lb-players').textContent = lobbyMode === 'join' && !L.length ? '' : tr('lobby_players', { n: Math.max(1, L.length) });
     const list = $('lb-list'); list.innerHTML = '';
-    (L.length ? L : [{ pid: 0, hero: HERO_ORDER[selIdx] }]).forEach(l => {
+    // гость до подключения не видит «чужого» лобби: показываем только статус соединения
+    (L.length ? L : (lobbyMode === 'join' ? [] : [{ pid: 0, hero: HERO_ORDER[selIdx] }])).forEach(l => {
       const me = Net.isClient ? l.pid === G.mpPid() : l.pid === 0;
       list.append(h('div', { cls: 'lb-p' }, h('b', null, (l.pid + 1) + '.'), h('span', null, HEROES[l.hero] ? HEROES[l.hero].name : '?'),
         l.pid === 0 ? h('span', { cls: 'tag g' }, tr('host_tag')) : null, me ? h('span', { cls: 'tag' }, tr('you_tag')) : null));
     });
     const isHost = lobbyMode === 'host' || lobbyMode === 'ingame';
     $('lb-note').textContent = tr('lobby_note', { n: Math.max(2, L.length) });
-    $('lb-wait').textContent = !Net.active ? tr('lobby_conn') : tr('lobby_wait');
+    $('lb-wait').textContent = lobbyMode === 'join' ? (lbStatus || tr('lobby_conn')) : (!Net.active ? tr('lobby_conn') : tr('lobby_wait'));
     $('lb-wait').classList.toggle('hidden', isHost && Net.active);
     $('lb-start').classList.toggle('hidden', lobbyMode !== 'host');
     $('lb-back').classList.toggle('hidden', lobbyMode !== 'ingame');
@@ -5102,6 +5193,10 @@ const UI = window.UI = {};
     if (!Net.active && lobbyMode === 'join' && $('lb-code').textContent !== '…') { /* ошибка — показываем кнопку выхода */ }
     updateMpBadge();
     void inGame;
+  };
+  UI.lobbyStatus = function (st, msg) {
+    lbStatus = st === 'p2p' ? tr('mp_st_p2p') : st === 'relay' ? tr('mp_st_relay') : st === 'ok' ? tr('mp_st_ok') : st === 'fail' ? '❌ ' + msg : '';
+    UI.lobbyUpdate();
   };
   function updateMpBadge() {
     const b = $('mpbadge'); b.classList.toggle('hidden', !Net.active);
