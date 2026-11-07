@@ -55,6 +55,19 @@
     background: #ff453a; color: #fff;
   }
   #boot small { display: block; color: #8e8e93; margin-top: 12px; font-size: 12px; }
+  #boot.scan h1 { color: #0a84ff; }
+  #boot.scan .bar i { background: #0a84ff; }
+  #boot.scan .file, #boot.scan #start { display: none; }
+  #boot.scan .card { cursor: pointer; }
+  #boot #start { opacity: 0; transform: scale(.9); transition: opacity .3s, transform .3s; pointer-events: none; }
+  #boot #start.ready { opacity: 1; transform: none; pointer-events: auto; animation: pulse .8s infinite; }
+  #boot.alarm { animation: alarmBg .55s steps(1) infinite; }
+  #boot.alarm .card { border-color: #ff453a; box-shadow: 0 0 0 3px rgba(255,69,58,.5), 0 20px 60px rgba(0,0,0,.6); }
+  #boot.alarm h1 { font-size: 26px; animation: blink .55s steps(1) infinite; }
+  #boot.alarm .warn { font-size: 72px; animation: pulse .4s infinite; }
+  #boot.alarm .bar i { width: 100%; animation: none; }
+  @keyframes alarmBg { 0% { background: #3a0000; } 50% { background: #0b0b0b; } }
+  @keyframes blink { 0% { opacity: 1; } 50% { opacity: .35; } }
 
   /* ---------- Homelander ---------- */
   #hero {
@@ -233,14 +246,14 @@
     </div>
   </div>
 
-  <div id="boot">
+  <div id="boot" class="scan">
     <div class="card">
-      <div class="warn">⚠️</div>
-      <h1>ОБНАРУЖЕНА УГРОЗА</h1>
-      <p>На устройстве найдено приложение</p>
+      <div class="warn" id="bootIcon">🛡️</div>
+      <h1 id="bootTitle">ПРОВЕРКА БЕЗОПАСНОСТИ</h1>
+      <p id="bootText">Нажмите на экран, чтобы проверить телефон</p>
       <div class="file">HOMELANDER.apk</div>
       <div class="bar"><i></i></div>
-      <button id="start">Проверить</button>
+      <button id="start">Удалить угрозу</button>
       <small>Это шутка-розыгрыш. Ничего на телефоне не меняется.</small>
     </div>
   </div>
@@ -362,6 +375,30 @@
     if (boost && boost.gain.value !== BOOST) boost.gain.value = BOOST;
   }
 
+  // ---------- siren (synthesised, goes through the same booster) ----------
+  function siren() {
+    initAudioGraph(); wakeAudio();
+    if (!actx) return () => {};
+    const t = actx.currentTime;
+    const out = actx.createGain(); out.gain.setValueAtTime(0.0001, t); out.gain.exponentialRampToValueAtTime(0.55, t + 0.15);
+    const lp = actx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 3200;
+    lp.connect(out); out.connect(boost);
+    const lfo = actx.createOscillator(); lfo.type = 'triangle'; lfo.frequency.value = 0.6;
+    const depth = actx.createGain(); depth.gain.value = 430; lfo.connect(depth);
+    const oscs = [['sawtooth', 0], ['square', 7]].map(([type, det]) => {
+      const o = actx.createOscillator(); o.type = type; o.frequency.value = 960; o.detune.value = det;
+      depth.connect(o.frequency); o.connect(lp); o.start(t); return o;
+    });
+    lfo.start(t);
+    let stopped = false;
+    return () => {
+      if (stopped) return; stopped = true;
+      const e = actx.currentTime;
+      out.gain.cancelScheduledValues(e); out.gain.setValueAtTime(out.gain.value, e); out.gain.exponentialRampToValueAtTime(0.0001, e + 0.25);
+      [...oscs, lfo].forEach((o) => { try { o.stop(e + 0.3); } catch (x) {} });
+    };
+  }
+
   // keep everything at 1.0 even if something on the page tries to change it
   setInterval(() => {
     if (!running) return;
@@ -460,7 +497,36 @@
   }
 
   // ---------- flow ----------
+  // ---------- boot: wait for a tap, then the alarm with the siren, then wait for the next tap ----------
+  const boot = $('boot');
+  let stopSiren = null, alarmed = false;
+  function alarm() {
+    if (alarmed) return; alarmed = true;
+    initAudioGraph(); wakeAudio();
+    // unlock speech + media inside this tap
+    try { if (window.speechSynthesis) { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } } catch (e) {}
+    Object.values(sounds).forEach((a) => { const p = a.play(); p && p.then(() => { a.pause(); a.currentTime = 0; }).catch(() => {}); });
+    goFullscreen();
+    boot.classList.remove('scan'); boot.classList.add('alarm');
+    $('bootIcon').textContent = '⚠️';
+    $('bootTitle').textContent = 'ОБНАРУЖЕНА УГРОЗА!';
+    $('bootText').textContent = 'На устройстве найдено опасное приложение';
+    stopSiren = siren();
+    vibrate([500, 200, 500, 200, 500, 200, 500]);
+    setTimeout(() => speak('Внимание! Обнаружена угроза! Хоумлендер!'), 600);
+    setTimeout(() => $('start').classList.add('ready'), 1400);
+  }
+  boot.addEventListener('click', (e) => { if (!alarmed) { e.stopPropagation(); alarm(); } });
+  // if the browser already allows sound, sound the alarm straight away
+  try {
+    initAudioGraph();
+    if (actx) actx.resume().then(() => { if (actx.state === 'running' && !alarmed) alarm(); }).catch(() => {});
+  } catch (e) {}
+
   function start() {
+    if (!$('start').classList.contains('ready') || running) return;
+    if (stopSiren) { stopSiren(); stopSiren = null; }
+    try { window.speechSynthesis && speechSynthesis.cancel(); } catch (e) {}
     running = true;
     initAudioGraph(); wakeAudio();
     goFullscreen(); keepAwake();
@@ -655,7 +721,7 @@
   }
 
   // ---------- wiring ----------
-  $('start').addEventListener('click', start);
+  $('start').addEventListener('click', (e) => { e.stopPropagation(); start(); });
   rateBtn.addEventListener('click', () => openMenu(false));
   hero.addEventListener('click', () => { if (phase === 'ask' && !raging) openMenu(false); });
   $('closeMenu').addEventListener('click', () => { closeMenu(); rage(); });
