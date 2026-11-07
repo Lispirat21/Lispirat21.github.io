@@ -248,6 +248,23 @@ body.fp #crosshair { display:block; }
 .slotbtn:disabled { filter:grayscale(1) brightness(.7); }
 .slotdel { border:none; border-radius:12px; padding:0 10px; background:linear-gradient(#e86a4a,#b03a2a); color:#fff; font-weight:800; font-size:12px; box-shadow:0 4px 0 #6a1a10; }
 @media (max-height:500px) { #menu.slots-open .title, #menu.slots-open .sub { display:none; } .slotbtn { padding:6px 10px; font-size:14px; } #slotList { gap:6px; } }
+/* ---------- совместная игра ---------- */
+#lobby { background:rgba(0,0,0,.65); z-index:56; }
+#lobby .lb { width:min(94vw,520px); max-height:92vh; overflow-y:auto; padding:14px 16px; text-align:center; touch-action:pan-y; }
+#lobby h2 { margin:0 0 6px; }
+.lb-coderow { font-size:16px; font-weight:700; display:flex; gap:8px; align-items:center; justify-content:center; flex-wrap:wrap; }
+#lb-code { font-size:34px; letter-spacing:6px; color:#6a3a10; background:#fff; border:3px dashed #c8a060; border-radius:12px; padding:2px 12px; user-select:text; -webkit-user-select:text; }
+#lb-players { margin-top:8px; font-weight:800; }
+#lb-list { display:flex; flex-direction:column; gap:5px; margin:6px 0; }
+.lb-p { display:flex; align-items:center; gap:8px; background:#fff; border:2px solid #e0c890; border-radius:10px; padding:6px 10px; font-size:15px; text-align:left; }
+.lb-p .tag { margin-left:auto; }
+#lb-wait { font-size:14px; opacity:.85; margin:6px 0; }
+#lb-note { font-size:12px; background:#eef6e0; border-radius:8px; padding:6px 8px; margin:6px 0; }
+.lb-btns { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+.lb-btns .big { flex:1; min-width:130px; padding:10px 12px; font-size:17px; }
+#joinCode { font-size:30px; letter-spacing:8px; text-align:center; text-transform:uppercase; padding:8px; border-radius:12px; border:3px solid #ffd24a; background:#fffaf0; color:#3a2a14; font-family:inherit; font-weight:900; user-select:text; -webkit-user-select:text; }
+#mpbadge { background:#5a2a7acc; border-radius:10px; padding:3px 8px; font-size:12px; font-weight:800; align-self:flex-start; }
+@media (max-height:430px) { #lb-code { font-size:26px; } #lb-note { font-size:11px; } .lb-p { padding:3px 8px; font-size:13px; } }
 /* ---------- предупреждение о графике «ПК» ---------- */
 #pcwarn { background:rgba(0,0,0,.7); z-index:58; }
 #pcwarn .pcw { width:min(92vw,520px); max-height:92vh; overflow-y:auto; padding:16px 18px; text-align:center; touch-action:pan-y; border-color:#e0a020; }
@@ -342,7 +359,18 @@ body.cutscene #touch { pointer-events:none; }
   <div class="menu-col hidden" id="m-play">
     <button class="big" data-act="new" data-i18n="newgame"></button>
     <button class="big blue" data-act="continue" id="btn-continue"><span data-i18n="continue"></span><small id="saveinfo"></small></button>
+    <button class="big" data-act="mp" data-i18n="mp_btn" style="background:linear-gradient(#b06ae0,#7a3ab0);box-shadow:0 5px 0 #4a1a6a,0 8px 18px rgba(0,0,0,.4);text-shadow:0 2px 0 #4a1a6a"></button>
     <button class="big gray" data-act="back" data-i18n="back"></button>
+  </div>
+  <div class="menu-col hidden" id="m-mp">
+    <button class="big" data-act="mp-create" data-i18n="mp_create"></button>
+    <button class="big blue" data-act="mp-join" data-i18n="mp_join"></button>
+    <button class="big gray" data-act="mp-back" data-i18n="back"></button>
+  </div>
+  <div class="menu-col hidden" id="m-join">
+    <input id="joinCode" maxlength="5" autocomplete="off" autocapitalize="characters" spellcheck="false">
+    <button class="big" data-act="join-next" data-i18n="next"></button>
+    <button class="big gray" data-act="join-back" data-i18n="back"></button>
   </div>
   <div class="menu-col hidden" id="m-slots">
     <div id="slotsTitle"></div>
@@ -404,6 +432,7 @@ body.cutscene #touch { pointer-events:none; }
     <div class="stb"><span>⚡</span><div class="stbar"><i id="pst"></i></div></div>
     <div id="quest"></div>
     <div id="birdcount"></div>
+    <div id="mpbadge" class="hidden"></div>
   </div>
   <div id="compass" class="hidden">➤</div>
   <div id="crosshair"></div>
@@ -447,6 +476,7 @@ body.cutscene #touch { pointer-events:none; }
   <div class="menu-col">
     <button class="big" data-p="resume" data-i18n="resume"></button>
     <button class="big blue" data-p="save" data-i18n="save_b"></button>
+    <button class="big" data-p="invite" id="btn-invite" data-i18n="invite" style="background:linear-gradient(#b06ae0,#7a3ab0);box-shadow:0 5px 0 #4a1a6a"></button>
     <button class="big blue" data-p="settings" data-i18n="settings_b"></button>
     <button class="big red" data-p="menu" data-i18n="mainmenu"></button>
   </div>
@@ -464,6 +494,22 @@ body.cutscene #touch { pointer-events:none; }
   <h1 class="title" data-i18n="bye_title"></h1>
   <p data-i18n="bye_txt"></p>
   <button class="big" id="bye-back" style="width:260px" data-i18n="bye_back"></button>
+</div>
+
+<div id="lobby" class="screen hidden">
+  <div class="card lb">
+    <h2 data-i18n="lobby_title"></h2>
+    <div class="lb-coderow"><span data-i18n="lobby_code"></span> <b id="lb-code">…</b> <button class="btn blue" id="lb-copy" data-i18n="lobby_copy"></button></div>
+    <div id="lb-players"></div>
+    <div id="lb-list"></div>
+    <div id="lb-wait" data-i18n="lobby_wait"></div>
+    <div id="lb-note"></div>
+    <div class="lb-btns">
+      <button class="big red" id="lb-leave" data-i18n="lobby_leave"></button>
+      <button class="big" id="lb-start" data-i18n="lobby_start"></button>
+      <button class="big" id="lb-back" data-i18n="lobby_back"></button>
+    </div>
+  </div>
 </div>
 
 <div id="pcwarn" class="screen hidden">
@@ -1281,6 +1327,37 @@ Object.assign(TR_UI, {
   pcw_note:  ["We do not recommend turning it on on a phone: the game may lag, the phone may heat up and drain its battery fast.", "Не рекомендуем включать на телефоне: игра может тормозить, телефон — греться и быстро садиться.", "No recomendamos activarlo en el móvil: el juego puede ir lento y el teléfono calentarse y gastar batería.", "Não recomendamos ativar no celular: o jogo pode travar e o aparelho esquentar e gastar bateria.", "Nous déconseillons de l'activer sur téléphone : le jeu peut ramer, le téléphone chauffer et vider sa batterie.", "Wir raten davon ab, es auf dem Handy einzuschalten: Das Spiel kann ruckeln, das Handy heiß werden und den Akku leeren.", "不建议在手机上开启：游戏可能卡顿，手机可能发热并快速耗电。", "スマホでの使用はおすすめしません：動作が重くなり、本体が熱くなって電池がすぐ減ることがあります。", "फ़ोन पर चालू करने की सलाह नहीं: खेल अटक सकता है, फ़ोन गर्म होकर जल्दी बैटरी ख़त्म कर सकता है।", "لا ننصح بتفعيلها على الهاتف: قد تتباطأ اللعبة ويسخن الهاتف وتنفد البطارية بسرعة."],
   cancel:    ["✖ Cancel", "✖ Отменить", "✖ Cancelar", "✖ Cancelar", "✖ Annuler", "✖ Abbrechen", "✖ 取消", "✖ キャンセル", "✖ रद्द करें", "✖ إلغاء"],
   apply:     ["✔ Apply", "✔ Применить", "✔ Aplicar", "✔ Aplicar", "✔ Appliquer", "✔ Übernehmen", "✔ 应用", "✔ 適用", "✔ लागू करें", "✔ تطبيق"],
+});
+// Совместная игра
+Object.assign(TR_UI, {
+  mp_btn:      ["👥 MULTIPLAYER", "👥 СОВМЕСТНАЯ ИГРА", "👥 MULTIJUGADOR", "👥 MULTIJOGADOR", "👥 MULTIJOUEUR", "👥 MEHRSPIELER", "👥 多人游戏", "👥 マルチプレイ", "👥 मल्टीप्लेयर", "👥 لعب جماعي"],
+  mp_create:   ["🏠 CREATE LOBBY", "🏠 СОЗДАТЬ ЛОББИ", "🏠 CREAR SALA", "🏠 CRIAR SALA", "🏠 CRÉER UN SALON", "🏠 LOBBY ERSTELLEN", "🏠 创建房间", "🏠 ロビーを作成", "🏠 लॉबी बनाएँ", "🏠 إنشاء غرفة"],
+  mp_join:     ["🔑 JOIN BY CODE", "🔑 ВОЙТИ ПО КОДУ", "🔑 UNIRSE CON CÓDIGO", "🔑 ENTRAR COM CÓDIGO", "🔑 REJOINDRE AVEC UN CODE", "🔑 MIT CODE BEITRETEN", "🔑 输入代码加入", "🔑 コードで参加", "🔑 कोड से जुड़ें", "🔑 انضم بالرمز"],
+  mp_code_ph:  ["Lobby code", "Код лобби", "Código de sala", "Código da sala", "Code du salon", "Lobby-Code", "房间代码", "ロビーコード", "लॉबी कोड", "رمز الغرفة"],
+  next:        ["NEXT ▶", "ДАЛЕЕ ▶", "SIGUIENTE ▶", "PRÓXIMO ▶", "SUIVANT ▶", "WEITER ▶", "下一步 ▶", "次へ ▶", "आगे ▶", "التالي ▶"],
+  mp_create_btn: ["CREATE LOBBY", "СОЗДАТЬ ЛОББИ", "CREAR SALA", "CRIAR SALA", "CRÉER LE SALON", "LOBBY ERSTELLEN", "创建房间", "ロビー作成", "लॉबी बनाएँ", "إنشاء الغرفة"],
+  mp_join_btn: ["JOIN", "ВОЙТИ", "UNIRSE", "ENTRAR", "REJOINDRE", "BEITRETEN", "加入", "参加", "जुड़ें", "انضم"],
+  lobby_title: ["👥 Lobby", "👥 Лобби", "👥 Sala", "👥 Sala", "👥 Salon", "👥 Lobby", "👥 房间", "👥 ロビー", "👥 लॉबी", "👥 الغرفة"],
+  lobby_code:  ["Code for friends:", "Код для друзей:", "Código para amigos:", "Código para amigos:", "Code pour les amis :", "Code für Freunde:", "给朋友的代码：", "友達用コード：", "दोस्तों के लिए कोड:", "رمز الأصدقاء:"],
+  lobby_copy:  ["📋 Copy", "📋 Копировать", "📋 Copiar", "📋 Copiar", "📋 Copier", "📋 Kopieren", "📋 复制", "📋 コピー", "📋 कॉपी", "📋 نسخ"],
+  copied:      ["Code copied", "Код скопирован", "Código copiado", "Código copiado", "Code copié", "Code kopiert", "已复制代码", "コードをコピーしました", "कोड कॉपी हुआ", "تم نسخ الرمز"],
+  lobby_players: ["Players {n}/3:", "Игроки {n}/3:", "Jugadores {n}/3:", "Jogadores {n}/3:", "Joueurs {n}/3 :", "Spieler {n}/3:", "玩家 {n}/3：", "プレイヤー {n}/3：", "खिलाड़ी {n}/3:", "اللاعبون {n}/3:"],
+  host_tag:    ["host", "хост", "anfitrión", "anfitrião", "hôte", "Host", "房主", "ホスト", "होस्ट", "المضيف"],
+  you_tag:     ["you", "вы", "tú", "você", "vous", "du", "你", "あなた", "आप", "أنت"],
+  lobby_start: ["▶ START", "▶ НАЧАТЬ", "▶ EMPEZAR", "▶ COMEÇAR", "▶ COMMENCER", "▶ STARTEN", "▶ 开始", "▶ 開始", "▶ शुरू करें", "▶ ابدأ"],
+  lobby_wait:  ["Waiting for the host to start the game…", "Ждём, пока хост начнёт игру…", "Esperando a que el anfitrión empiece…", "Esperando o anfitrião começar…", "En attente du lancement par l'hôte…", "Warte, bis der Host startet…", "等待房主开始游戏…", "ホストの開始を待っています…", "होस्ट के खेल शुरू करने का इंतज़ार…", "بانتظار أن يبدأ المضيف…"],
+  lobby_conn:  ["Connecting…", "Подключение…", "Conectando…", "Conectando…", "Connexion…", "Verbinde…", "连接中…", "接続中…", "जुड़ रहा है…", "جارٍ الاتصال…"],
+  lobby_leave: ["✖ Leave", "✖ Выйти", "✖ Salir", "✖ Sair", "✖ Quitter", "✖ Verlassen", "✖ 离开", "✖ 退出", "✖ छोड़ें", "✖ مغادرة"],
+  lobby_back:  ["▶ Back to the game", "▶ Вернуться в игру", "▶ Volver al juego", "▶ Voltar ao jogo", "▶ Retour au jeu", "▶ Zurück zum Spiel", "▶ 返回游戏", "▶ ゲームに戻る", "▶ खेल में लौटें", "▶ العودة للعبة"],
+  lobby_note:  ["Resources are shared. More players — more and stronger beasts, but building limits ×{n}. Send the code to a friend: they open the game, tap Multiplayer → Join by code.", "Ресурсы общие. Чем больше игроков — тем больше и сильнее зверей, зато лимиты построек ×{n}. Отправьте код другу: пусть откроет игру и нажмёт «Совместная игра» → «Войти по коду».", "Recursos compartidos. Más jugadores: más bestias y más fuertes, pero límites de construcción ×{n}. Envía el código a un amigo: Multijugador → Unirse con código.", "Recursos compartilhados. Mais jogadores: mais feras e mais fortes, mas limites ×{n}. Envie o código: Multijogador → Entrar com código.", "Ressources partagées. Plus de joueurs : plus de bêtes, plus fortes, mais limites ×{n}. Envoyez le code : Multijoueur → Rejoindre avec un code.", "Rohstoffe werden geteilt. Mehr Spieler — mehr und stärkere Tiere, aber Baulimits ×{n}. Code schicken: Mehrspieler → Mit Code beitreten.", "资源共享。玩家越多，野兽越多越强，但建造上限×{n}。把代码发给朋友：多人游戏 → 输入代码加入。", "資源は共有。人数が多いほど獣が増えて強くなるが、建築上限×{n}。コードを送ろう：マルチプレイ → コードで参加。", "संसाधन साझा हैं। ज़्यादा खिलाड़ी — ज़्यादा और ताक़तवर जानवर, पर निर्माण सीमा ×{n}। दोस्त को कोड भेजें: मल्टीप्लेयर → कोड से जुड़ें।", "الموارد مشتركة. لاعبون أكثر = وحوش أكثر وأقوى، لكن حدود البناء ×{n}. أرسل الرمز: لعب جماعي ← انضم بالرمز."],
+  invite:      ["👥 INVITE FRIENDS", "👥 ПОЗВАТЬ ДРУЗЕЙ", "👥 INVITAR AMIGOS", "👥 CONVIDAR AMIGOS", "👥 INVITER DES AMIS", "👥 FREUNDE EINLADEN", "👥 邀请好友", "👥 友達を招待", "👥 दोस्तों को बुलाएँ", "👥 ادعُ أصدقاءك"],
+  mp_joined:   ["👥 {name} joined the game!", "👥 {name} присоединился к игре!", "👥 ¡{name} se unió!", "👥 {name} entrou no jogo!", "👥 {name} a rejoint la partie !", "👥 {name} ist beigetreten!", "👥 {name} 加入了游戏！", "👥 {name}が参加しました！", "👥 {name} खेल में आया!", "👥 انضم {name}!"],
+  mp_left:     ["👥 {name} left the game", "👥 {name} вышел из игры", "👥 {name} salió", "👥 {name} saiu", "👥 {name} est parti", "👥 {name} hat verlassen", "👥 {name} 离开了", "👥 {name}が退出しました", "👥 {name} चला गया", "👥 غادر {name}"],
+  mp_error:    ["Connection error", "Ошибка соединения", "Error de conexión", "Erro de conexão", "Erreur de connexion", "Verbindungsfehler", "连接错误", "接続エラー", "कनेक्शन त्रुटि", "خطأ في الاتصال"],
+  mp_host_gone:["The host left — returning to the menu", "Хост вышел — возвращаемся в меню", "El anfitrión salió — volvemos al menú", "O anfitrião saiu — voltando ao menu", "L'hôte est parti — retour au menu", "Der Host ist weg — zurück ins Menü", "房主已离开，返回菜单", "ホストが退出 — メニューへ戻ります", "होस्ट चला गया — मेनू पर लौट रहे हैं", "غادر المضيف — العودة للقائمة"],
+  mp_notfound: ["Lobby not found. Check the code and that the host has the lobby open.", "Лобби не найдено. Проверьте код и что у хоста открыто лобби.", "Sala no encontrada. Revisa el código.", "Sala não encontrada. Confira o código.", "Salon introuvable. Vérifiez le code.", "Lobby nicht gefunden. Code prüfen.", "找不到房间，请检查代码。", "ロビーが見つかりません。コードを確認してください。", "लॉबी नहीं मिली। कोड जाँचें।", "لم يُعثر على الغرفة. تحقق من الرمز."],
+  mp_full:     ["The lobby is full (3/3)", "Лобби заполнено (3/3)", "La sala está llena (3/3)", "A sala está cheia (3/3)", "Le salon est plein (3/3)", "Die Lobby ist voll (3/3)", "房间已满（3/3）", "ロビーは満員です（3/3）", "लॉबी भर गई (3/3)", "الغرفة ممتلئة (3/3)"],
+  mp_badge:    ["👥 {code} · {n}/3", "👥 {code} · {n}/3", "👥 {code} · {n}/3", "👥 {code} · {n}/3", "👥 {code} · {n}/3", "👥 {code} · {n}/3", "👥 {code} · {n}/3", "👥 {code} · {n}/3", "👥 {code} · {n}/3", "👥 {code} · {n}/3"],
 });
 
 </script>
@@ -2913,6 +2990,89 @@ const World = (() => {
 </script>
 <script>
 'use strict';
+// ============ Сеть: хост и до 2 гостей. Соединение напрямую через PeerJS (WebRTC) ============
+// ?net=local — тестовый режим без интернета: окна одного браузера общаются через BroadcastChannel.
+const Net = (() => {
+  const N = { active: false, isHost: false, isClient: false, pid: 0, code: '', conns: new Map() };
+  const LOCAL = new URLSearchParams(location.search).get('net') === 'local';
+  let peer = null, bc = null, hostSend = null, cb = null, myId = '';
+  const ID = code => 'birdwars-v1-' + code;
+
+  function loadPeer() {
+    if (window.Peer) return Promise.resolve();
+    return new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = 'https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js';
+      s.onload = () => res(); s.onerror = () => rej(new Error('peerjs'));
+      document.head.append(s);
+    });
+  }
+  function genCode() { const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let c = ''; for (let i = 0; i < 5; i++) c += A[Math.floor(Math.random() * A.length)]; return c; }
+
+  // Хост: ждёт гостей. handlers: onOpen(code), onConn(id), onData(id, msg), onClose(id), onError(err)
+  async function host(handlers) {
+    close(); cb = handlers; N.code = genCode(); N.active = true; N.isHost = true; N.isClient = false;
+    if (LOCAL) {
+      bc = new BroadcastChannel('bwnet-' + N.code);
+      bc.onmessage = ev => {
+        const m = ev.data; if (m.to !== 'host') return;
+        if (m.hello && !N.conns.has(m.from)) { N.conns.set(m.from, { send: d => bc.postMessage({ to: m.from, d }) }); cb.onConn(m.from); }
+        if (m.bye) { N.conns.delete(m.from); cb.onClose(m.from); return; }
+        if (m.d !== undefined) cb.onData(m.from, m.d);
+      };
+      setTimeout(() => cb.onOpen(N.code), 0);
+      return;
+    }
+    await loadPeer();
+    peer = new Peer(ID(N.code), { debug: 0 });
+    peer.on('open', () => cb.onOpen(N.code));
+    peer.on('error', e => { if (e.type === 'unavailable-id') { peer.destroy(); host(handlers); return; } cb.onError(e); });
+    peer.on('connection', c => {
+      c.on('open', () => { if (N.conns.size >= 2) { c.send({ ev: 'full' }); setTimeout(() => c.close(), 300); return; } N.conns.set(c.peer, c); cb.onConn(c.peer); });
+      c.on('data', d => cb.onData(c.peer, d));
+      c.on('close', () => { if (N.conns.delete(c.peer)) cb.onClose(c.peer); });
+    });
+  }
+  // Гость: подключается к хосту по коду. handlers: onOpen(), onData('host', msg), onClose(), onError(err)
+  async function join(code, handlers) {
+    close(); cb = handlers; N.code = code.toUpperCase().trim(); N.active = true; N.isHost = false; N.isClient = true;
+    if (LOCAL) {
+      myId = 'g' + Math.random().toString(36).slice(2, 8);
+      bc = new BroadcastChannel('bwnet-' + N.code);
+      bc.onmessage = ev => { const m = ev.data; if (m.to === myId) cb.onData('host', m.d); };
+      hostSend = d => bc.postMessage({ to: 'host', from: myId, d });
+      bc.postMessage({ to: 'host', from: myId, hello: true });
+      setTimeout(() => cb.onOpen(), 50);
+      return;
+    }
+    await loadPeer();
+    peer = new Peer({ debug: 0 });
+    let opened = false;
+    peer.on('open', () => {
+      const c = peer.connect(ID(N.code), { reliable: true, serialization: 'json' });
+      c.on('open', () => { opened = true; hostSend = d => c.send(d); cb.onOpen(); });
+      c.on('data', d => cb.onData('host', d));
+      c.on('close', () => cb.onClose());
+    });
+    peer.on('error', e => cb.onError(e));
+    setTimeout(() => { if (!opened && N.isClient && cb) cb.onError({ type: 'timeout' }); }, 15000);
+  }
+  const send = (id, msg) => { const c = N.conns.get(id); if (c) try { c.send(msg); } catch (e) { } };
+  const broadcast = msg => N.conns.forEach(c => { try { c.send(msg); } catch (e) { } });
+  const toHost = msg => { if (hostSend) try { hostSend(msg); } catch (e) { } };
+  function close() {
+    if (LOCAL && bc && N.isClient) try { bc.postMessage({ to: 'host', from: myId, bye: true }); } catch (e) { }
+    try { if (peer) peer.destroy(); } catch (e) { }
+    try { if (bc) bc.close(); } catch (e) { }
+    peer = null; bc = null; hostSend = null; cb = null;
+    N.conns.clear(); N.active = false; N.isHost = false; N.isClient = false; N.code = '';
+  }
+  return Object.assign(N, { host, join, send, broadcast, toHost, close, LOCAL });
+})();
+
+</script>
+<script>
+'use strict';
 // ============ Игровая логика ============
 const G = window.G = {};
 (function () {
@@ -3033,6 +3193,7 @@ const G = window.G = {};
     PART.forEach(p => scene.remove(p.mesh)); PART.length = 0;
     deadNodes.length = 0;
     if (cut) { scene.remove(cut.heli); cut = null; UI.cutscene(false); }
+    puppets.forEach((_, k) => removePuppet(k));
     World.nodes.forEach(n => { n.alive = true; n.hp = n.maxHp; n.grow = 1; n.shake = 0; n.acc = 0; World.updateNodeMatrix(n); });
     if (P) scene.remove(P.mesh);
     if (build) G.cancelBuild();
@@ -3345,9 +3506,10 @@ const G = window.G = {};
   }
 
   // ---------------- Враги и волны ----------------
+  let enemySeq = 1;
   function waveList(n) {
     const types = Object.keys(ENEMIES).filter(t => !ENEMIES[t].boss && ENEMIES[t].wave <= n);
-    const count = Math.max(1, Math.round((2 + Math.floor(n * 1.7)) * DF().count));
+    const count = Math.max(1, Math.round((2 + Math.floor(n * 1.7)) * DF().count * (1 + 0.6 * (G.mpN() - 1))));
     const list = [];
     for (let i = 0; i < count; i++) list.push(types[Math.floor(Math.random() * types.length)]);
     if (n % 5 === 0) { const k = n / 5 - 1, boss = BOSS_ORDER[k % BOSS_ORDER.length]; for (let i = 0; i <= Math.floor(k / BOSS_ORDER.length); i++) list.push(boss); }
@@ -3363,8 +3525,8 @@ const G = window.G = {};
   function spawnEnemy(type, pos) {
     const d = ENEMIES[type], n = S.wave;
     const mesh = Models.makeEnemy(type); scene.add(mesh);
-    const hpMul = (1 + (n - 1) * 0.14) * DF().hp;
-    const e = { type, d, mesh, pos: pos.clone(), vel: V(0, 0, 0), yaw: 0, hp: d.hp * hpMul, maxHp: d.hp * hpMul, dmg: d.dmg * (1 + (n - 1) * 0.06) * DF().dmg, atkCd: 0, target: null, tkind: null, retarget: 0, slow: 0, dying: 0, mode: 'walk', t: Math.random() * 10, hitT: 0, flee: false, stuck: 0 };
+    const mpk = G.mpN() - 1; const hpMul = (1 + (n - 1) * 0.14) * DF().hp * (1 + 0.35 * mpk);
+    const e = { id: enemySeq++, type, d, mesh, pos: pos.clone(), vel: V(0, 0, 0), yaw: 0, hp: d.hp * hpMul, maxHp: d.hp * hpMul, dmg: d.dmg * (1 + (n - 1) * 0.06) * DF().dmg * (1 + 0.15 * mpk), atkCd: 0, target: null, tkind: null, retarget: 0, slow: 0, dying: 0, mode: 'walk', t: Math.random() * 10, hitT: 0, flee: false, stuck: 0 };
     mesh.position.copy(pos);
     E.push(e);
     if (d.boss) { UI.toast(tr('boss_appears', { name: d.name, desc: d.desc ? ' ' + d.desc + '.' : '' }), 'bad', 4500); UI.banner(tr('boss_banner')); Sound.play('growl', 1.6); e.summonT = 6; }
@@ -3401,12 +3563,12 @@ const G = window.G = {};
     const t = e.type; const ep = e.pos;
     const near = (list, r, f) => { let best = null, bd = r; list.forEach(o => { if (f && !f(o)) return; const p = o.mesh.position; const d = Math.hypot(p.x - ep.x, p.z - ep.z); if (d < bd) { bd = d; best = o; } }); return best; };
     const groundBird = b => !b.hidden && !b.cannon && b.state !== 'perch' && b.mesh.position.y - World.groundAt(b.mesh.position.x, b.mesh.position.z) < 1;
-    const playerNear = P && !P.dead && Math.hypot(P.pos.x - ep.x, P.pos.z - ep.z);
+    let PT = null, playerNear = 0; mpTargets().forEach(o => { if (o.dead) return; const d = Math.hypot(o.pos.x - ep.x, o.pos.z - ep.z); if (!PT || d < playerNear) { PT = o; playerNear = d; } });
     if (t === 'monster' || t === 'treant') return ['b', core];
-    if (t === 'alpha') { if (playerNear && playerNear < 18) return ['p', P]; return ['b', core]; }
-    if (t === 'bear' || t === 'boar' || t === 'wolverine' || t === 'elk' || t === 'bearking') { const b = near(B.filter(x => !x.onWall), 60); if (playerNear && playerNear < 6) return ['p', P]; return b ? ['b', b] : ['b', core]; }
-    if (t === 'fox' || t === 'lynx' || t === 'raccoon') { const bd = near(BD, 45, groundBird); if (bd) return ['bird', bd]; if (playerNear && playerNear < 10) return ['p', P]; return ['b', core]; }
-    if (playerNear && playerNear < 14) return ['p', P];
+    if (t === 'alpha') { if (playerNear && playerNear < 18) return ['p', PT]; return ['b', core]; }
+    if (t === 'bear' || t === 'boar' || t === 'wolverine' || t === 'elk' || t === 'bearking') { const b = near(B.filter(x => !x.onWall), 60); if (playerNear && playerNear < 6) return ['p', PT]; return b ? ['b', b] : ['b', core]; }
+    if (t === 'fox' || t === 'lynx' || t === 'raccoon') { const bd = near(BD, 45, groundBird); if (bd) return ['bird', bd]; if (playerNear && playerNear < 10) return ['p', PT]; return ['b', core]; }
+    if (playerNear && playerNear < 14) return ['p', PT];
     const bd = near(BD, 30, groundBird); if (bd) return ['bird', bd];
     return ['b', core];
   }
@@ -3453,10 +3615,10 @@ const G = window.G = {};
         if (l > 95) { scene.remove(m); E.splice(i, 1); continue; }
       } else {
         e.retarget -= dt;
-        const tgtGone = !e.target || (e.tkind === 'b' && !byId[e.target.id]) || (e.tkind === 'bird' && (BD.indexOf(e.target) < 0 || e.target.hidden || e.target.state === 'perch')) || (e.tkind === 'p' && P.dead);
+        const tgtGone = !e.target || (e.tkind === 'b' && !byId[e.target.id]) || (e.tkind === 'bird' && (BD.indexOf(e.target) < 0 || e.target.hidden || e.target.state === 'perch')) || (e.tkind === 'p' && e.target.dead);
         if (e.retarget <= 0 || tgtGone) { const r = pickTarget(e); e.tkind = r[0]; e.target = r[1]; e.retarget = 0.8 + Math.random() * 0.4; }
         if (!e.target) continue;
-        if (e.tkind === 'p') { tx = P.pos.x; tz = P.pos.z; reach = e.d.radius + 0.7; }
+        if (e.tkind === 'p') { tx = e.target.pos.x; tz = e.target.pos.z; reach = e.d.radius + 0.7; }
         else if (e.tkind === 'bird') { tx = e.target.mesh.position.x; tz = e.target.mesh.position.z; reach = e.d.radius + 0.5; }
         else { const b = e.target; tx = clamp(e.pos.x, b.minx, b.maxx); tz = clamp(e.pos.z, b.minz, b.maxz); reach = e.d.radius + 0.25; }
       }
@@ -3467,7 +3629,7 @@ const G = window.G = {};
         if (e.tkind === 'b') attackB = e.target;
         else if (e.atkCd <= 0) {
           e.atkCd = 1 / e.d.rate;
-          if (e.tkind === 'p') hurtPlayer(e.dmg);
+          if (e.tkind === 'p') { if (e.target === P) hurtPlayer(e.dmg); else Net.send(e.target.pid, { ev: 'hurt', dmg: e.dmg }); }
           else hurtBird(e.target, e.dmg);
           Sound.play('growl', 0.6);
         }
@@ -3498,6 +3660,7 @@ const G = window.G = {};
   }
   function hurtEnemy(e, dmg, quiet) {
     if (e.dying > 0) return;
+    if (Net.isClient) { Net.toHost({ c: 'hitEnemy', id: e.id, dmg }); if (!quiet) e.hitT = 0.15; return; }
     e.hp -= dmg; if (!quiet) e.hitT = 0.15;
     if (e.hp <= 0) {
       e.dying = 1.6; e.mesh.scale.setScalar(e.mesh.userData.baseScale);
@@ -3527,6 +3690,7 @@ const G = window.G = {};
     const to = e.pos.clone(); const dist = from.distanceTo(to); const tFlight = dist / speed;
     to.x += Math.sin(e.yaw) * e.d.speed * tFlight * (e.mode === 'walk' ? 0.8 : 0); to.z += Math.cos(e.yaw) * e.d.speed * tFlight * (e.mode === 'walk' ? 0.8 : 0);
     to.y += 0.5;
+    if (Net.isHost && !o.visual) fxQueue.push([kind, +from.x.toFixed(1), +from.y.toFixed(1), +from.z.toFixed(1), +to.x.toFixed(1), +to.y.toFixed(1), +to.z.toFixed(1), o.splash || 0, o.slow ? 1 : o.burn ? 2 : 0]);
     PR.push({ mesh, from: from.clone(), to, u: 0, dur: Math.max(0.1, tFlight), arc: kind === 'ball' ? dist * 0.12 : kind === 'rocket' ? dist * 0.15 : kind === 'bullet' ? 0 : dist * 0.03, target: e, ...o });
     mesh.position.copy(from);
   }
@@ -3581,7 +3745,9 @@ const G = window.G = {};
         else Sound.play('arrow');
       }
     }
-    // снаряды
+    updateProjectiles(dt);
+  }
+  function updateProjectiles(dt) {
     for (let i = PR.length - 1; i >= 0; i--) {
       const p = PR[i];
       p.u += dt / p.dur;
@@ -3594,13 +3760,13 @@ const G = window.G = {};
       if (u >= 1) {
         scene.remove(p.mesh); PR.splice(i, 1);
         if (p.splash > 0) {
-          for (const e of E) { if (e.dying) continue; if (Math.hypot(e.pos.x - p.to.x, e.pos.z - p.to.z) < p.splash + e.d.radius) { hurtEnemy(e, p.dmg); applyFx(e, p); } }
+          if (!p.visual) for (const e of E) { if (e.dying) continue; if (Math.hypot(e.pos.x - p.to.x, e.pos.z - p.to.z) < p.splash + e.d.radius) { hurtEnemy(e, p.dmg); applyFx(e, p); } }
           spawnParticles(p.to, p.slow ? 0x9adfff : 0xffa040, p.kind === 'rocket' ? 18 : 8, p.kind === 'rocket' ? 6 : 4, 0.26, 0.5);
           if (p.kind === 'rocket') spawnParticles(p.to, 0x60d040, 8, 5, 0.2, 0.5);
           spawnParticles(p.to, 0x8a7a6a, 6, 2.5, 0.3, 0.8);
           Sound.play('boom', 0.35);
         } else {
-          const e = p.target && !p.target.dying && p.target.pos.distanceTo(p.to) < 2.5 ? p.target : nearestEnemy(p.to.x, p.to.z, 1.6);
+          const e = p.visual ? null : p.target && !p.target.dying && p.target.pos.distanceTo(p.to) < 2.5 ? p.target : nearestEnemy(p.to.x, p.to.z, 1.6);
           if (e) { hurtEnemy(e, p.dmg); applyFx(e, p); }
         }
         if (p.crit) UI.floatText(p.to.clone().add(V(0, 1.5, 0)), tr('crit'), '#ff5050');
@@ -3681,10 +3847,22 @@ const G = window.G = {};
     const info = NODE_INFO[n.kind];
     const pos = V(n.x, n.y + 1.6, n.z);
     if (n.kind === 'berry') {
-      addRes('food', info.ratio, pos); Sound.play('pickup');
-      killNode(n); return;
+      Sound.play('pickup');
+      if (Net.isClient) { Net.toHost({ c: 'hitNode', i: n.idx, p: 1 }); return; }
+      addRes('food', info.ratio, pos); killNode(n); return;
     }
     const power = (info.tool === 'axe' ? AXES[S.tools.axe].power : PICKS[S.tools.pick].power) * hero.gather;
+    if (Net.isClient) { // ресурсы общие — добычу засчитывает хост
+      Net.toHost({ c: 'hitNode', i: n.idx, p: power }); n.shake = 0.3; World.updateNodeMatrix(n);
+      Sound.play(n.kind === 'tree' ? 'chop' : 'mine');
+      spawnParticles(V(n.x, n.y + (n.kind === 'tree' ? 1.0 : 0.7), n.z), n.kind === 'tree' ? 0xc89a5e : 0x9a9a96, 5, 3, 0.14, 0.6);
+      return;
+    }
+    hostHitNode(n, power, pos);
+  }
+  function hostHitNode(n, power, pos) {
+    const info = NODE_INFO[n.kind]; if (!n.alive) return;
+    if (n.kind === 'berry') { addRes('food', info.ratio, pos); killNode(n); return; }
     const dmg = Math.min(n.hp, power);
     n.hp -= dmg; n.acc += dmg * info.ratio;
     const whole = Math.floor(n.acc); if (whole > 0) { n.acc -= whole; addRes(info.res, whole, pos); }
@@ -3799,7 +3977,8 @@ const G = window.G = {};
   G.buyGear = function (id) {
     if (!S.gear) S.gear = { own: {}, eq: null };
     if (S.gear.own[id]) return G.equipGear(id);
-    if (!tryPay(GEAR[id].cost)) return false;
+    if (Net.isClient) { if (!G.canAfford(GEAR[id].cost)) { UI.toast(tr('not_enough') + G.missing(GEAR[id].cost), 'warn'); return false; } Net.toHost({ c: 'spend', cost: GEAR[id].cost }); }
+    else if (!tryPay(GEAR[id].cost)) return false;
     S.gear.own[id] = true; Sound.play('upgrade'); UI.toast(tr('gear_bought', { name: GEAR[id].name }), 'good');
     return G.equipGear(id);
   };
@@ -3811,6 +3990,7 @@ const G = window.G = {};
   G.eat = function () {
     if (S.res.food < 3) { UI.toast(tr('need_food'), 'warn'); Sound.play('error'); return; }
     if (P.hp >= P.maxHp) { UI.toast(tr('hp_full'), 'info'); return; }
+    if (Net.isClient) Net.toHost({ c: 'spend', cost: { food: 3 } });
     S.res.food -= 3; P.hp = Math.min(P.maxHp, P.hp + 35); Sound.play('pickup'); UI.toast('+35 ❤️', 'good');
   };
 
@@ -3899,7 +4079,7 @@ const G = window.G = {};
   G.enterBuild = function (t) {
     const d = BUILD[t];
     if (d.req && !S.tech[d.req]) { UI.toast(tr('need_tech_ws', { name: TECH[d.req].name }), 'warn'); Sound.play('error'); return false; }
-    if (G.countB(t) >= (d.max || 99)) { UI.toast(tr('limit_t', { name: d.name, n: d.max }), 'warn'); Sound.play('error'); return false; }
+    if (G.countB(t) >= G.maxOf(t)) { UI.toast(tr('limit_t', { name: d.name, n: G.maxOf(t) }), 'warn'); Sound.play('error'); return false; }
     if (build) G.cancelBuild();
     build = { t, rot: 0, ghost: makeGhost(t, false), ghostWall: t === 'cannon' ? makeGhost(t, true) : null, x: 0, z: 0, valid: false, reason: '', onWall: null };
     return true;
@@ -3961,17 +4141,31 @@ const G = window.G = {};
     if (!build) return;
     if (!build.valid) { UI.toast(build.reason || tr('cant_build'), 'warn'); Sound.play('error'); return; }
     const t = build.t, cost = G.scaleCost(BUILD[t].cost);
-    if (G.countB(t) >= (BUILD[t].max || 99)) { UI.toast(tr('limit_t', { name: BUILD[t].name, n: BUILD[t].max }), 'warn'); Sound.play('error'); G.cancelBuild(); return; }
+    if (G.countB(t) >= G.maxOf(t)) { UI.toast(tr('limit_t', { name: BUILD[t].name, n: G.maxOf(t) }), 'warn'); Sound.play('error'); G.cancelBuild(); return; }
+    const rot = build.onWall ? build.onWall.rot : (build.prot != null ? build.prot : build.rot);
+    if (Net.isClient) { // строит хост, гость видит результат в следующем обновлении
+      if (!G.canAfford(cost)) { UI.toast(tr('not_enough') + G.missing(cost), 'warn'); Sound.play('error'); return; }
+      Net.toHost({ c: 'place', t, x: build.x, z: build.z, r: rot, w: build.onWall ? build.onWall.id : 0 });
+      Sound.play('build'); spawnParticles(V(build.x, P.pos.y + 0.3, build.z), 0xc8b090, 14, 3, 0.35, 0.9);
+      if (BUILD[t].max === 1) G.cancelBuild();
+      return;
+    }
+    doPlace(t, build.x, build.z, rot, build.onWall ? build.onWall.id : 0);
+  };
+  function doPlace(t, x, z, rot, wallId) {
+    const cost = G.scaleCost(BUILD[t].cost);
+    if (G.countB(t) >= G.maxOf(t)) return;
+    if (wallId && (!byId[wallId] || byId[wallId].cannonId)) return;
     if (!tryPay(cost)) return;
     let b;
-    if (build.onWall) b = addBuilding('cannon', build.x, build.z, build.onWall.rot, 1, null, build.onWall.id);
-    else b = addBuilding(t, build.x, build.z, build.prot != null ? build.prot : build.rot);
+    if (wallId) b = addBuilding('cannon', x, z, byId[wallId].rot, 1, null, wallId);
+    else b = addBuilding(t, x, z, rot);
     S.stats.built++;
     Sound.play('build');
     spawnParticles(V(b.x, b.mesh.position.y + 0.3, b.z), 0xc8b090, 14, 3, 0.35, 0.9);
     if (t === 'cannon') { const bird = BD.find(x => !x.cannon); if (bird) G.assignBird(bird, b); else UI.toast(tr('buy_for_cannon'), 'info', 3500); }
-    if (G.countB(t) >= (BUILD[t].max || 99)) { G.cancelBuild(); if (BUILD[t].max > 1) UI.toast(tr('limit_done', { name: BUILD[t].name, n: BUILD[t].max }), 'info'); }
-  };
+    if (build && build.t === t && G.countB(t) >= G.maxOf(t)) { G.cancelBuild(); if (BUILD[t].max > 1) UI.toast(tr('limit_done', { name: BUILD[t].name, n: G.maxOf(t) }), 'info'); }
+  }
 
   // ---------------- Производство ----------------
   function updateLights(dt) {
@@ -4147,12 +4341,12 @@ const G = window.G = {};
       return;
     }
     if (G.state === 'cutscene') {
-      if (!G.paused) updateCutscene(dt);
+      if (!G.paused || Net.active) updateCutscene(dt);
       renderer.render(scene, camera);
       return;
     }
     if (G.state === 'play' || G.state === 'over') {
-      if (G.state === 'play' && !G.paused) update(dt);
+      if (G.state === 'play' && (!G.paused || Net.active)) update(dt);
       updateCamera(dt);
       renderer.render(scene, camera);
       if (G.state === 'play') UI.hud(dt);
@@ -4163,6 +4357,7 @@ const G = window.G = {};
   G.eternalNight = eternalNight;
   const skyTime = () => eternalNight() ? 0.75 : S.dayTime;
   function update(dt) {
+    if (Net.isClient) { clientUpdate(dt); return; }
     S.stats.time = (S.stats.time || 0) + dt;
     S.dayTime += dt / 300; if (S.dayTime >= 1) { S.dayTime -= 1; S.day++; UI.toast(tr('new_day', { n: S.day }), 'info'); if (S.day >= GOAL_DAYS && !S.won) { startCutscene(); return; } }
     const dl = World.updateSky(skyTime(), V(P.pos.x, 0, P.pos.z), dt, time);
@@ -4178,6 +4373,8 @@ const G = window.G = {};
     updateLights(dt);
     updateParticles(dt);
     updateQuests(dt);
+    updatePuppets(dt);
+    if (Net.isHost) hostTick(dt);
     autosaveT -= dt; if (autosaveT <= 0) { autosaveT = 45; if (!S.waveActive) G.save(true); }
   }
   let autosaveT = 45;
@@ -4200,7 +4397,7 @@ const G = window.G = {};
   G.core = () => B.find(b => b.t === 'core');
   G.boss = () => E.find(e => e.d.boss && !e.dying) || null;
   G.dayClock = () => { const t = S.dayTime, night = t >= 0.5; return { night, left: Math.ceil(((night ? 1 : 0.5) - t) * 300) }; };
-  G.enemiesLeft = () => E.filter(e => !e.dying && !e.flee).length + (S.spawnList ? S.spawnList.length : 0);
+  G.enemiesLeft = () => Net.isClient ? (S._left || 0) : E.filter(e => !e.dying && !e.flee).length + (S.spawnList ? S.spawnList.length : 0);
 
   // ---------------- Конец игры ----------------
   // ---------------- Золотые птицы (сохраняются между прохождениями) ----------------
@@ -4220,13 +4417,14 @@ const G = window.G = {};
 
   function gameOver() {
     G.state = 'over'; Sound.play('lose'); Sound.setMode('calm');
-    G.deleteSave(G.slot); // поражение: прохождение начинается заново
+    if (Net.isHost) Net.broadcast({ ev: 'end', win: false });
+    if (!Net.isClient) G.deleteSave(G.slot); // поражение: прохождение начинается заново
     const gb = awardGB(Math.floor(S.day / 3) * (DF().tokens || 1));
     UI.gameOver(Object.assign(runStats(), { gb, gbTotal: G.meta.gb }));
   }
   function victory() {
     G.state = 'over'; Sound.play('win'); Sound.setMode('calm');
-    G.deleteSave(G.slot);
+    if (!Net.isClient) G.deleteSave(G.slot);
     G.meta.wins = (G.meta.wins || 0) + 1;
     const gb = awardGB(10 * (DF().tokens || 1));
     UI.gameOver(Object.assign(runStats(), { gb, gbTotal: G.meta.gb, win: true }));
@@ -4236,6 +4434,7 @@ const G = window.G = {};
   let cut = null;
   function startCutscene() {
     S.won = true;
+    if (Net.isHost) Net.broadcast({ ev: 'cutscene' });
     G.cancelBuild();
     S.waveActive = false; S.spawnList = [];
     E.forEach(e => { if (!e.dying) { e.dying = 1.6; } });
@@ -4359,6 +4558,226 @@ const G = window.G = {};
     return out;
   };
 
+
+  // =====================================================================
+  // ---------------- Совместная игра (хост + до 2 гостей) ----------------
+  // Хост считает весь мир (звери, волны, пушки, птицы, ресурсы) и 10 раз в секунду
+  // рассылает его состояние. Гости ходят сами, а всё остальное отправляют хосту командами.
+  // =====================================================================
+  const puppets = new Map();           // другие игроки: pid → { pid, hero, mesh, pos, tgt, yaw, anim, swing, dead }
+  let mpCount = 1;                     // игроков в игре (на гостях — из снимка хоста)
+  const fxQueue = [];                  // выстрелы для отрисовки у гостей
+  let lobby = [];                      // [{ pid, id, hero }]
+  let snapT = 0, meT = 0, fullFor = new Set(), lastBl = '', lastDead = '', pidSeq = 1;
+  G.mpN = () => Net.isClient ? mpCount : (Net.isHost ? 1 + Net.conns.size : 1);
+  G.maxOf = t => { const m = BUILD[t].max || 99; return m === 1 ? 1 : m * G.mpN(); };
+  G.lobby = () => lobby;
+  function mpTargets() { const list = P ? [P] : []; puppets.forEach(p => list.push(p)); return list; }
+
+  function makePuppet(pid, hero) {
+    const mesh = Models.makeHero(hero); mesh.traverse(o => { if (o.isMesh) o.castShadow = true; });
+    mesh.userData.parts.hand.add(Models.makeTool(HEROES[hero].weapon || 'axe', 0));
+    scene.add(mesh);
+    const pp = { pid, hero, mesh, pos: V(2 * pid, 0, 6), tgt: V(2 * pid, 0, 6), yaw: 0, anim: 0, swing: 0, dead: false, animT: Math.random() * 5, hp: HEROES[hero].hp };
+    puppets.set(pid, pp); return pp;
+  }
+  function removePuppet(pid) { const pp = puppets.get(pid); if (pp) { scene.remove(pp.mesh); puppets.delete(pid); } }
+  function updatePuppets(dt) {
+    puppets.forEach(pp => {
+      pp.pos.lerp(pp.tgt, 1 - Math.exp(-dt * 10)); pp.pos.y = World.groundAt(pp.pos.x, pp.pos.z);
+      const m = pp.mesh; m.position.copy(pp.pos); m.visible = G.state !== 'cutscene';
+      let dy = pp.yaw - m.rotation.y; while (dy > Math.PI) dy -= Math.PI * 2; while (dy < -Math.PI) dy += Math.PI * 2; m.rotation.y += dy * Math.min(1, dt * 12);
+      m.rotation.x = pp.dead ? -Math.PI / 2 : 0;
+      pp.animT += dt; Models.animHero(m, ['idle', 'walk', 'run'][pp.anim] || 'idle', pp.animT, HEROES[pp.hero].speed / 6, pp.swing);
+    });
+  }
+  const myState = () => ({ c: 'me', x: +P.pos.x.toFixed(2), z: +P.pos.z.toFixed(2), y: +P.yaw.toFixed(2), a: P.moving || 0, s: +P.swing.toFixed(2), d: P.dead ? 1 : 0, h: S.hero });
+
+  // ---------- хост: снимок мира ----------
+  const birdCode = b => b.hidden ? 3 : b.state === 'fly' ? 1 : b.state === 'gunner' ? 2 : b.state === 'walk' ? 0 : 4;
+  function snapshot(full) {
+    const r1 = v => Math.round(v * 10) / 10;
+    const s = { ev: 'snap', n: G.mpN(), res: S.res, tools: S.tools, tech: S.tech, wave: S.wave, wt: Math.round(S.waveTimer), wa: S.waveActive, dt: +S.dayTime.toFixed(4), day: S.day, q: S.quest, left: G.enemiesLeft(), diff: S.diff };
+    const bl = B.map(b => [b.id, b.t, b.x, b.z, b.rot, b.lvl, b.onWall || 0]); const blKey = bl.map(a => a[0] + ':' + a[5]).join(',');
+    if (full || blKey !== lastBl) s.bl = bl;
+    s.bh = B.map(b => [b.id, Math.round(b.hp), +b.yaw.toFixed(2)]);
+    s.en = E.map(e => [e.id, e.type, r1(e.pos.x), r1(e.pos.z), +e.yaw.toFixed(2), Math.round(e.hp / e.maxHp * 100), e.mode === 'attack' ? 1 : 0, e.dying > 0 ? 1 : 0]);
+    s.bd = BD.map(b => { const m = b.mesh.position; return [b.id, b.sp, r1(m.x), +m.y.toFixed(2), r1(m.z), +b.mesh.rotation.y.toFixed(2), birdCode(b), b.cannon ? b.cannon.id : 0, Math.round(b.hp)]; });
+    const dead = World.nodes.filter(n => !n.alive).map(n => n.idx); const dKey = dead.length + ':' + dead.reduce((a, v) => a + v, 0);
+    if (full || dKey !== lastDead) s.dead = dead;
+    s.pl = [[0, S.hero, r1(P.pos.x), r1(P.pos.z), +P.yaw.toFixed(2), P.moving || 0, +P.swing.toFixed(2), P.dead ? 1 : 0]];
+    puppets.forEach(pp => s.pl.push([pp.pid, pp.hero, r1(pp.tgt.x), r1(pp.tgt.z), pp.yaw, pp.anim, pp.swing, pp.dead ? 1 : 0]));
+    s.fx = fxQueue.splice(0);
+    return { s, blKey, dKey };
+  }
+  function hostTick(dt) {
+    snapT -= dt; if (snapT > 0) return; snapT = 0.1;
+    if (!Net.conns.size) { fxQueue.length = 0; return; }
+    const { s, blKey, dKey } = snapshot(false);
+    const sFull = fullFor.size ? snapshot(true).s : null;
+    lobby.forEach(l => { if (!Net.conns.has(l.id)) return; Net.send(l.id, fullFor.has(l.id) ? sFull : s); });
+    fullFor.clear(); lastBl = blKey; lastDead = dKey;
+  }
+  // ---------- хост: команды гостей ----------
+  const REMOTE = ['upgrade', 'repair', 'demolish', 'buyBird', 'assignBird', 'unassignBird', 'releaseBird', 'craftTool', 'research', 'startWaveNow'];
+  const enc = a => a && typeof a === 'object' ? (a.sp && a.mesh ? { bd: a.id } : (a.t && a.mesh ? { b: a.id } : a)) : a;
+  const dec = a => a && typeof a === 'object' ? (a.bd !== undefined ? BD.find(b => b.id === a.bd) : a.b !== undefined ? byId[a.b] : a) : a;
+  const hostFns = {};
+  REMOTE.forEach(name => {
+    const f = G[name]; hostFns[name] = f;
+    G[name] = (...args) => { if (Net.isClient) { Net.toHost({ c: 'call', f: name, a: args.map(enc) }); Sound.play('click'); return true; } return f(...args); };
+  });
+  function onHostData(id, m) {
+    const L = lobby.find(l => l.id === id);
+    if (m.c === 'hello') {
+      if (lobby.length >= 3 && !L) { Net.send(id, { ev: 'full' }); return; }
+      const me = L || { pid: pidSeq++, id, hero: m.hero }; me.hero = m.hero; if (!L) lobby.push(me);
+      Net.send(id, { ev: 'welcome', pid: me.pid, code: Net.code });
+      Net.broadcast({ ev: 'lobby', players: lobby.map(l => ({ pid: l.pid, hero: l.hero })) });
+      UI.lobbyUpdate && UI.lobbyUpdate();
+      if (G.state === 'play' && S) { startGuest(me); }
+      return;
+    }
+    if (!L || G.state !== 'play') return;
+    if (m.c === 'me') {
+      let pp = puppets.get(L.pid) || makePuppet(L.pid, m.h || L.hero);
+      pp.tgt.set(m.x, 0, m.z); pp.yaw = m.y; pp.anim = m.a; pp.swing = m.s; pp.dead = !!m.d;
+    } else if (m.c === 'hitNode') { const n = World.nodes[m.i]; if (n && n.alive) hostHitNode(n, Math.min(6, +m.p || 1), V(n.x, n.y + 1.6, n.z)); }
+    else if (m.c === 'hitEnemy') { const e = E.find(x => x.id === m.id); if (e) hurtEnemy(e, Math.min(400, +m.dmg || 0)); }
+    else if (m.c === 'place') { if (BUILD[m.t]) doPlace(m.t, +m.x, +m.z, (m.r | 0) % 4, m.w | 0); }
+    else if (m.c === 'spend') { const c = m.cost || {}; if (G.canAfford(c)) pay(c); }
+    else if (m.c === 'call' && hostFns[m.f]) { const args = (m.a || []).map(dec); if (args.some(a => a === undefined)) return; hostFns[m.f](...args); }
+  }
+  function startGuest(l) {
+    fullFor.add(l.id);
+    Net.send(l.id, { ev: 'start', seed: S.seed, biome: World.biomeId, diff: S.diff, pid: l.pid });
+    if (!puppets.has(l.pid)) makePuppet(l.pid, l.hero);
+    UI.toast(tr('mp_joined', { name: HEROES[l.hero].name }), 'good');
+  }
+  // Хост: открыть лобби (из меню перед игрой или из паузы во время игры)
+  G.mpHost = function (hero) {
+    lobby = [{ pid: 0, id: 'host', hero }]; pidSeq = 1; puppets.forEach((_, k) => removePuppet(k));
+    return Net.host({
+      onOpen: code => UI.lobbyUpdate && UI.lobbyUpdate(code),
+      onConn: () => { },
+      onData: onHostData,
+      onClose: id => { const L = lobby.find(l => l.id === id); lobby = lobby.filter(l => l.id !== id); if (L) { removePuppet(L.pid); UI.toast(tr('mp_left', { name: HEROES[L.hero].name }), 'warn'); } Net.broadcast({ ev: 'lobby', players: lobby.map(l => ({ pid: l.pid, hero: l.hero })) }); UI.lobbyUpdate && UI.lobbyUpdate(); },
+      onError: e => UI.toast(tr('mp_error') + ' (' + (e.type || e.message || e) + ')', 'bad', 5000),
+    });
+  };
+  G.mpStartHosted = function () { lobby.forEach(l => { if (l.pid !== 0) startGuest(l); }); };
+  G.mpLeave = function () { if (Net.isHost) Net.broadcast({ ev: 'hostLeft' }); Net.close(); lobby = []; puppets.forEach((_, k) => removePuppet(k)); mpCount = 1; };
+
+  // ---------- гость ----------
+  let guestHero = 'defender', guestPid = 1;
+  G.mpJoin = function (code, hero) {
+    guestHero = hero; lobby = [];
+    return Net.join(code, {
+      onOpen: () => Net.toHost({ c: 'hello', hero }),
+      onData: (_, m) => onGuestData(m),
+      onClose: () => { if (Net.isClient) { UI.toast(tr('mp_host_gone'), 'bad', 5000); G.mpLeave(); UI.toMenu(); } },
+      onError: e => { UI.toast(e && e.type === 'peer-unavailable' || e && e.type === 'timeout' ? tr('mp_notfound') : tr('mp_error') + ' (' + (e.type || e.message || e) + ')', 'bad', 5000); G.mpLeave(); UI.lobbyUpdate && UI.lobbyUpdate(); },
+    });
+  };
+  function onGuestData(m) {
+    if (m.ev === 'welcome') { guestPid = m.pid; UI.lobbyUpdate && UI.lobbyUpdate(m.code); }
+    else if (m.ev === 'lobby') { lobby = m.players; UI.lobbyUpdate && UI.lobbyUpdate(); }
+    else if (m.ev === 'full') { UI.toast(tr('mp_full'), 'warn', 4000); G.mpLeave(); UI.lobbyUpdate && UI.lobbyUpdate(); }
+    else if (m.ev === 'hostLeft') { UI.toast(tr('mp_host_gone'), 'bad', 5000); G.mpLeave(); UI.toMenu(); }
+    else if (m.ev === 'start') { startClient(m); }
+    else if (m.ev === 'snap') { if (S && G.state === 'play') applySnap(m); }
+    else if (m.ev === 'hurt') { if (P && G.state === 'play') hurtPlayer(m.dmg); }
+    else if (m.ev === 'cutscene') { if (G.state === 'play') startCutscene(); }
+    else if (m.ev === 'end') { if (!m.win && G.state === 'play') gameOver(); }
+  }
+  function startClient(m) {
+    clearWorld();
+    World.generate(m.seed, m.biome);
+    S = newState(guestHero, m.diff); S.seed = m.seed; S.player = { x: 2 * m.pid, z: 6, hp: HEROES[guestHero].hp };
+    spawnPlayer(); guestPid = m.pid;
+    G.state = 'play'; Sound.setMode('calm');
+    UI.enterGameMP();
+  }
+  function applyBuildingList(bl) {
+    const seen = new Set(bl.map(a => a[0]));
+    B.slice().forEach(b => { if (!seen.has(b.id)) { if (b.hp < b.maxHp * 0.3) spawnParticles(V(b.x, b.mesh.position.y + 1, b.z), 0xa8743e, 16, 5, 0.3, 1.2); removeBuilding(b, true); } });
+    bl.slice().sort((a, b) => (a[6] ? 1 : 0) - (b[6] ? 1 : 0)).forEach(([id, t, x, z, r, l, w]) => {
+      const b = byId[id];
+      if (!b) { addBuilding(t, x, z, r, l, null, w || null, id); return; }
+      if (b.lvl !== l) { b.lvl = l; b.maxHp = maxHpOf(b); buildMesh(b); if (b.cannonId && byId[b.cannonId]) buildMesh(byId[b.cannonId]); }
+    });
+  }
+  function applySnap(s) {
+    Object.assign(S.res, s.res); S.tools = s.tools; S.tech = s.tech; S.wave = s.wave; S.waveTimer = s.wt; S.day = s.day; S.quest = s.q; S._left = s.left; mpCount = s.n;
+    if (s.wa !== S.waveActive) Sound.setMode(s.wa ? 'battle' : 'calm');
+    S.waveActive = s.wa; S.dayTime = s.dt;
+    if (s.bl) applyBuildingList(s.bl);
+    s.bh.forEach(([id, hp, yaw]) => { const b = byId[id]; if (!b) return; b.hp = hp; b.yaw = yaw; const tur = b.mesh.userData.turret; if (tur) tur.rotation.y = yaw - b.mesh.rotation.y; });
+    // звери
+    const seenE = new Set();
+    s.en.forEach(([id, type, x, z, yaw, hpP, atk, dying]) => {
+      seenE.add(id); let e = E.find(o => o.id === id);
+      if (!e) { const mesh = Models.makeEnemy(type); scene.add(mesh); e = { id, type, d: ENEMIES[type], mesh, pos: V(x, World.groundAt(x, z), z), tgt: V(x, 0, z), yaw, hp: hpP, maxHp: 100, dying: 0, mode: 'walk', t: Math.random() * 9, hitT: 0 }; mesh.position.copy(e.pos); E.push(e); }
+      e.tgt.set(x, 0, z); e.yaw = yaw; e.hp = hpP; e.mode = atk ? 'attack' : 'walk';
+      if (dying && !e.dying) { e.dying = 1.6; Sound.play('growl', 0.6); }
+    });
+    E.slice().forEach(e => { if (!seenE.has(e.id) && !e.dying) { scene.remove(e.mesh); E.splice(E.indexOf(e), 1); } });
+    // птицы
+    const seenB = new Set();
+    s.bd.forEach(([id, sp, x, y, z, ry, st, cid, hp]) => {
+      seenB.add(id); let b = BD.find(o => o.id === id);
+      if (!b) { const mesh = Models.makeBird(sp); scene.add(mesh); mesh.position.set(x, y, z); b = { id, sp, mesh, hp, maxHp: BIRDS[sp].hp, cannon: null, hidden: false, state: 'walk', ph: Math.random() * 10, tgt: V(x, y, z), ry }; BD.push(b); }
+      b.tgt.set(x, y, z); b.ry = ry; b.hp = hp; b.st = st; b.hidden = st === 3; b.state = ['walk', 'fly', 'gunner', 'hidden', 'perch'][st];
+      const c = cid ? byId[cid] : null; if (b.cannon && b.cannon !== c) b.cannon.gunner = null; b.cannon = c; if (c) c.gunner = b;
+    });
+    BD.slice().forEach(b => { if (!seenB.has(b.id)) { if (b.cannon) b.cannon.gunner = null; scene.remove(b.mesh); BD.splice(BD.indexOf(b), 1); } });
+    // ресурсы на карте
+    if (s.dead) { const dead = new Set(s.dead); World.nodes.forEach(n => { const a = !dead.has(n.idx); if (a !== n.alive) { if (!a && n.kind === 'tree' && Math.hypot(n.x - P.pos.x, n.z - P.pos.z) < 30) fellTree(n); n.alive = a; n.grow = a ? 0.05 : 1; World.updateNodeMatrix(n); } }); }
+    // другие игроки
+    const seenP = new Set();
+    s.pl.forEach(([pid, hero, x, z, yaw, anim, sw, dead]) => {
+      if (pid === guestPid) return; seenP.add(pid);
+      const pp = puppets.get(pid) || makePuppet(pid, hero); pp.tgt.set(x, 0, z); pp.yaw = yaw; pp.anim = anim; pp.swing = sw; pp.dead = !!dead;
+    });
+    puppets.forEach((_, pid) => { if (!seenP.has(pid)) removePuppet(pid); });
+    // выстрелы — только картинка
+    const KINDS = { ball: 1, arrow: 1, bolt: 1, bullet: 1, rocket: 1 };
+    s.fx.forEach(([kind, fx, fy, fz, tx, ty, tz, splash, eff]) => {
+      if (!KINDS[kind]) return;
+      const fake = { pos: V(tx, ty - 0.5, tz), yaw: 0, d: { speed: 0 }, mode: 'idle', dying: 0 };
+      fire(V(fx, fy, fz), fake, { kind, dmg: 0, splash, slow: eff === 1, burn: eff === 2, visual: true });
+      if (kind === 'ball') Sound.play('boom', 0.4); else if (kind === 'bullet') Sound.play('gun', 0.6); else if (kind === 'rocket') Sound.play('rocket', 0.6); else Sound.play('arrow', 0.6);
+    });
+  }
+  // Лёгкое обновление на госте: свой герой, интерполяция чужих объектов, эффекты
+  function clientUpdate(dt) {
+    S.stats.time = (S.stats.time || 0) + dt;
+    S.dayTime += dt / 300; if (S.dayTime >= 1) S.dayTime -= 1;
+    const dl = World.updateSky(skyTime(), V(P.pos.x, 0, P.pos.z), dt, time);
+    Sound.setNight(dl < 0.2);
+    updatePlayer(dt); updateBuild();
+    for (let i = falling.length - 1; i >= 0; i--) { const f = falling[i]; f.t += dt; f.g.rotation.x = Math.min(Math.PI / 2, f.t * f.t * 2.2); if (f.t > 1.4) f.g.position.y -= dt * 2; if (f.t > 2.4) { scene.remove(f.g); falling.splice(i, 1); } }
+    for (const n of World.nodesNear(P.pos.x, P.pos.z, 40, nearTmp)) { if (!n.alive) continue; if (n.shake > 0) { n.shake = Math.max(0, n.shake - dt); World.updateNodeMatrix(n); } if (n.grow < 1) { n.grow = Math.min(1, n.grow + dt * 0.5); World.updateNodeMatrix(n); } }
+    const k = 1 - Math.exp(-dt * 10);
+    for (let i = E.length - 1; i >= 0; i--) {
+      const e = E[i], m = e.mesh; e.t += dt;
+      if (e.dying > 0) { e.dying -= dt; m.rotation.z = Math.min(Math.PI / 2, m.rotation.z + dt * 5); if (e.dying < 0.8) m.position.y -= dt * 1.2; if (e.dying <= 0) { scene.remove(m); E.splice(i, 1); } continue; }
+      if (e.hitT > 0) { e.hitT -= dt; m.scale.setScalar(m.userData.baseScale * (1 + e.hitT)); }
+      e.pos.lerp(e.tgt, k); e.pos.y = Math.max(World.groundAt(e.pos.x, e.pos.z), World.WATER_Y - 0.6); m.position.copy(e.pos);
+      let dy = e.yaw - m.rotation.y; while (dy > Math.PI) dy -= Math.PI * 2; while (dy < -Math.PI) dy += Math.PI * 2; m.rotation.y += dy * Math.min(1, dt * 8);
+      Models.animEnemy(m, e.pos.distanceToSquared(e.tgt) > 0.01 || e.mode === 'attack' ? e.mode : 'idle', e.t, e.d.speed);
+    }
+    for (const b of BD) {
+      const m = b.mesh; b.ph += dt; m.visible = !b.hidden;
+      m.position.lerp(b.tgt, b.st === 2 ? 1 : k); m.rotation.y = b.ry;
+      Models.animBird(m, b.st === 1 ? 'fly' : b.st === 0 ? 'walk' : b.st === 4 ? 'peck' : 'idle', b.ph);
+    }
+    updatePuppets(dt);
+    updateProjectiles(dt); updateLights(dt); updateParticles(dt);
+    meT -= dt; if (meT <= 0) { meT = 0.1; Net.toHost(myState()); }
+  }
+  G.mpPid = () => guestPid;
+
   // ---------------- Сохранение: 3 слота ----------------
   const SLOT_KEY = n => 'birdwars_slot_' + n;
   G.slot = 1;
@@ -4368,7 +4787,7 @@ const G = window.G = {};
   G.hasSave = n => n ? !!readSlot(n) : [1, 2, 3].some(k => readSlot(k));
   G.saveCount = () => [1, 2, 3].filter(k => readSlot(k)).length;
   G.save = function (auto) {
-    if (!S || G.state === 'over' || G.state === 'cutscene') return;
+    if (!S || G.state === 'over' || G.state === 'cutscene' || Net.isClient) return;
     S.player = { x: P.pos.x, z: P.pos.z, hp: P.hp };
     const data = Object.assign({}, S, {
       waveActive: false, spawnList: null, waveTimer: S.waveActive ? 30 : S.waveTimer, biomeId: World.biomeId,
@@ -4521,6 +4940,12 @@ const UI = window.UI = {};
     if (a === 'exit') exitGame();
     if (a === 'continue') openSlots('load');
     if (a === 'new') openSlots('new');
+    if (a === 'mp') { $('m-play').classList.add('hidden'); $('m-mp').classList.remove('hidden'); }
+    if (a === 'mp-back') { $('m-mp').classList.add('hidden'); $('m-play').classList.remove('hidden'); }
+    if (a === 'mp-create') { mpMode = 'host'; $('m-mp').classList.add('hidden'); openSlots('new'); }
+    if (a === 'mp-join') { $('m-mp').classList.add('hidden'); $('m-join').classList.remove('hidden'); $('joinCode').value = ''; $('joinCode').placeholder = tr('mp_code_ph'); setTimeout(() => $('joinCode').focus(), 50); }
+    if (a === 'join-back') { $('m-join').classList.add('hidden'); $('m-mp').classList.remove('hidden'); }
+    if (a === 'join-next') { const code = $('joinCode').value.toUpperCase().replace(/[^A-Z0-9]/g, ''); if (code.length !== 5) { toast(tr('mp_notfound'), 'warn'); return; } joinCode = code; mpMode = 'join'; openSelect(); }
     if (a === 'slots-back') { $('m-slots').classList.add('hidden'); $('menu').classList.remove('slots-open'); $('m-play').classList.remove('hidden'); refreshContinue(); }
   }));
   function refreshContinue() {
@@ -4530,7 +4955,7 @@ const UI = window.UI = {};
   }
   function refreshGB() { $('gbBadge').innerHTML = `${GB_ICON}<b>${G.meta.gb}</b>`; }
   UI.refreshGB = refreshGB;
-  let selSlot = 1;
+  let selSlot = 1, mpMode = null, joinCode = '';
   function openSlots(mode) {
     $('m-play').classList.add('hidden'); $('m-main').classList.add('hidden'); $('m-slots').classList.remove('hidden'); $('menu').classList.add('slots-open');
     $('slotsTitle').textContent = tr(mode === 'new' ? 'slots_new' : 'slots_load');
@@ -4562,7 +4987,7 @@ const UI = window.UI = {};
     try { window.close(); } catch (e) { }
   }
   tap($('bye-back'), () => { G.state = 'menu'; show('menu'); backToMain(); });
-  function backToMain() { $('m-play').classList.add('hidden'); $('m-slots').classList.add('hidden'); $('menu').classList.remove('slots-open'); $('m-main').classList.remove('hidden'); Sound.setMode('menu'); }
+  function backToMain() { mpMode = null; ['m-mp', 'm-join'].forEach(id => $(id).classList.add('hidden')); $('m-play').classList.add('hidden'); $('m-slots').classList.add('hidden'); $('menu').classList.remove('slots-open'); $('m-main').classList.remove('hidden'); Sound.setMode('menu'); }
 
   // ---------------- Настройки ----------------
   function openSettings(from) { settingsFrom = from; renderSettings(); $('settings').classList.remove('hidden'); if (from === 'menu') $('menu').classList.add('hidden'); if (from === 'pause') $('pause').classList.add('hidden'); }
@@ -4611,7 +5036,7 @@ const UI = window.UI = {};
   function renderHero() {
     const id = HERO_ORDER[selIdx], d = HEROES[id], locked = !G.heroUnlocked(id);
     G.showHero(id);
-    $('sel-go').innerHTML = locked ? tr('hero_buy', { n: d.price }) + ' ' + GB_ICON : tr('start');
+    $('sel-go').innerHTML = locked ? tr('hero_buy', { n: d.price }) + ' ' + GB_ICON : tr(mpMode === 'host' ? 'mp_create_btn' : mpMode === 'join' ? 'mp_join_btn' : 'start');
     $('sel-go').classList.toggle('gold', locked);
     const bar = (lbl, v, max) => h('div', { cls: 'stat' }, h('b', null, lbl), h('div', { cls: 'sb' }, h('i', { style: `width:${Math.min(100, v / max * 100)}%` })));
     const c = $('heroCard'); c.innerHTML = '';
@@ -4622,6 +5047,7 @@ const UI = window.UI = {};
       h('div', { cls: 'perk' }, '⭐ ' + d.perk));
     const seg = h('div', { cls: 'seg diff' });
     DIFF_ORDER.forEach(k => { const D = DIFFICULTY[k]; const b = h('button', { cls: (k === selDiff ? 'on ' : '') + 'd-' + k }, D.icon + ' ' + D.name); tap(b, () => { selDiff = k; renderHero(); }); seg.append(b); });
+    if (mpMode === 'join') return; // мир, сид и сложность выбирает хост
     c.append(h('div', { style: 'margin-top:8px;font-weight:800' }, tr('difficulty')), seg, h('div', { cls: 'ddesc', style: 'font-size:12px;margin-top:3px;opacity:.85' }, DIFFICULTY[selDiff].desc + tr('prep', { t: `${Math.floor(DIFFICULTY[selDiff].prep / 60)}:${String(DIFFICULTY[selDiff].prep % 60).padStart(2, '0')}` })));
     // мир (сид) — как в Майнкрафте: одинаковый сид даёт одинаковую карту
     const bioName = () => tr('biome_seed') + ' (' + World.biomeOf(World.seedFrom(selSeed || '1')).name + ')';
@@ -4641,11 +5067,62 @@ const UI = window.UI = {};
   tap($('sel-go'), async () => {
     const hid = HERO_ORDER[selIdx];
     if (!G.heroUnlocked(hid)) { if (G.buyHero(hid)) { renderHero(); refreshGB(); } return; }
+    if (mpMode === 'join') { openLobby('join'); G.mpJoin(joinCode, hid); return; }
+    if (mpMode === 'host') { pendingStart = { hid, diff: selDiff, seedStr: selSeed, bio: selBiome, slot: selSlot }; openLobby('host'); G.mpHost(hid); return; }
     const seed = World.seedFrom(selSeed || String(Math.floor(Math.random() * 1e9)));
     const bio = selBiome || World.biomeOf(seed).id;
     await withLoading(tr('load_gen', { name: World.biomeById(bio).name }), () => G.newGame(hid, selDiff, seed, bio, selSlot));
     enterGame(); toast(tr('welcome', { biome: World.biome.name, seed }), 'good', 4500);
   });
+  // ---------------- Лобби совместной игры ----------------
+  let pendingStart = null, lobbyMode = null;
+  function openLobby(mode) {
+    lobbyMode = mode; $('lobby').classList.remove('hidden');
+    $('lb-code').textContent = mode === 'join' ? joinCode : '…';
+    UI.lobbyUpdate();
+  }
+  UI.lobbyUpdate = function (code) {
+    if (code && lobbyMode) $('lb-code').textContent = code;
+    if (!lobbyMode) { updateMpBadge(); return; }
+    const L = G.lobby(), inGame = G.state === 'play';
+    $('lb-players').textContent = tr('lobby_players', { n: Math.max(1, L.length) });
+    const list = $('lb-list'); list.innerHTML = '';
+    (L.length ? L : [{ pid: 0, hero: HERO_ORDER[selIdx] }]).forEach(l => {
+      const me = Net.isClient ? l.pid === G.mpPid() : l.pid === 0;
+      list.append(h('div', { cls: 'lb-p' }, h('b', null, (l.pid + 1) + '.'), h('span', null, HEROES[l.hero] ? HEROES[l.hero].name : '?'),
+        l.pid === 0 ? h('span', { cls: 'tag g' }, tr('host_tag')) : null, me ? h('span', { cls: 'tag' }, tr('you_tag')) : null));
+    });
+    const isHost = lobbyMode === 'host' || lobbyMode === 'ingame';
+    $('lb-note').textContent = tr('lobby_note', { n: Math.max(2, L.length) });
+    $('lb-wait').textContent = !Net.active ? tr('lobby_conn') : tr('lobby_wait');
+    $('lb-wait').classList.toggle('hidden', isHost && Net.active);
+    $('lb-start').classList.toggle('hidden', lobbyMode !== 'host');
+    $('lb-back').classList.toggle('hidden', lobbyMode !== 'ingame');
+    $('lb-leave').classList.toggle('hidden', lobbyMode === 'ingame');
+    if (!Net.active && lobbyMode === 'join' && $('lb-code').textContent !== '…') { /* ошибка — показываем кнопку выхода */ }
+    updateMpBadge();
+    void inGame;
+  };
+  function updateMpBadge() {
+    const b = $('mpbadge'); b.classList.toggle('hidden', !Net.active);
+    if (Net.active) b.textContent = tr('mp_badge', { code: Net.code, n: G.mpN() });
+  }
+  function closeLobby() { lobbyMode = null; $('lobby').classList.add('hidden'); }
+  tap($('lb-copy'), () => { const c = $('lb-code').textContent; try { navigator.clipboard.writeText(c).then(() => toast(tr('copied'), 'good')).catch(() => { }); } catch (e) { } });
+  tap($('lb-leave'), () => { G.mpLeave(); closeLobby(); G.state = 'menu'; show('menu'); backToMain(); });
+  tap($('lb-back'), () => { closeLobby(); closePause(); });
+  tap($('lb-start'), async () => {
+    const p = pendingStart; if (!p) return;
+    const seed = World.seedFrom(p.seedStr || String(Math.floor(Math.random() * 1e9)));
+    const bio = p.bio || World.biomeOf(seed).id;
+    closeLobby();
+    await withLoading(tr('load_gen', { name: World.biomeById(bio).name }), () => G.newGame(p.hid, p.diff, seed, bio, p.slot));
+    enterGame(); G.mpStartHosted();
+    toast(tr('welcome', { biome: World.biome.name, seed }), 'good', 4500);
+  });
+  UI.enterGameMP = function () { closeLobby(); show('hud'); enterGame(); toast(tr('welcome', { biome: World.biome.name, seed: G.worldInfo().seed }), 'good', 4500); };
+  UI.toMenu = function () { closeLobby(); closeModal(); G.cancelBuild && G.cancelBuild(); G.state = 'menu'; $('pause').classList.add('hidden'); $('over').classList.add('hidden'); show('menu'); backToMain(); clearFloats(); refreshGB(); };
+
   async function withLoading(text, fn) {
     show('loading'); setLoad(60, text); await nextFrame(); await nextFrame();
     let r; try { r = fn(); } catch (e) { console.error(e); }
@@ -4664,7 +5141,7 @@ const UI = window.UI = {};
   tap($('rot-ok'), () => { rotateOk = true; document.body.classList.remove('ask-rotate'); });
 
   // ---------------- Пауза ----------------
-  function openPause() { if (G.state !== 'play' && G.state !== 'cutscene') return; G.paused = true; $('pause').classList.remove('hidden'); Sound.setMode('menu'); }
+  function openPause() { if (G.state !== 'play' && G.state !== 'cutscene') return; G.paused = true; $('pause').classList.remove('hidden'); $('btn-invite').classList.toggle('hidden', Net.isClient); $('pause').querySelector('[data-p=save]').classList.toggle('hidden', Net.isClient); Sound.setMode('menu'); }
   function closePause() { $('pause').classList.add('hidden'); G.paused = modalOpen(); Sound.setMode(G.S() && G.S().waveActive ? 'battle' : 'calm'); }
   tap($('btn-pause'), openPause);
   press($('btn-view'), () => { setView(G.settings.view === 'first' ? 'third' : 'first'); toast(G.settings.view === 'first' ? tr('view_fp') : tr('view_tp'), 'info'); });
@@ -4673,7 +5150,8 @@ const UI = window.UI = {};
     if (a === 'resume') closePause();
     if (a === 'save') G.save();
     if (a === 'settings') openSettings('pause');
-    if (a === 'menu') { G.save(true); G.cancelBuild(); G.state = 'menu'; $('pause').classList.add('hidden'); show('menu'); backToMain(); clearFloats(); }
+    if (a === 'invite') { if (Net.isClient) return; lobbyMode = 'ingame'; $('lobby').classList.remove('hidden'); if (!Net.active) { G.mpHost(G.S().hero); } UI.lobbyUpdate(Net.code || undefined); return; }
+    if (a === 'menu') { G.save(true); if (Net.active) G.mpLeave(); G.cancelBuild(); G.state = 'menu'; $('pause').classList.add('hidden'); show('menu'); backToMain(); clearFloats(); }
   }));
   // Конец игры
   UI.cutscene = function (on) {
@@ -4710,7 +5188,7 @@ const UI = window.UI = {};
 `;
     setTimeout(() => { $('over').classList.remove('hidden'); }, 1400);
   };
-  tap($('over-menu'), () => { refreshGB(); document.body.classList.remove('cutscene'); $('over').classList.add('hidden'); G.state = 'menu'; show('menu'); backToMain(); clearFloats(); });
+  tap($('over-menu'), () => { if (Net.active) G.mpLeave(); refreshGB(); document.body.classList.remove('cutscene'); $('over').classList.add('hidden'); G.state = 'menu'; show('menu'); backToMain(); clearFloats(); });
 
   // ---------------- HUD ----------------
   const RES_KEYS = ['wood', 'stone', 'iron', 'coal', 'food', 'coins'];
@@ -4746,6 +5224,7 @@ const UI = window.UI = {};
       if (boss) { $('bossname').textContent = '☠️ ' + boss.d.name; $('bosshp').style.width = (boss.hp / boss.maxHp * 100) + '%'; }
       $('quest').innerHTML = `<b>${tr('quest')}</b> ${G.questText()}`;
       const birds = G.birds();
+      if (Net.active) updateMpBadge(); else $('mpbadge').classList.add('hidden');
       $('birdcount').textContent = tr('bird_count', { n: birds.length, cap: G.birdCap(), c: birds.filter(b => b.cannon).length });
       // кнопка действия и инструмент
       const tool = G.playerTool();

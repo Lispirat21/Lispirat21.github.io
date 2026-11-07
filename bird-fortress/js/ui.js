@@ -106,6 +106,12 @@ const UI = window.UI = {};
     if (a === 'exit') exitGame();
     if (a === 'continue') openSlots('load');
     if (a === 'new') openSlots('new');
+    if (a === 'mp') { $('m-play').classList.add('hidden'); $('m-mp').classList.remove('hidden'); }
+    if (a === 'mp-back') { $('m-mp').classList.add('hidden'); $('m-play').classList.remove('hidden'); }
+    if (a === 'mp-create') { mpMode = 'host'; $('m-mp').classList.add('hidden'); openSlots('new'); }
+    if (a === 'mp-join') { $('m-mp').classList.add('hidden'); $('m-join').classList.remove('hidden'); $('joinCode').value = ''; $('joinCode').placeholder = tr('mp_code_ph'); setTimeout(() => $('joinCode').focus(), 50); }
+    if (a === 'join-back') { $('m-join').classList.add('hidden'); $('m-mp').classList.remove('hidden'); }
+    if (a === 'join-next') { const code = $('joinCode').value.toUpperCase().replace(/[^A-Z0-9]/g, ''); if (code.length !== 5) { toast(tr('mp_notfound'), 'warn'); return; } joinCode = code; mpMode = 'join'; openSelect(); }
     if (a === 'slots-back') { $('m-slots').classList.add('hidden'); $('menu').classList.remove('slots-open'); $('m-play').classList.remove('hidden'); refreshContinue(); }
   }));
   function refreshContinue() {
@@ -115,7 +121,7 @@ const UI = window.UI = {};
   }
   function refreshGB() { $('gbBadge').innerHTML = `${GB_ICON}<b>${G.meta.gb}</b>`; }
   UI.refreshGB = refreshGB;
-  let selSlot = 1;
+  let selSlot = 1, mpMode = null, joinCode = '';
   function openSlots(mode) {
     $('m-play').classList.add('hidden'); $('m-main').classList.add('hidden'); $('m-slots').classList.remove('hidden'); $('menu').classList.add('slots-open');
     $('slotsTitle').textContent = tr(mode === 'new' ? 'slots_new' : 'slots_load');
@@ -147,7 +153,7 @@ const UI = window.UI = {};
     try { window.close(); } catch (e) { }
   }
   tap($('bye-back'), () => { G.state = 'menu'; show('menu'); backToMain(); });
-  function backToMain() { $('m-play').classList.add('hidden'); $('m-slots').classList.add('hidden'); $('menu').classList.remove('slots-open'); $('m-main').classList.remove('hidden'); Sound.setMode('menu'); }
+  function backToMain() { mpMode = null; ['m-mp', 'm-join'].forEach(id => $(id).classList.add('hidden')); $('m-play').classList.add('hidden'); $('m-slots').classList.add('hidden'); $('menu').classList.remove('slots-open'); $('m-main').classList.remove('hidden'); Sound.setMode('menu'); }
 
   // ---------------- Настройки ----------------
   function openSettings(from) { settingsFrom = from; renderSettings(); $('settings').classList.remove('hidden'); if (from === 'menu') $('menu').classList.add('hidden'); if (from === 'pause') $('pause').classList.add('hidden'); }
@@ -196,7 +202,7 @@ const UI = window.UI = {};
   function renderHero() {
     const id = HERO_ORDER[selIdx], d = HEROES[id], locked = !G.heroUnlocked(id);
     G.showHero(id);
-    $('sel-go').innerHTML = locked ? tr('hero_buy', { n: d.price }) + ' ' + GB_ICON : tr('start');
+    $('sel-go').innerHTML = locked ? tr('hero_buy', { n: d.price }) + ' ' + GB_ICON : tr(mpMode === 'host' ? 'mp_create_btn' : mpMode === 'join' ? 'mp_join_btn' : 'start');
     $('sel-go').classList.toggle('gold', locked);
     const bar = (lbl, v, max) => h('div', { cls: 'stat' }, h('b', null, lbl), h('div', { cls: 'sb' }, h('i', { style: `width:${Math.min(100, v / max * 100)}%` })));
     const c = $('heroCard'); c.innerHTML = '';
@@ -207,6 +213,7 @@ const UI = window.UI = {};
       h('div', { cls: 'perk' }, '⭐ ' + d.perk));
     const seg = h('div', { cls: 'seg diff' });
     DIFF_ORDER.forEach(k => { const D = DIFFICULTY[k]; const b = h('button', { cls: (k === selDiff ? 'on ' : '') + 'd-' + k }, D.icon + ' ' + D.name); tap(b, () => { selDiff = k; renderHero(); }); seg.append(b); });
+    if (mpMode === 'join') return; // мир, сид и сложность выбирает хост
     c.append(h('div', { style: 'margin-top:8px;font-weight:800' }, tr('difficulty')), seg, h('div', { cls: 'ddesc', style: 'font-size:12px;margin-top:3px;opacity:.85' }, DIFFICULTY[selDiff].desc + tr('prep', { t: `${Math.floor(DIFFICULTY[selDiff].prep / 60)}:${String(DIFFICULTY[selDiff].prep % 60).padStart(2, '0')}` })));
     // мир (сид) — как в Майнкрафте: одинаковый сид даёт одинаковую карту
     const bioName = () => tr('biome_seed') + ' (' + World.biomeOf(World.seedFrom(selSeed || '1')).name + ')';
@@ -226,11 +233,62 @@ const UI = window.UI = {};
   tap($('sel-go'), async () => {
     const hid = HERO_ORDER[selIdx];
     if (!G.heroUnlocked(hid)) { if (G.buyHero(hid)) { renderHero(); refreshGB(); } return; }
+    if (mpMode === 'join') { openLobby('join'); G.mpJoin(joinCode, hid); return; }
+    if (mpMode === 'host') { pendingStart = { hid, diff: selDiff, seedStr: selSeed, bio: selBiome, slot: selSlot }; openLobby('host'); G.mpHost(hid); return; }
     const seed = World.seedFrom(selSeed || String(Math.floor(Math.random() * 1e9)));
     const bio = selBiome || World.biomeOf(seed).id;
     await withLoading(tr('load_gen', { name: World.biomeById(bio).name }), () => G.newGame(hid, selDiff, seed, bio, selSlot));
     enterGame(); toast(tr('welcome', { biome: World.biome.name, seed }), 'good', 4500);
   });
+  // ---------------- Лобби совместной игры ----------------
+  let pendingStart = null, lobbyMode = null;
+  function openLobby(mode) {
+    lobbyMode = mode; $('lobby').classList.remove('hidden');
+    $('lb-code').textContent = mode === 'join' ? joinCode : '…';
+    UI.lobbyUpdate();
+  }
+  UI.lobbyUpdate = function (code) {
+    if (code && lobbyMode) $('lb-code').textContent = code;
+    if (!lobbyMode) { updateMpBadge(); return; }
+    const L = G.lobby(), inGame = G.state === 'play';
+    $('lb-players').textContent = tr('lobby_players', { n: Math.max(1, L.length) });
+    const list = $('lb-list'); list.innerHTML = '';
+    (L.length ? L : [{ pid: 0, hero: HERO_ORDER[selIdx] }]).forEach(l => {
+      const me = Net.isClient ? l.pid === G.mpPid() : l.pid === 0;
+      list.append(h('div', { cls: 'lb-p' }, h('b', null, (l.pid + 1) + '.'), h('span', null, HEROES[l.hero] ? HEROES[l.hero].name : '?'),
+        l.pid === 0 ? h('span', { cls: 'tag g' }, tr('host_tag')) : null, me ? h('span', { cls: 'tag' }, tr('you_tag')) : null));
+    });
+    const isHost = lobbyMode === 'host' || lobbyMode === 'ingame';
+    $('lb-note').textContent = tr('lobby_note', { n: Math.max(2, L.length) });
+    $('lb-wait').textContent = !Net.active ? tr('lobby_conn') : tr('lobby_wait');
+    $('lb-wait').classList.toggle('hidden', isHost && Net.active);
+    $('lb-start').classList.toggle('hidden', lobbyMode !== 'host');
+    $('lb-back').classList.toggle('hidden', lobbyMode !== 'ingame');
+    $('lb-leave').classList.toggle('hidden', lobbyMode === 'ingame');
+    if (!Net.active && lobbyMode === 'join' && $('lb-code').textContent !== '…') { /* ошибка — показываем кнопку выхода */ }
+    updateMpBadge();
+    void inGame;
+  };
+  function updateMpBadge() {
+    const b = $('mpbadge'); b.classList.toggle('hidden', !Net.active);
+    if (Net.active) b.textContent = tr('mp_badge', { code: Net.code, n: G.mpN() });
+  }
+  function closeLobby() { lobbyMode = null; $('lobby').classList.add('hidden'); }
+  tap($('lb-copy'), () => { const c = $('lb-code').textContent; try { navigator.clipboard.writeText(c).then(() => toast(tr('copied'), 'good')).catch(() => { }); } catch (e) { } });
+  tap($('lb-leave'), () => { G.mpLeave(); closeLobby(); G.state = 'menu'; show('menu'); backToMain(); });
+  tap($('lb-back'), () => { closeLobby(); closePause(); });
+  tap($('lb-start'), async () => {
+    const p = pendingStart; if (!p) return;
+    const seed = World.seedFrom(p.seedStr || String(Math.floor(Math.random() * 1e9)));
+    const bio = p.bio || World.biomeOf(seed).id;
+    closeLobby();
+    await withLoading(tr('load_gen', { name: World.biomeById(bio).name }), () => G.newGame(p.hid, p.diff, seed, bio, p.slot));
+    enterGame(); G.mpStartHosted();
+    toast(tr('welcome', { biome: World.biome.name, seed }), 'good', 4500);
+  });
+  UI.enterGameMP = function () { closeLobby(); show('hud'); enterGame(); toast(tr('welcome', { biome: World.biome.name, seed: G.worldInfo().seed }), 'good', 4500); };
+  UI.toMenu = function () { closeLobby(); closeModal(); G.cancelBuild && G.cancelBuild(); G.state = 'menu'; $('pause').classList.add('hidden'); $('over').classList.add('hidden'); show('menu'); backToMain(); clearFloats(); refreshGB(); };
+
   async function withLoading(text, fn) {
     show('loading'); setLoad(60, text); await nextFrame(); await nextFrame();
     let r; try { r = fn(); } catch (e) { console.error(e); }
@@ -249,7 +307,7 @@ const UI = window.UI = {};
   tap($('rot-ok'), () => { rotateOk = true; document.body.classList.remove('ask-rotate'); });
 
   // ---------------- Пауза ----------------
-  function openPause() { if (G.state !== 'play' && G.state !== 'cutscene') return; G.paused = true; $('pause').classList.remove('hidden'); Sound.setMode('menu'); }
+  function openPause() { if (G.state !== 'play' && G.state !== 'cutscene') return; G.paused = true; $('pause').classList.remove('hidden'); $('btn-invite').classList.toggle('hidden', Net.isClient); $('pause').querySelector('[data-p=save]').classList.toggle('hidden', Net.isClient); Sound.setMode('menu'); }
   function closePause() { $('pause').classList.add('hidden'); G.paused = modalOpen(); Sound.setMode(G.S() && G.S().waveActive ? 'battle' : 'calm'); }
   tap($('btn-pause'), openPause);
   press($('btn-view'), () => { setView(G.settings.view === 'first' ? 'third' : 'first'); toast(G.settings.view === 'first' ? tr('view_fp') : tr('view_tp'), 'info'); });
@@ -258,7 +316,8 @@ const UI = window.UI = {};
     if (a === 'resume') closePause();
     if (a === 'save') G.save();
     if (a === 'settings') openSettings('pause');
-    if (a === 'menu') { G.save(true); G.cancelBuild(); G.state = 'menu'; $('pause').classList.add('hidden'); show('menu'); backToMain(); clearFloats(); }
+    if (a === 'invite') { if (Net.isClient) return; lobbyMode = 'ingame'; $('lobby').classList.remove('hidden'); if (!Net.active) { G.mpHost(G.S().hero); } UI.lobbyUpdate(Net.code || undefined); return; }
+    if (a === 'menu') { G.save(true); if (Net.active) G.mpLeave(); G.cancelBuild(); G.state = 'menu'; $('pause').classList.add('hidden'); show('menu'); backToMain(); clearFloats(); }
   }));
   // Конец игры
   UI.cutscene = function (on) {
@@ -295,7 +354,7 @@ const UI = window.UI = {};
 `;
     setTimeout(() => { $('over').classList.remove('hidden'); }, 1400);
   };
-  tap($('over-menu'), () => { refreshGB(); document.body.classList.remove('cutscene'); $('over').classList.add('hidden'); G.state = 'menu'; show('menu'); backToMain(); clearFloats(); });
+  tap($('over-menu'), () => { if (Net.active) G.mpLeave(); refreshGB(); document.body.classList.remove('cutscene'); $('over').classList.add('hidden'); G.state = 'menu'; show('menu'); backToMain(); clearFloats(); });
 
   // ---------------- HUD ----------------
   const RES_KEYS = ['wood', 'stone', 'iron', 'coal', 'food', 'coins'];
@@ -331,6 +390,7 @@ const UI = window.UI = {};
       if (boss) { $('bossname').textContent = '☠️ ' + boss.d.name; $('bosshp').style.width = (boss.hp / boss.maxHp * 100) + '%'; }
       $('quest').innerHTML = `<b>${tr('quest')}</b> ${G.questText()}`;
       const birds = G.birds();
+      if (Net.active) updateMpBadge(); else $('mpbadge').classList.add('hidden');
       $('birdcount').textContent = tr('bird_count', { n: birds.length, cap: G.birdCap(), c: birds.filter(b => b.cannon).length });
       // кнопка действия и инструмент
       const tool = G.playerTool();

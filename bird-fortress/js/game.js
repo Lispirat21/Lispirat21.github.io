@@ -119,6 +119,7 @@ const G = window.G = {};
     PART.forEach(p => scene.remove(p.mesh)); PART.length = 0;
     deadNodes.length = 0;
     if (cut) { scene.remove(cut.heli); cut = null; UI.cutscene(false); }
+    puppets.forEach((_, k) => removePuppet(k));
     World.nodes.forEach(n => { n.alive = true; n.hp = n.maxHp; n.grow = 1; n.shake = 0; n.acc = 0; World.updateNodeMatrix(n); });
     if (P) scene.remove(P.mesh);
     if (build) G.cancelBuild();
@@ -431,9 +432,10 @@ const G = window.G = {};
   }
 
   // ---------------- Враги и волны ----------------
+  let enemySeq = 1;
   function waveList(n) {
     const types = Object.keys(ENEMIES).filter(t => !ENEMIES[t].boss && ENEMIES[t].wave <= n);
-    const count = Math.max(1, Math.round((2 + Math.floor(n * 1.7)) * DF().count));
+    const count = Math.max(1, Math.round((2 + Math.floor(n * 1.7)) * DF().count * (1 + 0.6 * (G.mpN() - 1))));
     const list = [];
     for (let i = 0; i < count; i++) list.push(types[Math.floor(Math.random() * types.length)]);
     if (n % 5 === 0) { const k = n / 5 - 1, boss = BOSS_ORDER[k % BOSS_ORDER.length]; for (let i = 0; i <= Math.floor(k / BOSS_ORDER.length); i++) list.push(boss); }
@@ -449,8 +451,8 @@ const G = window.G = {};
   function spawnEnemy(type, pos) {
     const d = ENEMIES[type], n = S.wave;
     const mesh = Models.makeEnemy(type); scene.add(mesh);
-    const hpMul = (1 + (n - 1) * 0.14) * DF().hp;
-    const e = { type, d, mesh, pos: pos.clone(), vel: V(0, 0, 0), yaw: 0, hp: d.hp * hpMul, maxHp: d.hp * hpMul, dmg: d.dmg * (1 + (n - 1) * 0.06) * DF().dmg, atkCd: 0, target: null, tkind: null, retarget: 0, slow: 0, dying: 0, mode: 'walk', t: Math.random() * 10, hitT: 0, flee: false, stuck: 0 };
+    const mpk = G.mpN() - 1; const hpMul = (1 + (n - 1) * 0.14) * DF().hp * (1 + 0.35 * mpk);
+    const e = { id: enemySeq++, type, d, mesh, pos: pos.clone(), vel: V(0, 0, 0), yaw: 0, hp: d.hp * hpMul, maxHp: d.hp * hpMul, dmg: d.dmg * (1 + (n - 1) * 0.06) * DF().dmg * (1 + 0.15 * mpk), atkCd: 0, target: null, tkind: null, retarget: 0, slow: 0, dying: 0, mode: 'walk', t: Math.random() * 10, hitT: 0, flee: false, stuck: 0 };
     mesh.position.copy(pos);
     E.push(e);
     if (d.boss) { UI.toast(tr('boss_appears', { name: d.name, desc: d.desc ? ' ' + d.desc + '.' : '' }), 'bad', 4500); UI.banner(tr('boss_banner')); Sound.play('growl', 1.6); e.summonT = 6; }
@@ -487,12 +489,12 @@ const G = window.G = {};
     const t = e.type; const ep = e.pos;
     const near = (list, r, f) => { let best = null, bd = r; list.forEach(o => { if (f && !f(o)) return; const p = o.mesh.position; const d = Math.hypot(p.x - ep.x, p.z - ep.z); if (d < bd) { bd = d; best = o; } }); return best; };
     const groundBird = b => !b.hidden && !b.cannon && b.state !== 'perch' && b.mesh.position.y - World.groundAt(b.mesh.position.x, b.mesh.position.z) < 1;
-    const playerNear = P && !P.dead && Math.hypot(P.pos.x - ep.x, P.pos.z - ep.z);
+    let PT = null, playerNear = 0; mpTargets().forEach(o => { if (o.dead) return; const d = Math.hypot(o.pos.x - ep.x, o.pos.z - ep.z); if (!PT || d < playerNear) { PT = o; playerNear = d; } });
     if (t === 'monster' || t === 'treant') return ['b', core];
-    if (t === 'alpha') { if (playerNear && playerNear < 18) return ['p', P]; return ['b', core]; }
-    if (t === 'bear' || t === 'boar' || t === 'wolverine' || t === 'elk' || t === 'bearking') { const b = near(B.filter(x => !x.onWall), 60); if (playerNear && playerNear < 6) return ['p', P]; return b ? ['b', b] : ['b', core]; }
-    if (t === 'fox' || t === 'lynx' || t === 'raccoon') { const bd = near(BD, 45, groundBird); if (bd) return ['bird', bd]; if (playerNear && playerNear < 10) return ['p', P]; return ['b', core]; }
-    if (playerNear && playerNear < 14) return ['p', P];
+    if (t === 'alpha') { if (playerNear && playerNear < 18) return ['p', PT]; return ['b', core]; }
+    if (t === 'bear' || t === 'boar' || t === 'wolverine' || t === 'elk' || t === 'bearking') { const b = near(B.filter(x => !x.onWall), 60); if (playerNear && playerNear < 6) return ['p', PT]; return b ? ['b', b] : ['b', core]; }
+    if (t === 'fox' || t === 'lynx' || t === 'raccoon') { const bd = near(BD, 45, groundBird); if (bd) return ['bird', bd]; if (playerNear && playerNear < 10) return ['p', PT]; return ['b', core]; }
+    if (playerNear && playerNear < 14) return ['p', PT];
     const bd = near(BD, 30, groundBird); if (bd) return ['bird', bd];
     return ['b', core];
   }
@@ -539,10 +541,10 @@ const G = window.G = {};
         if (l > 95) { scene.remove(m); E.splice(i, 1); continue; }
       } else {
         e.retarget -= dt;
-        const tgtGone = !e.target || (e.tkind === 'b' && !byId[e.target.id]) || (e.tkind === 'bird' && (BD.indexOf(e.target) < 0 || e.target.hidden || e.target.state === 'perch')) || (e.tkind === 'p' && P.dead);
+        const tgtGone = !e.target || (e.tkind === 'b' && !byId[e.target.id]) || (e.tkind === 'bird' && (BD.indexOf(e.target) < 0 || e.target.hidden || e.target.state === 'perch')) || (e.tkind === 'p' && e.target.dead);
         if (e.retarget <= 0 || tgtGone) { const r = pickTarget(e); e.tkind = r[0]; e.target = r[1]; e.retarget = 0.8 + Math.random() * 0.4; }
         if (!e.target) continue;
-        if (e.tkind === 'p') { tx = P.pos.x; tz = P.pos.z; reach = e.d.radius + 0.7; }
+        if (e.tkind === 'p') { tx = e.target.pos.x; tz = e.target.pos.z; reach = e.d.radius + 0.7; }
         else if (e.tkind === 'bird') { tx = e.target.mesh.position.x; tz = e.target.mesh.position.z; reach = e.d.radius + 0.5; }
         else { const b = e.target; tx = clamp(e.pos.x, b.minx, b.maxx); tz = clamp(e.pos.z, b.minz, b.maxz); reach = e.d.radius + 0.25; }
       }
@@ -553,7 +555,7 @@ const G = window.G = {};
         if (e.tkind === 'b') attackB = e.target;
         else if (e.atkCd <= 0) {
           e.atkCd = 1 / e.d.rate;
-          if (e.tkind === 'p') hurtPlayer(e.dmg);
+          if (e.tkind === 'p') { if (e.target === P) hurtPlayer(e.dmg); else Net.send(e.target.pid, { ev: 'hurt', dmg: e.dmg }); }
           else hurtBird(e.target, e.dmg);
           Sound.play('growl', 0.6);
         }
@@ -584,6 +586,7 @@ const G = window.G = {};
   }
   function hurtEnemy(e, dmg, quiet) {
     if (e.dying > 0) return;
+    if (Net.isClient) { Net.toHost({ c: 'hitEnemy', id: e.id, dmg }); if (!quiet) e.hitT = 0.15; return; }
     e.hp -= dmg; if (!quiet) e.hitT = 0.15;
     if (e.hp <= 0) {
       e.dying = 1.6; e.mesh.scale.setScalar(e.mesh.userData.baseScale);
@@ -613,6 +616,7 @@ const G = window.G = {};
     const to = e.pos.clone(); const dist = from.distanceTo(to); const tFlight = dist / speed;
     to.x += Math.sin(e.yaw) * e.d.speed * tFlight * (e.mode === 'walk' ? 0.8 : 0); to.z += Math.cos(e.yaw) * e.d.speed * tFlight * (e.mode === 'walk' ? 0.8 : 0);
     to.y += 0.5;
+    if (Net.isHost && !o.visual) fxQueue.push([kind, +from.x.toFixed(1), +from.y.toFixed(1), +from.z.toFixed(1), +to.x.toFixed(1), +to.y.toFixed(1), +to.z.toFixed(1), o.splash || 0, o.slow ? 1 : o.burn ? 2 : 0]);
     PR.push({ mesh, from: from.clone(), to, u: 0, dur: Math.max(0.1, tFlight), arc: kind === 'ball' ? dist * 0.12 : kind === 'rocket' ? dist * 0.15 : kind === 'bullet' ? 0 : dist * 0.03, target: e, ...o });
     mesh.position.copy(from);
   }
@@ -667,7 +671,9 @@ const G = window.G = {};
         else Sound.play('arrow');
       }
     }
-    // снаряды
+    updateProjectiles(dt);
+  }
+  function updateProjectiles(dt) {
     for (let i = PR.length - 1; i >= 0; i--) {
       const p = PR[i];
       p.u += dt / p.dur;
@@ -680,13 +686,13 @@ const G = window.G = {};
       if (u >= 1) {
         scene.remove(p.mesh); PR.splice(i, 1);
         if (p.splash > 0) {
-          for (const e of E) { if (e.dying) continue; if (Math.hypot(e.pos.x - p.to.x, e.pos.z - p.to.z) < p.splash + e.d.radius) { hurtEnemy(e, p.dmg); applyFx(e, p); } }
+          if (!p.visual) for (const e of E) { if (e.dying) continue; if (Math.hypot(e.pos.x - p.to.x, e.pos.z - p.to.z) < p.splash + e.d.radius) { hurtEnemy(e, p.dmg); applyFx(e, p); } }
           spawnParticles(p.to, p.slow ? 0x9adfff : 0xffa040, p.kind === 'rocket' ? 18 : 8, p.kind === 'rocket' ? 6 : 4, 0.26, 0.5);
           if (p.kind === 'rocket') spawnParticles(p.to, 0x60d040, 8, 5, 0.2, 0.5);
           spawnParticles(p.to, 0x8a7a6a, 6, 2.5, 0.3, 0.8);
           Sound.play('boom', 0.35);
         } else {
-          const e = p.target && !p.target.dying && p.target.pos.distanceTo(p.to) < 2.5 ? p.target : nearestEnemy(p.to.x, p.to.z, 1.6);
+          const e = p.visual ? null : p.target && !p.target.dying && p.target.pos.distanceTo(p.to) < 2.5 ? p.target : nearestEnemy(p.to.x, p.to.z, 1.6);
           if (e) { hurtEnemy(e, p.dmg); applyFx(e, p); }
         }
         if (p.crit) UI.floatText(p.to.clone().add(V(0, 1.5, 0)), tr('crit'), '#ff5050');
@@ -767,10 +773,22 @@ const G = window.G = {};
     const info = NODE_INFO[n.kind];
     const pos = V(n.x, n.y + 1.6, n.z);
     if (n.kind === 'berry') {
-      addRes('food', info.ratio, pos); Sound.play('pickup');
-      killNode(n); return;
+      Sound.play('pickup');
+      if (Net.isClient) { Net.toHost({ c: 'hitNode', i: n.idx, p: 1 }); return; }
+      addRes('food', info.ratio, pos); killNode(n); return;
     }
     const power = (info.tool === 'axe' ? AXES[S.tools.axe].power : PICKS[S.tools.pick].power) * hero.gather;
+    if (Net.isClient) { // ресурсы общие — добычу засчитывает хост
+      Net.toHost({ c: 'hitNode', i: n.idx, p: power }); n.shake = 0.3; World.updateNodeMatrix(n);
+      Sound.play(n.kind === 'tree' ? 'chop' : 'mine');
+      spawnParticles(V(n.x, n.y + (n.kind === 'tree' ? 1.0 : 0.7), n.z), n.kind === 'tree' ? 0xc89a5e : 0x9a9a96, 5, 3, 0.14, 0.6);
+      return;
+    }
+    hostHitNode(n, power, pos);
+  }
+  function hostHitNode(n, power, pos) {
+    const info = NODE_INFO[n.kind]; if (!n.alive) return;
+    if (n.kind === 'berry') { addRes('food', info.ratio, pos); killNode(n); return; }
     const dmg = Math.min(n.hp, power);
     n.hp -= dmg; n.acc += dmg * info.ratio;
     const whole = Math.floor(n.acc); if (whole > 0) { n.acc -= whole; addRes(info.res, whole, pos); }
@@ -885,7 +903,8 @@ const G = window.G = {};
   G.buyGear = function (id) {
     if (!S.gear) S.gear = { own: {}, eq: null };
     if (S.gear.own[id]) return G.equipGear(id);
-    if (!tryPay(GEAR[id].cost)) return false;
+    if (Net.isClient) { if (!G.canAfford(GEAR[id].cost)) { UI.toast(tr('not_enough') + G.missing(GEAR[id].cost), 'warn'); return false; } Net.toHost({ c: 'spend', cost: GEAR[id].cost }); }
+    else if (!tryPay(GEAR[id].cost)) return false;
     S.gear.own[id] = true; Sound.play('upgrade'); UI.toast(tr('gear_bought', { name: GEAR[id].name }), 'good');
     return G.equipGear(id);
   };
@@ -897,6 +916,7 @@ const G = window.G = {};
   G.eat = function () {
     if (S.res.food < 3) { UI.toast(tr('need_food'), 'warn'); Sound.play('error'); return; }
     if (P.hp >= P.maxHp) { UI.toast(tr('hp_full'), 'info'); return; }
+    if (Net.isClient) Net.toHost({ c: 'spend', cost: { food: 3 } });
     S.res.food -= 3; P.hp = Math.min(P.maxHp, P.hp + 35); Sound.play('pickup'); UI.toast('+35 ❤️', 'good');
   };
 
@@ -985,7 +1005,7 @@ const G = window.G = {};
   G.enterBuild = function (t) {
     const d = BUILD[t];
     if (d.req && !S.tech[d.req]) { UI.toast(tr('need_tech_ws', { name: TECH[d.req].name }), 'warn'); Sound.play('error'); return false; }
-    if (G.countB(t) >= (d.max || 99)) { UI.toast(tr('limit_t', { name: d.name, n: d.max }), 'warn'); Sound.play('error'); return false; }
+    if (G.countB(t) >= G.maxOf(t)) { UI.toast(tr('limit_t', { name: d.name, n: G.maxOf(t) }), 'warn'); Sound.play('error'); return false; }
     if (build) G.cancelBuild();
     build = { t, rot: 0, ghost: makeGhost(t, false), ghostWall: t === 'cannon' ? makeGhost(t, true) : null, x: 0, z: 0, valid: false, reason: '', onWall: null };
     return true;
@@ -1047,17 +1067,31 @@ const G = window.G = {};
     if (!build) return;
     if (!build.valid) { UI.toast(build.reason || tr('cant_build'), 'warn'); Sound.play('error'); return; }
     const t = build.t, cost = G.scaleCost(BUILD[t].cost);
-    if (G.countB(t) >= (BUILD[t].max || 99)) { UI.toast(tr('limit_t', { name: BUILD[t].name, n: BUILD[t].max }), 'warn'); Sound.play('error'); G.cancelBuild(); return; }
+    if (G.countB(t) >= G.maxOf(t)) { UI.toast(tr('limit_t', { name: BUILD[t].name, n: G.maxOf(t) }), 'warn'); Sound.play('error'); G.cancelBuild(); return; }
+    const rot = build.onWall ? build.onWall.rot : (build.prot != null ? build.prot : build.rot);
+    if (Net.isClient) { // строит хост, гость видит результат в следующем обновлении
+      if (!G.canAfford(cost)) { UI.toast(tr('not_enough') + G.missing(cost), 'warn'); Sound.play('error'); return; }
+      Net.toHost({ c: 'place', t, x: build.x, z: build.z, r: rot, w: build.onWall ? build.onWall.id : 0 });
+      Sound.play('build'); spawnParticles(V(build.x, P.pos.y + 0.3, build.z), 0xc8b090, 14, 3, 0.35, 0.9);
+      if (BUILD[t].max === 1) G.cancelBuild();
+      return;
+    }
+    doPlace(t, build.x, build.z, rot, build.onWall ? build.onWall.id : 0);
+  };
+  function doPlace(t, x, z, rot, wallId) {
+    const cost = G.scaleCost(BUILD[t].cost);
+    if (G.countB(t) >= G.maxOf(t)) return;
+    if (wallId && (!byId[wallId] || byId[wallId].cannonId)) return;
     if (!tryPay(cost)) return;
     let b;
-    if (build.onWall) b = addBuilding('cannon', build.x, build.z, build.onWall.rot, 1, null, build.onWall.id);
-    else b = addBuilding(t, build.x, build.z, build.prot != null ? build.prot : build.rot);
+    if (wallId) b = addBuilding('cannon', x, z, byId[wallId].rot, 1, null, wallId);
+    else b = addBuilding(t, x, z, rot);
     S.stats.built++;
     Sound.play('build');
     spawnParticles(V(b.x, b.mesh.position.y + 0.3, b.z), 0xc8b090, 14, 3, 0.35, 0.9);
     if (t === 'cannon') { const bird = BD.find(x => !x.cannon); if (bird) G.assignBird(bird, b); else UI.toast(tr('buy_for_cannon'), 'info', 3500); }
-    if (G.countB(t) >= (BUILD[t].max || 99)) { G.cancelBuild(); if (BUILD[t].max > 1) UI.toast(tr('limit_done', { name: BUILD[t].name, n: BUILD[t].max }), 'info'); }
-  };
+    if (build && build.t === t && G.countB(t) >= G.maxOf(t)) { G.cancelBuild(); if (BUILD[t].max > 1) UI.toast(tr('limit_done', { name: BUILD[t].name, n: G.maxOf(t) }), 'info'); }
+  }
 
   // ---------------- Производство ----------------
   function updateLights(dt) {
@@ -1233,12 +1267,12 @@ const G = window.G = {};
       return;
     }
     if (G.state === 'cutscene') {
-      if (!G.paused) updateCutscene(dt);
+      if (!G.paused || Net.active) updateCutscene(dt);
       renderer.render(scene, camera);
       return;
     }
     if (G.state === 'play' || G.state === 'over') {
-      if (G.state === 'play' && !G.paused) update(dt);
+      if (G.state === 'play' && (!G.paused || Net.active)) update(dt);
       updateCamera(dt);
       renderer.render(scene, camera);
       if (G.state === 'play') UI.hud(dt);
@@ -1249,6 +1283,7 @@ const G = window.G = {};
   G.eternalNight = eternalNight;
   const skyTime = () => eternalNight() ? 0.75 : S.dayTime;
   function update(dt) {
+    if (Net.isClient) { clientUpdate(dt); return; }
     S.stats.time = (S.stats.time || 0) + dt;
     S.dayTime += dt / 300; if (S.dayTime >= 1) { S.dayTime -= 1; S.day++; UI.toast(tr('new_day', { n: S.day }), 'info'); if (S.day >= GOAL_DAYS && !S.won) { startCutscene(); return; } }
     const dl = World.updateSky(skyTime(), V(P.pos.x, 0, P.pos.z), dt, time);
@@ -1264,6 +1299,8 @@ const G = window.G = {};
     updateLights(dt);
     updateParticles(dt);
     updateQuests(dt);
+    updatePuppets(dt);
+    if (Net.isHost) hostTick(dt);
     autosaveT -= dt; if (autosaveT <= 0) { autosaveT = 45; if (!S.waveActive) G.save(true); }
   }
   let autosaveT = 45;
@@ -1286,7 +1323,7 @@ const G = window.G = {};
   G.core = () => B.find(b => b.t === 'core');
   G.boss = () => E.find(e => e.d.boss && !e.dying) || null;
   G.dayClock = () => { const t = S.dayTime, night = t >= 0.5; return { night, left: Math.ceil(((night ? 1 : 0.5) - t) * 300) }; };
-  G.enemiesLeft = () => E.filter(e => !e.dying && !e.flee).length + (S.spawnList ? S.spawnList.length : 0);
+  G.enemiesLeft = () => Net.isClient ? (S._left || 0) : E.filter(e => !e.dying && !e.flee).length + (S.spawnList ? S.spawnList.length : 0);
 
   // ---------------- Конец игры ----------------
   // ---------------- Золотые птицы (сохраняются между прохождениями) ----------------
@@ -1306,13 +1343,14 @@ const G = window.G = {};
 
   function gameOver() {
     G.state = 'over'; Sound.play('lose'); Sound.setMode('calm');
-    G.deleteSave(G.slot); // поражение: прохождение начинается заново
+    if (Net.isHost) Net.broadcast({ ev: 'end', win: false });
+    if (!Net.isClient) G.deleteSave(G.slot); // поражение: прохождение начинается заново
     const gb = awardGB(Math.floor(S.day / 3) * (DF().tokens || 1));
     UI.gameOver(Object.assign(runStats(), { gb, gbTotal: G.meta.gb }));
   }
   function victory() {
     G.state = 'over'; Sound.play('win'); Sound.setMode('calm');
-    G.deleteSave(G.slot);
+    if (!Net.isClient) G.deleteSave(G.slot);
     G.meta.wins = (G.meta.wins || 0) + 1;
     const gb = awardGB(10 * (DF().tokens || 1));
     UI.gameOver(Object.assign(runStats(), { gb, gbTotal: G.meta.gb, win: true }));
@@ -1322,6 +1360,7 @@ const G = window.G = {};
   let cut = null;
   function startCutscene() {
     S.won = true;
+    if (Net.isHost) Net.broadcast({ ev: 'cutscene' });
     G.cancelBuild();
     S.waveActive = false; S.spawnList = [];
     E.forEach(e => { if (!e.dying) { e.dying = 1.6; } });
@@ -1445,6 +1484,226 @@ const G = window.G = {};
     return out;
   };
 
+
+  // =====================================================================
+  // ---------------- Совместная игра (хост + до 2 гостей) ----------------
+  // Хост считает весь мир (звери, волны, пушки, птицы, ресурсы) и 10 раз в секунду
+  // рассылает его состояние. Гости ходят сами, а всё остальное отправляют хосту командами.
+  // =====================================================================
+  const puppets = new Map();           // другие игроки: pid → { pid, hero, mesh, pos, tgt, yaw, anim, swing, dead }
+  let mpCount = 1;                     // игроков в игре (на гостях — из снимка хоста)
+  const fxQueue = [];                  // выстрелы для отрисовки у гостей
+  let lobby = [];                      // [{ pid, id, hero }]
+  let snapT = 0, meT = 0, fullFor = new Set(), lastBl = '', lastDead = '', pidSeq = 1;
+  G.mpN = () => Net.isClient ? mpCount : (Net.isHost ? 1 + Net.conns.size : 1);
+  G.maxOf = t => { const m = BUILD[t].max || 99; return m === 1 ? 1 : m * G.mpN(); };
+  G.lobby = () => lobby;
+  function mpTargets() { const list = P ? [P] : []; puppets.forEach(p => list.push(p)); return list; }
+
+  function makePuppet(pid, hero) {
+    const mesh = Models.makeHero(hero); mesh.traverse(o => { if (o.isMesh) o.castShadow = true; });
+    mesh.userData.parts.hand.add(Models.makeTool(HEROES[hero].weapon || 'axe', 0));
+    scene.add(mesh);
+    const pp = { pid, hero, mesh, pos: V(2 * pid, 0, 6), tgt: V(2 * pid, 0, 6), yaw: 0, anim: 0, swing: 0, dead: false, animT: Math.random() * 5, hp: HEROES[hero].hp };
+    puppets.set(pid, pp); return pp;
+  }
+  function removePuppet(pid) { const pp = puppets.get(pid); if (pp) { scene.remove(pp.mesh); puppets.delete(pid); } }
+  function updatePuppets(dt) {
+    puppets.forEach(pp => {
+      pp.pos.lerp(pp.tgt, 1 - Math.exp(-dt * 10)); pp.pos.y = World.groundAt(pp.pos.x, pp.pos.z);
+      const m = pp.mesh; m.position.copy(pp.pos); m.visible = G.state !== 'cutscene';
+      let dy = pp.yaw - m.rotation.y; while (dy > Math.PI) dy -= Math.PI * 2; while (dy < -Math.PI) dy += Math.PI * 2; m.rotation.y += dy * Math.min(1, dt * 12);
+      m.rotation.x = pp.dead ? -Math.PI / 2 : 0;
+      pp.animT += dt; Models.animHero(m, ['idle', 'walk', 'run'][pp.anim] || 'idle', pp.animT, HEROES[pp.hero].speed / 6, pp.swing);
+    });
+  }
+  const myState = () => ({ c: 'me', x: +P.pos.x.toFixed(2), z: +P.pos.z.toFixed(2), y: +P.yaw.toFixed(2), a: P.moving || 0, s: +P.swing.toFixed(2), d: P.dead ? 1 : 0, h: S.hero });
+
+  // ---------- хост: снимок мира ----------
+  const birdCode = b => b.hidden ? 3 : b.state === 'fly' ? 1 : b.state === 'gunner' ? 2 : b.state === 'walk' ? 0 : 4;
+  function snapshot(full) {
+    const r1 = v => Math.round(v * 10) / 10;
+    const s = { ev: 'snap', n: G.mpN(), res: S.res, tools: S.tools, tech: S.tech, wave: S.wave, wt: Math.round(S.waveTimer), wa: S.waveActive, dt: +S.dayTime.toFixed(4), day: S.day, q: S.quest, left: G.enemiesLeft(), diff: S.diff };
+    const bl = B.map(b => [b.id, b.t, b.x, b.z, b.rot, b.lvl, b.onWall || 0]); const blKey = bl.map(a => a[0] + ':' + a[5]).join(',');
+    if (full || blKey !== lastBl) s.bl = bl;
+    s.bh = B.map(b => [b.id, Math.round(b.hp), +b.yaw.toFixed(2)]);
+    s.en = E.map(e => [e.id, e.type, r1(e.pos.x), r1(e.pos.z), +e.yaw.toFixed(2), Math.round(e.hp / e.maxHp * 100), e.mode === 'attack' ? 1 : 0, e.dying > 0 ? 1 : 0]);
+    s.bd = BD.map(b => { const m = b.mesh.position; return [b.id, b.sp, r1(m.x), +m.y.toFixed(2), r1(m.z), +b.mesh.rotation.y.toFixed(2), birdCode(b), b.cannon ? b.cannon.id : 0, Math.round(b.hp)]; });
+    const dead = World.nodes.filter(n => !n.alive).map(n => n.idx); const dKey = dead.length + ':' + dead.reduce((a, v) => a + v, 0);
+    if (full || dKey !== lastDead) s.dead = dead;
+    s.pl = [[0, S.hero, r1(P.pos.x), r1(P.pos.z), +P.yaw.toFixed(2), P.moving || 0, +P.swing.toFixed(2), P.dead ? 1 : 0]];
+    puppets.forEach(pp => s.pl.push([pp.pid, pp.hero, r1(pp.tgt.x), r1(pp.tgt.z), pp.yaw, pp.anim, pp.swing, pp.dead ? 1 : 0]));
+    s.fx = fxQueue.splice(0);
+    return { s, blKey, dKey };
+  }
+  function hostTick(dt) {
+    snapT -= dt; if (snapT > 0) return; snapT = 0.1;
+    if (!Net.conns.size) { fxQueue.length = 0; return; }
+    const { s, blKey, dKey } = snapshot(false);
+    const sFull = fullFor.size ? snapshot(true).s : null;
+    lobby.forEach(l => { if (!Net.conns.has(l.id)) return; Net.send(l.id, fullFor.has(l.id) ? sFull : s); });
+    fullFor.clear(); lastBl = blKey; lastDead = dKey;
+  }
+  // ---------- хост: команды гостей ----------
+  const REMOTE = ['upgrade', 'repair', 'demolish', 'buyBird', 'assignBird', 'unassignBird', 'releaseBird', 'craftTool', 'research', 'startWaveNow'];
+  const enc = a => a && typeof a === 'object' ? (a.sp && a.mesh ? { bd: a.id } : (a.t && a.mesh ? { b: a.id } : a)) : a;
+  const dec = a => a && typeof a === 'object' ? (a.bd !== undefined ? BD.find(b => b.id === a.bd) : a.b !== undefined ? byId[a.b] : a) : a;
+  const hostFns = {};
+  REMOTE.forEach(name => {
+    const f = G[name]; hostFns[name] = f;
+    G[name] = (...args) => { if (Net.isClient) { Net.toHost({ c: 'call', f: name, a: args.map(enc) }); Sound.play('click'); return true; } return f(...args); };
+  });
+  function onHostData(id, m) {
+    const L = lobby.find(l => l.id === id);
+    if (m.c === 'hello') {
+      if (lobby.length >= 3 && !L) { Net.send(id, { ev: 'full' }); return; }
+      const me = L || { pid: pidSeq++, id, hero: m.hero }; me.hero = m.hero; if (!L) lobby.push(me);
+      Net.send(id, { ev: 'welcome', pid: me.pid, code: Net.code });
+      Net.broadcast({ ev: 'lobby', players: lobby.map(l => ({ pid: l.pid, hero: l.hero })) });
+      UI.lobbyUpdate && UI.lobbyUpdate();
+      if (G.state === 'play' && S) { startGuest(me); }
+      return;
+    }
+    if (!L || G.state !== 'play') return;
+    if (m.c === 'me') {
+      let pp = puppets.get(L.pid) || makePuppet(L.pid, m.h || L.hero);
+      pp.tgt.set(m.x, 0, m.z); pp.yaw = m.y; pp.anim = m.a; pp.swing = m.s; pp.dead = !!m.d;
+    } else if (m.c === 'hitNode') { const n = World.nodes[m.i]; if (n && n.alive) hostHitNode(n, Math.min(6, +m.p || 1), V(n.x, n.y + 1.6, n.z)); }
+    else if (m.c === 'hitEnemy') { const e = E.find(x => x.id === m.id); if (e) hurtEnemy(e, Math.min(400, +m.dmg || 0)); }
+    else if (m.c === 'place') { if (BUILD[m.t]) doPlace(m.t, +m.x, +m.z, (m.r | 0) % 4, m.w | 0); }
+    else if (m.c === 'spend') { const c = m.cost || {}; if (G.canAfford(c)) pay(c); }
+    else if (m.c === 'call' && hostFns[m.f]) { const args = (m.a || []).map(dec); if (args.some(a => a === undefined)) return; hostFns[m.f](...args); }
+  }
+  function startGuest(l) {
+    fullFor.add(l.id);
+    Net.send(l.id, { ev: 'start', seed: S.seed, biome: World.biomeId, diff: S.diff, pid: l.pid });
+    if (!puppets.has(l.pid)) makePuppet(l.pid, l.hero);
+    UI.toast(tr('mp_joined', { name: HEROES[l.hero].name }), 'good');
+  }
+  // Хост: открыть лобби (из меню перед игрой или из паузы во время игры)
+  G.mpHost = function (hero) {
+    lobby = [{ pid: 0, id: 'host', hero }]; pidSeq = 1; puppets.forEach((_, k) => removePuppet(k));
+    return Net.host({
+      onOpen: code => UI.lobbyUpdate && UI.lobbyUpdate(code),
+      onConn: () => { },
+      onData: onHostData,
+      onClose: id => { const L = lobby.find(l => l.id === id); lobby = lobby.filter(l => l.id !== id); if (L) { removePuppet(L.pid); UI.toast(tr('mp_left', { name: HEROES[L.hero].name }), 'warn'); } Net.broadcast({ ev: 'lobby', players: lobby.map(l => ({ pid: l.pid, hero: l.hero })) }); UI.lobbyUpdate && UI.lobbyUpdate(); },
+      onError: e => UI.toast(tr('mp_error') + ' (' + (e.type || e.message || e) + ')', 'bad', 5000),
+    });
+  };
+  G.mpStartHosted = function () { lobby.forEach(l => { if (l.pid !== 0) startGuest(l); }); };
+  G.mpLeave = function () { if (Net.isHost) Net.broadcast({ ev: 'hostLeft' }); Net.close(); lobby = []; puppets.forEach((_, k) => removePuppet(k)); mpCount = 1; };
+
+  // ---------- гость ----------
+  let guestHero = 'defender', guestPid = 1;
+  G.mpJoin = function (code, hero) {
+    guestHero = hero; lobby = [];
+    return Net.join(code, {
+      onOpen: () => Net.toHost({ c: 'hello', hero }),
+      onData: (_, m) => onGuestData(m),
+      onClose: () => { if (Net.isClient) { UI.toast(tr('mp_host_gone'), 'bad', 5000); G.mpLeave(); UI.toMenu(); } },
+      onError: e => { UI.toast(e && e.type === 'peer-unavailable' || e && e.type === 'timeout' ? tr('mp_notfound') : tr('mp_error') + ' (' + (e.type || e.message || e) + ')', 'bad', 5000); G.mpLeave(); UI.lobbyUpdate && UI.lobbyUpdate(); },
+    });
+  };
+  function onGuestData(m) {
+    if (m.ev === 'welcome') { guestPid = m.pid; UI.lobbyUpdate && UI.lobbyUpdate(m.code); }
+    else if (m.ev === 'lobby') { lobby = m.players; UI.lobbyUpdate && UI.lobbyUpdate(); }
+    else if (m.ev === 'full') { UI.toast(tr('mp_full'), 'warn', 4000); G.mpLeave(); UI.lobbyUpdate && UI.lobbyUpdate(); }
+    else if (m.ev === 'hostLeft') { UI.toast(tr('mp_host_gone'), 'bad', 5000); G.mpLeave(); UI.toMenu(); }
+    else if (m.ev === 'start') { startClient(m); }
+    else if (m.ev === 'snap') { if (S && G.state === 'play') applySnap(m); }
+    else if (m.ev === 'hurt') { if (P && G.state === 'play') hurtPlayer(m.dmg); }
+    else if (m.ev === 'cutscene') { if (G.state === 'play') startCutscene(); }
+    else if (m.ev === 'end') { if (!m.win && G.state === 'play') gameOver(); }
+  }
+  function startClient(m) {
+    clearWorld();
+    World.generate(m.seed, m.biome);
+    S = newState(guestHero, m.diff); S.seed = m.seed; S.player = { x: 2 * m.pid, z: 6, hp: HEROES[guestHero].hp };
+    spawnPlayer(); guestPid = m.pid;
+    G.state = 'play'; Sound.setMode('calm');
+    UI.enterGameMP();
+  }
+  function applyBuildingList(bl) {
+    const seen = new Set(bl.map(a => a[0]));
+    B.slice().forEach(b => { if (!seen.has(b.id)) { if (b.hp < b.maxHp * 0.3) spawnParticles(V(b.x, b.mesh.position.y + 1, b.z), 0xa8743e, 16, 5, 0.3, 1.2); removeBuilding(b, true); } });
+    bl.slice().sort((a, b) => (a[6] ? 1 : 0) - (b[6] ? 1 : 0)).forEach(([id, t, x, z, r, l, w]) => {
+      const b = byId[id];
+      if (!b) { addBuilding(t, x, z, r, l, null, w || null, id); return; }
+      if (b.lvl !== l) { b.lvl = l; b.maxHp = maxHpOf(b); buildMesh(b); if (b.cannonId && byId[b.cannonId]) buildMesh(byId[b.cannonId]); }
+    });
+  }
+  function applySnap(s) {
+    Object.assign(S.res, s.res); S.tools = s.tools; S.tech = s.tech; S.wave = s.wave; S.waveTimer = s.wt; S.day = s.day; S.quest = s.q; S._left = s.left; mpCount = s.n;
+    if (s.wa !== S.waveActive) Sound.setMode(s.wa ? 'battle' : 'calm');
+    S.waveActive = s.wa; S.dayTime = s.dt;
+    if (s.bl) applyBuildingList(s.bl);
+    s.bh.forEach(([id, hp, yaw]) => { const b = byId[id]; if (!b) return; b.hp = hp; b.yaw = yaw; const tur = b.mesh.userData.turret; if (tur) tur.rotation.y = yaw - b.mesh.rotation.y; });
+    // звери
+    const seenE = new Set();
+    s.en.forEach(([id, type, x, z, yaw, hpP, atk, dying]) => {
+      seenE.add(id); let e = E.find(o => o.id === id);
+      if (!e) { const mesh = Models.makeEnemy(type); scene.add(mesh); e = { id, type, d: ENEMIES[type], mesh, pos: V(x, World.groundAt(x, z), z), tgt: V(x, 0, z), yaw, hp: hpP, maxHp: 100, dying: 0, mode: 'walk', t: Math.random() * 9, hitT: 0 }; mesh.position.copy(e.pos); E.push(e); }
+      e.tgt.set(x, 0, z); e.yaw = yaw; e.hp = hpP; e.mode = atk ? 'attack' : 'walk';
+      if (dying && !e.dying) { e.dying = 1.6; Sound.play('growl', 0.6); }
+    });
+    E.slice().forEach(e => { if (!seenE.has(e.id) && !e.dying) { scene.remove(e.mesh); E.splice(E.indexOf(e), 1); } });
+    // птицы
+    const seenB = new Set();
+    s.bd.forEach(([id, sp, x, y, z, ry, st, cid, hp]) => {
+      seenB.add(id); let b = BD.find(o => o.id === id);
+      if (!b) { const mesh = Models.makeBird(sp); scene.add(mesh); mesh.position.set(x, y, z); b = { id, sp, mesh, hp, maxHp: BIRDS[sp].hp, cannon: null, hidden: false, state: 'walk', ph: Math.random() * 10, tgt: V(x, y, z), ry }; BD.push(b); }
+      b.tgt.set(x, y, z); b.ry = ry; b.hp = hp; b.st = st; b.hidden = st === 3; b.state = ['walk', 'fly', 'gunner', 'hidden', 'perch'][st];
+      const c = cid ? byId[cid] : null; if (b.cannon && b.cannon !== c) b.cannon.gunner = null; b.cannon = c; if (c) c.gunner = b;
+    });
+    BD.slice().forEach(b => { if (!seenB.has(b.id)) { if (b.cannon) b.cannon.gunner = null; scene.remove(b.mesh); BD.splice(BD.indexOf(b), 1); } });
+    // ресурсы на карте
+    if (s.dead) { const dead = new Set(s.dead); World.nodes.forEach(n => { const a = !dead.has(n.idx); if (a !== n.alive) { if (!a && n.kind === 'tree' && Math.hypot(n.x - P.pos.x, n.z - P.pos.z) < 30) fellTree(n); n.alive = a; n.grow = a ? 0.05 : 1; World.updateNodeMatrix(n); } }); }
+    // другие игроки
+    const seenP = new Set();
+    s.pl.forEach(([pid, hero, x, z, yaw, anim, sw, dead]) => {
+      if (pid === guestPid) return; seenP.add(pid);
+      const pp = puppets.get(pid) || makePuppet(pid, hero); pp.tgt.set(x, 0, z); pp.yaw = yaw; pp.anim = anim; pp.swing = sw; pp.dead = !!dead;
+    });
+    puppets.forEach((_, pid) => { if (!seenP.has(pid)) removePuppet(pid); });
+    // выстрелы — только картинка
+    const KINDS = { ball: 1, arrow: 1, bolt: 1, bullet: 1, rocket: 1 };
+    s.fx.forEach(([kind, fx, fy, fz, tx, ty, tz, splash, eff]) => {
+      if (!KINDS[kind]) return;
+      const fake = { pos: V(tx, ty - 0.5, tz), yaw: 0, d: { speed: 0 }, mode: 'idle', dying: 0 };
+      fire(V(fx, fy, fz), fake, { kind, dmg: 0, splash, slow: eff === 1, burn: eff === 2, visual: true });
+      if (kind === 'ball') Sound.play('boom', 0.4); else if (kind === 'bullet') Sound.play('gun', 0.6); else if (kind === 'rocket') Sound.play('rocket', 0.6); else Sound.play('arrow', 0.6);
+    });
+  }
+  // Лёгкое обновление на госте: свой герой, интерполяция чужих объектов, эффекты
+  function clientUpdate(dt) {
+    S.stats.time = (S.stats.time || 0) + dt;
+    S.dayTime += dt / 300; if (S.dayTime >= 1) S.dayTime -= 1;
+    const dl = World.updateSky(skyTime(), V(P.pos.x, 0, P.pos.z), dt, time);
+    Sound.setNight(dl < 0.2);
+    updatePlayer(dt); updateBuild();
+    for (let i = falling.length - 1; i >= 0; i--) { const f = falling[i]; f.t += dt; f.g.rotation.x = Math.min(Math.PI / 2, f.t * f.t * 2.2); if (f.t > 1.4) f.g.position.y -= dt * 2; if (f.t > 2.4) { scene.remove(f.g); falling.splice(i, 1); } }
+    for (const n of World.nodesNear(P.pos.x, P.pos.z, 40, nearTmp)) { if (!n.alive) continue; if (n.shake > 0) { n.shake = Math.max(0, n.shake - dt); World.updateNodeMatrix(n); } if (n.grow < 1) { n.grow = Math.min(1, n.grow + dt * 0.5); World.updateNodeMatrix(n); } }
+    const k = 1 - Math.exp(-dt * 10);
+    for (let i = E.length - 1; i >= 0; i--) {
+      const e = E[i], m = e.mesh; e.t += dt;
+      if (e.dying > 0) { e.dying -= dt; m.rotation.z = Math.min(Math.PI / 2, m.rotation.z + dt * 5); if (e.dying < 0.8) m.position.y -= dt * 1.2; if (e.dying <= 0) { scene.remove(m); E.splice(i, 1); } continue; }
+      if (e.hitT > 0) { e.hitT -= dt; m.scale.setScalar(m.userData.baseScale * (1 + e.hitT)); }
+      e.pos.lerp(e.tgt, k); e.pos.y = Math.max(World.groundAt(e.pos.x, e.pos.z), World.WATER_Y - 0.6); m.position.copy(e.pos);
+      let dy = e.yaw - m.rotation.y; while (dy > Math.PI) dy -= Math.PI * 2; while (dy < -Math.PI) dy += Math.PI * 2; m.rotation.y += dy * Math.min(1, dt * 8);
+      Models.animEnemy(m, e.pos.distanceToSquared(e.tgt) > 0.01 || e.mode === 'attack' ? e.mode : 'idle', e.t, e.d.speed);
+    }
+    for (const b of BD) {
+      const m = b.mesh; b.ph += dt; m.visible = !b.hidden;
+      m.position.lerp(b.tgt, b.st === 2 ? 1 : k); m.rotation.y = b.ry;
+      Models.animBird(m, b.st === 1 ? 'fly' : b.st === 0 ? 'walk' : b.st === 4 ? 'peck' : 'idle', b.ph);
+    }
+    updatePuppets(dt);
+    updateProjectiles(dt); updateLights(dt); updateParticles(dt);
+    meT -= dt; if (meT <= 0) { meT = 0.1; Net.toHost(myState()); }
+  }
+  G.mpPid = () => guestPid;
+
   // ---------------- Сохранение: 3 слота ----------------
   const SLOT_KEY = n => 'birdwars_slot_' + n;
   G.slot = 1;
@@ -1454,7 +1713,7 @@ const G = window.G = {};
   G.hasSave = n => n ? !!readSlot(n) : [1, 2, 3].some(k => readSlot(k));
   G.saveCount = () => [1, 2, 3].filter(k => readSlot(k)).length;
   G.save = function (auto) {
-    if (!S || G.state === 'over' || G.state === 'cutscene') return;
+    if (!S || G.state === 'over' || G.state === 'cutscene' || Net.isClient) return;
     S.player = { x: P.pos.x, z: P.pos.z, hp: P.hp };
     const data = Object.assign({}, S, {
       waveActive: false, spawnList: null, waveTimer: S.waveActive ? 30 : S.waveTimer, biomeId: World.biomeId,
