@@ -8,6 +8,7 @@ const RES_INFO = {
   coal:  { name: 'Уголь',   icon: "<svg class=\"rico\" viewBox=\"0 0 24 24\"><path d=\"M3 15 6 7l6-3 7 3 2 8-5 5H8z\" fill=\"#2b2d33\" stroke=\"#b8bec8\" stroke-width=\"1.4\" stroke-linejoin=\"round\"/><path d=\"M6 7l6-3 7 3-6 3z\" fill=\"#5a5e68\"/><path d=\"M12 10l7-3 2 8-7 1z\" fill=\"#3c3f47\"/><path d=\"M3 15l3-8 6 3 2 6-6 4z\" fill=\"#1c1d21\"/><path d=\"M9 6.5l2.5-1M15 6l2 .8M5.5 11l1-2\" stroke=\"#c8ccd6\" stroke-width=\"1.1\" stroke-linecap=\"round\"/></svg>" },
   food:  { name: 'Еда',     icon: '🍖' },
   coins: { name: 'Монеты',  icon: '🪙' },
+  ruby:  { name: 'Рубины',  icon: "<svg class=\"rico\" viewBox=\"0 0 24 24\"><path d=\"M7 3h10l5 6-10 12L2 9z\" fill=\"#e0204a\" stroke=\"#7a0018\" stroke-width=\"1.3\" stroke-linejoin=\"round\"/><path d=\"M2 9h20M7 3l5 6 5-6M12 9v12\" stroke=\"#ff8aa0\" stroke-width=\"1\" fill=\"none\"/><path d=\"M7 3l-5 6h5z\" fill=\"#ff6a88\"/></svg>" },
 };
 
 // Птицы. dmg/rate/range — множители для пушки, за которой сидит птица.
@@ -102,7 +103,7 @@ const BUILD = {
   workshop:   { max: 1, name: 'Мастерская',         cat: 'prod',    cost: { wood: 40 },             hp: 350,  size: [3.6, 3],   icon: '⚒️', desc: 'Инструменты и технологии.', unique: true },
   farm:       { max: 4, name: 'Ферма',              cat: 'prod',    cost: { wood: 25 },             hp: 200,  size: [4, 4],   icon: '🌾', desc: 'Производит еду.' },
   mineshaft:  { max: 3, name: 'Своя шахта',         cat: 'prod',    cost: { wood: 50, stone: 30 },  hp: 500,  size: [3.4, 3.4], icon: '🕳️', desc: 'Ставится где угодно. Сама добывает камень, уголь и железо. Улучшается до 3 уровня.', req: 'stone' },
-  minelift:   { max: 2, name: 'Шахтный подъёмник',  cat: 'prod',    cost: { wood: 40, stone: 20 },  hp: 400,  size: [3, 3],   icon: '⛏️', desc: 'Ставится в карьере. Сам добывает камень, уголь и железо.', req: 'stone' },
+  minelift:   { max: 2, name: 'Шахтный подъёмник',  cat: 'prod',    cost: { wood: 40, stone: 20 },  hp: 400,  size: [3, 3],   icon: '⛏️', desc: 'Ставится в карьере. Сам добывает камень и уголь, после улучшений — железо и рубины.', req: 'stone' },
   core:       { max: 1, name: 'Великое гнездо',     cat: 'none',    cost: {},                       hp: 1200, size: [5, 5],   icon: '🪺', desc: 'Сердце базы. Если его разрушат — игра окончена.' },
 };
 const BUILD_CATS = [
@@ -119,11 +120,22 @@ const AXES = [
   { name: 'Деревянный топор', power: 1 },
   { name: 'Каменный топор',   power: 2,   cost: { wood: 15, stone: 10 } },
   { name: 'Железный топор',   power: 3.5, cost: { wood: 15, iron: 10, coal: 5 }, req: 'metal' },
+  { name: 'Рубиновый топор',  power: 6,   cost: { ruby: 6, iron: 6, coal: 6 }, req: 'metal' },
+  { name: 'Бензопила',        power: 10,  cost: { ruby: 20, iron: 40, coal: 30, coins: 500 }, req: 'mech' },
 ];
 const PICKS = [
   { name: 'Кирка',            power: 1,   cost: { wood: 20 } },
   { name: 'Улучшенная кирка', power: 1.8, cost: { wood: 10, stone: 20 } },
   { name: 'Железная кирка',   power: 3,   cost: { iron: 12, coal: 8 }, req: 'metal' },
+  { name: 'Рубиновая кирка',  power: 5,   cost: { ruby: 6, iron: 6, coal: 6 }, req: 'metal' },
+  { name: 'Отбойный молоток', power: 9,   cost: { ruby: 20, iron: 40, coal: 30, coins: 500 }, req: 'mech' },
+];
+// Мечи: mul — множитель урона героя по врагам
+const SWORDS = [
+  { name: 'Деревянный меч', mul: 1.2, cost: { wood: 15 } },
+  { name: 'Каменный меч',   mul: 1.6, cost: { wood: 10, stone: 15 } },
+  { name: 'Железный меч',   mul: 2.2, cost: { wood: 5, iron: 12, coal: 6 }, req: 'metal' },
+  { name: 'Рубиновый меч',  mul: 3.4, cost: { ruby: 8, iron: 6, coal: 6 }, req: 'metal' },
 ];
 
 const NODE_INFO = {
@@ -131,6 +143,7 @@ const NODE_INFO = {
   stone: { hp: 10, res: 'stone', ratio: 1,   tool: 'pick', minPick: 0,  regrow: 180, name: 'Камень' },
   coal:  { hp: 9,  res: 'coal',  ratio: 1,   tool: 'pick', minPick: 0,  regrow: 220, name: 'Уголь' },
   iron:  { hp: 12, res: 'iron',  ratio: 0.6, tool: 'pick', minPick: 1,  regrow: 260, name: 'Железная руда' },
+  ruby:  { hp: 18, res: 'ruby',  ratio: 0.3, tool: 'pick', minPick: 2,  regrow: 420, name: 'Рубиновая руда' },
   berry: { hp: 1,  res: 'food',  ratio: 4,   tool: 'hand', minPick: -1, regrow: 70,  name: 'Ягодный куст' },
 };
 
@@ -175,6 +188,12 @@ const BALLISTA_LEVELS = [
   { name: 'Ракетница',      kind: 'rocket', dmg: 75, rate: 0.8, range: 32, splash: 3.6, hp: 900, cost: { iron: 35, coal: 25, coins: 300 } },
 ];
 // Уровни своей шахты: секунды на 1 единицу ресурса
+// Шахтный подъёмник (карьерный добытчик): 0 — не добывает этот ресурс
+const LIFT_LEVELS = [
+  { name: 'Подъёмник',            hp: 400,  stone: 6, coal: 14, iron: 0,  ruby: 0,  cost: { wood: 40, stone: 20 } },
+  { name: 'Усиленный подъёмник',  hp: 650,  stone: 4, coal: 10, iron: 20, ruby: 0,  cost: { wood: 40, stone: 50, iron: 10 } },
+  { name: 'Рубиновый подъёмник',  hp: 1000, stone: 3, coal: 6,  iron: 12, ruby: 60, cost: { stone: 60, iron: 40, coal: 25, coins: 200 }, req: 'metal' },
+];
 const SHAFT_LEVELS = [
   { name: 'Шахта',              hp: 500,  stone: 9, coal: 20, iron: 34, cost: { wood: 50, stone: 30 } },
   { name: 'Глубокая шахта',     hp: 750,  stone: 6, coal: 13, iron: 22, cost: { wood: 40, stone: 50, iron: 10 } },
@@ -184,4 +203,10 @@ const SHAFT_LEVELS = [
 const GEAR = {
   lamp:   { name: 'Ручная лампа',          icon: '🪔', cost: { wood: 10, coal: 3, coins: 30 },   desc: 'Слабо светит вокруг героя в темноте.' },
   helmet: { name: 'Каска с прожектором',   icon: '⛑️', cost: { iron: 8, coal: 6, coins: 120 },  desc: 'Мощный луч света туда, куда смотрит герой.' },
+};
+// Броня героя: уменьшает получаемый урон
+const ARMOR = {
+  leather: { icon: '🦺', red: 0.2, cost: { wood: 10, food: 12, coins: 40 } },
+  iron:    { icon: '🛡️', red: 0.4, cost: { iron: 20, coal: 10, coins: 120 }, req: 'metal' },
+  ruby:    { icon: '💎', red: 0.6, cost: { ruby: 15, iron: 15, coins: 300 }, req: 'metal' },
 };

@@ -255,7 +255,7 @@ const Models = (() => {
   function makeHero(type) {
     const L = HERO_LOOK[type]; const root = new THREE.Group(); const P = { root };
     const hips = group(root, 0, 0.92, 0); P.hips = hips;
-    const torso = group(hips, 0, 0, 0); P.torso = torso;
+    const torso = group(hips, 0, 0, 0); P.torso = torso; P.torsoW = L.width;
     box(L.width, 0.62, 0.32, L.shirt, 0, 0.36, 0, torso);
     box(L.width + 0.02, 0.1, 0.34, 0x3a2614, 0, 0.06, 0, torso); // пояс
     box(0.12, 0.08, 0.05, 0xd8b040, 0, 0.06, 0.18, torso, false);
@@ -372,14 +372,66 @@ const Models = (() => {
       const glass = cyl(0.075, 0.075, 0.02, mat(0xffffff, { emissive: 0xfff4c0, emissiveIntensity: 2.5 }), 0, 0.18, 0.26, hd, 10, false); glass.rotation.x = Math.PI / 2;
     }
   }
+  // Броня: кожаная (жилет, наплечники, наручи) или железная (нагрудник, наплечники, поножи)
+  function setArmor(root, id) {
+    const P = root.userData.parts;
+    if (P.armor) { P.armor.forEach(o => o.parent && o.parent.remove(o)); }
+    P.armor = [];
+    if (!id) return;
+    const ruby = id === 'ruby', iron = id === 'iron' || ruby;
+    const m1 = ruby ? mat(0xe0204a, { emissive: 0x900018, emissiveIntensity: 0.6, roughness: 0.25 }) : iron ? mat(0xd4dae2, { metalness: 0.3, roughness: 0.3 }) : mat(0x7a4a24, { roughness: 0.85 });
+    const m2 = ruby ? mat(0x8a1028, { roughness: 0.35 }) : iron ? mat(0x9aa2ae, { metalness: 0.3, roughness: 0.4 }) : mat(0x4a2c14, { roughness: 0.9 });
+    const rim = iron ? mat(0xd8b040, { metalness: 0.6, roughness: 0.35 }) : mat(0xc8a070);
+    const w = (P.torsoW || 0.56) + 0.06;
+    const t = group(P.torso, 0, 0, 0); P.armor.push(t);
+    box(w, 0.5, 0.38, m1, 0, 0.4, 0, t);                       // корпус
+    if (iron) {
+      box(w * 0.7, 0.3, 0.04, m2, 0, 0.48, 0.2, t);             // выпуклая пластина
+      box(w + 0.02, 0.05, 0.4, rim, 0, 0.66, 0, t, false);
+      box(w + 0.02, 0.05, 0.4, rim, 0, 0.16, 0, t, false);
+      box(0.24, 0.12, 0.3, m1, 0, 0.72, 0, t);                  // горжет
+    } else {
+      [-1, 1].forEach(sx => { const st = box(0.06, 0.62, 0.02, m2, sx * w * 0.22, 0.4, 0.2, t, false); st.rotation.z = sx * 0.5; });
+      box(0.08, 0.06, 0.02, rim, 0, 0.4, 0.21, t, false);       // пряжка
+      box(w + 0.02, 0.06, 0.4, m2, 0, 0.18, 0, t, false);
+    }
+    P.arms.forEach((a, i) => {
+      const sx = i ? 1 : -1;
+      const g = group(a, 0, 0, 0); P.armor.push(g);
+      const sh = sph(0.27, iron ? 0.2 : 0.16, 0.27, m1, sx * 0.02, 0.02, 0, g, true); // наплечник
+      if (iron) box(0.22, 0.04, 0.24, rim, sx * 0.02, -0.06, 0, g, false);
+      box(0.18, 0.18, 0.2, iron ? m1 : m2, 0, -0.44, 0, g);     // наруч
+    });
+    P.legs.forEach(l => {
+      const g = group(l, 0, 0, 0); P.armor.push(g);
+      if (iron) { box(0.24, 0.3, 0.26, m1, 0, -0.5, 0.01, g); sph(0.12, 0.1, 0.1, m2, 0, -0.36, 0.12, g, true); }
+      else box(0.24, 0.16, 0.26, m2, 0, -0.06, 0, g);           // кожаная юбка
+    });
+  }
   function makeTool(kind, tier) {
     const g = new THREE.Group();
-    const headC = [0x8a6a44, 0x8a8a8a, 0xd8dce4][Math.max(0, tier)] || 0x8a6a44;
-    const metal = tier >= 2 ? { metalness: 0.6, roughness: 0.35 } : undefined;
+    const headC = [0x8a6a44, 0x8a8a8a, 0xd8dce4, 0xe0204a][Math.max(0, tier)] || 0x8a6a44;
+    const metal = tier >= 3 ? { emissive: 0xa00020, emissiveIntensity: 0.7, roughness: 0.25 } : tier >= 2 ? { metalness: 0.6, roughness: 0.35 } : undefined;
     cyl(0.035, 0.035, 0.75, 0x6a4424, 0, 0.25, 0, g, 6);
-    if (kind === 'axe') {
+    if (kind === 'axe' && tier >= 4) { // бензопила
+      g.children[0].visible = false;
+      box(0.07, 0.14, 0.12, 0x2a2a2a, 0, 0.0, 0, g);                     // рукоять
+      box(0.2, 0.24, 0.36, 0xf08a10, 0, 0.18, -0.04, g);                  // корпус
+      box(0.21, 0.08, 0.2, 0x2a2a2a, 0, 0.33, -0.08, g, false);
+      box(0.04, 0.8, 0.14, mat(0xc8ccd4, { metalness: 0.6, roughness: 0.35 }), 0, 0.68, 0.06, g);  // шина
+      cyl(0.07, 0.07, 0.05, 0xc8ccd4, 0, 1.08, 0.06, g, 10).rotation.z = Math.PI / 2;
+      for (let i = 0; i < 8; i++) box(0.06, 0.04, 0.18, 0x3a3a3a, 0, 0.33 + i * 0.1, 0.06, g, false); // цепь
+    } else if (kind === 'pick' && tier >= 4) { // отбойный молоток
+      g.children[0].visible = false;
+      box(0.36, 0.06, 0.06, 0x2a2a2a, 0, -0.02, 0, g);                   // поперечная рукоять
+      box(0.18, 0.4, 0.18, 0xf2c41a, 0, 0.22, 0, g);                      // корпус
+      box(0.2, 0.06, 0.2, 0x2a2a2a, 0, 0.44, 0, g, false);
+      cyl(0.06, 0.07, 0.24, 0x5a5a62, 0, 0.56, 0, g, 8);
+      const bit = mat(0xe0204a, { emissive: 0x900018, emissiveIntensity: 0.6, roughness: 0.25 });
+      cyl(0.03, 0.03, 0.34, bit, 0, 0.82, 0, g, 6); cone(0.04, 0.1, bit, 0, 1.02, 0, g, 6, false);
+    } else if (kind === 'axe') {
       box(0.06, 0.2, 0.24, mat(headC, metal), 0, 0.52, 0.1, g);
-      box(0.04, 0.24, 0.05, mat(tier >= 1 ? 0xcfd2d8 : 0x6a4a2a, metal), 0, 0.52, 0.23, g, false);
+      box(0.04, 0.24, 0.05, mat(tier >= 3 ? 0xff5070 : tier >= 1 ? 0xcfd2d8 : 0x6a4a2a, metal), 0, 0.52, 0.23, g, false);
     } else if (kind === 'pick') {
       const a = box(0.06, 0.06, 0.32, mat(headC, metal), 0, 0.58, 0.14, g); a.rotation.x = 0.35;
       const b = box(0.06, 0.06, 0.32, mat(headC, metal), 0, 0.58, -0.14, g); b.rotation.x = -0.35;
@@ -387,9 +439,11 @@ const Models = (() => {
       box(0.14, 0.14, 0.26, 0x5a5a5a, 0, 0.56, 0, g);
     } else if (kind === 'sword') {
       g.children[0].visible = false;
-      const steel = mat(0xdde2ea, { metalness: 0.8, roughness: 0.25 });
+      // 0 — дерево, 1 — камень, 2 — сталь, 3 — рубин
+      const st = Math.max(0, Math.min(3, tier));
+      const steel = [mat(0xa87444, { roughness: 0.9 }), mat(0x9a9a96, { roughness: 0.85 }), mat(0xdde2ea, { metalness: 0.8, roughness: 0.25 }), mat(0xe8204a, { emissive: 0xb00024, emissiveIntensity: 0.8, roughness: 0.2 })][st];
       cyl(0.035, 0.035, 0.22, 0x5a3a1a, 0, 0.0, 0, g, 6);
-      box(0.3, 0.05, 0.08, 0xd8b040, 0, 0.12, 0, g);
+      box(0.3, 0.05, 0.08, st >= 2 ? 0xd8b040 : 0x6a4424, 0, 0.12, 0, g);
       box(0.08, 0.85, 0.025, steel, 0, 0.56, 0, g);
       cone(0.04, 0.12, steel, 0, 1.04, 0, g, 4, false);
     } else if (kind === 'bow') {
@@ -855,6 +909,16 @@ const Models = (() => {
         const wh = torus(0.7, 0.07, 0x5a5a62, 0, 4.4, 0, g, 16); g.userData.spin = wh;
         cyl(0.03, 0.03, 4.2, 0x2a2a2a, 0, 2.2, 0, g, 4, false);
         box(0.8, 0.5, 0.6, 0x5a5a62, 1.6, 0.5, 0, g); for (let i = 0; i < 3; i++) sph(0.25, 0.2, 0.25, 0x606060, 1.5 + i * 0.12, 0.85, 0, g, true);
+        if (lvl >= 2) { // железные распорки и вагонетка с рудой
+          [-1, 1].forEach(sx => box(0.1, 0.1, 1.4, 0x8a8f98, sx * 0.9, 2.6, 0, g));
+          box(0.9, 0.5, 0.7, 0x6a6e76, -1.6, 0.45, 0, g); for (let i = 0; i < 3; i++) sph(0.22, 0.18, 0.22, 0xc87a40, -1.7 + i * 0.12, 0.8, 0, g, true);
+          box(1.9, 0.12, 1.5, 0x8a8f98, 0, 4.05, 0, g);
+        }
+        if (lvl >= 3) { // рубины на крыше и в вагонетке
+          const rm = mat(0xe8204a, { emissive: 0xb00024, emissiveIntensity: 0.9, roughness: 0.25 });
+          [[-0.7, 0.55], [0.7, -0.55], [0, 0]].forEach(([x, z], i) => { const c = new THREE.Mesh(new THREE.OctahedronGeometry(0.28, 0), rm); c.scale.set(0.8, 1.6, 0.8); c.position.set(x, 4.45 + (i === 2 ? 0.95 : 0), z); g.add(c); });
+          for (let i = 0; i < 3; i++) sph(0.18, 0.16, 0.18, rm, 1.5 + i * 0.12, 1.0, 0.1, g, true);
+        }
         break;
       }
       case 'core': {
@@ -928,10 +992,11 @@ const Models = (() => {
     const stone = merge([[new THREE.DodecahedronGeometry(1, 0), 0x9a9a96, mtx(0, 0.5, 0, 1.2, 0.85, 1)], [new THREE.DodecahedronGeometry(0.6, 0), 0x8a8a86, mtx(0.8, 0.3, 0.3)]]);
     const coal = merge([[new THREE.DodecahedronGeometry(1, 0), 0x6a6a66, mtx(0, 0.5, 0, 1.1, 0.8, 1)], [new THREE.OctahedronGeometry(0.35, 0), 0x151515, mtx(0.5, 0.8, 0.5)], [new THREE.OctahedronGeometry(0.3, 0), 0x101010, mtx(-0.6, 0.6, 0.2)], [new THREE.OctahedronGeometry(0.28, 0), 0x1a1a1a, mtx(0.1, 1.0, -0.5)]]);
     const iron = merge([[new THREE.DodecahedronGeometry(1, 0), 0x7a706a, mtx(0, 0.5, 0, 1.1, 0.85, 1)], [new THREE.OctahedronGeometry(0.32, 0), 0xc87a40, mtx(0.55, 0.8, 0.4)], [new THREE.OctahedronGeometry(0.28, 0), 0xd88a50, mtx(-0.6, 0.6, 0.3)], [new THREE.OctahedronGeometry(0.25, 0), 0xb06a34, mtx(0, 1.05, -0.45)]]);
+    const ruby = merge([[new THREE.DodecahedronGeometry(1, 0), 0x5a5054, mtx(0, 0.5, 0, 1.1, 0.85, 1)], [new THREE.OctahedronGeometry(0.4, 0), 0xe0204a, mtx(0.45, 1.2, 0.35, 1, 1.7, 1)], [new THREE.OctahedronGeometry(0.32, 0), 0xff3a5e, mtx(-0.55, 1.0, 0.3, 1, 1.6, 1)], [new THREE.OctahedronGeometry(0.3, 0), 0xc01036, mtx(0.05, 1.35, -0.35, 1, 1.8, 1)]]);
     const berry = merge([[new THREE.IcosahedronGeometry(0.8, 0), 0x3a7a30, mtx(0, 0.6, 0, 1.2, 0.9, 1.2)], [new THREE.IcosahedronGeometry(0.55, 0), 0x46883a, mtx(0.5, 0.5, 0.3)],
       ...[[0.5, 0.9, 0.5], [-0.6, 0.7, 0.4], [0.2, 1.1, -0.4], [-0.3, 0.9, 0.7], [0.7, 0.6, -0.3], [0, 0.4, 0.95]].map(p => [new THREE.IcosahedronGeometry(0.11, 0), 0xd02040, mtx(p[0], p[1], p[2])])]);
-    return { stone, coal, iron, berry };
+    return { stone, coal, iron, ruby, berry };
   }
 
-  return { setDetail, get detail() { return HI; }, makeHelicopter, setGear, mat, texMat, T, box, sph, cyl, cone, torus, group, makeBird, animBird, makeHero, makeTool, animHero, makeEnemy, animEnemy, makeBuilding, makeCannon, merge, mtx, treeGeos, rockGeos, WALL_H: l => WALL_LEVELS[l - 1].h };
+  return { setDetail, get detail() { return HI; }, makeHelicopter, setGear, setArmor, mat, texMat, T, box, sph, cyl, cone, torus, group, makeBird, animBird, makeHero, makeTool, animHero, makeEnemy, animEnemy, makeBuilding, makeCannon, merge, mtx, treeGeos, rockGeos, WALL_H: l => WALL_LEVELS[l - 1].h };
 })();

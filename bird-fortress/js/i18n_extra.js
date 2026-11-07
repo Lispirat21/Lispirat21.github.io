@@ -113,3 +113,43 @@ Object.assign(TR_UI, {
   mp_server:   ["Could not reach the connection server. Check your internet or try Wi-Fi.", "Не удалось связаться с сервером соединения. Проверьте интернет или попробуйте через Wi-Fi.", "No se pudo contactar el servidor de conexión. Revisa internet o prueba Wi-Fi.", "Não foi possível alcançar o servidor. Verifique a internet ou use Wi-Fi.", "Serveur de connexion injoignable. Vérifiez internet ou essayez le Wi-Fi.", "Verbindungsserver nicht erreichbar. Internet prüfen oder WLAN nutzen.", "无法连接服务器，请检查网络或改用 Wi-Fi。", "接続サーバーに届きません。ネットかWi-Fiを確認してください。", "कनेक्शन सर्वर तक नहीं पहुँचे। इंटरनेट जाँचें या Wi-Fi आज़माएँ।", "تعذّر الوصول لخادم الاتصال. تحقق من الإنترنت أو جرّب Wi-Fi."],
   mp_sandbox:  ["Multiplayer does not work on this page (network is blocked here). Open the game on the site: lispirat21.github.io/bird-fortress", "Совместная игра не работает на этой странице (здесь запрещена сеть). Откройте игру на сайте: lispirat21.github.io/bird-fortress", "El multijugador no funciona en esta página. Abre el juego en: lispirat21.github.io/bird-fortress", "O multijogador não funciona nesta página. Abra o jogo em: lispirat21.github.io/bird-fortress", "Le multijoueur ne marche pas sur cette page. Ouvrez le jeu sur : lispirat21.github.io/bird-fortress", "Mehrspieler funktioniert hier nicht. Öffne das Spiel auf: lispirat21.github.io/bird-fortress", "此页面无法多人游戏（网络被禁用）。请在网站打开：lispirat21.github.io/bird-fortress", "このページではマルチプレイ不可。サイトで開いてください：lispirat21.github.io/bird-fortress", "इस पेज पर मल्टीप्लेयर नहीं चलता। साइट पर खोलें: lispirat21.github.io/bird-fortress", "اللعب الجماعي لا يعمل هنا. افتح اللعبة على: lispirat21.github.io/bird-fortress"],
 });
+Object.assign(TR_DATA, {
+  'a.leather':  ["Leather Armor", "Кожаная броня", "Armadura de cuero", "Armadura de couro", "Armure de cuir", "Lederrüstung", "皮甲", "革の鎧", "चमड़े का कवच", "درع جلدي"],
+  'ad.leather': ["Vest, shoulder pads and bracers. −20% damage taken.", "Жилет, наплечники и наручи. −20% получаемого урона.", "Chaleco, hombreras y brazales. −20% de daño recibido.", "Colete, ombreiras e braçadeiras. −20% de dano recebido.", "Gilet, épaulettes et brassards. −20 % de dégâts subis.", "Weste, Schulterpolster und Armschienen. −20 % Schaden.", "背心、护肩和护腕。受到伤害−20%。", "ベスト、肩当て、籠手。被ダメージ−20%。", "बनियान, कंधे और कलाई रक्षक। −20% नुकसान।", "صدرية وواقيات أكتاف وسواعد. −20% من الضرر."],
+  'a.iron':     ["Iron Armor", "Железная броня", "Armadura de hierro", "Armadura de ferro", "Armure de fer", "Eisenrüstung", "铁甲", "鉄の鎧", "लोहे का कवच", "درع حديدي"],
+  'ad.iron':    ["Steel breastplate, pauldrons and greaves. −40% damage taken.", "Стальной нагрудник, наплечники и поножи. −40% получаемого урона.", "Peto de acero, hombreras y grebas. −40% de daño recibido.", "Peitoral de aço, ombreiras e grevas. −40% de dano recebido.", "Plastron d'acier, spalières et jambières. −40 % de dégâts subis.", "Stahlbrustplatte, Schulterplatten und Beinschienen. −40 % Schaden.", "钢制胸甲、肩甲和护腿。受到伤害−40%。", "鋼の胸当て、肩鎧、すね当て。被ダメージ−40%。", "इस्पात का सीना, कंधे और पैर कवच। −40% नुकसान।", "صدرية فولاذية وواقيات أكتاف وسيقان. −40% من الضرر."],
+});
+Object.assign(TR_UI, {
+  armor_title: ["🛡 Armor — less damage", "🛡 Броня — меньше урона", "🛡 Armadura — menos daño", "🛡 Armadura — menos dano", "🛡 Armure — moins de dégâts", "🛡 Rüstung — weniger Schaden", "🛡 护甲 — 减少伤害", "🛡 鎧 — ダメージ軽減", "🛡 कवच — कम नुकसान", "🛡 الدروع — ضرر أقل"],
+});
+Object.assign(TR_DATA, {
+  'r.ruby': ["Rubies", "Рубины", "Rubíes", "Rubis", "Rubis", "Rubine", "红宝石", "ルビー", "माणिक", "ياقوت"],
+  'n.ruby': ["ruby ore", "рубиновая руда", "mena de rubí", "minério de rubi", "minerai de rubis", "Rubinerz", "红宝石矿", "ルビー鉱石", "माणिक अयस्क", "خام الياقوت"],
+  'ax3': ["Ruby Axe", "Рубиновый топор", "Hacha de rubí", "Machado de rubi", "Hache en rubis", "Rubinaxt", "红宝石斧", "ルビーの斧", "माणिक कुल्हाड़ी", "فأس الياقوت"],
+  'pk3': ["Ruby Pickaxe", "Рубиновая кирка", "Pico de rubí", "Picareta de rubi", "Pioche en rubis", "Rubinspitzhacke", "红宝石镐", "ルビーのツルハシ", "माणिक कुदाल", "معول الياقوت"],
+  'sw0': ["Wooden Sword", "Деревянный меч", "Espada de madera", "Espada de madeira", "Épée en bois", "Holzschwert", "木剑", "木の剣", "लकड़ी की तलवार", "سيف خشبي"],
+  'sw1': ["Stone Sword", "Каменный меч", "Espada de piedra", "Espada de pedra", "Épée en pierre", "Steinschwert", "石剑", "石の剣", "पत्थर की तलवार", "سيف حجري"],
+  'sw2': ["Iron Sword", "Железный меч", "Espada de hierro", "Espada de ferro", "Épée en fer", "Eisenschwert", "铁剑", "鉄の剣", "लोहे की तलवार", "سيف حديدي"],
+  'sw3': ["Ruby Sword", "Рубиновый меч", "Espada de rubí", "Espada de rubi", "Épée en rubis", "Rubinschwert", "红宝石剑", "ルビーの剣", "माणिक तलवार", "سيف الياقوت"],
+});
+Object.assign(TR_UI, {
+  tb_weapon: ["Weapon", "Оружие", "Arma", "Arma", "Arme", "Waffe", "武器", "武器", "हथियार", "سلاح"],
+  no_sword: ["No sword yet! Craft one in the workshop.", "Меча пока нет! Сделайте его в мастерской.", "¡Aún no tienes espada! Créala en el taller.", "Ainda sem espada! Faça uma na oficina.", "Pas encore d'épée ! Fabriquez-en une à l'atelier.", "Noch kein Schwert! Stelle eins in der Werkstatt her.", "还没有剑！去工坊制作。", "まだ剣がない！工房で作ろう。", "अभी तलवार नहीं! कार्यशाला में बनाएँ।", "لا سيف بعد! اصنعه في الورشة."],
+  sword_dmg: ["Damage ×{n}", "Урон ×{n}", "Daño ×{n}", "Dano ×{n}", "Dégâts ×{n}", "Schaden ×{n}", "伤害 ×{n}", "ダメージ ×{n}", "नुकसान ×{n}", "الضرر ×{n}"],
+  sword_need: ["Hits enemies much harder than an axe", "Бьёт врагов гораздо сильнее топора", "Golpea mucho más fuerte que un hacha", "Bate muito mais forte que um machado", "Frappe bien plus fort qu'une hache", "Trifft viel härter als eine Axt", "比斧头伤害高得多", "斧よりずっと強く敵を斬る", "कुल्हाड़ी से कहीं ज़्यादा नुकसान", "يضرب الأعداء أقوى بكثير من الفأس"],
+  need_pick3: ["Rubies need an iron pickaxe", "Для рубинов нужна железная кирка", "Los rubíes requieren pico de hierro", "Rubis exigem picareta de ferro", "Les rubis exigent une pioche en fer", "Rubine brauchen eine Eisenspitzhacke", "红宝石需要铁镐", "ルビーには鉄のツルハシが必要", "माणिक के लिए लोहे की कुदाल चाहिए", "الياقوت يحتاج معولًا حديديًا"],
+});
+Object.assign(TR_DATA, {
+  'Bd.minelift': ["Only in the quarry. Mines stone and coal; upgrades add iron, then rubies.", "Ставится в карьере. Добывает камень и уголь, после улучшений — железо, а потом рубины.", "Solo en la cantera. Extrae piedra y carbón; mejoras: hierro y rubíes.", "Só na pedreira. Extrai pedra e carvão; melhorias: ferro e rubis.", "Seulement dans la carrière. Pierre et charbon ; améliorations : fer puis rubis.", "Nur im Steinbruch. Stein und Kohle; Upgrades: Eisen, dann Rubine.", "仅限采石场。开采石头和煤，升级后开采铁和红宝石。", "採石場専用。石と石炭、強化で鉄とルビーも。", "केवल खदान में। पत्थर और कोयला; उन्नयन से लोहा, फिर माणिक।", "في المحجر فقط. حجر وفحم، وبالتطوير حديد ثم ياقوت."],
+  'll1': ["Mine Hoist", "Подъёмник", "Montacargas", "Elevador", "Chevalement", "Förderturm", "矿井升降机", "巻き上げ機", "खदान लिफ्ट", "رافعة المنجم"],
+  'll2': ["Reinforced Hoist", "Усиленный подъёмник", "Montacargas reforzado", "Elevador reforçado", "Chevalement renforcé", "Verstärkter Förderturm", "加固升降机", "強化巻き上げ機", "मज़बूत लिफ्ट", "رافعة معززة"],
+  'll3': ["Ruby Hoist", "Рубиновый подъёмник", "Montacargas de rubí", "Elevador de rubi", "Chevalement à rubis", "Rubin-Förderturm", "红宝石升降机", "ルビー巻き上げ機", "माणिक लिफ्ट", "رافعة الياقوت"],
+  'ax4': ["Chainsaw", "Бензопила", "Motosierra", "Motosserra", "Tronçonneuse", "Kettensäge", "电锯", "チェーンソー", "चेनसॉ", "منشار آلي"],
+  'pk4': ["Jackhammer", "Отбойный молоток", "Martillo neumático", "Britadeira", "Marteau-piqueur", "Presslufthammer", "风镐", "削岩機", "जैकहैमर", "مطرقة هوائية"],
+  'a.ruby': ["Ruby Armor", "Рубиновая броня", "Armadura de rubí", "Armadura de rubi", "Armure de rubis", "Rubinrüstung", "红宝石甲", "ルビーの鎧", "माणिक कवच", "درع الياقوت"],
+  'ad.ruby': ["Glowing ruby plates. −60% damage taken.", "Сияющие рубиновые латы. −60% получаемого урона.", "Placas de rubí brillantes. −60% de daño recibido.", "Placas de rubi brilhantes. −60% de dano recebido.", "Plaques de rubis lumineuses. −60 % de dégâts subis.", "Leuchtende Rubinplatten. −60 % Schaden.", "闪耀的红宝石甲片。受到伤害−60%。", "輝くルビーの鎧。被ダメージ−60%。", "चमकती माणिक प्लेटें। −60% नुकसान।", "صفائح ياقوت لامعة. −60% من الضرر."],
+});
+Object.assign(TR_UI, {
+  mine_head: ["Mines:", "Добывает:", "Extrae:", "Extrai:", "Extrait :", "Fördert:", "开采：", "採掘：", "निकालता है:", "يستخرج:"],
+  mine_each: ["{a} every {x}s", "{a} раз в {x}с", "{a} cada {x}s", "{a} a cada {x}s", "{a} toutes les {x}s", "{a} alle {x}s", "{a} 每{x}秒", "{a} {x}秒ごと", "{a} हर {x}से", "{a} كل {x}ث"],
+});

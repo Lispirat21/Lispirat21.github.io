@@ -287,11 +287,14 @@ function applyDataLang() {
   GATE_LEVELS.forEach((l, i) => l.name = tr('gl' + (i + 1)));
   BALLISTA_LEVELS.forEach((l, i) => l.name = tr('bl' + (i + 1)));
   SHAFT_LEVELS.forEach((l, i) => l.name = tr('sl' + (i + 1)));
+  if (typeof LIFT_LEVELS !== 'undefined') LIFT_LEVELS.forEach((l, i) => l.name = tr('ll' + (i + 1)));
   for (const k in TECH) { TECH[k].name = tr('t.' + k); TECH[k].desc = tr('td.' + k); }
   AXES.forEach((a, i) => a.name = tr('ax' + i));
   PICKS.forEach((a, i) => a.name = tr('pk' + i));
+  if (typeof SWORDS !== 'undefined') SWORDS.forEach((a, i) => a.name = tr('sw' + i));
   for (const k in NODE_INFO) NODE_INFO[k].name = tr('n.' + k);
   for (const k in GEAR) { GEAR[k].name = tr('g.' + k); GEAR[k].desc = tr('gd.' + k); }
+  if (typeof ARMOR !== 'undefined') for (const k in ARMOR) { ARMOR[k].name = tr('a.' + k); ARMOR[k].desc = tr('ad.' + k); }
   for (const k in DIFFICULTY) { DIFFICULTY[k].name = tr('d.' + k); DIFFICULTY[k].desc = tr('dd.' + k); }
   QUESTS.forEach((q, i) => q.text = tr('q' + i));
   if (typeof World !== 'undefined' && World.BIOMES) World.BIOMES.forEach(b => b.name = tr('bio.' + b.id));
