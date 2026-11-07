@@ -60,7 +60,7 @@ const G = window.G = {};
     const res = G.settings.resolution;
     let pr;
     if (res && res !== 'auto') pr = parseInt(res, 10) / h;
-    else pr = Math.min(window.devicePixelRatio || 1, { low: 0.75, medium: 1, high: 1.5, ultra: 2 }[G.settings.quality] || 1);
+    else pr = Math.min(window.devicePixelRatio || 1, { low: 0.75, medium: 1, high: 1.5, ultra: 2, pc: 2 }[G.settings.quality] || 1);
     renderer.setPixelRatio(clamp(pr, 0.4, 3));
     renderer.setSize(w, h, false);
     camera.aspect = w / h; camera.updateProjectionMatrix();
@@ -69,11 +69,27 @@ const G = window.G = {};
   };
   G.applyQuality = function () {
     const q = G.settings.quality;
+    const hi = q === 'pc';
+    if (Models.detail !== hi) { Models.setDetail(hi); rebuildCreatures(); }
     World.applyQuality(q);
-    const far = { low: 150, medium: 220, high: 280, ultra: 340 }[q] || 220;
+    const far = { low: 150, medium: 220, high: 280, ultra: 340, pc: 420 }[q] || 220;
     scene.fog.far = far; scene.fog.near = far * 0.3; camera.far = far + 650; camera.updateProjectionMatrix();
     G.resize();
   };
+
+  // Пересоздать модели птиц, зверей и героя (при переключении на графику «ПК» и обратно)
+  function rebuildCreatures() {
+    if (!scene) return;
+    const swap = (old, fresh) => { fresh.position.copy(old.position); fresh.rotation.copy(old.rotation); fresh.visible = old.visible; if (old.userData.baseScale) fresh.scale.setScalar(old.scale.x); scene.remove(old); scene.add(fresh); return fresh; };
+    BD.forEach(b => { b.mesh = swap(b.mesh, Models.makeBird(b.sp)); });
+    E.forEach(e => { e.mesh = swap(e.mesh, Models.makeEnemy(e.type)); });
+    if (menuBird) { const m = Models.makeBird('parrot'); m.scale.setScalar(1.6); menuBird = swap(menuBird, m); menuBird.scale.setScalar(1.6); }
+    if (P && S) {
+      const fresh = Models.makeHero(S.hero); fresh.traverse(o => { if (o.isMesh) o.castShadow = true; });
+      P.mesh = swap(P.mesh, fresh); P.tool = null; P.toolTier = -9; setTool('axe');
+      if (S.gear) Models.setGear(P.mesh, S.gear.eq);
+    }
+  }
 
   // ---------------- Состояние ----------------
   function newState(hero, diff) {

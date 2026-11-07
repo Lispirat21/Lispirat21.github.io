@@ -161,7 +161,14 @@ const UI = window.UI = {};
     $('s-uiScale').value = s.uiScale; $('s-uiScaleV').textContent = s.uiScale + '%';
     $('s-musicVol').value = s.musicVol; $('s-sfxVol').value = s.sfxVol; $('s-camDist').value = s.camDist; $('s-sens').value = s.sens;
   }
-  document.querySelectorAll('#s-quality button').forEach(b => tap(b, () => { G.settings.quality = b.dataset.v; saveSettings(); renderSettings(); G.applyQuality(); }));
+  function setQuality(v) { G.settings.quality = v; saveSettings(); renderSettings(); G.applyQuality(); }
+  // «ПК»: сначала предупреждение, переключаем только после «Применить»
+  document.querySelectorAll('#s-quality button').forEach(b => tap(b, () => {
+    if (b.dataset.v === 'pc' && G.settings.quality !== 'pc') { $('pcwarn').classList.remove('hidden'); return; }
+    setQuality(b.dataset.v);
+  }));
+  tap($('pcw-cancel'), () => $('pcwarn').classList.add('hidden'));
+  tap($('pcw-apply'), () => { $('pcwarn').classList.add('hidden'); setQuality('pc'); });
   $('s-res').addEventListener('change', () => { G.settings.resolution = $('s-res').value; saveSettings(); G.resize(); });
   ['musicOn', 'sfxOn', 'autoAct'].forEach(k => tap($('s-' + k), () => { G.settings[k] = !G.settings[k]; saveSettings(); renderSettings(); applyAudio(); }));
   ['musicVol', 'sfxVol', 'camDist', 'sens', 'uiScale'].forEach(k => $('s-' + k).addEventListener('input', e => { G.settings[k] = +e.target.value; saveSettings(); applyAudio(); applyUiScale(); $('s-uiScaleV').textContent = G.settings.uiScale + '%'; placeIdleSticks(); }));

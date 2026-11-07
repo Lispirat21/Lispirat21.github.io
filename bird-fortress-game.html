@@ -248,6 +248,18 @@ body.fp #crosshair { display:block; }
 .slotbtn:disabled { filter:grayscale(1) brightness(.7); }
 .slotdel { border:none; border-radius:12px; padding:0 10px; background:linear-gradient(#e86a4a,#b03a2a); color:#fff; font-weight:800; font-size:12px; box-shadow:0 4px 0 #6a1a10; }
 @media (max-height:500px) { #menu.slots-open .title, #menu.slots-open .sub { display:none; } .slotbtn { padding:6px 10px; font-size:14px; } #slotList { gap:6px; } }
+/* ---------- предупреждение о графике «ПК» ---------- */
+#pcwarn { background:rgba(0,0,0,.7); z-index:58; }
+#pcwarn .pcw { width:min(92vw,520px); max-height:92vh; overflow-y:auto; padding:16px 18px; text-align:center; touch-action:pan-y; border-color:#e0a020; }
+#pcwarn h2 { color:#c0301a; font-size:26px; margin:0 0 6px; letter-spacing:1px; }
+.pcw-head { font-size:18px; font-weight:900; color:#6a3a10; }
+#pcwarn p { font-size:14px; margin:8px 0; }
+.pcw-note { background:#ffe8e0; border:2px dashed #e06a4a; border-radius:10px; padding:8px 10px; color:#a02a1a; font-weight:700; }
+.pcw-btns { display:flex; gap:10px; justify-content:center; margin-top:10px; flex-wrap:wrap; }
+.pcw-btns .big { flex:1; min-width:140px; padding:10px 14px; font-size:18px; }
+.seg button.pcq { background:#2a2e3a; color:#ffd24a; }
+.seg button.pcq.on { background:linear-gradient(#ffd24a,#d89a10); color:#4a2a08; }
+@media (max-height:430px) { #pcwarn p { font-size:12px; margin:5px 0; } #pcwarn h2 { font-size:20px; } }
 /* ---------- Золотые птицы ---------- */
 .gbi { width:1.25em; height:1.25em; vertical-align:-0.3em; display:inline-block; }
 #gbBadge { position:fixed; right:calc(max(12px,env(safe-area-inset-right)) + 58px); top:max(16px,env(safe-area-inset-top)); background:#0008; border:2px solid #ffd24a88; border-radius:20px; padding:6px 12px; font-size:18px; color:#ffd24a; }
@@ -347,7 +359,7 @@ body.cutscene #touch { pointer-events:none; }
     <h2 data-i18n="s_title"></h2>
     <div class="row"><label data-i18n="s_lang"></label><select id="s-lang"></select></div>
     <div class="row"><label data-i18n="s_graphics"></label><div class="seg" id="s-quality">
-      <button data-v="low" data-i18n="q_low"></button><button data-v="medium" data-i18n="q_medium"></button><button data-v="high" data-i18n="q_high"></button><button data-v="ultra" data-i18n="q_ultra"></button></div></div>
+      <button data-v="low" data-i18n="q_low"></button><button data-v="medium" data-i18n="q_medium"></button><button data-v="high" data-i18n="q_high"></button><button data-v="ultra" data-i18n="q_ultra"></button><button data-v="pc" class="pcq" data-i18n="q_pc"></button></div></div>
     <div class="row"><label data-i18n="s_res"></label><select id="s-res">
       <option value="auto" data-i18n="res_auto"></option><option value="480">854×480</option><option value="540">960×540</option><option value="720">1280×720</option><option value="900">1600×900</option><option value="1080">1920×1080</option><option value="1440">2560×1440</option></select></div>
     <div class="row"><label data-i18n="s_view"></label><div class="seg" id="s-view"><button data-v="third" data-i18n="view_third"></button><button data-v="first" data-i18n="view_first"></button></div></div>
@@ -452,6 +464,19 @@ body.cutscene #touch { pointer-events:none; }
   <h1 class="title" data-i18n="bye_title"></h1>
   <p data-i18n="bye_txt"></p>
   <button class="big" id="bye-back" style="width:260px" data-i18n="bye_back"></button>
+</div>
+
+<div id="pcwarn" class="screen hidden">
+  <div class="card pcw">
+    <h2 data-i18n="pcw_title"></h2>
+    <div class="pcw-head" data-i18n="pcw_head"></div>
+    <p data-i18n="pcw_txt"></p>
+    <p class="pcw-note" data-i18n="pcw_note"></p>
+    <div class="pcw-btns">
+      <button class="big red" id="pcw-cancel" data-i18n="cancel"></button>
+      <button class="big" id="pcw-apply" data-i18n="apply"></button>
+    </div>
+  </div>
 </div>
 
 <div id="langpick" class="screen hidden">
@@ -1247,6 +1272,16 @@ Object.assign(TR_UI, {
 Object.assign(TR_DATA, {
   'dd.impossible': ["Eternal night until the end, huge packs, very little time. Masters only.", "Вечная ночь до самого конца, огромные стаи, очень мало времени. Только для мастеров.", "Noche eterna hasta el final, manadas enormes, poco tiempo. Solo expertos.", "Noite eterna até o fim, bandos enormes, pouco tempo. Só mestres.", "Nuit éternelle jusqu'à la fin, meutes énormes, peu de temps. Experts.", "Ewige Nacht bis zum Ende, riesige Rudel, kaum Zeit. Nur für Profis.", "永夜直到结局，巨大兽群，时间极少，仅限高手。", "最後まで永遠の夜、巨大な群れ、時間わずか。達人向け。", "अंत तक अनंत रात, विशाल झुंड, बहुत कम समय। सिर्फ़ उस्ताद।", "ليل أبدي حتى النهاية، قطعان هائلة ووقت قليل. للمحترفين فقط."],
 });
+// Графика «ПК» и предупреждение
+Object.assign(TR_UI, {
+  q_pc:      ["PC", "ПК", "PC", "PC", "PC", "PC", "电脑", "PC", "पीसी", "PC"],
+  pcw_title: ["⚠️ WARNING", "⚠️ ПРЕДУПРЕЖДЕНИЕ", "⚠️ ADVERTENCIA", "⚠️ AVISO", "⚠️ AVERTISSEMENT", "⚠️ WARNUNG", "⚠️ 警告", "⚠️ 警告", "⚠️ चेतावनी", "⚠️ تحذير"],
+  pcw_head:  ["This graphics is not for phones", "Эта графика не для телефонов", "Estos gráficos no son para móviles", "Estes gráficos não são para celulares", "Ces graphismes ne sont pas pour les téléphones", "Diese Grafik ist nicht für Handys", "此画质不适合手机", "このグラフィックはスマホ向けではありません", "यह ग्राफ़िक्स फ़ोन के लिए नहीं है", "هذه الرسومات ليست للهواتف"],
+  pcw_txt:   ["“PC” graphics: detailed birds and beasts, three times more grass swaying in the wind, sharp wide shadows, rippling water and a far view distance. It needs a powerful computer.", "Графика «ПК»: детализированные птицы и звери, в 3 раза больше травы, которая качается на ветру, чёткие широкие тени, вода с рябью и большая дальность обзора. Нужен мощный компьютер.", "Gráficos «PC»: aves y bestias detalladas, el triple de hierba que se mece con el viento, sombras nítidas, agua con ondas y gran distancia de visión. Requiere un ordenador potente.", "Gráficos «PC»: pássaros e feras detalhados, o triplo de grama balançando ao vento, sombras nítidas, água com ondulações e grande distância de visão. Requer um computador potente.", "Graphismes « PC » : oiseaux et bêtes détaillés, trois fois plus d'herbe ondulant au vent, ombres nettes, eau ondulante et grande distance de vue. Nécessite un ordinateur puissant.", "„PC“-Grafik: detaillierte Vögel und Tiere, dreimal mehr Gras im Wind, scharfe Schatten, Wasser mit Wellen und große Sichtweite. Braucht einen starken Computer.", "“电脑”画质：精细的鸟和野兽、三倍随风摇曳的草、清晰的大范围阴影、波光粼粼的水面和更远视距。需要高性能电脑。", "「PC」グラフィック：細かい鳥と獣、風に揺れる3倍の草、くっきりした広い影、波打つ水面、遠くまでの視界。高性能なPCが必要です。", "“पीसी” ग्राफ़िक्स: विस्तृत पक्षी और जानवर, हवा में झूमती तीन गुना घास, साफ़ चौड़ी छायाएँ, लहरदार पानी और दूर तक दृश्य। ताक़तवर कंप्यूटर चाहिए।", "رسومات «PC»: طيور ووحوش مفصّلة، عشب أكثر بثلاث مرات يتمايل مع الريح، ظلال حادة، ماء متموج ومدى رؤية بعيد. تحتاج حاسوبًا قويًا."],
+  pcw_note:  ["We do not recommend turning it on on a phone: the game may lag, the phone may heat up and drain its battery fast.", "Не рекомендуем включать на телефоне: игра может тормозить, телефон — греться и быстро садиться.", "No recomendamos activarlo en el móvil: el juego puede ir lento y el teléfono calentarse y gastar batería.", "Não recomendamos ativar no celular: o jogo pode travar e o aparelho esquentar e gastar bateria.", "Nous déconseillons de l'activer sur téléphone : le jeu peut ramer, le téléphone chauffer et vider sa batterie.", "Wir raten davon ab, es auf dem Handy einzuschalten: Das Spiel kann ruckeln, das Handy heiß werden und den Akku leeren.", "不建议在手机上开启：游戏可能卡顿，手机可能发热并快速耗电。", "スマホでの使用はおすすめしません：動作が重くなり、本体が熱くなって電池がすぐ減ることがあります。", "फ़ोन पर चालू करने की सलाह नहीं: खेल अटक सकता है, फ़ोन गर्म होकर जल्दी बैटरी ख़त्म कर सकता है।", "لا ننصح بتفعيلها على الهاتف: قد تتباطأ اللعبة ويسخن الهاتف وتنفد البطارية بسرعة."],
+  cancel:    ["✖ Cancel", "✖ Отменить", "✖ Cancelar", "✖ Cancelar", "✖ Annuler", "✖ Abbrechen", "✖ 取消", "✖ キャンセル", "✖ रद्द करें", "✖ إلغاء"],
+  apply:     ["✔ Apply", "✔ Применить", "✔ Aplicar", "✔ Aplicar", "✔ Appliquer", "✔ Übernehmen", "✔ 应用", "✔ 適用", "✔ लागू करें", "✔ تطبيق"],
+});
 
 </script>
 <script>
@@ -1485,6 +1520,15 @@ const Models = (() => {
   const G_BOX = new THREE.BoxGeometry(1, 1, 1);
   const G_SPH = new THREE.SphereGeometry(0.5, 12, 9);
   const G_SPH_LO = new THREE.SphereGeometry(0.5, 7, 5);
+  // Графика «ПК»: гладкие высокополигональные формы и дополнительные детали у птиц и зверей
+  const G_SPH_HI = new THREE.SphereGeometry(0.5, 28, 20);
+  let HI = false; const smoothCache = new Map();
+  function setDetail(on) { HI = !!on; }
+  function smooth(m) {
+    if (!HI || !m.flatShading) return m;
+    if (!smoothCache.has(m)) { const c = m.clone(); c.flatShading = false; smoothCache.set(m, c); }
+    return smoothCache.get(m);
+  }
   function M(material) { return typeof material === 'object' ? material : mat(material); }
   function add(m, parent, x, y, z, shadow = true) {
     m.position.set(x || 0, y || 0, z || 0);
@@ -1493,7 +1537,7 @@ const Models = (() => {
     return m;
   }
   function box(w, h, d, c, x, y, z, p, shadow) { const m = add(new THREE.Mesh(G_BOX, M(c)), p, x, y, z, shadow); m.scale.set(w, h, d); return m; }
-  function sph(w, h, d, c, x, y, z, p, lo, shadow) { const m = add(new THREE.Mesh(lo ? G_SPH_LO : G_SPH, M(c)), p, x, y, z, shadow); m.scale.set(w, h, d); return m; }
+  function sph(w, h, d, c, x, y, z, p, lo, shadow) { const m = add(new THREE.Mesh(HI ? G_SPH_HI : (lo ? G_SPH_LO : G_SPH), HI ? smooth(M(c)) : M(c)), p, x, y, z, shadow); m.scale.set(w, h, d); return m; }
   function cyl(rt, rb, h, c, x, y, z, p, seg = 8, shadow) {
     const g = geo('c' + rt + '_' + rb + '_' + h + '_' + seg, () => new THREE.CylinderGeometry(rt, rb, h, seg));
     return add(new THREE.Mesh(g, M(c)), p, x, y, z, shadow);
@@ -1634,6 +1678,16 @@ const Models = (() => {
     if (id === 'parrot') { sph(0.08, bodyS[1] * 0.4, bodyS[2] * 0.6, 0xf0c020, -0.04, -bodyS[1] * 0.12, 0, wingL); sph(0.08, bodyS[1] * 0.4, bodyS[2] * 0.6, 0xf0c020, 0.04, -bodyS[1] * 0.12, 0, wingR); }
     if (id === 'bullfinch') { box(0.11, 0.05, 0.3, 0xf0f0f0, -0.03, -0.12, 0, wingL, false); box(0.11, 0.05, 0.3, 0xf0f0f0, 0.03, -0.12, 0, wingR, false); }
     P.wingL = wingL; P.wingR = wingR; wl.rotation.x = 0.15; wr.rotation.x = 0.15;
+    if (HI) {
+      // маховые перья веером на концах крыльев, блик в глазах, перья на груди
+      const fc = new THREE.Color(wingMat.color || 0x6a4a2a).multiplyScalar(0.7).getHex();
+      [[wingL, -1], [wingR, 1]].forEach(([wg, sx]) => {
+        for (let i = 0; i < 5; i++) { const f = box(0.025, 0.07, bodyS[2] * (0.42 - i * 0.04), fc, sx * 0.03, -bodyS[1] * (0.45 + i * 0.07), -bodyS[2] * 0.42, wg, false); f.rotation.x = 0.35 + i * 0.12; }
+        for (let i = 0; i < 3; i++) { const cv = box(0.03, 0.05, bodyS[2] * 0.5, wingMat, sx * 0.05, -bodyS[1] * (0.12 + i * 0.1), -0.02, wg, false); cv.rotation.x = 0.2; }
+      });
+      [-1, 1].forEach(sx => sph(0.03, 0.03, 0.02, 0xffffff, sx * headS * 0.33, headS * 0.17, headS * (id === 'owl' ? 0.48 : 0.33), head, true, false));
+      for (let i = 0; i < 6; i++) { const a = (i - 2.5) * 0.28; sph(0.13, 0.08, 0.06, bellyMat, Math.sin(a) * bodyS[0] * 0.32, legH + bodyS[1] * (0.25 + (i % 2) * 0.12), bodyS[2] * 0.36 + Math.cos(a) * 0.02, b, true, false); }
+    }
     // хвост
     const tail = group(b, 0, legH + bodyS[1] * 0.55, -bodyS[2] * 0.45); P.tail = tail;
     if (id === 'peacock') {
@@ -1967,6 +2021,14 @@ const Models = (() => {
     else if (type === 'lynx') sph(0.12, 0.12, 0.22, 0x1a1a1a, 0, 0, -0.08, tail, true);
     else if (type === 'boar') { const t = cyl(0.025, 0.025, 0.3, d.c2, 0, -0.12, -0.05, tail, 4); t.rotation.x = 0.4; }
     else if (type === 'monster') { const t = cone(0.3, 1.2, d.c2, 0, -0.2, -0.5, tail, 6); t.rotation.x = -Math.PI / 2 - 0.4; }
+    if (HI) {
+      // шерсть клочьями, когти, клыки, блики в глазах
+      const furC = new THREE.Color(d.c).multiplyScalar(0.85).getHex();
+      for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2; const f = cone(d.w * 0.09, d.h * 0.32, furC, Math.cos(a) * d.w * 0.46, Math.sin(a) * d.h * 0.42, d.len * 0.22, body, 4, false); f.rotation.set(Math.PI / 2 - 0.6, 0, -a + Math.PI / 2); }
+      for (let i = 0; i < 6; i++) { const f = cone(d.w * 0.07, d.h * 0.25, d.c2, (i % 2 ? 1 : -1) * d.w * 0.12, d.h * 0.47, d.len * 0.25 - i * d.len * 0.1, body, 4, false); f.rotation.x = -0.9; }
+      P.legs.forEach(l => { for (let k = -1; k <= 1; k++) { const cl = cone(0.025 * d.w / 0.42 + 0.01, 0.1, 0xe8e0d0, k * d.w * 0.08, -(d.legH + d.h * 0.2) + 0.03, d.w * 0.22, l, 4, false); cl.rotation.x = Math.PI / 2; } });
+      [-1, 1].forEach(sx => { const tth = cone(0.025, 0.1, 0xf4f0e4, sx * d.head * 0.12, -d.head * 0.3, d.head * 0.62, head, 4, false); tth.rotation.x = Math.PI; sph(d.head * 0.05, d.head * 0.05, d.head * 0.03, 0xffffff, sx * d.head * 0.24, d.head * 0.17, d.head * 0.48, head, true, false); });
+    }
     root.userData.parts = P; root.userData.d = d;
     root.userData.baseScale = { monster: 1.1, alpha: 1.15, bearking: 1.25, treant: 1.2, troll: 1.1 }[type] || 1;
     root.scale.setScalar(root.userData.baseScale);
@@ -2380,7 +2442,7 @@ const Models = (() => {
     return { stone, coal, iron, berry };
   }
 
-  return { makeHelicopter, setGear, mat, texMat, T, box, sph, cyl, cone, torus, group, makeBird, animBird, makeHero, makeTool, animHero, makeEnemy, animEnemy, makeBuilding, makeCannon, merge, mtx, treeGeos, rockGeos, WALL_H: l => WALL_LEVELS[l - 1].h };
+  return { setDetail, get detail() { return HI; }, makeHelicopter, setGear, mat, texMat, T, box, sph, cyl, cone, torus, group, makeBird, animBird, makeHero, makeTool, animHero, makeEnemy, animEnemy, makeBuilding, makeCannon, merge, mtx, treeGeos, rockGeos, WALL_H: l => WALL_LEVELS[l - 1].h };
 })();
 
 </script>
@@ -2504,7 +2566,7 @@ const World = (() => {
   // Полностью пересоздаёт мир по сиду
   function generate(seed, biomeId) {
     if (root) { scene.remove(root); owned.forEach(g => g.dispose()); owned = []; }
-    nodes.length = 0; grid.clear();
+    nodes.length = 0; grid.clear(); grassMesh = null; grassBuiltFor = null;
     root = new THREE.Group(); scene.add(root);
     setupSeed(seed, biomeId);
     const BI = W.biome; W.biomeId = BI.id;
@@ -2613,18 +2675,9 @@ const World = (() => {
       [new THREE.ConeGeometry(0.05, 0.45, 3), g2.getHex(), Models.mtx(0.08, 0.22, 0.03, 1, 1, 1, 0, 0, -0.3)],
       [new THREE.ConeGeometry(0.05, 0.4, 3), g1.clone().multiplyScalar(0.85).getHex(), Models.mtx(-0.07, 0.2, -0.02, 1, 1, 1, 0, 0.2, 0.3)],
     ]));
-    const GRASS_MAX = 16000;
     const vMat2 = own(new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.9 }));
-    grassMesh = new THREE.InstancedMesh(blade, vMat2, GRASS_MAX); grassMesh.receiveShadow = true;
-    const gm = new THREE.Matrix4(); let gi = 0, gt = 0;
-    while (gi < GRASS_MAX && gt < GRASS_MAX * 4) {
-      gt++; const a = rnd() * 6.28, R = 18 + Math.pow(rnd(), 0.8) * 130, x = Math.cos(a) * R, z = Math.sin(a) * R;
-      const h = heightAt(x, z); if (h < WATER_Y + 0.3 || h > 14 || mineCarve(x, z).carve > 0.1) continue;
-      if (Math.hypot(x, z) < 26 && rnd() < 0.85) continue;
-      const s = 0.7 + rnd() * 0.9; gm.compose(new THREE.Vector3(x, h, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, rnd() * 6, 0)), new THREE.Vector3(s, s, s));
-      grassMesh.setMatrixAt(gi++, gm);
-    }
-    grassMesh.userData.max = gi; addR(grassMesh);
+    grassBlade = blade; buildGrass(quality);
+    const gm = new THREE.Matrix4();
     const flower = own(Models.merge([[new THREE.CylinderGeometry(0.02, 0.02, 0.4, 3), 0x3a7a2a, Models.mtx(0, 0.2, 0)], [new THREE.IcosahedronGeometry(0.1, 0), 0xffffff, Models.mtx(0, 0.42, 0)]]));
     const FL = Math.round(1500 * BI.flowers);
     flowerMesh = new THREE.InstancedMesh(flower, vMat, FL); flowerMesh.userData.max = FL;
@@ -2652,6 +2705,48 @@ const World = (() => {
     applyQuality(quality);
   }
 
+  // Трава: на графике «ПК» её почти в 3 раза больше; качается на ветру
+  let grassBlade = null, grassMat = null, grassBuiltFor = null;
+  function buildGrass(q) {
+    const MAX = q === 'pc' ? 46000 : 16000;
+    if (grassMesh && grassBuiltFor === MAX) return;
+    if (grassMesh) { root.remove(grassMesh); grassMesh.dispose(); }
+    if (!grassMat) {
+      grassMat = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.9 });
+      grassMat.onBeforeCompile = sh => {
+        sh.uniforms.uTime = { value: 0 }; sh.uniforms.uWind = { value: 1 };
+        sh.vertexShader = 'uniform float uTime; uniform float uWind;\n' + sh.vertexShader.replace('#include <begin_vertex>',
+          '#include <begin_vertex>\n#ifdef USE_INSTANCING\nvec3 ip = vec3(instanceMatrix[3][0], 0.0, instanceMatrix[3][2]);\nfloat sw = sin(uTime * 1.8 + ip.x * 0.35 + ip.z * 0.27) + 0.5 * sin(uTime * 3.1 + ip.x * 0.9);\ntransformed.x += sw * 0.09 * uWind * position.y;\ntransformed.z += sw * 0.05 * uWind * position.y;\n#endif');
+        grassMat.userData.shader = sh;
+      };
+    }
+    const rnd = mulberry32(W.seed + 777);
+    grassMesh = new THREE.InstancedMesh(grassBlade, grassMat, MAX); grassMesh.receiveShadow = true;
+    const gm = new THREE.Matrix4(); let gi = 0, gt = 0;
+    const pc = MAX > 20000;
+    while (gi < MAX && gt < MAX * 4) {
+      gt++; const a = rnd() * 6.28, R = 18 + Math.pow(rnd(), pc ? 1.1 : 0.8) * 130, x = Math.cos(a) * R, z = Math.sin(a) * R;
+      const h = heightAt(x, z); if (h < WATER_Y + 0.3 || h > 14 || mineCarve(x, z).carve > 0.1) continue;
+      if (Math.hypot(x, z) < 26 && rnd() < 0.85) continue;
+      const s = (0.7 + rnd() * 0.9) * (pc ? 1.15 : 1); gm.compose(new THREE.Vector3(x, h, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, rnd() * 6, 0)), new THREE.Vector3(s, s * (pc ? 1.2 : 1), s));
+      grassMesh.setMatrixAt(gi++, gm);
+    }
+    grassMesh.userData.max = gi; grassBuiltFor = MAX; root.add(grassMesh);
+    grassMesh.count = gi;
+  }
+  // Рябь на воде для графики «ПК» (карта нормалей из шума)
+  let waterNormal = null;
+  function makeWaterNormal() {
+    const N = 128, c = document.createElement('canvas'); c.width = c.height = N; const g = c.getContext('2d'); const img = g.createImageData(N, N);
+    const hgt = (x, y) => Math.sin(x * 0.35) * Math.cos(y * 0.29) + 0.6 * Math.sin((x + y) * 0.53) + 0.4 * Math.cos((x - y) * 0.81);
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      const dx = hgt(x + 1, y) - hgt(x - 1, y), dy = hgt(x, y + 1) - hgt(x, y - 1);
+      const nx = -dx * 0.5, ny = -dy * 0.5, nz = 1, l = Math.hypot(nx, ny, nz), i = (y * N + x) * 4;
+      img.data[i] = (nx / l * 0.5 + 0.5) * 255; img.data[i + 1] = (ny / l * 0.5 + 0.5) * 255; img.data[i + 2] = (nz / l * 0.5 + 0.5) * 255; img.data[i + 3] = 255;
+    }
+    g.putImageData(img, 0, 0);
+    const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(60, 60); return t;
+  }
   function updateNodeMatrix(n) {
     const m = new THREE.Matrix4();
     if (!n.alive) m.makeScale(0, 0, 0);
@@ -2780,6 +2875,8 @@ const World = (() => {
     clouds.forEach(c => { c.position.x += c.userData.v * dt; if (c.position.x > center.x + 280) c.position.x = center.x - 280; c.material.color.setScalar(0.35 + 0.65 * daylight); });
     water.material.color.setHex(daylight > 0.3 ? (W.biome.water || 0x3a8ac8) : (W.biome.waterNight || 0x1a3a68));
     water.position.y = WATER_Y + Math.sin(time * 0.8) * 0.04;
+    if (grassMat && grassMat.userData.shader) grassMat.userData.shader.uniforms.uTime.value = time;
+    if (water.material.normalMap) { water.material.normalMap.offset.x = time * 0.012; water.material.normalMap.offset.y = time * 0.008; }
     flock.forEach((b, i) => {
       const f = b.userData.fl, ang = time * f.sp + f.ph;
       b.position.set(f.cx + Math.cos(ang) * f.r, f.h + Math.sin(time * 0.7 + i) * 2, f.cz + Math.sin(ang) * f.r);
@@ -2791,13 +2888,23 @@ const World = (() => {
   function applyQuality(q) {
     quality = q;
     if (!grassMesh) return;
-    const frac = { low: 0, medium: 0.3, high: 0.65, ultra: 1 }[q] ?? 0.3;
+    const pc = q === 'pc';
+    buildGrass(q);
+    const frac = { low: 0, medium: 0.3, high: 0.65, ultra: 1, pc: 1 }[q] ?? 0.3;
     grassMesh.count = Math.floor(grassMesh.userData.max * frac);
     grassMesh.visible = frac > 0;
     flowerMesh.count = Math.floor(flowerMesh.userData.max * Math.max(0.2, frac));
     sun.castShadow = q !== 'low';
-    const ms = { low: 512, medium: 1024, high: 2048, ultra: 4096 }[q] || 1024;
+    const ms = { low: 512, medium: 1024, high: 2048, ultra: 4096, pc: 4096 }[q] || 1024;
+    const ext = pc ? 62 : 38;
+    const sc = sun.shadow.camera;
+    if (sc.right !== ext) { sc.left = -ext; sc.right = ext; sc.top = ext; sc.bottom = -ext; sc.updateProjectionMatrix(); }
+    sun.shadow.normalBias = pc ? 0.02 : 0.03;
     if (sun.shadow.mapSize.x !== ms) { sun.shadow.mapSize.set(ms, ms); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
+    // вода: рябь и блики на «ПК»
+    if (pc && !waterNormal) waterNormal = makeWaterNormal();
+    const wm = water.material, wantN = pc ? waterNormal : null;
+    if (wm.normalMap !== wantN) { wm.normalMap = wantN; wm.normalScale = new THREE.Vector2(0.55, 0.55); wm.roughness = pc ? 0.08 : 0.15; wm.metalness = pc ? 0.35 : 0.2; wm.opacity = pc ? 0.84 : 0.78; wm.needsUpdate = true; }
   }
 
   return { build, generate, seedFrom, biomeOf, heightAt, groundAt, inWater, inMine, nodes, nodesNear, updateNodeMatrix, updateSky, applyQuality, WATER_Y, MINE, LAKE, CAVE, BIOMES, get seed() { return W.seed; }, get biome() { return W.biome; }, get biomeId() { return W.biome.id; }, biomeById, get daylight() { return daylight; }, get sun() { return sun; } };
@@ -2867,7 +2974,7 @@ const G = window.G = {};
     const res = G.settings.resolution;
     let pr;
     if (res && res !== 'auto') pr = parseInt(res, 10) / h;
-    else pr = Math.min(window.devicePixelRatio || 1, { low: 0.75, medium: 1, high: 1.5, ultra: 2 }[G.settings.quality] || 1);
+    else pr = Math.min(window.devicePixelRatio || 1, { low: 0.75, medium: 1, high: 1.5, ultra: 2, pc: 2 }[G.settings.quality] || 1);
     renderer.setPixelRatio(clamp(pr, 0.4, 3));
     renderer.setSize(w, h, false);
     camera.aspect = w / h; camera.updateProjectionMatrix();
@@ -2876,11 +2983,27 @@ const G = window.G = {};
   };
   G.applyQuality = function () {
     const q = G.settings.quality;
+    const hi = q === 'pc';
+    if (Models.detail !== hi) { Models.setDetail(hi); rebuildCreatures(); }
     World.applyQuality(q);
-    const far = { low: 150, medium: 220, high: 280, ultra: 340 }[q] || 220;
+    const far = { low: 150, medium: 220, high: 280, ultra: 340, pc: 420 }[q] || 220;
     scene.fog.far = far; scene.fog.near = far * 0.3; camera.far = far + 650; camera.updateProjectionMatrix();
     G.resize();
   };
+
+  // Пересоздать модели птиц, зверей и героя (при переключении на графику «ПК» и обратно)
+  function rebuildCreatures() {
+    if (!scene) return;
+    const swap = (old, fresh) => { fresh.position.copy(old.position); fresh.rotation.copy(old.rotation); fresh.visible = old.visible; if (old.userData.baseScale) fresh.scale.setScalar(old.scale.x); scene.remove(old); scene.add(fresh); return fresh; };
+    BD.forEach(b => { b.mesh = swap(b.mesh, Models.makeBird(b.sp)); });
+    E.forEach(e => { e.mesh = swap(e.mesh, Models.makeEnemy(e.type)); });
+    if (menuBird) { const m = Models.makeBird('parrot'); m.scale.setScalar(1.6); menuBird = swap(menuBird, m); menuBird.scale.setScalar(1.6); }
+    if (P && S) {
+      const fresh = Models.makeHero(S.hero); fresh.traverse(o => { if (o.isMesh) o.castShadow = true; });
+      P.mesh = swap(P.mesh, fresh); P.tool = null; P.toolTier = -9; setTool('axe');
+      if (S.gear) Models.setGear(P.mesh, S.gear.eq);
+    }
+  }
 
   // ---------------- Состояние ----------------
   function newState(hero, diff) {
@@ -4453,7 +4576,14 @@ const UI = window.UI = {};
     $('s-uiScale').value = s.uiScale; $('s-uiScaleV').textContent = s.uiScale + '%';
     $('s-musicVol').value = s.musicVol; $('s-sfxVol').value = s.sfxVol; $('s-camDist').value = s.camDist; $('s-sens').value = s.sens;
   }
-  document.querySelectorAll('#s-quality button').forEach(b => tap(b, () => { G.settings.quality = b.dataset.v; saveSettings(); renderSettings(); G.applyQuality(); }));
+  function setQuality(v) { G.settings.quality = v; saveSettings(); renderSettings(); G.applyQuality(); }
+  // «ПК»: сначала предупреждение, переключаем только после «Применить»
+  document.querySelectorAll('#s-quality button').forEach(b => tap(b, () => {
+    if (b.dataset.v === 'pc' && G.settings.quality !== 'pc') { $('pcwarn').classList.remove('hidden'); return; }
+    setQuality(b.dataset.v);
+  }));
+  tap($('pcw-cancel'), () => $('pcwarn').classList.add('hidden'));
+  tap($('pcw-apply'), () => { $('pcwarn').classList.add('hidden'); setQuality('pc'); });
   $('s-res').addEventListener('change', () => { G.settings.resolution = $('s-res').value; saveSettings(); G.resize(); });
   ['musicOn', 'sfxOn', 'autoAct'].forEach(k => tap($('s-' + k), () => { G.settings[k] = !G.settings[k]; saveSettings(); renderSettings(); applyAudio(); }));
   ['musicVol', 'sfxVol', 'camDist', 'sens', 'uiScale'].forEach(k => $('s-' + k).addEventListener('input', e => { G.settings[k] = +e.target.value; saveSettings(); applyAudio(); applyUiScale(); $('s-uiScaleV').textContent = G.settings.uiScale + '%'; placeIdleSticks(); }));

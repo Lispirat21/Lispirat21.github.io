@@ -117,7 +117,7 @@ const World = (() => {
   // Полностью пересоздаёт мир по сиду
   function generate(seed, biomeId) {
     if (root) { scene.remove(root); owned.forEach(g => g.dispose()); owned = []; }
-    nodes.length = 0; grid.clear();
+    nodes.length = 0; grid.clear(); grassMesh = null; grassBuiltFor = null;
     root = new THREE.Group(); scene.add(root);
     setupSeed(seed, biomeId);
     const BI = W.biome; W.biomeId = BI.id;
@@ -226,18 +226,9 @@ const World = (() => {
       [new THREE.ConeGeometry(0.05, 0.45, 3), g2.getHex(), Models.mtx(0.08, 0.22, 0.03, 1, 1, 1, 0, 0, -0.3)],
       [new THREE.ConeGeometry(0.05, 0.4, 3), g1.clone().multiplyScalar(0.85).getHex(), Models.mtx(-0.07, 0.2, -0.02, 1, 1, 1, 0, 0.2, 0.3)],
     ]));
-    const GRASS_MAX = 16000;
     const vMat2 = own(new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.9 }));
-    grassMesh = new THREE.InstancedMesh(blade, vMat2, GRASS_MAX); grassMesh.receiveShadow = true;
-    const gm = new THREE.Matrix4(); let gi = 0, gt = 0;
-    while (gi < GRASS_MAX && gt < GRASS_MAX * 4) {
-      gt++; const a = rnd() * 6.28, R = 18 + Math.pow(rnd(), 0.8) * 130, x = Math.cos(a) * R, z = Math.sin(a) * R;
-      const h = heightAt(x, z); if (h < WATER_Y + 0.3 || h > 14 || mineCarve(x, z).carve > 0.1) continue;
-      if (Math.hypot(x, z) < 26 && rnd() < 0.85) continue;
-      const s = 0.7 + rnd() * 0.9; gm.compose(new THREE.Vector3(x, h, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, rnd() * 6, 0)), new THREE.Vector3(s, s, s));
-      grassMesh.setMatrixAt(gi++, gm);
-    }
-    grassMesh.userData.max = gi; addR(grassMesh);
+    grassBlade = blade; buildGrass(quality);
+    const gm = new THREE.Matrix4();
     const flower = own(Models.merge([[new THREE.CylinderGeometry(0.02, 0.02, 0.4, 3), 0x3a7a2a, Models.mtx(0, 0.2, 0)], [new THREE.IcosahedronGeometry(0.1, 0), 0xffffff, Models.mtx(0, 0.42, 0)]]));
     const FL = Math.round(1500 * BI.flowers);
     flowerMesh = new THREE.InstancedMesh(flower, vMat, FL); flowerMesh.userData.max = FL;
@@ -265,6 +256,48 @@ const World = (() => {
     applyQuality(quality);
   }
 
+  // Трава: на графике «ПК» её почти в 3 раза больше; качается на ветру
+  let grassBlade = null, grassMat = null, grassBuiltFor = null;
+  function buildGrass(q) {
+    const MAX = q === 'pc' ? 46000 : 16000;
+    if (grassMesh && grassBuiltFor === MAX) return;
+    if (grassMesh) { root.remove(grassMesh); grassMesh.dispose(); }
+    if (!grassMat) {
+      grassMat = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.9 });
+      grassMat.onBeforeCompile = sh => {
+        sh.uniforms.uTime = { value: 0 }; sh.uniforms.uWind = { value: 1 };
+        sh.vertexShader = 'uniform float uTime; uniform float uWind;\n' + sh.vertexShader.replace('#include <begin_vertex>',
+          '#include <begin_vertex>\n#ifdef USE_INSTANCING\nvec3 ip = vec3(instanceMatrix[3][0], 0.0, instanceMatrix[3][2]);\nfloat sw = sin(uTime * 1.8 + ip.x * 0.35 + ip.z * 0.27) + 0.5 * sin(uTime * 3.1 + ip.x * 0.9);\ntransformed.x += sw * 0.09 * uWind * position.y;\ntransformed.z += sw * 0.05 * uWind * position.y;\n#endif');
+        grassMat.userData.shader = sh;
+      };
+    }
+    const rnd = mulberry32(W.seed + 777);
+    grassMesh = new THREE.InstancedMesh(grassBlade, grassMat, MAX); grassMesh.receiveShadow = true;
+    const gm = new THREE.Matrix4(); let gi = 0, gt = 0;
+    const pc = MAX > 20000;
+    while (gi < MAX && gt < MAX * 4) {
+      gt++; const a = rnd() * 6.28, R = 18 + Math.pow(rnd(), pc ? 1.1 : 0.8) * 130, x = Math.cos(a) * R, z = Math.sin(a) * R;
+      const h = heightAt(x, z); if (h < WATER_Y + 0.3 || h > 14 || mineCarve(x, z).carve > 0.1) continue;
+      if (Math.hypot(x, z) < 26 && rnd() < 0.85) continue;
+      const s = (0.7 + rnd() * 0.9) * (pc ? 1.15 : 1); gm.compose(new THREE.Vector3(x, h, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, rnd() * 6, 0)), new THREE.Vector3(s, s * (pc ? 1.2 : 1), s));
+      grassMesh.setMatrixAt(gi++, gm);
+    }
+    grassMesh.userData.max = gi; grassBuiltFor = MAX; root.add(grassMesh);
+    grassMesh.count = gi;
+  }
+  // Рябь на воде для графики «ПК» (карта нормалей из шума)
+  let waterNormal = null;
+  function makeWaterNormal() {
+    const N = 128, c = document.createElement('canvas'); c.width = c.height = N; const g = c.getContext('2d'); const img = g.createImageData(N, N);
+    const hgt = (x, y) => Math.sin(x * 0.35) * Math.cos(y * 0.29) + 0.6 * Math.sin((x + y) * 0.53) + 0.4 * Math.cos((x - y) * 0.81);
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      const dx = hgt(x + 1, y) - hgt(x - 1, y), dy = hgt(x, y + 1) - hgt(x, y - 1);
+      const nx = -dx * 0.5, ny = -dy * 0.5, nz = 1, l = Math.hypot(nx, ny, nz), i = (y * N + x) * 4;
+      img.data[i] = (nx / l * 0.5 + 0.5) * 255; img.data[i + 1] = (ny / l * 0.5 + 0.5) * 255; img.data[i + 2] = (nz / l * 0.5 + 0.5) * 255; img.data[i + 3] = 255;
+    }
+    g.putImageData(img, 0, 0);
+    const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(60, 60); return t;
+  }
   function updateNodeMatrix(n) {
     const m = new THREE.Matrix4();
     if (!n.alive) m.makeScale(0, 0, 0);
@@ -393,6 +426,8 @@ const World = (() => {
     clouds.forEach(c => { c.position.x += c.userData.v * dt; if (c.position.x > center.x + 280) c.position.x = center.x - 280; c.material.color.setScalar(0.35 + 0.65 * daylight); });
     water.material.color.setHex(daylight > 0.3 ? (W.biome.water || 0x3a8ac8) : (W.biome.waterNight || 0x1a3a68));
     water.position.y = WATER_Y + Math.sin(time * 0.8) * 0.04;
+    if (grassMat && grassMat.userData.shader) grassMat.userData.shader.uniforms.uTime.value = time;
+    if (water.material.normalMap) { water.material.normalMap.offset.x = time * 0.012; water.material.normalMap.offset.y = time * 0.008; }
     flock.forEach((b, i) => {
       const f = b.userData.fl, ang = time * f.sp + f.ph;
       b.position.set(f.cx + Math.cos(ang) * f.r, f.h + Math.sin(time * 0.7 + i) * 2, f.cz + Math.sin(ang) * f.r);
@@ -404,13 +439,23 @@ const World = (() => {
   function applyQuality(q) {
     quality = q;
     if (!grassMesh) return;
-    const frac = { low: 0, medium: 0.3, high: 0.65, ultra: 1 }[q] ?? 0.3;
+    const pc = q === 'pc';
+    buildGrass(q);
+    const frac = { low: 0, medium: 0.3, high: 0.65, ultra: 1, pc: 1 }[q] ?? 0.3;
     grassMesh.count = Math.floor(grassMesh.userData.max * frac);
     grassMesh.visible = frac > 0;
     flowerMesh.count = Math.floor(flowerMesh.userData.max * Math.max(0.2, frac));
     sun.castShadow = q !== 'low';
-    const ms = { low: 512, medium: 1024, high: 2048, ultra: 4096 }[q] || 1024;
+    const ms = { low: 512, medium: 1024, high: 2048, ultra: 4096, pc: 4096 }[q] || 1024;
+    const ext = pc ? 62 : 38;
+    const sc = sun.shadow.camera;
+    if (sc.right !== ext) { sc.left = -ext; sc.right = ext; sc.top = ext; sc.bottom = -ext; sc.updateProjectionMatrix(); }
+    sun.shadow.normalBias = pc ? 0.02 : 0.03;
     if (sun.shadow.mapSize.x !== ms) { sun.shadow.mapSize.set(ms, ms); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
+    // вода: рябь и блики на «ПК»
+    if (pc && !waterNormal) waterNormal = makeWaterNormal();
+    const wm = water.material, wantN = pc ? waterNormal : null;
+    if (wm.normalMap !== wantN) { wm.normalMap = wantN; wm.normalScale = new THREE.Vector2(0.55, 0.55); wm.roughness = pc ? 0.08 : 0.15; wm.metalness = pc ? 0.35 : 0.2; wm.opacity = pc ? 0.84 : 0.78; wm.needsUpdate = true; }
   }
 
   return { build, generate, seedFrom, biomeOf, heightAt, groundAt, inWater, inMine, nodes, nodesNear, updateNodeMatrix, updateSky, applyQuality, WATER_Y, MINE, LAKE, CAVE, BIOMES, get seed() { return W.seed; }, get biome() { return W.biome; }, get biomeId() { return W.biome.id; }, biomeById, get daylight() { return daylight; }, get sun() { return sun; } };
