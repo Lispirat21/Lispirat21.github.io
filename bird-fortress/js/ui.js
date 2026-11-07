@@ -14,6 +14,9 @@ const UI = window.UI = {};
   const applyUiScale = () => document.documentElement.style.setProperty('--ui', (G.settings.uiScale || 100) / 100);
   applyUiScale();
 
+  // Золотая птица — особая валюта между прохождениями
+  const GB_ICON = '<svg class="gbi" viewBox="0 0 32 32"><defs><linearGradient id="gbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff3a0"/><stop offset=".5" stop-color="#f2c230"/><stop offset="1" stop-color="#b07a10"/></linearGradient></defs><circle cx="16" cy="16" r="15" fill="url(#gbg)" stroke="#8a5a08" stroke-width="1.5"/><path d="M7 19c3-1 5-4 6-7 1-2 3-3 5-3 2 0 3 1 4 2l3 0-2 2c0 4-3 7-7 8l3 3h-3l-2-2c-3 0-5-1-7-3z" fill="#7a4a06"/><circle cx="20" cy="12" r="1.2" fill="#fff3a0"/></svg>';
+  UI.GB_ICON = GB_ICON;
   function h(tag, attrs, ...kids) {
     const e = document.createElement(tag);
     if (attrs) for (const k in attrs) { if (k === 'on') for (const ev in attrs.on) e.addEventListener(ev, attrs.on[ev]); else if (k === 'html') e.innerHTML = attrs[k]; else if (k === 'cls') e.className = attrs[k]; else e.setAttribute(k, attrs[k]); }
@@ -31,18 +34,25 @@ const UI = window.UI = {};
   function show(...ids) { screens.forEach(s => $(s).classList.toggle('hidden', !ids.includes(s))); }
 
   // ---------------- Загрузка ----------------
-  const setLoad = (p, t) => { $('loadbar').style.width = p + '%'; $('loadtxt').textContent = t; };
+  const setLoad = (p, t) => { p = Math.round(p); $('loadbar').style.width = p + '%'; $('loadpct').textContent = p + '%'; $('loadtxt').textContent = t; };
+  function placeLoadBirds() {
+    const box = $('ld-birds'); box.innerHTML = '';
+    BIRD_ORDER.forEach((sp, i) => { const a = i / BIRD_ORDER.length * Math.PI * 2 - Math.PI / 2; const im = h('img', { src: G.portrait(sp), cls: 'ldb', style: `left:calc(50% + ${Math.cos(a) * 40}vw * var(--rx));top:calc(41% + ${Math.sin(a) * 27}vh);animation-delay:${(i * 0.17).toFixed(2)}s` }); box.append(im); });
+  }
   const nextFrame = () => new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
   async function boot() {
     setLang(G.settings.lang || 'en');
-    setLoad(10, tr('load_trees')); await nextFrame();
-    try { G.init($('c')); } catch (e) { setLoad(100, tr('webgl_err') + e.message); console.error(e); return; }
-    setLoad(70, tr('load_birds')); await nextFrame();
+    setLoad(4, tr('loading')); await nextFrame();
+    try { G.initRenderer($('c')); } catch (e) { setLoad(100, tr('webgl_err') + e.message); console.error(e); return; }
+    setLoad(12, tr('load_birds')); await nextFrame();
+    try { G.makePortraits(); placeLoadBirds(); } catch (e) { console.warn(e); }
+    setLoad(30, tr('load_trees')); await nextFrame(); await nextFrame();
+    try { G.initWorld(); } catch (e) { setLoad(100, tr('webgl_err') + e.message); console.error(e); return; }
+    setLoad(85, tr('load_trees')); await nextFrame();
     G.applyQuality();
-    try { G.makePortraits(); } catch (e) { console.warn(e); }
-    setLoad(100, tr('load_done')); await nextFrame();
+    setLoad(100, tr('load_done')); await nextFrame(); await new Promise(r => setTimeout(r, 350));
     G.state = 'menu';
-    show('menu');
+    show('menu'); refreshGB();
     if (!G.settings.lang) openLangPicker(true);
     loop(performance.now());
   }
@@ -88,17 +98,42 @@ const UI = window.UI = {};
     if (a === 'back') { $('m-play').classList.add('hidden'); $('m-main').classList.remove('hidden'); }
     if (a === 'settings') openSettings('menu');
     if (a === 'exit') exitGame();
-    if (a === 'continue') { withLoading(tr('load_world'), () => G.load()).then(ok => { if (ok) enterGame(); else show('menu'); }); }
-    if (a === 'new') {
-      if (G.hasSave() && !b.dataset.armed) { b.dataset.armed = '1'; b.innerHTML = tr('newgame_confirm'); setTimeout(() => { delete b.dataset.armed; b.textContent = tr('newgame'); }, 4000); return; }
-      delete b.dataset.armed; b.textContent = tr('newgame');
-      openSelect();
-    }
+    if (a === 'continue') openSlots('load');
+    if (a === 'new') openSlots('new');
+    if (a === 'slots-back') { $('m-slots').classList.add('hidden'); $('m-play').classList.remove('hidden'); refreshContinue(); }
   }));
   function refreshContinue() {
-    const info = G.saveInfo();
-    $('btn-continue').disabled = !info;
-    $('saveinfo').textContent = info ? tr('save_info', { hero: HEROES[info.hero] ? HEROES[info.hero].name : '', diff: (DIFFICULTY[info.diff] || DIFFICULTY.normal).name, wave: info.wave }) : tr('no_save');
+    const n = G.saveCount();
+    $('btn-continue').disabled = !n;
+    $('saveinfo').textContent = n ? tr('saves_n', { n }) : tr('no_save');
+  }
+  function refreshGB() { $('gbBadge').innerHTML = `${GB_ICON}<b>${G.meta.gb}</b>`; }
+  UI.refreshGB = refreshGB;
+  let selSlot = 1;
+  function openSlots(mode) {
+    $('m-play').classList.add('hidden'); $('m-main').classList.add('hidden'); $('m-slots').classList.remove('hidden');
+    $('slotsTitle').textContent = tr(mode === 'new' ? 'slots_new' : 'slots_load');
+    const list = $('slotList'); list.innerHTML = '';
+    [1, 2, 3].forEach(n => {
+      const info = G.saveInfo(n);
+      const main = h('button', { cls: 'slotbtn' + (info ? '' : ' empty') },
+        h('b', null, tr('slot', { n })),
+        h('small', null, info ? tr('slot_line', { hero: HEROES[info.hero] ? HEROES[info.hero].name : '', diff: (DIFFICULTY[info.diff] || DIFFICULTY.normal).name, day: info.day, wave: info.wave }) : tr('slot_empty')),
+        info ? h('small', { cls: 'sl2' }, '🌍 ' + info.biome + (info.at ? ' · ' + new Date(info.at).toLocaleString() : '')) : null);
+      if (mode === 'load' && !info) main.disabled = true;
+      tap(main, () => {
+        if (mode === 'load') { withLoading(tr('load_world'), () => G.load(n)).then(ok => { if (ok) enterGame(); else show('menu'); }); return; }
+        if (info && !main.dataset.armed) { main.dataset.armed = '1'; main.querySelector('small').textContent = tr('overwrite'); main.classList.add('warn'); return; }
+        selSlot = n; openSelect();
+      });
+      const row = h('div', { cls: 'slotrow' }, main);
+      if (info) {
+        const del = h('button', { cls: 'slotdel' }, tr('del_slot'));
+        tap(del, () => { if (!del.dataset.armed) { del.dataset.armed = '1'; del.textContent = tr('del_sure'); return; } G.deleteSave(n); openSlots(mode); refreshContinue(); });
+        row.append(del);
+      }
+      list.append(row);
+    });
   }
   function exitGame() {
     if (G.state === 'play') G.save(true);
@@ -141,15 +176,19 @@ const UI = window.UI = {};
   }
 
   // ---------------- Выбор героя ----------------
-  let selIdx = 0, selDiff = 'normal', selSeed = '';
+  let selIdx = 0, selDiff = 'normal', selSeed = '', selBiome = '';
   function openSelect() {
     G.state = 'select'; show('select'); selIdx = 0; G.selRot = 0.4; selSeed = String(Math.floor(Math.random() * 1e9)); renderHero(); goFullscreenMobile();
   }
   function renderHero() {
-    const id = HERO_ORDER[selIdx], d = HEROES[id];
+    const id = HERO_ORDER[selIdx], d = HEROES[id], locked = !G.heroUnlocked(id);
     G.showHero(id);
+    $('sel-go').innerHTML = locked ? tr('hero_buy', { n: d.price }) + ' ' + GB_ICON : tr('start');
+    $('sel-go').classList.toggle('gold', locked);
     const bar = (lbl, v, max) => h('div', { cls: 'stat' }, h('b', null, lbl), h('div', { cls: 'sb' }, h('i', { style: `width:${Math.min(100, v / max * 100)}%` })));
     const c = $('heroCard'); c.innerHTML = '';
+    c.append(h('div', { cls: 'gbline', html: `${GB_ICON} <b>${G.meta.gb}</b> · ${tr('gbirds')} · ${selIdx + 1}/${HERO_ORDER.length}` }));
+    if (locked) c.append(h('div', { cls: 'lockline', html: tr('hero_locked', { n: d.price }) + ' ' + GB_ICON }));
     c.append(h('h3', null, d.name), h('p', null, d.desc),
       h('div', { cls: 'stats' }, bar(tr('st_hp'), d.hp, 160), bar(tr('st_speed'), d.speed, 8), bar(tr('st_attack'), d.dmg * d.atkRate, 56), bar(tr('st_gather'), d.gather, 1.4), bar(tr('st_build'), 1 / d.buildMul, 1.4)),
       h('div', { cls: 'perk' }, '⭐ ' + d.perk));
@@ -157,19 +196,26 @@ const UI = window.UI = {};
     DIFF_ORDER.forEach(k => { const D = DIFFICULTY[k]; const b = h('button', { cls: (k === selDiff ? 'on ' : '') + 'd-' + k }, D.icon + ' ' + D.name); tap(b, () => { selDiff = k; renderHero(); }); seg.append(b); });
     c.append(h('div', { style: 'margin-top:8px;font-weight:800' }, tr('difficulty')), seg, h('div', { cls: 'ddesc', style: 'font-size:12px;margin-top:3px;opacity:.85' }, DIFFICULTY[selDiff].desc + tr('prep', { t: `${Math.floor(DIFFICULTY[selDiff].prep / 60)}:${String(DIFFICULTY[selDiff].prep % 60).padStart(2, '0')}` })));
     // мир (сид) — как в Майнкрафте: одинаковый сид даёт одинаковую карту
-    const biomeLbl = h('span', { cls: 'biome' }, '🌍 ' + World.biomeOf(World.seedFrom(selSeed)).name);
+    const bioName = () => tr('biome_seed') + ' (' + World.biomeOf(World.seedFrom(selSeed || '1')).name + ')';
+    const biomeLbl = { set textContent(v) { const o = document.querySelector('#biomeSel option[value=""]'); if (o) o.textContent = v; } };
     const inp = h('input', { id: 'seedIn', type: 'text', inputmode: 'text', maxlength: '24', value: selSeed, placeholder: tr('seed_ph'), autocomplete: 'off' });
-    inp.addEventListener('input', () => { selSeed = inp.value; biomeLbl.textContent = '🌍 ' + World.biomeOf(World.seedFrom(selSeed || '1')).name; });
+    inp.addEventListener('input', () => { selSeed = inp.value; biomeLbl.textContent = bioName(); });
     const dice = h('button', { cls: 'btn blue', style: 'padding:6px 10px' }, '🎲');
-    tap(dice, () => { selSeed = String(Math.floor(Math.random() * 1e9)); inp.value = selSeed; biomeLbl.textContent = '🌍 ' + World.biomeOf(World.seedFrom(selSeed)).name; });
-    c.append(h('div', { cls: 'seedrow' }, h('b', null, tr('world')), inp, dice, biomeLbl));
+    tap(dice, () => { selSeed = String(Math.floor(Math.random() * 1e9)); inp.value = selSeed; biomeLbl.textContent = bioName(); });
+    const bsel = h('select', { id: 'biomeSel' });
+    [['', bioName()], ...World.BIOMES.map(b => [b.id, ({ summer: '☀️ ', autumn: '🍂 ', taiga: '🌲 ', winter: '❄️ ', bloom: '🌸 ' }[b.id] || '') + b.name])].forEach(([v, l]) => { const o = document.createElement('option'); o.value = v; o.textContent = l; if (v === selBiome) o.selected = true; bsel.append(o); });
+    bsel.addEventListener('change', () => { selBiome = bsel.value; biomeLbl.textContent = bioName(); });
+    c.append(h('div', { cls: 'seedrow' }, h('b', null, tr('world')), inp, dice, bsel));
   }
-  tap($('sel-prev'), () => { selIdx = (selIdx + 2) % 3; renderHero(); });
-  tap($('sel-next'), () => { selIdx = (selIdx + 1) % 3; renderHero(); });
-  tap($('sel-back'), () => { G.state = 'menu'; show('menu'); });
+  tap($('sel-prev'), () => { selIdx = (selIdx + HERO_ORDER.length - 1) % HERO_ORDER.length; renderHero(); });
+  tap($('sel-next'), () => { selIdx = (selIdx + 1) % HERO_ORDER.length; renderHero(); });
+  tap($('sel-back'), () => { G.state = 'menu'; show('menu'); refreshGB(); });
   tap($('sel-go'), async () => {
+    const hid = HERO_ORDER[selIdx];
+    if (!G.heroUnlocked(hid)) { if (G.buyHero(hid)) { renderHero(); refreshGB(); } return; }
     const seed = World.seedFrom(selSeed || String(Math.floor(Math.random() * 1e9)));
-    await withLoading(tr('load_gen', { name: World.biomeOf(seed).name }), () => G.newGame(HERO_ORDER[selIdx], selDiff, seed));
+    const bio = selBiome || World.biomeOf(seed).id;
+    await withLoading(tr('load_gen', { name: World.biomeById(bio).name }), () => G.newGame(hid, selDiff, seed, bio, selSlot));
     enterGame(); toast(tr('welcome', { biome: World.biome.name, seed }), 'good', 4500);
   });
   async function withLoading(text, fn) {
@@ -190,8 +236,8 @@ const UI = window.UI = {};
   tap($('rot-ok'), () => { rotateOk = true; document.body.classList.remove('ask-rotate'); });
 
   // ---------------- Пауза ----------------
-  function openPause() { if (G.state !== 'play') return; G.paused = true; $('pause').classList.remove('hidden'); Sound.setMode('menu'); }
-  function closePause() { $('pause').classList.add('hidden'); G.paused = modalOpen(); Sound.setMode(G.S().waveActive ? 'battle' : 'calm'); }
+  function openPause() { if (G.state !== 'play' && G.state !== 'cutscene') return; G.paused = true; $('pause').classList.remove('hidden'); Sound.setMode('menu'); }
+  function closePause() { $('pause').classList.add('hidden'); G.paused = modalOpen(); Sound.setMode(G.S() && G.S().waveActive ? 'battle' : 'calm'); }
   tap($('btn-pause'), openPause);
   press($('btn-view'), () => { setView(G.settings.view === 'first' ? 'third' : 'first'); toast(G.settings.view === 'first' ? tr('view_fp') : tr('view_tp'), 'info'); });
   document.querySelectorAll('#pause [data-p]').forEach(b => tap(b, () => {
@@ -202,13 +248,21 @@ const UI = window.UI = {};
     if (a === 'menu') { G.save(true); G.cancelBuild(); G.state = 'menu'; $('pause').classList.add('hidden'); show('menu'); backToMain(); clearFloats(); }
   }));
   // Конец игры
+  UI.cutscene = function (on) {
+    document.body.classList.toggle('cutscene', on);
+    if (on) { closeModal(); clearFloats(); G.input.mx = G.input.mz = G.input.camX = G.input.camY = 0; G.input.run = false; }
+  };
   UI.gameOver = function (st) {
+    $('over').querySelector('h1').textContent = st.win ? tr('victory') : tr('over_title');
+    $('over').classList.toggle('win', !!st.win);
     const t = Math.floor(st.time || 0), hh = Math.floor(t / 3600), mm = Math.floor(t / 60) % 60, ss = t % 60;
     const tstr = (hh ? hh + ':' + String(mm).padStart(2, '0') : mm) + ':' + String(ss).padStart(2, '0');
     const D = DIFFICULTY[st.diff] || DIFFICULTY.normal;
     const cell = (ic, lbl, v) => `<div class="rs"><span class="ri">${ic}</span><span class="rl">${lbl}</span><b>${v}</b></div>`;
     $('overtxt').innerHTML = `
-      <div class="rnote">${tr('over_note')}</div>
+      ${st.win ? `<div class="wintxt">${tr('victory_txt')}</div>` : ''}
+      <div class="gbreward">${tr(st.win ? 'win_gb' : 'defeat_gb')} ${GB_ICON} <b>+${st.gb}</b> <small>(${tr('gb_earned', { n: st.gb, t: st.gbTotal })})</small></div>
+      <div class="rnote">${st.win ? tr('run_note') : tr('over_note')}</div>
       <div class="rsub">${HEROES[st.hero] ? HEROES[st.hero].name : ''} · ${D.icon} ${D.name} · 🌍 ${st.biome} (${tr('seed')} ${st.seed})</div>
       <div class="rgrid">
         ${cell('🌊', tr('r_waves'), Math.max(0, st.wave - 1))}
@@ -228,7 +282,7 @@ const UI = window.UI = {};
 `;
     setTimeout(() => { $('over').classList.remove('hidden'); }, 1400);
   };
-  tap($('over-menu'), () => { $('over').classList.add('hidden'); G.state = 'menu'; show('menu'); backToMain(); clearFloats(); });
+  tap($('over-menu'), () => { refreshGB(); document.body.classList.remove('cutscene'); $('over').classList.add('hidden'); G.state = 'menu'; show('menu'); backToMain(); clearFloats(); });
 
   // ---------------- HUD ----------------
   const RES_KEYS = ['wood', 'stone', 'iron', 'coal', 'food', 'coins'];
@@ -257,7 +311,7 @@ const UI = window.UI = {};
       $('phptxt').textContent = P.dead ? tr('wounded') : `${Math.ceil(P.hp)}/${P.maxHp}`;
       const dl = World.daylight;
       const dc = G.dayClock(), mmss = n => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`;
-      $('daytxt').innerHTML = `${dc.night ? '🌙' : '☀️'} ${tr('day', { n: S.day })} · ${G.diff().icon}<br><small>${tr(dc.night ? 'morning_in' : 'night_in', { t: mmss(dc.left) })}</small>`;
+      $('daytxt').innerHTML = `${dc.night ? '🌙' : '☀️'} ${tr('goal_day', { n: S.day })} · ${G.diff().icon}<br><small>${tr(dc.night ? 'morning_in' : 'night_in', { t: mmss(dc.left) })}</small>`;
       const st = P.st / P.maxSt; $('pst').style.width = (st * 100) + '%'; $('pst').className = P.tired ? 'tired' : '';
       $('btn-run').classList.toggle('on', !!G.input.run);
       const boss = G.boss(); $('bossbar').classList.toggle('hidden', !boss);
@@ -661,6 +715,7 @@ const UI = window.UI = {};
     if (e.code === 'KeyE') k = 'e'; if (e.code === 'KeyB') k = 'b'; if (e.code === 'KeyI') k = 'i'; if (e.code === 'KeyP') k = 'p'; if (e.code === 'KeyR') k = 'r'; if (e.code === 'KeyF') k = 'f'; if (e.code === 'KeyN') k = 'n';
     Sound.init();
     if (k === 'escape') {
+      if (G.state === 'cutscene') { if ($('pause').classList.contains('hidden')) openPause(); else closePause(); return; }
       if (G.state !== 'play') return;
       if (modal) closeModal(); else if (G.building()) G.cancelBuild(); else if (!$('settings').classList.contains('hidden')) { $('settings').classList.add('hidden'); $('pause').classList.remove('hidden'); } else if ($('pause').classList.contains('hidden')) openPause(); else closePause();
       return;

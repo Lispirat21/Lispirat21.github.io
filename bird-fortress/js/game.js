@@ -23,11 +23,15 @@ const G = window.G = {};
   G.paused = false;
 
   // ---------------- Инициализация ----------------
-  G.init = function (canvas) {
+  G.initRenderer = function (canvas) {
     const q = G.settings.quality;
     renderer = new THREE.WebGLRenderer({ canvas, antialias: q !== 'low', powerPreference: 'high-performance' });
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  };
+  G.init = function (canvas) { if (!renderer) G.initRenderer(canvas); G.initWorld(); };
+  G.initWorld = function () {
+    const q = G.settings.quality;
     scene = new THREE.Scene();
     scene.fog = new THREE.Fog(0x8fd0f4, 60, 240);
     camera = new THREE.PerspectiveCamera(55, 1, 0.3, 1000);
@@ -98,16 +102,19 @@ const G = window.G = {};
     PR.forEach(p => scene.remove(p.mesh)); PR.length = 0;
     PART.forEach(p => scene.remove(p.mesh)); PART.length = 0;
     deadNodes.length = 0;
+    if (cut) { scene.remove(cut.heli); cut = null; UI.cutscene(false); }
     World.nodes.forEach(n => { n.alive = true; n.hp = n.maxHp; n.grow = 1; n.shake = 0; n.acc = 0; World.updateNodeMatrix(n); });
     if (P) scene.remove(P.mesh);
     if (build) G.cancelBuild();
     nextId = 1;
   }
 
-  G.newGame = function (hero, diff, seed) {
+  G.newGame = function (hero, diff, seed, biomeId, slot) {
     clearWorld();
     seed = seed || 20240611;
-    if (World.seed !== seed) World.generate(seed);
+    if (slot) G.slot = slot;
+    const wantBiome = biomeId || World.biomeOf(seed).id;
+    if (World.seed !== seed || World.biomeId !== wantBiome) World.generate(seed, wantBiome);
     S = newState(hero, diff); S.seed = seed;
     // стартовая база: кольцо из частокола, ворота, гнездо, скворечники, пушка
     addBuilding('core', 0, 0, 0);
@@ -142,11 +149,13 @@ const G = window.G = {};
   }
   function setTool(kind) {
     if (kind === 'pick' && S.tools.pick < 0) kind = 'axe';
-    const tier = kind === 'axe' ? S.tools.axe : S.tools.pick;
+    const weapon = HEROES[S.hero].weapon;
+    if (kind === 'weapon' && !weapon) kind = 'axe';
+    const tier = kind === 'axe' ? S.tools.axe : kind === 'pick' ? S.tools.pick : 0;
     if (P.tool === kind && P.toolTier === tier) return;
     const hand = P.mesh.userData.parts.hand;
     while (hand.children.length) hand.remove(hand.children[0]);
-    hand.add(Models.makeTool(kind, tier));
+    hand.add(Models.makeTool(kind === 'weapon' ? weapon : kind, tier));
     P.tool = kind; P.toolTier = tier;
   }
   G.selectTool = k => { if (k === 'pick' && S.tools.pick < 0) { UI.toast(tr('no_pick_yet'), 'warn'); return; } setTool(k); };
@@ -160,6 +169,7 @@ const G = window.G = {};
   const LEVELS = { wall: WALL_LEVELS, cannon: CANNON_LEVELS, gate: GATE_LEVELS, ballista: BALLISTA_LEVELS, mineshaft: SHAFT_LEVELS };
   G.LEVELS = LEVELS;
   function maxHpOf(b) {
+    if (b.t === 'core') return Math.round(BUILD.core.hp * (DF().core || 1));
     if (b.t === 'wall' || b.t === 'gate' || b.t === 'ballista' || b.t === 'mineshaft') return LEVELS[b.t][b.lvl - 1].hp;
     if (b.t === 'cannon') return BUILD.cannon.hp + (b.lvl - 1) * 110;
     return BUILD[b.t].hp;
@@ -170,7 +180,7 @@ const G = window.G = {};
     return { min: m, max: M };
   }
   function wallTopY(w) {
-    const H = WALL_LEVELS[w.lvl - 1].h; return w.y + [H - 0.25, H - 0.2, H + 0.15, H, H][w.lvl - 1];
+    const H = WALL_LEVELS[w.lvl - 1].h; return w.y + [H - 0.25, H - 0.2, H + 0.15, H, H, H + 0.05][w.lvl - 1];
   }
   function addBuilding(t, x, z, rot, lvl = 1, hp = null, onWall = null, id = null) {
     const b = { id: id || nextId++, t, x, z, rot, lvl, onWall, cannonId: null, cd: Math.random(), yaw: rot * Math.PI / 2, gunner: null, prodT: 0, prod2: 0, prod3: 0, hitT: 0, spin: 0 };
@@ -610,10 +620,10 @@ const G = window.G = {};
         if (bird && bird.state !== 'gunner') bird = null;
         if (!bird && b.lvl < 4) continue; // без птицы стреляют только автоматические пушки
         const bs = bird ? BIRDS[bird.sp] : { dmg: 1, rate: 0.6, range: 1 };
-        dmg = L.dmg * bs.dmg * (S.hero === 'defender' ? 1.15 : 1) * (bird && bs.special === 'night' && night ? 1.7 : 1);
+        dmg = L.dmg * bs.dmg * (S.hero === 'defender' ? 1.15 : S.hero === 'engineer' ? 1.25 : 1) * (S.hero === 'druid' && bird ? 1.25 : 1) * (bird && bs.special === 'night' && night ? 1.7 : 1);
         rate = L.rate * bs.rate; range = L.range * bs.range; splash = L.splash * (bird && bs.special === 'splash' ? 1.5 : 1); kind = 'ball';
-      } else if (b.t === 'ballista') { const L = BALLISTA_LEVELS[b.lvl - 1]; dmg = L.dmg; rate = L.rate; range = L.range; splash = L.splash; kind = L.kind; }
-      else { const D = BUILD[b.t]; dmg = D.dmg; rate = D.rate; range = D.range; kind = 'arrow'; }
+      } else if (b.t === 'ballista') { const L = BALLISTA_LEVELS[b.lvl - 1]; dmg = L.dmg * (S.hero === 'engineer' ? 1.25 : 1); rate = L.rate; range = L.range; splash = L.splash; kind = L.kind; }
+      else { const D = BUILD[b.t]; dmg = D.dmg * (S.hero === 'engineer' ? 1.25 : 1); rate = D.rate; range = D.range; kind = 'arrow'; }
       const mp = b.mesh.position; const e = nearestEnemy(mp.x, mp.z, range);
       if (b.mesh.userData.spin && isCannon) b.mesh.userData.spin.rotation.z += dt * (e ? 14 : 1);
       if (!e) continue;
@@ -693,7 +703,7 @@ const G = window.G = {};
   // ---------------- Игрок ----------------
   function hurtPlayer(dmg) {
     if (P.dead) return;
-    P.hp -= dmg; P.lastHurt = time;
+    P.hp -= dmg * (HEROES[S.hero].armor || 1); P.lastHurt = time;
     Sound.play('hurt'); UI.flash();
     if (P.hp <= 0) {
       P.hp = 0; P.dead = 5; P.mesh.rotation.x = -Math.PI / 2;
@@ -724,7 +734,7 @@ const G = window.G = {};
     if (P.swing > 0 || P.atkCd > 0 || P.dead) return;
     const t = findActTarget(); if (!t) return;
     if (t.n && !nodeOK(t.n)) return;
-    if (t.n) setTool(NODE_INFO[t.n.kind].tool === 'pick' ? 'pick' : 'axe'); else setTool('axe');
+    if (t.n) setTool(NODE_INFO[t.n.kind].tool === 'pick' ? 'pick' : 'axe'); else setTool('weapon');
     P.swing = 0.0001; P.swingTarget = t; P.hitDone = false;
     const tx = t.e ? t.e.pos.x : t.n.x, tz = t.e ? t.e.pos.z : t.n.z;
     P.yaw = Math.atan2(tx - P.pos.x, tz - P.pos.z);
@@ -831,6 +841,18 @@ const G = window.G = {};
     P.pos.y = Math.max(World.groundAt(P.pos.x, P.pos.z), World.WATER_Y - 1.1);
     // действие
     P.atkCd -= dt;
+    if (hero.bowRange) {
+      P.bowCd = (P.bowCd || 0) - dt;
+      if (P.bowCd <= 0 && P.swing <= 0) {
+        const e = nearestEnemy(P.pos.x, P.pos.z, hero.bowRange);
+        if (e) {
+          P.bowCd = 1 / hero.atkRate; setTool('weapon');
+          P.yaw = Math.atan2(e.pos.x - P.pos.x, e.pos.z - P.pos.z);
+          fire(V(P.pos.x, P.pos.y + 1.5, P.pos.z), e, { kind: 'arrow', dmg: hero.dmg, splash: 0 });
+          Sound.play('arrow');
+        }
+      }
+    }
     if (input.action || G.settings.autoAct) playerAct();
     if (P.swing > 0) {
       P.swing += dt / (1 / hero.atkRate * 0.85);
@@ -1040,6 +1062,11 @@ const G = window.G = {};
       const lamps = B.filter(b => b.mesh.userData.lightPos).sort((a, b) => Math.hypot(a.x - P.pos.x, a.z - P.pos.z) - Math.hypot(b.x - P.pos.x, b.z - P.pos.z));
       lightPool.forEach((l, i) => { const b = lamps[i]; l.userData.b = b || null; if (b) l.position.copy(b.mesh.localToWorld(b.mesh.userData.lightPos.clone())); });
     }
+    for (const b of B) {
+      const bm = b.mesh.userData.beams; if (!bm) continue;
+      b.mesh.userData.beamMat.opacity = night * 0.16;
+      bm.forEach(hd => { hd.rotation.y = Math.sin(time * 0.35 + hd.userData.phase) * 0.55; hd.visible = true; });
+    }
     lightPool.forEach(l => {
       const b = l.userData.b;
       if (!b || !B.includes(b) || night <= 0) { l.intensity = 0; return; }
@@ -1068,6 +1095,8 @@ const G = window.G = {};
         if (b.prod3 >= 24) { b.prod3 = 0; addRes('iron', 1, near ? V(b.x, b.y + 3.2, b.z) : null); }
         if (b.mesh.userData.spin) b.mesh.userData.spin.rotation.z += dt * 2;
       }
+      if (S.hero === 'engineer' && b.hp < b.maxHp && Math.hypot(P.pos.x - b.x, P.pos.z - b.z) < 15) b.hp = Math.min(b.maxHp, b.hp + b.maxHp * 0.015 * dt);
+      if (S.hero === 'druid' && b.t === 'core' && b.hp < b.maxHp) b.hp = Math.min(b.maxHp, b.hp + 2 * dt);
       if (b.t === 'core' && b.mesh.userData.flag) b.mesh.userData.flag.rotation.y = Math.sin(time * 2) * 0.3;
     }
   }
@@ -1099,7 +1128,7 @@ const G = window.G = {};
     const key = S.hero + P.tool + P.toolTier;
     if (key !== vmKey) {
       vmKey = key; while (vm.children.length) vm.remove(vm.children[0]);
-      const look = { defender: [0x3d7a3a, 0xf1c7a0], builder: [0xe8b890, 0xe8b890], hunter: [0x8a5a32, 0xf3cfa8] }[S.hero];
+      const look = { defender: [0x3d7a3a, 0xf1c7a0], builder: [0xe8b890, 0xe8b890], hunter: [0x8a5a32, 0xf3cfa8], knight: [0x9aa0aa, 0xf0c4a0], ranger: [0x2f5a3a, 0xe8c09a], engineer: [0x3a5a8a, 0xd8a888], druid: [0x5a3a8a, 0xf0d0b0] }[S.hero] || [0x3d7a3a, 0xf1c7a0];
       // Та же рука, что у героя от 3-го лица: плечо → рука → кисть с инструментом.
       // rig развёрнут на 180°, чтобы «вперёд» героя совпадало со взглядом камеры.
       const rig = new THREE.Group(); rig.rotation.y = Math.PI; vm.add(rig); vm.userData.rig = rig;
@@ -1187,6 +1216,11 @@ const G = window.G = {};
       renderer.render(selScene, selCam);
       return;
     }
+    if (G.state === 'cutscene') {
+      if (!G.paused) updateCutscene(dt);
+      renderer.render(scene, camera);
+      return;
+    }
     if (G.state === 'play' || G.state === 'over') {
       if (G.state === 'play' && !G.paused) update(dt);
       updateCamera(dt);
@@ -1196,7 +1230,7 @@ const G = window.G = {};
   };
   function update(dt) {
     S.stats.time = (S.stats.time || 0) + dt;
-    S.dayTime += dt / 300; if (S.dayTime >= 1) { S.dayTime -= 1; S.day++; UI.toast(tr('new_day', { n: S.day }), 'info'); }
+    S.dayTime += dt / 300; if (S.dayTime >= 1) { S.dayTime -= 1; S.day++; UI.toast(tr('new_day', { n: S.day }), 'info'); if (S.day >= GOAL_DAYS && !S.won) { startCutscene(); return; } }
     const dl = World.updateSky(S.dayTime, V(P.pos.x, 0, P.pos.z), dt, time);
     Sound.setNight(dl < 0.2);
     updatePlayer(dt);
@@ -1235,18 +1269,100 @@ const G = window.G = {};
   G.enemiesLeft = () => E.filter(e => !e.dying && !e.flee).length + (S.spawnList ? S.spawnList.length : 0);
 
   // ---------------- Конец игры ----------------
+  // ---------------- Золотые птицы (сохраняются между прохождениями) ----------------
+  const META_KEY = 'birdwars_meta_v1';
+  G.meta = { gb: 0, unlocked: [], wins: 0 };
+  try { Object.assign(G.meta, JSON.parse(localStorage.getItem(META_KEY)) || {}); } catch (e) { }
+  const saveMeta = () => { try { localStorage.setItem(META_KEY, JSON.stringify(G.meta)); } catch (e) { } };
+  G.heroUnlocked = id => !HEROES[id].price || G.meta.unlocked.includes(id);
+  G.buyHero = function (id) {
+    const h = HEROES[id]; if (G.heroUnlocked(id)) return true;
+    if (G.meta.gb < h.price) { UI.toast(tr('hero_noGB'), 'warn'); Sound.play('error'); return false; }
+    G.meta.gb -= h.price; G.meta.unlocked.push(id); saveMeta();
+    Sound.play('win'); UI.toast(tr('hero_bought', { name: h.name }), 'good'); return true;
+  };
+  function awardGB(n) { n = Math.max(1, Math.round(n)); G.meta.gb += n; saveMeta(); return n; }
+  function runStats() { return Object.assign({ wave: S.wave, day: S.day, hero: S.hero, diff: S.diff, seed: S.seed, biome: World.biome.name }, S.stats); }
+
   function gameOver() {
     G.state = 'over'; Sound.play('lose'); Sound.setMode('calm');
-    G.deleteSave(); // поражение: прохождение начинается заново
-    UI.gameOver(Object.assign({ wave: S.wave, day: S.day, hero: S.hero, diff: S.diff, seed: S.seed, biome: World.biome.name }, S.stats));
+    G.deleteSave(G.slot); // поражение: прохождение начинается заново
+    const gb = awardGB(Math.floor(S.day / 3) * (DF().tokens || 1));
+    UI.gameOver(Object.assign(runStats(), { gb, gbTotal: G.meta.gb }));
   }
+  function victory() {
+    G.state = 'over'; Sound.play('win'); Sound.setMode('calm');
+    G.deleteSave(G.slot);
+    G.meta.wins = (G.meta.wins || 0) + 1;
+    const gb = awardGB(10 * (DF().tokens || 1));
+    UI.gameOver(Object.assign(runStats(), { gb, gbTotal: G.meta.gb, win: true }));
+  }
+
+  // ---------------- Финал: вертолёт забирает героя и улетает в закат ----------------
+  let cut = null;
+  function startCutscene() {
+    S.won = true;
+    G.cancelBuild();
+    S.waveActive = false; S.spawnList = [];
+    E.forEach(e => { if (!e.dying) { e.dying = 1.6; } });
+    G.state = 'cutscene'; Sound.setMode('calm');
+    UI.cutscene(true);
+    UI.toast(tr('heli_coming'), 'good', 5000);
+    const heli = Models.makeHelicopter(); scene.add(heli);
+    // площадка посадки — рядом с героем, на ровной земле базы
+    const land = V(P.pos.x + 4, 0, P.pos.z + 1); land.y = World.groundAt(land.x, land.z);
+    // солнце садится с этой стороны (0.47 дня), туда вертолёт и улетит
+    const a = 0.492 * Math.PI * 2, sunDir = V(Math.cos(a) * 0.8, 0, 0.45).normalize();
+    const start = land.clone().addScaledVector(sunDir, -110); start.y = land.y + 40;
+    heli.position.copy(start);
+    cut = { t: 0, heli, land, start, sunDir, day0: S.dayTime, rotorT: 0, heroGone: false, camPos: camera.position.clone() };
+  }
+  function updateCutscene(dt) {
+    const c = cut; if (!c) return;
+    c.t += dt; time += dt; const t = c.t, h = c.heli, ease = x => x * x * (3 - 2 * x);
+    // небо плавно переходит в закат
+    S.dayTime = c.day0 + (0.492 - c.day0) * Math.min(1, t / 9);
+    World.updateSky(S.dayTime, V(c.land.x, 0, c.land.z), dt, time);
+    updateParticles(dt); updateEnemies(dt); updateBirds(dt); updateLights(dt);
+    // винты
+    h.userData.rotor.rotation.y += dt * 28; h.userData.tailRotor.rotation.x += dt * 34;
+    c.rotorT -= dt; if (c.rotorT <= 0) { c.rotorT = 0.11; Sound.play('rotor', Math.max(0.15, 1 - h.position.distanceTo(camera.position) / 120)); }
+    const hover = V(c.land.x, c.land.y + 12, c.land.z);
+    const look = (from, to) => { const d = to.clone().sub(from); if (d.lengthSq() > 1e-4) h.rotation.y = Math.atan2(d.x, d.z); };
+    let target;
+    if (t < 7) { const u = ease(t / 7); target = c.start.clone().lerp(hover, u); look(h.position, hover); h.rotation.z = Math.sin(t) * 0.05; }
+    else if (t < 10) { target = hover.clone().lerp(c.land, ease((t - 7) / 3)); }
+    else if (t < 13) { target = c.land.clone(); }
+    else if (t < 16) { target = c.land.clone().lerp(hover.clone().setY(c.land.y + 16), ease((t - 13) / 3)); }
+    else { const u = (t - 16) / 9; target = V(c.land.x, c.land.y + 16, c.land.z).addScaledVector(c.sunDir, u * u * 260); target.y += u * 8; h.rotation.y += ((Math.atan2(c.sunDir.x, c.sunDir.z)) - h.rotation.y) * Math.min(1, dt * 1.5); h.rotation.x = 0.18; }
+    h.position.copy(target);
+    // герой идёт к вертолёту и садится в него
+    if (t >= 10 && t < 12.6) {
+      const door = c.land.clone().add(V(-1.9, 0, -0.4));
+      const d = door.clone().sub(P.pos); d.y = 0; const dist = d.length();
+      if (dist > 0.15) { P.pos.addScaledVector(d.normalize(), Math.min(dist, dt * 3.2)); P.yaw = Math.atan2(d.x, d.z); }
+      P.pos.y = World.groundAt(P.pos.x, P.pos.z);
+      P.mesh.position.copy(P.pos); P.mesh.rotation.y = P.yaw; P.animT += dt;
+      Models.animHero(P.mesh, dist > 0.15 ? 'walk' : 'idle', P.animT, 1, 0);
+    } else if (t >= 12.6 && !c.heroGone) { c.heroGone = true; P.mesh.visible = false; Sound.play('pickup'); }
+    else if (t < 10) { P.animT += dt; Models.animHero(P.mesh, 'idle', P.animT, 1, 0); P.mesh.rotation.y += ((Math.atan2(h.position.x - P.pos.x, h.position.z - P.pos.z)) - P.mesh.rotation.y) * Math.min(1, dt * 3); }
+    // камера: сначала за героем, потом с земли смотрим, как вертолёт уходит в закат
+    let cp, lk;
+    if (t < 13) { cp = V(P.pos.x - c.sunDir.x * 9 + 6, P.pos.y + 6, P.pos.z - c.sunDir.z * 9 + 6); lk = h.position.clone().lerp(P.pos.clone().add(V(0, 1.5, 0)), t < 7 ? 0.3 : 0.6); }
+    else { cp = V(c.land.x - c.sunDir.x * 14, c.land.y + 3.5, c.land.z - c.sunDir.z * 14); lk = h.position.clone(); }
+    camera.position.lerp(cp, 1 - Math.exp(-dt * 2.5)); camera.lookAt(lk);
+    if (vm) vm.visible = false;
+    if (t > 25.5) { scene.remove(h); cut = null; UI.cutscene(false); victory(); }
+  }
+  G.cutscene = () => cut;
+  G._cutStep = (dt, n) => { for (let i = 0; i < n && cut; i++) updateCutscene(dt); };
 
   // ---------------- Выбор героя ----------------
   G.selRot = 0;
   G.showHero = function (type) {
     if (selHero) selScene.remove(selHero);
     selHero = Models.makeHero(type); selScene.add(selHero);
-    const hand = selHero.userData.parts.hand; hand.add(Models.makeTool(type === 'builder' ? 'hammer' : 'axe', type === 'hunter' ? 1 : 0));
+    const hand = selHero.userData.parts.hand; hand.add(Models.makeTool(HEROES[type].weapon || (type === 'builder' ? 'hammer' : 'axe'), type === 'hunter' ? 1 : 0));
   };
 
 
@@ -1278,28 +1394,34 @@ const G = window.G = {};
   };
   G.portrait = sp => portraits[sp] || '';
 
-  // ---------------- Сохранение ----------------
-  const SAVE_KEY = 'birdfortress_save_v1';
-  G.hasSave = () => { try { return !!localStorage.getItem(SAVE_KEY); } catch (e) { return false; } };
+  // ---------------- Сохранение: 3 слота ----------------
+  const SLOT_KEY = n => 'birdwars_slot_' + n;
+  G.slot = 1;
+  // перенос старого единственного сохранения в слот 1
+  try { const old = localStorage.getItem('birdfortress_save_v1'); if (old && !localStorage.getItem(SLOT_KEY(1))) { localStorage.setItem(SLOT_KEY(1), old); } if (old) localStorage.removeItem('birdfortress_save_v1'); } catch (e) { }
+  const readSlot = n => { try { return JSON.parse(localStorage.getItem(SLOT_KEY(n))); } catch (e) { return null; } };
+  G.hasSave = n => n ? !!readSlot(n) : [1, 2, 3].some(k => readSlot(k));
+  G.saveCount = () => [1, 2, 3].filter(k => readSlot(k)).length;
   G.save = function (auto) {
-    if (!S || G.state === 'over') return;
+    if (!S || G.state === 'over' || G.state === 'cutscene') return;
     S.player = { x: P.pos.x, z: P.pos.z, hp: P.hp };
     const data = Object.assign({}, S, {
-      waveActive: false, spawnList: null, waveTimer: S.waveActive ? 30 : S.waveTimer,
+      waveActive: false, spawnList: null, waveTimer: S.waveActive ? 30 : S.waveTimer, biomeId: World.biomeId,
       buildings: B.map(b => ({ id: b.id, t: b.t, x: b.x, z: b.z, r: b.rot, l: b.lvl, hp: Math.round(b.hp), w: b.onWall || 0 })),
       birds: BD.map(b => ({ sp: b.sp, hp: b.hp, c: b.cannon ? b.cannon.id : 0 })),
       nodes: World.nodes.filter(n => !n.alive).map(n => [n.idx, Math.round(n.regrow)]),
       cam: { yaw: cam.yaw, pitch: cam.pitch }, savedAt: Date.now(),
     });
-    try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); if (!auto) UI.toast(tr('saved'), 'info'); else UI.saveIcon(); } catch (e) { UI.toast(tr('save_fail'), 'bad'); }
+    try { localStorage.setItem(SLOT_KEY(G.slot), JSON.stringify(data)); if (!auto) UI.toast(tr('saved'), 'info'); else UI.saveIcon(); } catch (e) { UI.toast(tr('save_fail'), 'bad'); }
   };
-  G.load = function () {
-    let data;
-    try { data = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) { data = null; }
+  G.load = function (slot) {
+    const n = slot || G.slot; const data = readSlot(n);
     if (!data) return false;
+    G.slot = n;
     clearWorld();
     if (!data.seed) data.seed = 20240611;
-    if (World.seed !== data.seed) World.generate(data.seed);
+    if (!data.biomeId) data.biomeId = World.biomeOf(data.seed, 4).id; // старые сохранения
+    if (World.seed !== data.seed || World.biomeId !== data.biomeId) World.generate(data.seed, data.biomeId);
     S = data; const blds = data.buildings, birds = data.birds, nodes = data.nodes;
     delete S.buildings; delete S.birds; delete S.nodes;
     if (!S.diff) S.diff = 'normal';
@@ -1316,8 +1438,10 @@ const G = window.G = {};
     G.state = 'play'; Sound.setMode('calm');
     return true;
   };
-  G.deleteSave = () => { try { localStorage.removeItem(SAVE_KEY); } catch (e) { } };
-  G.saveInfo = function () {
-    try { const d = JSON.parse(localStorage.getItem(SAVE_KEY)); if (!d) return null; return { hero: d.hero, wave: d.wave, day: d.day, at: d.savedAt, diff: d.diff || 'normal' }; } catch (e) { return null; }
+  G.deleteSave = n => { try { localStorage.removeItem(SLOT_KEY(n || G.slot)); } catch (e) { } };
+  G.saveInfo = function (n) {
+    const d = readSlot(n || G.slot); if (!d) return null;
+    const bio = World.biomeById(d.biomeId || World.biomeOf(d.seed || 20240611, 4).id);
+    return { hero: d.hero, wave: d.wave, day: d.day, at: d.savedAt, diff: d.diff || 'normal', biome: bio ? bio.name : '' };
   };
 })();

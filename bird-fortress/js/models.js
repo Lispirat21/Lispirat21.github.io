@@ -228,6 +228,10 @@ const Models = (() => {
     defender: { skin: 0xf1c7a0, shirt: 0x3d7a3a, pants: 0x5a4632, boots: 0x3a2a1a, hair: 0x6a3e1e, width: 0.56 },
     builder:  { skin: 0xe8b890, shirt: 0xe07a20, pants: 0x2c5a9a, boots: 0x4a3018, hair: 0x7a4a24, width: 0.7 },
     hunter:   { skin: 0xf3cfa8, shirt: 0x8a5a32, pants: 0x4a4a34, boots: 0x2a1e12, hair: 0x2a1a10, width: 0.5 },
+    knight:   { skin: 0xf0c4a0, shirt: 0x9aa0aa, pants: 0x6a6e78, boots: 0x3a3c44, hair: 0x5a3a1e, width: 0.62 },
+    ranger:   { skin: 0xe8c09a, shirt: 0x2f5a3a, pants: 0x3a3a2a, boots: 0x2a1e12, hair: 0xc89a4a, width: 0.5 },
+    engineer: { skin: 0xd8a888, shirt: 0x3a5a8a, pants: 0x2a3a5a, boots: 0x222222, hair: 0x2a2a2a, width: 0.58 },
+    druid:    { skin: 0xf0d0b0, shirt: 0x5a3a8a, pants: 0x4a2a6a, boots: 0x3a2a1a, hair: 0xe8e8e8, width: 0.54 },
   };
   function makeHero(type) {
     const L = HERO_LOOK[type]; const root = new THREE.Group(); const P = { root };
@@ -269,6 +273,37 @@ const Models = (() => {
       box(L.width * 0.7, 0.4, 0.04, 0x2c5a9a, 0, 0.3, 0.17, torso); // комбинезон
       [-1, 1].forEach(sx => box(0.07, 0.36, 0.03, 0x2c5a9a, sx * 0.18, 0.62, 0.17, torso, false));
       box(0.3, 0.25, 0.2, 0x7a5a3a, 0, 0.3, -0.25, torso); // сумка
+    } else if (type === 'knight') {
+      const steel = mat(0xb8bec8, { metalness: 0.7, roughness: 0.3 });
+      sph(0.42, 0.42, 0.42, steel, 0, 0.04, -0.01, head, true);
+      box(0.3, 0.05, 0.05, 0x1a1a1e, 0, 0.04, 0.2, head, false); // прорезь шлема
+      const pl = cone(0.05, 0.35, 0xd02020, 0, 0.32, -0.05, head, 5); pl.rotation.x = -0.4;
+      box(L.width + 0.06, 0.4, 0.36, steel, 0, 0.45, 0, torso); // нагрудник
+      [-1, 1].forEach(sx => sph(0.26, 0.18, 0.26, steel, sx * (L.width / 2 + 0.06), 0.66, 0, torso, true));
+      const sh = cyl(0.32, 0.32, 0.07, 0x2a4aa0, 0, 0.4, -0.26, torso, 6); sh.rotation.x = Math.PI / 2;
+      box(0.08, 0.4, 0.02, 0xd8b040, 0, 0.4, -0.3, torso, false); box(0.3, 0.08, 0.02, 0xd8b040, 0, 0.45, -0.3, torso, false);
+      const cape = box(L.width + 0.08, 0.9, 0.05, 0xb02a2a, 0, 0.2, -0.24, torso); P.cape = cape;
+    } else if (type === 'ranger') {
+      sph(0.44, 0.44, 0.44, 0x2f5a3a, 0, 0.05, -0.05, head, true); // капюшон
+      sph(0.36, 0.14, 0.3, L.hair, 0, 0.1, 0.06, head, true);
+      const cape = box(L.width + 0.1, 0.95, 0.05, 0x24482e, 0, 0.2, -0.2, torso); P.cape = cape;
+      const q = cyl(0.11, 0.09, 0.6, 0x6a3a1a, -0.12, 0.42, -0.24, torso, 8); q.rotation.z = -0.35;
+      for (let i = 0; i < 4; i++) { const ar = box(0.02, 0.3, 0.02, 0xf0f0f0, -0.16 - i * 0.03, 0.78, -0.24 + (i - 1.5) * 0.03, torso, false); ar.rotation.z = -0.35; }
+    } else if (type === 'engineer') {
+      sph(0.42, 0.22, 0.42, 0xf28a1a, 0, 0.14, 0, head, true);
+      box(0.36, 0.1, 0.06, 0x2a2a2e, 0, 0.13, 0.19, head, false); // очки-гоглы
+      [-1, 1].forEach(sx => sph(0.11, 0.11, 0.05, mat(0x80d0ff, { metalness: 0.3, roughness: 0.2 }), sx * 0.09, 0.13, 0.22, head, true, false));
+      box(L.width * 0.75, 0.45, 0.04, 0xd8a040, 0, 0.32, 0.17, torso); // жилет
+      box(L.width + 0.04, 0.12, 0.36, 0x5a3a1a, 0, 0.06, 0, torso);
+      for (let i = 0; i < 3; i++) box(0.06, 0.14, 0.06, [0xc0c0c8, 0xd03020, 0xd8b040][i], -0.2 + i * 0.12, 0.04, 0.2, torso, false);
+      box(0.32, 0.36, 0.22, 0x5a6a7a, 0, 0.4, -0.24, torso); cyl(0.04, 0.04, 0.4, 0x8a8a90, 0.1, 0.75, -0.26, torso, 5);
+    } else if (type === 'druid') {
+      sph(0.42, 0.2, 0.42, L.hair, 0, 0.12, 0, head, true);
+      const beard = cone(0.16, 0.5, 0xeeeeee, 0, -0.32, 0.12, head, 6); beard.rotation.x = Math.PI;
+      const wreath = torus(0.2, 0.04, 0x3f8f32, 0, 0.19, 0, head, 10); wreath.rotation.x = Math.PI / 2;
+      for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; sph(0.06, 0.06, 0.06, 0xe8e040, Math.cos(a) * 0.2, 0.21, Math.sin(a) * 0.2, head, true, false); }
+      const robe = box(L.width + 0.1, 1.0, 0.4, L.shirt, 0, -0.1, 0, torso); void robe;
+      const cape = box(L.width + 0.12, 1.1, 0.05, 0x3a2a5a, 0, 0.1, -0.22, torso); P.cape = cape;
     } else {
       sph(0.4, 0.18, 0.4, L.hair, 0, 0.13, -0.02, head, true);
       const hat = cone(0.3, 0.3, 0x3e5a2a, 0, 0.3, 0, head, 8); cyl(0.36, 0.36, 0.03, 0x3e5a2a, 0, 0.17, 0, head, 12);
@@ -280,6 +315,25 @@ const Models = (() => {
     root.userData.parts = P;
     root.userData.type = type;
     return root;
+  }
+  // Спасательный вертолёт (финальная сцена)
+  function makeHelicopter() {
+    const g = new THREE.Group(); const red = mat(0xd8302a, { roughness: 0.5 }), white = mat(0xf2f2f2, { roughness: 0.5 });
+    sph(3.0, 2.4, 4.6, red, 0, 2.2, 0, g);
+    sph(2.6, 1.8, 2.2, mat(0x8ad0ff, { metalness: 0.4, roughness: 0.1, transparent: true, opacity: 0.75 }), 0, 2.5, 1.6, g, false, false);
+    box(3.02, 0.5, 3.0, white, 0, 2.0, -0.3, g);
+    const boom = cyl(0.3, 0.55, 5.5, red, 0, 2.6, -4.6, g, 8); boom.rotation.x = Math.PI / 2;
+    box(0.15, 1.6, 1.0, white, 0, 3.3, -7.2, g);
+    const tailRotor = group(g, 0.22, 3.4, -7.2); for (let i = 0; i < 2; i++) { const b = box(0.06, 1.6, 0.18, 0x2a2a2e, 0, 0, 0, tailRotor, false); b.rotation.x = i * Math.PI / 2; }
+    [-1, 1].forEach(sx => { box(0.12, 0.12, 4.2, 0x2a2a2e, sx * 1.2, 0.35, 0.2, g); [-1, 1].forEach(sz => box(0.1, 0.9, 0.1, 0x2a2a2e, sx * 1.1, 0.8, sz * 1.2, g, false)); });
+    cyl(0.25, 0.3, 0.6, 0x3a3a40, 0, 3.6, 0.2, g, 8);
+    const rotor = group(g, 0, 3.95, 0.2); for (let i = 0; i < 4; i++) { const b = box(0.35, 0.06, 6.5, 0x2a2a2e, 0, 0, 3.1, rotor, false); const piv = group(rotor); piv.rotation.y = i * Math.PI / 2; piv.add(b); }
+    box(1.4, 1.4, 0.06, white, 0, 2.3, -0.05 + 1.0, g, false).position.set(1.52, 2.3, -0.4);
+    const crossH = box(0.06, 0.25, 0.8, red, 1.56, 2.3, -0.4, g, false); void crossH; box(0.06, 0.8, 0.25, red, 1.56, 2.3, -0.4, g, false);
+    const lamp = sph(0.2, 0.2, 0.2, mat(0xff3030, { emissive: 0xff2020, emissiveIntensity: 2 }), 0, 4.05, -6.8, g, true, false); void lamp;
+    g.userData.rotor = rotor; g.userData.tailRotor = tailRotor;
+    g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+    return g;
   }
   // Снаряжение: лампа в левой руке или каска с прожектором
   function setGear(root, gear) {
@@ -312,6 +366,24 @@ const Models = (() => {
       const b = box(0.06, 0.06, 0.32, mat(headC, metal), 0, 0.58, -0.14, g); b.rotation.x = -0.35;
     } else if (kind === 'hammer') {
       box(0.14, 0.14, 0.26, 0x5a5a5a, 0, 0.56, 0, g);
+    } else if (kind === 'sword') {
+      g.children[0].visible = false;
+      const steel = mat(0xdde2ea, { metalness: 0.8, roughness: 0.25 });
+      cyl(0.035, 0.035, 0.22, 0x5a3a1a, 0, 0.0, 0, g, 6);
+      box(0.3, 0.05, 0.08, 0xd8b040, 0, 0.12, 0, g);
+      box(0.08, 0.85, 0.025, steel, 0, 0.56, 0, g);
+      cone(0.04, 0.12, steel, 0, 1.04, 0, g, 4, false);
+    } else if (kind === 'bow') {
+      g.children[0].visible = false;
+      for (let i = 0; i < 7; i++) { const a = -0.9 + i * 0.3; const seg = box(0.05, 0.2, 0.05, 0x7a4a24, 0, 0.25 + Math.sin(a) * 0.5, Math.cos(a) * 0.22 - 0.12, g); seg.rotation.x = -a; }
+      box(0.01, 1.0, 0.01, 0xeeeeee, 0, 0.25, -0.14, g, false);
+    } else if (kind === 'wrench') {
+      const steel = mat(0xb0b6c0, { metalness: 0.7, roughness: 0.35 });
+      box(0.08, 0.16, 0.24, steel, 0, 0.58, 0.04, g); box(0.08, 0.1, 0.08, steel, 0, 0.66, -0.1, g);
+    } else if (kind === 'staff') {
+      g.children[0].scale.y = 1.6; g.children[0].position.y = 0.45;
+      sph(0.18, 0.18, 0.18, mat(0x7ae860, { emissive: 0x40d020, emissiveIntensity: 1.6 }), 0, 1.05, 0, g, true, false);
+      for (let i = 0; i < 3; i++) { const l = sph(0.08, 0.03, 0.14, 0x3f8f32, Math.cos(i * 2.1) * 0.1, 0.92, Math.sin(i * 2.1) * 0.1, g, true, false); l.rotation.y = i * 2.1; }
     }
     g.rotation.x = Math.PI / 2; g.position.set(0, -0.02, 0.02);
     return g;
@@ -358,6 +430,9 @@ const Models = (() => {
       elk:     { c: 0x6a4a2e, c2: 0x4a3420, belly: 0x9a7a54, len: 1.8, h: 1.0, w: 0.8, legH: 1.15, head: 0.5 },
       alpha:   { c: 0x1e1e24, c2: 0x101014, belly: 0x4a4a52, len: 1.9, h: 0.85, w: 0.75, legH: 0.8, head: 0.6 },
       bearking:{ c: 0x4a2e18, c2: 0x2e1c0e, belly: 0x6a4428, len: 2.6, h: 1.6, w: 1.5, legH: 0.9, head: 0.9 },
+      werewolf:{ c: 0x4a3e36, c2: 0x2e2620, belly: 0x6a5e54, len: 1.5, h: 0.85, w: 0.7, legH: 0.85, head: 0.5 },
+      direboar:{ c: 0x3a2a20, c2: 0x241812, belly: 0x4a3a2c, len: 1.6, h: 0.95, w: 0.85, legH: 0.5, head: 0.58 },
+      troll:   { c: 0x5a6a4a, c2: 0x3e4a32, belly: 0x7a8a62, len: 2.0, h: 1.7, w: 1.4, legH: 1.0, head: 0.75 },
       treant:  { c: 0x5a4028, c2: 0x3e2c1a, belly: 0x6e5236, len: 2.4, h: 1.8, w: 1.3, legH: 1.1, head: 0.8 },
     })[type];
     const body = group(root, 0, d.legH + d.h / 2, 0); P.body = body;
@@ -366,12 +441,15 @@ const Models = (() => {
     sph(d.w, d.h, d.len, bodyMat, 0, 0, 0, body);
     sph(d.w * 0.95, d.h * 0.7, d.len * 0.55, d.c2, 0, d.h * 0.2, -d.len * 0.1, body, true);
     sph(d.w * 0.8, d.h * 0.6, d.len * 0.6, d.belly, 0, -d.h * 0.15, d.len * 0.08, body, true);
-    if (type === 'wolf' || type === 'monster' || type === 'alpha') sph(d.w * 1.05, d.h * 1.0, d.len * 0.45, d.c, 0, 0.05, d.len * 0.25, body, true); // грива
+    if (type === 'wolf' || type === 'monster' || type === 'alpha' || type === 'werewolf') sph(d.w * 1.05, d.h * 1.0, d.len * 0.45, d.c, 0, 0.05, d.len * 0.25, body, true); // грива
     if (type === 'boar') for (let i = 0; i < 6; i++) cone(0.05, 0.22, 0x1a120c, 0, d.h * 0.5, d.len * 0.35 - i * 0.14, body, 4, false);
     if (type === 'wolverine') box(d.w * 0.9, 0.06, d.len * 0.8, 0xc8a870, 0, d.h * 0.32, -d.len * 0.05, body, false);
     if (type === 'alpha') for (let i = 0; i < 6; i++) { const sp = cone(0.08, 0.4, 0x3a3a44, 0, d.h * 0.48, d.len * 0.3 - i * 0.18, body, 4, false); sp.rotation.x = -0.5; }
     if (type === 'bearking') { box(d.w * 1.05, d.h * 0.5, d.len * 0.55, mat(0x7a7e88, { metalness: 0.6, roughness: 0.4 }), 0, d.h * 0.3, -d.len * 0.05, body); for (let i = 0; i < 4; i++) cone(0.12, 0.4, mat(0xd8b040, { metalness: 0.7, roughness: 0.3 }), 0, d.h * 0.62, d.len * 0.15 - i * 0.25, body, 5, false); }
     if (type === 'treant') { for (let i = 0; i < 6; i++) { const lf = sph(1.1 + (i % 3) * 0.3, 0.8, 1.1, i % 2 ? 0x3f7f32 : 0x4c8f3a, (i % 2 ? 0.4 : -0.4), d.h * 0.55 + (i % 3) * 0.2, d.len * 0.3 - i * 0.28, body, true); void lf; } for (let i = 0; i < 4; i++) { const br = cyl(0.06, 0.12, 1.2, 0x4a3420, (i % 2 ? 0.6 : -0.6), d.h * 0.7, d.len * 0.1 - i * 0.3, body, 5); br.rotation.z = (i % 2 ? -0.7 : 0.7); } }
+    if (type === 'direboar') { const steel = mat(0x8a8e98, { metalness: 0.7, roughness: 0.35 }); for (let i = 0; i < 4; i++) box(d.w * 1.02, 0.12, 0.3, steel, 0, d.h * 0.35, d.len * 0.3 - i * 0.32, body); for (let i = 0; i < 6; i++) cone(0.06, 0.3, 0x2a2a2e, 0, d.h * 0.52, d.len * 0.35 - i * 0.2, body, 4, false); }
+    if (type === 'werewolf') { sph(d.w * 1.1, d.h * 1.1, d.len * 0.5, d.c2, 0, 0.1, d.len * 0.22, body, true); for (let i = 0; i < 5; i++) { const sp = cone(0.07, 0.3, d.c2, 0, d.h * 0.55, d.len * 0.25 - i * 0.18, body, 4, false); sp.rotation.x = -0.6; } }
+    if (type === 'troll') { const club = group(body, d.w * 0.6, -d.h * 0.1, d.len * 0.3); const c1 = cyl(0.12, 0.28, 1.8, 0x6a4a2a, 0, -0.4, 0.3, club, 7); c1.rotation.x = 0.9; for (let i = 0; i < 4; i++) cone(0.06, 0.2, 0x9a9aa4, 0.15 * Math.cos(i * 1.6), -0.9, 0.95 + 0.15 * Math.sin(i * 1.6), club, 4, false); sph(d.w * 0.9, d.h * 0.4, d.len * 0.4, 0x8a6a3a, 0, -d.h * 0.25, 0, body, true); }
     if (type === 'raccoon') { for (let i = 0; i < 3; i++) { const r = cyl(0.13, 0.13, 0.08, 0x2a2a2e, 0, -0.05 - i * 0.02, -0.15 - i * 0.16, null, 8, false); void r; } }
     if (type === 'monster') for (let i = 0; i < 5; i++) { const sp = cone(0.14, 0.55, 0x5a6a3a, 0, d.h * 0.48, d.len * 0.3 - i * 0.32, body, 5); sp.rotation.x = -0.4; }
     // голова
@@ -382,13 +460,14 @@ const Models = (() => {
     if (type === 'boar') { box(d.head * 0.55, d.head * 0.45, 0.06, 0xd89a90, 0, -d.head * 0.12, d.head * 0.45 + snoutL, head, false); [-1, 1].forEach(sx => { const t = cone(0.04, 0.22, 0xf4ecd8, sx * 0.13, -d.head * 0.1, d.head * 0.55 + snoutL * 0.6, head, 5); t.rotation.x = -0.6; }); }
     else sph(0.08 * d.head / 0.35, 0.06 * d.head / 0.35, 0.06, 0x111111, 0, -d.head * 0.04, d.head * 0.45 + snoutL - 0.04, head, true, false);
     void sn;
-    const eyeMat = (type === 'alpha' || type === 'bearking') ? mat(0xff2010, { emissive: 0xff1000, emissiveIntensity: 2.2 }) : type === 'treant' ? mat(0x9aff60, { emissive: 0x60ff20, emissiveIntensity: 2 }) : type === 'monster' ? mat(0xff3010, { emissive: 0xff2000, emissiveIntensity: 2 }) : mat(0x111111);
+    const eyeMat = (type === 'werewolf') ? mat(0xffd020, { emissive: 0xffb000, emissiveIntensity: 2.4 }) : (type === 'alpha' || type === 'bearking' || type === 'direboar') ? mat(0xff2010, { emissive: 0xff1000, emissiveIntensity: 2.2 }) : type === 'treant' ? mat(0x9aff60, { emissive: 0x60ff20, emissiveIntensity: 2 }) : type === 'monster' ? mat(0xff3010, { emissive: 0xff2000, emissiveIntensity: 2 }) : mat(0x111111);
     [-1, 1].forEach(sx => {
       sph(d.head * 0.15, d.head * 0.15, d.head * 0.1, eyeMat, sx * d.head * 0.28, d.head * 0.12, d.head * 0.42, head, true, false);
       // уши
       if (type === 'elk') { const ant = group(head, sx * d.head * 0.3, d.head * 0.45, -d.head * 0.1); const a1 = cyl(0.04, 0.06, 0.7, 0xd8c8a0, 0, 0.3, 0, ant, 5); a1.rotation.z = -sx * 0.6; const pal = box(0.6, 0.08, 0.35, 0xd8c8a0, sx * 0.45, 0.62, 0, ant); pal.rotation.z = -sx * 0.3; for (let k = 0; k < 3; k++) cone(0.04, 0.25, 0xd8c8a0, sx * (0.25 + k * 0.17), 0.78, 0, ant, 4, false); }
       else if (type === 'treant') { const hb = cyl(0.05, 0.1, 0.9, 0x4a3420, sx * d.head * 0.4, d.head * 0.6, 0, head, 5); hb.rotation.z = -sx * 0.5; }
-      else if (type === 'bear' || type === 'boar' || type === 'bearking' || type === 'raccoon' && false) sph(d.head * 0.3, d.head * 0.3, d.head * 0.12, d.c2, sx * d.head * 0.35, d.head * 0.42, -d.head * 0.05, head, true);
+      else if (type === 'troll') { const t2 = cone(0.08, 0.35, 0xf0e8d0, sx * d.head * 0.25, -d.head * 0.15, d.head * 0.5, head, 5); t2.rotation.x = -2.6; sph(d.head * 0.35, d.head * 0.25, d.head * 0.1, d.c2, sx * d.head * 0.5, d.head * 0.1, 0, head, true); }
+      else if (type === 'bear' || type === 'boar' || type === 'bearking' || type === 'direboar' || type === 'raccoon' && false) sph(d.head * 0.3, d.head * 0.3, d.head * 0.12, d.c2, sx * d.head * 0.35, d.head * 0.42, -d.head * 0.05, head, true);
       else if (type === 'monster') { const h = cone(0.12, 0.7, 0xd8ccb0, sx * d.head * 0.4, d.head * 0.5, 0, head, 6); h.rotation.z = -sx * 0.5; h.rotation.x = -0.3; }
       else {
         const e = cone(d.head * 0.22, d.head * 0.5, type === 'fox' ? 0x2a1a10 : d.c2, sx * d.head * 0.25, d.head * 0.5, -d.head * 0.05, head, 4); e.rotation.z = -sx * 0.15;
@@ -415,7 +494,7 @@ const Models = (() => {
     else if (type === 'boar') { const t = cyl(0.025, 0.025, 0.3, d.c2, 0, -0.12, -0.05, tail, 4); t.rotation.x = 0.4; }
     else if (type === 'monster') { const t = cone(0.3, 1.2, d.c2, 0, -0.2, -0.5, tail, 6); t.rotation.x = -Math.PI / 2 - 0.4; }
     root.userData.parts = P; root.userData.d = d;
-    root.userData.baseScale = { monster: 1.1, alpha: 1.15, bearking: 1.25, treant: 1.2 }[type] || 1;
+    root.userData.baseScale = { monster: 1.1, alpha: 1.15, bearking: 1.25, treant: 1.2, troll: 1.1 }[type] || 1;
     root.scale.setScalar(root.userData.baseScale);
     return root;
   }
@@ -466,6 +545,29 @@ const Models = (() => {
       [0.5, 1.2, 1.9].forEach(y => { box(4.05, 0.16, 0.14, WOOD_D, 0, y, 0.27, g); box(4.05, 0.06, 0.16, 0x4a4a50, 0, y, 0.29, g, false); });
       box(4, 0.12, 0.8, WOOD_L, 0, H - 0.5, -0.3, g);
       [-1.8, 1.8].forEach(x => box(0.3, H, 0.3, WOOD_D, x, H / 2, -0.55, g));
+    } else if (lvl === 6) {
+      const plate = texMat(canvasTex('steelplate', 128, 128, (c, w, hh) => { c.fillStyle = '#5a5f6a'; c.fillRect(0, 0, w, hh); c.strokeStyle = '#2e3138'; c.lineWidth = 3; for (let i = 0; i <= 2; i++) { c.strokeRect(2, i * 64 + 2, w - 4, 60); } c.fillStyle = '#9aa0aa'; for (let y = 8; y < hh; y += 32) for (let x = 8; x < w; x += 28) { c.beginPath(); c.arc(x, y, 2.5, 0, 7); c.fill(); } }), { metalness: 0.6, roughness: 0.4 });
+      plate.map.repeat.set(2, 1.4);
+      box(4, H, 1.4, plate, 0, H / 2, 0, g);
+      box(4.1, 0.3, 1.55, 0x2e3138, 0, 0.15, 0, g);
+      for (let i = 0; i < 5; i++) box(0.55, 0.55, 0.5, plate, -1.6 + i * 0.8, H + 0.27, 0.45, g);
+      for (let i = 0; i < 6; i++) { const sp = cone(0.08, 0.55, mat(0xc8ccd6, { metalness: 0.8, roughness: 0.25 }), -1.75 + i * 0.7, H * 0.45, 0.95, g, 5); sp.rotation.x = Math.PI / 2; }
+      box(4.12, 0.14, 1.5, mat(0xd8b040, { metalness: 0.7, roughness: 0.35 }), 0, H * 0.78, 0, g, false);
+      // два прожектора, светят наружу
+      const beamMat = new THREE.MeshBasicMaterial({ color: 0xfff4c8, transparent: true, opacity: 0.0, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false });
+      g.userData.beams = [];
+      [-1.25, 1.25].forEach((x, i) => {
+        const sp = group(g, x, H + 0.15, -0.1);
+        box(0.3, 0.35, 0.3, 0x2a2c32, 0, 0.17, 0, sp);
+        const head = group(sp, 0, 0.45, 0);
+        const housing = cyl(0.26, 0.2, 0.45, 0x3a3e48, 0, 0, 0, head, 10); housing.rotation.x = Math.PI / 2;
+        const lens = cyl(0.23, 0.23, 0.03, mat(0xffffff, { emissive: 0xfff4c0, emissiveIntensity: 2.8 }), 0, 0, 0.24, head, 10, false); lens.rotation.x = Math.PI / 2;
+        const beam = new THREE.Mesh(new THREE.ConeGeometry(2.6, 14, 16, 1, true), beamMat); beam.rotation.x = -Math.PI / 2; beam.position.set(0, 0, 7.2); head.add(beam);
+        head.rotation.x = 0.28; head.userData.phase = i * 1.7;
+        g.userData.beams.push(head);
+      });
+      g.userData.beamMat = beamMat;
+      g.userData.lightPos = new THREE.Vector3(0, H + 0.8, 1.6); g.userData.lightPower = 1.5;
     } else {
       const th = lvl === 3 ? 1.0 : (lvl === 4 ? 1.1 : 1.3);
       box(4, H, th, brickMat(lvl), 0, H / 2, 0, g);
@@ -804,5 +906,5 @@ const Models = (() => {
     return { stone, coal, iron, berry };
   }
 
-  return { setGear, mat, texMat, T, box, sph, cyl, cone, torus, group, makeBird, animBird, makeHero, makeTool, animHero, makeEnemy, animEnemy, makeBuilding, makeCannon, merge, mtx, treeGeos, rockGeos, WALL_H: l => WALL_LEVELS[l - 1].h };
+  return { makeHelicopter, setGear, mat, texMat, T, box, sph, cyl, cone, torus, group, makeBird, animBird, makeHero, makeTool, animHero, makeEnemy, animEnemy, makeBuilding, makeCannon, merge, mtx, treeGeos, rockGeos, WALL_H: l => WALL_LEVELS[l - 1].h };
 })();

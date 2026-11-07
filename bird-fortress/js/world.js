@@ -21,6 +21,7 @@ const World = (() => {
     { id: 'summer', name: 'Летний лес', grass: [0x5e9f38, 0x86b84a], trees: { pine: [0x2f6e34, 0x3a8040, 0x46924a], oak: [0x4f9a3a, 0x5aa844, 0x468a34, 0x62b04a], birch: [0x8ac850, 0x9ad458] }, mix: [0.55, 0.85], count: 430, dens: 0.42, flowers: 1, bush: 0x3f7f32, snow: 42 },
     { id: 'autumn', name: 'Осенний лес', grass: [0x8a9a3a, 0xb4a648], trees: { pine: [0x2a5e30, 0x356e38, 0x407a40], oak: [0xd8742a, 0xe8a030, 0xc0482a, 0xf0b840], birch: [0xf0c838, 0xe8d860] }, mix: [0.3, 0.75], count: 420, dens: 0.42, flowers: 0.5, bush: 0xa86a2a, snow: 42 },
     { id: 'taiga', name: 'Тайга', grass: [0x4a7a3a, 0x648c4a], trees: { pine: [0x1f5a34, 0x2a6a3a, 0x356f42], oak: [0x3f7a34, 0x4a8a3a, 0x3a6e30, 0x52923f], birch: [0x7ab048, 0x86bc50], snowy: true }, mix: [0.85, 0.9], count: 540, dens: 0.38, flowers: 0.3, bush: 0x2f6a30, snow: 26 },
+    { id: 'winter', name: 'Зимний лес', grass: [0xe6edf3, 0xf7f9fc], trees: { pine: [0x2a5a3e, 0x34684a, 0x3e7452], oak: [0xdfe8ef, 0xeef3f7, 0xd2dde6, 0xf4f7fa], birch: [0xe4ecf2, 0xf2f6f9], snowy: true }, mix: [0.75, 0.9], count: 440, dens: 0.4, flowers: 0.04, bush: 0xd6e2ea, snow: 14, water: 0x9ac8e0, waterNight: 0x3a5878 },
     { id: 'bloom', name: 'Цветущий луг', grass: [0x74b844, 0xa0d05a], trees: { pine: [0x2f6e34, 0x3a8040, 0x46924a], oak: [0xf0a8c8, 0xf8c0d8, 0xe890b8, 0xffd0e0], birch: [0x9ad458, 0xb0e060] }, mix: [0.25, 0.7], count: 300, dens: 0.5, flowers: 2.4, bush: 0x4c9a3a, snow: 42 },
   ];
   const WATER_Y = -0.9;
@@ -37,11 +38,14 @@ const World = (() => {
     let h = 2166136261; for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619); }
     return (h >>> 0) || 1;
   }
-  function biomeOf(seed) { return BIOMES[Math.floor(mulberry32(seed ^ 0x9e3779b9)() * BIOMES.length)]; }
-  function setupSeed(seed) {
+  // n = 4 — старые сохранения (до зимнего биома), чтобы их мир не изменился
+  function biomeOf(seed, n) { const r = mulberry32(seed ^ 0x9e3779b9)(); return n === 4 ? [BIOMES[0], BIOMES[1], BIOMES[2], BIOMES[4]][Math.floor(r * 4)] : BIOMES[Math.floor(r * BIOMES.length)]; }
+  const biomeById = id => BIOMES.find(b => b.id === id) || null;
+  function setupSeed(seed, biomeId) {
     W.seed = seed; shufflePerm(seed);
     const r = mulberry32(seed ^ 0x9e3779b9);
     W.biome = BIOMES[Math.floor(r() * BIOMES.length)];
+    if (biomeId) W.biome = biomeById(biomeId) || W.biome;
     W.hScale = 8 + r() * 14; W.hFreq = 0.008 + r() * 0.009; W.mtn = 40 + r() * 45;
     W.rA = r() * Math.PI; W.rC = Math.cos(W.rA); W.rS = Math.sin(W.rA);
     W.rOff = (r() < 0.5 ? -1 : 1) * (58 + r() * 25); W.rAmp = 8 + r() * 18; W.rFreq = 0.015 + r() * 0.02; W.river = r() < 0.88;
@@ -111,12 +115,12 @@ const World = (() => {
     generate(20240611);
   }
   // Полностью пересоздаёт мир по сиду
-  function generate(seed) {
+  function generate(seed, biomeId) {
     if (root) { scene.remove(root); owned.forEach(g => g.dispose()); owned = []; }
     nodes.length = 0; grid.clear();
     root = new THREE.Group(); scene.add(root);
-    setupSeed(seed);
-    const BI = W.biome;
+    setupSeed(seed, biomeId);
+    const BI = W.biome; W.biomeId = BI.id;
     // ----- Рельеф -----
     const SIZE = 460, SEG = 150;
     const tg = own(new THREE.PlaneGeometry(SIZE, SIZE, SEG, SEG)); tg.rotateX(-Math.PI / 2);
@@ -387,7 +391,7 @@ const World = (() => {
     stars.material.opacity = Math.max(0, 1 - daylight * 2.5);
     stars.position.copy(center);
     clouds.forEach(c => { c.position.x += c.userData.v * dt; if (c.position.x > center.x + 280) c.position.x = center.x - 280; c.material.color.setScalar(0.35 + 0.65 * daylight); });
-    water.material.color.setHex(daylight > 0.3 ? 0x3a8ac8 : 0x1a3a68);
+    water.material.color.setHex(daylight > 0.3 ? (W.biome.water || 0x3a8ac8) : (W.biome.waterNight || 0x1a3a68));
     water.position.y = WATER_Y + Math.sin(time * 0.8) * 0.04;
     flock.forEach((b, i) => {
       const f = b.userData.fl, ang = time * f.sp + f.ph;
@@ -409,5 +413,5 @@ const World = (() => {
     if (sun.shadow.mapSize.x !== ms) { sun.shadow.mapSize.set(ms, ms); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
   }
 
-  return { build, generate, seedFrom, biomeOf, heightAt, groundAt, inWater, inMine, nodes, nodesNear, updateNodeMatrix, updateSky, applyQuality, WATER_Y, MINE, LAKE, CAVE, BIOMES, get seed() { return W.seed; }, get biome() { return W.biome; }, get daylight() { return daylight; }, get sun() { return sun; } };
+  return { build, generate, seedFrom, biomeOf, heightAt, groundAt, inWater, inMine, nodes, nodesNear, updateNodeMatrix, updateSky, applyQuality, WATER_Y, MINE, LAKE, CAVE, BIOMES, get seed() { return W.seed; }, get biome() { return W.biome; }, get biomeId() { return W.biome.id; }, biomeById, get daylight() { return daylight; }, get sun() { return sun; } };
 })();

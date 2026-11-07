@@ -224,6 +224,40 @@ body.fp #crosshair { display:block; }
 #lp-list button .fl { font-size:28px; line-height:1; }
 #lp-list button.on { border-color:#4caf50; background:#eaf7e2; box-shadow:0 0 0 2px #4caf50 inset; }
 .langbtn { position:fixed; right:max(12px,env(safe-area-inset-right)); top:max(12px,env(safe-area-inset-top)); width:48px; height:48px; border-radius:50%; border:2px solid #fff8; background:#0008; font-size:24px; color:#fff; }
+/* ---------- загрузка: название, птицы по кругу, жёлтая полоска ---------- */
+#loading { background:radial-gradient(ellipse at 50% 45%,#4f9a3c 0%,#2d6a2a 55%,#173d18 100%); --rx:1; }
+@media (orientation:portrait) { #loading { --rx:1.1; } }
+#ld-birds { position:absolute; inset:0; pointer-events:none; }
+.ldb { position:absolute; width:clamp(54px,9vmin,96px); height:clamp(54px,9vmin,96px); margin:calc(clamp(54px,9vmin,96px) / -2); border-radius:50%; background:#e6f4d4; border:3px solid #ffd24a; box-shadow:0 4px 12px #0006; object-fit:cover; animation:ldbob 2.2s ease-in-out infinite; }
+@keyframes ldbob { 50% { transform:translateY(-8px) rotate(-4deg); } }
+.ld-title { position:absolute; left:0; right:0; top:41%; transform:translateY(-50%); text-align:center; font-size:clamp(46px,12vmin,110px); font-weight:900; color:#ffd24a; letter-spacing:2px; text-shadow:0 4px 0 #7a4512,0 8px 0 #4a2a0a,0 14px 30px rgba(0,0,0,.6); }
+.ld-bottom { position:absolute; left:0; right:0; bottom:max(24px,env(safe-area-inset-bottom)); display:flex; flex-direction:column; align-items:center; gap:6px; }
+#loading .lbar { position:relative; width:min(78vw,520px); height:26px; background:#0007; border:3px solid #fff8; border-radius:14px; }
+#loading .lbar i { background:linear-gradient(#ffe56a,#f2b81a); border-radius:10px; }
+#loadpct { position:absolute; inset:0; text-align:center; font-weight:900; font-size:15px; line-height:20px; color:#3a2a08; text-shadow:0 1px 0 #fff8; }
+/* ---------- слоты сохранений ---------- */
+#slotsTitle { font-size:18px; font-weight:900; text-shadow:0 2px 4px #000; }
+#slotList { display:flex; flex-direction:column; gap:8px; }
+.slotrow { display:flex; gap:6px; }
+.slotbtn { flex:1; display:flex; flex-direction:column; align-items:flex-start; gap:2px; text-align:left; border:none; border-radius:12px; padding:9px 12px; background:linear-gradient(#4aa8e0,#2a6ab0); color:#fff; box-shadow:0 4px 0 #1a3a6a; font-size:16px; }
+.slotbtn small { font-size:12px; opacity:.95; } .slotbtn .sl2 { font-size:11px; opacity:.8; }
+.slotbtn.empty { background:linear-gradient(#6cc04a,#3a8a2a); box-shadow:0 4px 0 #24561a; }
+.slotbtn.warn { background:linear-gradient(#e8a03a,#b0661a); }
+.slotbtn:disabled { filter:grayscale(1) brightness(.7); }
+.slotdel { border:none; border-radius:12px; padding:0 10px; background:linear-gradient(#e86a4a,#b03a2a); color:#fff; font-weight:800; font-size:12px; box-shadow:0 4px 0 #6a1a10; }
+/* ---------- Золотые птицы ---------- */
+.gbi { width:1.25em; height:1.25em; vertical-align:-0.3em; display:inline-block; }
+#gbBadge { position:fixed; right:calc(max(12px,env(safe-area-inset-right)) + 58px); top:max(16px,env(safe-area-inset-top)); background:#0008; border:2px solid #ffd24a88; border-radius:20px; padding:6px 12px; font-size:18px; color:#ffd24a; }
+.gbline { font-size:13px; margin-bottom:4px; color:#6a3a10; }
+.lockline { background:#fff3c8; border:2px dashed #d8a020; border-radius:8px; padding:4px 8px; font-weight:800; font-size:13px; margin:4px 0; color:#8a5a08; }
+#sel-go.gold { background:linear-gradient(#ffd24a,#d89a10); color:#4a2a08; box-shadow:0 5px 0 #8a5a08; text-shadow:none; }
+.gbreward { margin:6px 0; font-size:16px; } .gbreward small { font-size:12px; opacity:.8; }
+.wintxt { margin:4px 0 8px; font-size:15px; font-weight:700; color:#2a6a2a; }
+#over.win .results h1 { color:#c89a10; }
+#biomeSel { font-size:14px; padding:4px 6px; border-radius:8px; border:2px solid #c8a060; }
+/* ---------- кат-сцена: остаётся только пауза ---------- */
+body.cutscene #hud > *:not(#topright), body.cutscene #topright > *:not(#btn-pause), body.cutscene #bars, body.cutscene #floats { display:none !important; }
+body.cutscene #touch { pointer-events:none; }
 /* ---------- масштаб интерфейса (только GUI, мир не меняется) ---------- */
 :root { --ui: 1; }
 .rico { width:1.05em; height:1.05em; display:inline-block; vertical-align:-0.18em; }
@@ -250,7 +284,7 @@ body.fp #crosshair { display:block; }
 #selNav { pointer-events:none; } #selNav > * { pointer-events:auto; }
 #heroCard .stats { display:grid; grid-template-columns:1fr 1fr; column-gap:10px; }
 #heroCard .stat b { width:66px; }
-@media (max-height:430px) { #heroCard { padding:8px 10px; width:min(50vw,390px); } #heroCard > p, #heroCard .ddesc, #heroCard .perk { display:none; } .seedrow { margin-top:5px; } .seedrow input { width:100px; padding:3px 6px; } .seg.diff { flex-wrap:nowrap; gap:3px; } .seg.diff button { padding:5px 4px; font-size:11px; white-space:nowrap; } #heroCard h3 { font-size:17px; } #heroCard p { font-size:12px; margin:2px 0; } #heroCard .stat { margin:1px 0; font-size:12px; } #heroCard .perk { font-size:12px; padding:4px 6px; margin-top:4px; } #dragHint { display:none; } }
+@media (max-height:430px) { #heroCard { padding:8px 10px; width:min(50vw,390px); } #heroCard > p, #heroCard .ddesc, #heroCard .perk, #heroCard .gbline { display:none; } #biomeSel { max-width:150px; font-size:12px; } #heroCard h3 { margin:0; } .seedrow { margin-top:5px; } .seedrow input { width:100px; padding:3px 6px; } .seg.diff { flex-wrap:nowrap; gap:3px; } .seg.diff button { padding:5px 4px; font-size:11px; white-space:nowrap; } #heroCard h3 { font-size:17px; } #heroCard p { font-size:12px; margin:2px 0; } #heroCard .stat { margin:1px 0; font-size:12px; } #heroCard .perk { font-size:12px; padding:4px 6px; margin-top:4px; } #dragHint { display:none; } }
 #selNav { transform:scale(var(--ui)); transform-origin:bottom center; }
 #selTitle { transform:scale(var(--ui)); transform-origin:top center; }
 @media (max-height:430px) {
@@ -271,9 +305,12 @@ body.fp #crosshair { display:block; }
 <div id="touch"></div>
 
 <div id="loading" class="screen">
-  <div class="logo">🪺 <span data-i18n="title">Bird Wars</span></div>
-  <div class="lbar"><i id="loadbar"></i></div>
-  <div id="loadtxt" data-i18n="loading">Loading…</div>
+  <div id="ld-birds"></div>
+  <div class="ld-title">Bird Wars</div>
+  <div class="ld-bottom">
+    <div class="lbar"><i id="loadbar"></i><span id="loadpct">0%</span></div>
+    <div id="loadtxt">Loading…</div>
+  </div>
 </div>
 
 <div id="menu" class="screen hidden">
@@ -289,8 +326,14 @@ body.fp #crosshair { display:block; }
     <button class="big blue" data-act="continue" id="btn-continue"><span data-i18n="continue"></span><small id="saveinfo"></small></button>
     <button class="big gray" data-act="back" data-i18n="back"></button>
   </div>
+  <div class="menu-col hidden" id="m-slots">
+    <div id="slotsTitle"></div>
+    <div id="slotList"></div>
+    <button class="big gray" data-act="slots-back" data-i18n="back"></button>
+  </div>
   <div class="ver" data-i18n="ver"></div>
   <button class="langbtn" id="btn-lang">🌍</button>
+  <div id="gbBadge" title="Golden Birds"></div>
 </div>
 
 <div id="settings" class="screen hidden" style="background:rgba(0,0,0,.55)">
@@ -467,7 +510,13 @@ const HEROES = {
   hunter:   { stamina: 140, name: 'Быстрый охотник', hp: 95, speed: 7.5, dmg: 24, atkRate: 2.3, gather: 1.0,  buildMul: 1.0,  coinMul: 1.5,
               perk: 'Самый быстрый. +50% монет за победу над зверями.', desc: 'Ловкий следопыт с колчаном и шляпой с пером.' },
 };
-const HERO_ORDER = ['defender', 'builder', 'hunter'];
+// Платные классы (покупаются за Золотых птиц — особую валюту, которая сохраняется между прохождениями)
+HEROES.knight   = { price: 3,  weapon: 'sword',  stamina: 110, name: '', hp: 210, speed: 5.4, dmg: 32, atkRate: 1.4, gather: 0.9,  buildMul: 1.0, coinMul: 1.0, armor: 0.7 };
+HEROES.ranger   = { price: 5,  weapon: 'bow',    stamina: 120, name: '', hp: 100, speed: 6.8, dmg: 22, atkRate: 1.6, gather: 1.0,  buildMul: 1.0, coinMul: 1.2, bowRange: 15 };
+HEROES.engineer = { price: 7,  weapon: 'wrench', stamina: 100, name: '', hp: 125, speed: 5.8, dmg: 16, atkRate: 1.6, gather: 1.1,  buildMul: 0.9, coinMul: 1.0 };
+HEROES.druid    = { price: 10, weapon: 'staff',  stamina: 110, name: '', hp: 115, speed: 6.0, dmg: 18, atkRate: 1.7, gather: 1.0,  buildMul: 1.0, coinMul: 1.0 };
+const HERO_ORDER = ['defender', 'builder', 'hunter', 'knight', 'ranger', 'engineer', 'druid'];
+const GOAL_DAYS = 50;
 
 const ENEMIES = {
   wolf:    { name: 'Волк',          hp: 45,  speed: 4.3, dmg: 7,  rate: 1.0, coins: 5,  food: 0, radius: 0.6, size: 1.0,  wave: 1 },
@@ -482,6 +531,9 @@ const ENEMIES = {
   monster:   { name: 'Лесное чудище',   hp: 900,  speed: 2.1, dmg: 55, rate: 0.6, coins: 70,  food: 0,  radius: 1.6, size: 2.4, wave: 5,  boss: true },
   alpha:     { name: 'Вожак стаи',      hp: 1300, speed: 4.2, dmg: 45, rate: 1.1, coins: 110, food: 0,  radius: 1.3, size: 2.0, wave: 10, boss: true, desc: 'Призывает волков' },
   bearking:  { name: 'Медведь-великан', hp: 2600, speed: 2.2, dmg: 120,rate: 0.5, coins: 160, food: 20, radius: 2.0, size: 3.2, wave: 15, boss: true, desc: 'Ломает стены с одного удара' },
+  werewolf:  { name: 'Оборотень',     hp: 330, speed: 5.9, dmg: 32, rate: 1.3, coins: 22, food: 0,  radius: 0.8, size: 1.3, wave: 21 },
+  direboar:  { name: 'Бронекабан',    hp: 520, speed: 4.3, dmg: 46, rate: 0.9, coins: 26, food: 10, radius: 1.0, size: 1.4, wave: 22 },
+  troll:     { name: 'Лесной тролль', hp: 950, speed: 2.5, dmg: 75, rate: 0.6, coins: 38, food: 0,  radius: 1.4, size: 2.2, wave: 23 },
   treant:    { name: 'Древень',         hp: 3800, speed: 1.6, dmg: 80, rate: 0.6, coins: 220, food: 0,  radius: 2.0, size: 3.6, wave: 20, boss: true, desc: 'Восстанавливает здоровье' },
 };
 
@@ -492,6 +544,7 @@ const WALL_LEVELS = [
   { name: 'Каменная стена',            hp: 700,  h: 2.8, cost: { stone: 20, wood: 5 },  req: 'stone' },
   { name: 'Усиленная каменная',        hp: 1100, h: 3.0, cost: { stone: 35, wood: 10 }, req: 'stone' },
   { name: 'Мощная крепостная стена',   hp: 1700, h: 3.4, cost: { stone: 40, iron: 15 }, req: 'metal' },
+  { name: 'Железная стена с прожекторами', hp: 2700, h: 3.6, cost: { iron: 40, coal: 15, stone: 20 }, req: 'mech' },
 ];
 const CANNON_LEVELS = [
   { name: 'Простая пушка',            dmg: 14, rate: 0.6, range: 17, splash: 2.0, cost: { wood: 20, coins: 20 } },
@@ -573,10 +626,10 @@ const QUESTS = [
 
 // Уровни сложности
 const DIFFICULTY = {
-  easy:       { prep: 240, name: 'Лёгкая',     icon: '🌱', hp: 0.65, dmg: 0.55, count: 0.7, timer: 1.4, reward: 1.25, start: 1.5, desc: 'Звери слабые и приходят реже. Для знакомства с игрой.' },
-  normal:     { prep: 180, name: 'Средняя',    icon: '🌳', hp: 1,    dmg: 1,    count: 1,   timer: 1,   reward: 1,    start: 1,   desc: 'Обычный баланс.' },
-  hard:       { prep: 130, name: 'Сложная',    icon: '🔥', hp: 1.4,  dmg: 1.4,  count: 1.35,timer: 0.8, reward: 0.9,  start: 0.8, desc: 'Больше сильных зверей, меньше времени на подготовку.' },
-  impossible: { prep: 90, name: 'Невозможная',icon: '💀', hp: 2.1,  dmg: 2,    count: 1.8, timer: 0.6, reward: 0.75, start: 0.6, desc: 'Огромные стаи, очень мало времени. Только для мастеров.' },
+  easy:       { core: 1.35, tokens: 1, prep: 240, name: 'Лёгкая',     icon: '🌱', hp: 0.65, dmg: 0.55, count: 0.7, timer: 1.4, reward: 1.25, start: 1.5, desc: 'Звери слабые и приходят реже. Для знакомства с игрой.' },
+  normal:     { core: 1, tokens: 1.5, prep: 180, name: 'Средняя',    icon: '🌳', hp: 1,    dmg: 1,    count: 1,   timer: 1,   reward: 1,    start: 1,   desc: 'Обычный баланс.' },
+  hard:       { core: 0.75, tokens: 2, prep: 130, name: 'Сложная',    icon: '🔥', hp: 1.4,  dmg: 1.4,  count: 1.35,timer: 0.8, reward: 0.9,  start: 0.8, desc: 'Больше сильных зверей, меньше времени на подготовку.' },
+  impossible: { core: 0.5, tokens: 3, prep: 90, name: 'Невозможная',icon: '💀', hp: 2.1,  dmg: 2,    count: 1.8, timer: 0.6, reward: 0.75, start: 0.6, desc: 'Огромные стаи, очень мало времени. Только для мастеров.' },
 };
 const DIFF_ORDER = ['easy', 'normal', 'hard', 'impossible'];
 
@@ -1122,6 +1175,62 @@ function setLang(id) {
 </script>
 <script>
 'use strict';
+// ============ Переводы: новые герои, враги, слоты, победа, Золотые птицы ============
+// Порядок: en, ru, es, pt, fr, de, zh, ja, hi, ar
+Object.assign(TR_DATA, {
+  'h.knight':   ["Knight", "Рыцарь", "Caballero", "Cavaleiro", "Chevalier", "Ritter", "骑士", "騎士", "शूरवीर", "فارس"],
+  'hd.knight':  ["Heavy armor and a sword. Hard to bring down.", "Тяжёлые доспехи и меч. Его сложно свалить.", "Armadura pesada y espada. Difícil de derribar.", "Armadura pesada e espada. Difícil de derrubar.", "Armure lourde et épée. Difficile à abattre.", "Schwere Rüstung und Schwert. Kaum zu Fall zu bringen.", "重甲与长剑，很难被击倒。", "重装鎧と剣。倒れにくい。", "भारी कवच और तलवार। गिराना मुश्किल।", "درع ثقيل وسيف. يصعب إسقاطه."],
+  'hp.knight':  ["Sword hits hard. Takes 30% less damage.", "Меч бьёт сильно. Получает на 30% меньше урона.", "La espada pega fuerte. Recibe 30% menos daño.", "A espada bate forte. Recebe 30% menos dano.", "L'épée frappe fort. Subit 30 % de dégâts en moins.", "Starkes Schwert. Nimmt 30 % weniger Schaden.", "剑击强力，受到伤害减少30%。", "剣は強力。被ダメージ30%減。", "तलवार ज़ोरदार। 30% कम नुकसान लेता है।", "سيف قوي. يتلقى ضررًا أقل بـ30%."],
+  'h.ranger':   ["Ranger", "Лучник", "Arquero", "Arqueiro", "Archer", "Bogenschütze", "游侠", "レンジャー", "धनुर्धर", "رامي السهام"],
+  'hd.ranger':  ["Shoots arrows at beasts from afar.", "Стреляет из лука по зверям издалека.", "Dispara flechas a las bestias desde lejos.", "Atira flechas nas feras de longe.", "Tire des flèches sur les bêtes de loin.", "Schießt aus der Ferne Pfeile auf Tiere.", "远距离用弓射击野兽。", "遠くから獣を弓で撃つ。", "दूर से जानवरों पर तीर चलाता है।", "يرمي الوحوش بالسهام من بعيد."],
+  'hp.ranger':  ["Auto-shoots beasts within 15 m. +20% coins.", "Сам стреляет по зверям в радиусе 15 м. +20% монет.", "Dispara solo a bestias a 15 m. +20% monedas.", "Atira sozinho em feras a 15 m. +20% moedas.", "Tire seul sur les bêtes à 15 m. +20 % de pièces.", "Schießt selbst auf Tiere in 15 m. +20 % Münzen.", "自动射击15米内野兽，金币+20%。", "15m以内の獣を自動射撃。コイン+20%。", "15 मी. में जानवरों पर ख़ुद तीर। +20% सिक्के।", "يرمي تلقائيًا الوحوش ضمن 15 م. +20% عملات."],
+  'h.engineer': ["Engineer", "Инженер", "Ingeniero", "Engenheiro", "Ingénieur", "Ingenieur", "工程师", "エンジニア", "इंजीनियर", "مهندس"],
+  'hd.engineer':["A master of machines with a big wrench.", "Мастер механизмов с большим гаечным ключом.", "Maestro de máquinas con una gran llave.", "Mestre das máquinas com uma grande chave.", "Maître des machines avec une grosse clé.", "Maschinenmeister mit großem Schraubenschlüssel.", "手持大扳手的机械大师。", "大きなレンチを持つ機械の達人。", "बड़े रिंच वाला मशीनों का उस्ताद।", "خبير آلات بمفتاح ربط كبير."],
+  'hp.engineer':["Cannons and turrets +25% damage. Nearby buildings repair themselves.", "Пушки и турели +25% урона. Постройки рядом чинятся сами.", "Cañones y torretas +25% daño. Los edificios cercanos se reparan.", "Canhões e torretas +25% dano. Construções próximas se consertam.", "Canons et tourelles +25 %. Les bâtiments proches se réparent.", "Kanonen und Geschütze +25 %. Gebäude in der Nähe reparieren sich.", "大炮与炮塔伤害+25%，附近建筑自动修复。", "大砲とタレット+25%。近くの建物が自動修理。", "तोपें और बुर्ज +25%। पास की इमारतें ख़ुद ठीक होती हैं।", "المدافع والأبراج +25%. المباني القريبة تُصلح نفسها."],
+  'h.druid':    ["Druid", "Друид", "Druida", "Druida", "Druide", "Druide", "德鲁伊", "ドルイド", "ड्रुइड", "الكاهن الدرويدي"],
+  'hd.druid':   ["A forest sage with a magic staff. Friend of all birds.", "Лесной мудрец с волшебным посохом. Друг всех птиц.", "Sabio del bosque con bastón mágico. Amigo de las aves.", "Sábio da floresta com cajado mágico. Amigo das aves.", "Sage de la forêt au bâton magique. Ami des oiseaux.", "Waldweiser mit Zauberstab. Freund aller Vögel.", "手持魔杖的森林智者，鸟类之友。", "魔法の杖を持つ森の賢者。鳥の友。", "जादुई छड़ी वाला वन ऋषि। सभी पक्षियों का मित्र।", "حكيم الغابة بعصا سحرية. صديق كل الطيور."],
+  'hp.druid':   ["Birds at cannons +25% damage. The Great Nest heals itself.", "Птицы у пушек +25% урона. Великое гнездо само лечится.", "Aves en cañones +25% daño. El Gran Nido se cura.", "Pássaros nos canhões +25% dano. O Grande Ninho se cura.", "Oiseaux aux canons +25 %. Le Grand Nid se soigne.", "Vögel an Kanonen +25 %. Das Große Nest heilt sich.", "炮位鸟伤害+25%，伟大之巢自动恢复。", "砲手の鳥+25%。大いなる巣が自己回復。", "तोपों पर पक्षी +25%। महान घोंसला ख़ुद ठीक होता है।", "طيور المدافع +25% ضررًا. العش العظيم يشفي نفسه."],
+  'e.werewolf': ["Werewolf", "Оборотень", "Hombre lobo", "Lobisomem", "Loup-garou", "Werwolf", "狼人", "人狼", "भेड़िया-मानव", "مستذئب"],
+  'e.direboar': ["Armored Boar", "Бронекабан", "Jabalí acorazado", "Javali blindado", "Sanglier cuirassé", "Panzerkeiler", "装甲野猪", "鎧イノシシ", "कवचधारी सूअर", "خنزير مدرع"],
+  'e.troll':    ["Forest Troll", "Лесной тролль", "Trol del bosque", "Troll da floresta", "Troll des bois", "Waldtroll", "森林巨魔", "森のトロール", "जंगली ट्रोल", "غول الغابة"],
+  'wl6':        ["Iron Wall with Spotlights", "Железная стена с прожекторами", "Muro de hierro con focos", "Muro de ferro com holofotes", "Mur de fer à projecteurs", "Eisenmauer mit Scheinwerfern", "带探照灯的铁墙", "サーチライト付き鉄壁", "सर्चलाइट वाली लोहे की दीवार", "سور حديدي بكشافات"],
+  'bio.winter': ["Winter Forest", "Зимний лес", "Bosque invernal", "Floresta de inverno", "Forêt d'hiver", "Winterwald", "冬日森林", "冬の森", "शीतकालीन वन", "غابة الشتاء"],
+});
+Object.assign(TR_UI, {
+  // слоты
+  slots_new:   ["Choose a slot for the new game", "Выберите слот для новой игры", "Elige una ranura para la partida", "Escolha um slot para o novo jogo", "Choisissez un emplacement", "Wähle einen Speicherplatz", "选择新游戏的存档位", "新しいゲームのスロットを選択", "नए खेल के लिए स्लॉट चुनें", "اختر خانة للعبة الجديدة"],
+  slots_load:  ["Choose a save", "Выберите сохранение", "Elige una partida", "Escolha um save", "Choisissez une sauvegarde", "Spielstand wählen", "选择存档", "セーブを選択", "सेव चुनें", "اختر حفظًا"],
+  slot:        ["Slot {n}", "Слот {n}", "Ranura {n}", "Slot {n}", "Emplacement {n}", "Platz {n}", "存档 {n}", "スロット{n}", "स्लॉट {n}", "الخانة {n}"],
+  slot_empty:  ["Empty", "Пусто", "Vacía", "Vazio", "Vide", "Leer", "空", "空き", "ख़ाली", "فارغة"],
+  slot_line:   ["{hero} · {diff} · day {day}/50 · wave {wave}", "{hero} · {diff} · день {day}/50 · волна {wave}", "{hero} · {diff} · día {day}/50 · oleada {wave}", "{hero} · {diff} · dia {day}/50 · onda {wave}", "{hero} · {diff} · jour {day}/50 · vague {wave}", "{hero} · {diff} · Tag {day}/50 · Welle {wave}", "{hero} · {diff} · 第{day}/50天 · 第{wave}波", "{hero} · {diff} · {day}/50日 · ウェーブ{wave}", "{hero} · {diff} · दिन {day}/50 · लहर {wave}", "{hero} · {diff} · اليوم {day}/50 · الموجة {wave}"],
+  overwrite:   ["Tap again to overwrite", "Нажмите ещё раз, чтобы перезаписать", "Pulsa otra vez para sobrescribir", "Toque de novo para substituir", "Touchez encore pour écraser", "Nochmal tippen zum Überschreiben", "再点一次覆盖", "もう一度タップで上書き", "बदलने के लिए फिर दबाएँ", "اضغط مرة أخرى للاستبدال"],
+  del_slot:    ["🗑 Delete", "🗑 Удалить", "🗑 Borrar", "🗑 Apagar", "🗑 Supprimer", "🗑 Löschen", "🗑 删除", "🗑 削除", "🗑 हटाएँ", "🗑 حذف"],
+  del_sure:    ["Delete? Tap again", "Удалить? Нажмите ещё раз", "¿Borrar? Pulsa otra vez", "Apagar? Toque de novo", "Supprimer ? Touchez encore", "Löschen? Nochmal tippen", "确认删除？再点一次", "削除？もう一度タップ", "हटाएँ? फिर दबाएँ", "حذف؟ اضغط مرة أخرى"],
+  saves_n:     ["{n}/3 saves", "сохранений: {n}/3", "{n}/3 partidas", "{n}/3 saves", "{n}/3 sauvegardes", "{n}/3 Spielstände", "{n}/3 个存档", "セーブ {n}/3", "{n}/3 सेव", "{n}/3 حفظ"],
+  // золотые птицы, герои за них
+  gbirds:      ["Golden Birds", "Золотые птицы", "Aves doradas", "Pássaros dourados", "Oiseaux d'or", "Goldvögel", "金鸟", "黄金の鳥", "सुनहरे पक्षी", "الطيور الذهبية"],
+  gb_info:     ["Earned by surviving 50 days or when your nest falls. Kept forever, across all runs.", "Даются за 50 дней выживания или при разрушении гнезда. Сохраняются навсегда, во всех прохождениях.", "Se ganan sobreviviendo 50 días o al caer el nido. Se conservan siempre.", "Ganhos ao sobreviver 50 dias ou quando o ninho cai. Ficam para sempre.", "Gagnés en survivant 50 jours ou à la chute du nid. Conservés pour toujours.", "Für 50 überlebte Tage oder wenn das Nest fällt. Bleiben für immer.", "存活50天或巢被毁时获得，永久保留。", "50日生存か巣の破壊で獲得。ずっと残る。", "50 दिन बचने या घोंसला गिरने पर मिलते हैं। हमेशा रहते हैं।", "تُكسب بالنجاة 50 يومًا أو عند سقوط العش. تبقى للأبد."],
+  hero_locked: ["🔒 Costs {n} Golden Birds", "🔒 Стоит {n} Золотых птиц", "🔒 Cuesta {n} aves doradas", "🔒 Custa {n} pássaros dourados", "🔒 Coûte {n} oiseaux d'or", "🔒 Kostet {n} Goldvögel", "🔒 需要 {n} 金鸟", "🔒 黄金の鳥{n}羽", "🔒 कीमत {n} सुनहरे पक्षी", "🔒 السعر {n} طيور ذهبية"],
+  hero_buy:    ["Unlock for {n}", "Открыть за {n}", "Desbloquear por {n}", "Liberar por {n}", "Débloquer pour {n}", "Freischalten für {n}", "用 {n} 解锁", "{n}で解放", "{n} में खोलें", "افتح مقابل {n}"],
+  hero_noGB:   ["Not enough Golden Birds — survive 50 days or keep playing to earn them", "Не хватает Золотых птиц — доживите до 50 дня или играйте ещё, чтобы их получить", "Faltan aves doradas — sobrevive 50 días o sigue jugando", "Faltam pássaros dourados — sobreviva 50 dias ou continue jogando", "Pas assez d'oiseaux d'or — survivez 50 jours ou continuez", "Zu wenige Goldvögel — überlebe 50 Tage oder spiele weiter", "金鸟不足 — 存活50天或继续游玩来获得", "黄金の鳥が足りない — 50日生き延びよう", "सुनहरे पक्षी कम हैं — 50 दिन बचें या खेलते रहें", "طيور ذهبية غير كافية — انجُ 50 يومًا أو واصل اللعب"],
+  hero_bought: ["New hero unlocked: {name}!", "Новый герой открыт: {name}!", "¡Nuevo héroe: {name}!", "Novo herói: {name}!", "Nouveau héros : {name} !", "Neuer Held: {name}!", "解锁新英雄：{name}！", "新ヒーロー解放：{name}！", "नया नायक खुला: {name}!", "بطل جديد: {name}!"],
+  gb_earned:   ["+{n} Golden Birds (total {t})", "+{n} Золотых птиц (всего {t})", "+{n} aves doradas (total {t})", "+{n} pássaros dourados (total {t})", "+{n} oiseaux d'or (total {t})", "+{n} Goldvögel (gesamt {t})", "+{n} 金鸟（共 {t}）", "黄金の鳥 +{n}（計{t}）", "+{n} सुनहरे पक्षी (कुल {t})", "+{n} طيور ذهبية (المجموع {t})"],
+  // биом
+  biome_pick:  ["Biome:", "Биом:", "Bioma:", "Bioma:", "Biome :", "Biom:", "生物群系：", "バイオーム：", "बायोम:", "البيئة:"],
+  biome_seed:  ["🎲 By seed", "🎲 По сиду", "🎲 Por semilla", "🎲 Pela semente", "🎲 Selon la graine", "🎲 Nach Seed", "🎲 按种子", "🎲 シード通り", "🎲 सीड से", "🎲 حسب البذرة"],
+  // цель и победа
+  goal_day:    ["Day {n}/50", "День {n}/50", "Día {n}/50", "Dia {n}/50", "Jour {n}/50", "Tag {n}/50", "第{n}/50天", "{n}/50日目", "दिन {n}/50", "اليوم {n}/50"],
+  heli_coming: ["🚁 Day 50! The rescue helicopter is coming!", "🚁 50-й день! Летит спасательный вертолёт!", "🚁 ¡Día 50! ¡Llega el helicóptero de rescate!", "🚁 Dia 50! O helicóptero de resgate está chegando!", "🚁 Jour 50 ! L'hélicoptère de secours arrive !", "🚁 Tag 50! Der Rettungshubschrauber kommt!", "🚁 第50天！救援直升机来了！", "🚁 50日目！救助ヘリが来た！", "🚁 दिन 50! बचाव हेलीकॉप्टर आ रहा है!", "🚁 اليوم 50! مروحية الإنقاذ قادمة!"],
+  victory:     ["🏆 VICTORY!", "🏆 ПОБЕДА!", "🏆 ¡VICTORIA!", "🏆 VITÓRIA!", "🏆 VICTOIRE !", "🏆 SIEG!", "🏆 胜利！", "🏆 勝利！", "🏆 जीत!", "🏆 النصر!"],
+  victory_txt: ["You held out for 50 days! The birds are safe, and the hero flies off into the sunset.", "Вы продержались 50 дней! Птицы спасены, а герой улетает в закат.", "¡Resististe 50 días! Las aves están a salvo y el héroe vuela hacia el atardecer.", "Você resistiu 50 dias! Os pássaros estão salvos e o herói voa rumo ao pôr do sol.", "Vous avez tenu 50 jours ! Les oiseaux sont sauvés, le héros s'envole vers le couchant.", "Du hast 50 Tage durchgehalten! Die Vögel sind sicher, der Held fliegt in den Sonnenuntergang.", "你坚持了50天！鸟儿得救了，英雄飞向夕阳。", "50日間守り抜いた！鳥たちは無事、ヒーローは夕日へ飛び去る。", "आप 50 दिन टिके रहे! पक्षी सुरक्षित हैं और नायक सूर्यास्त की ओर उड़ गया।", "صمدت 50 يومًا! الطيور بأمان والبطل يطير نحو الغروب."],
+  defeat_gb:   ["Even in defeat you earned Golden Birds:", "Даже за поражение вы получили Золотых птиц:", "Incluso perdiendo ganaste aves doradas:", "Mesmo perdendo você ganhou pássaros dourados:", "Même vaincu, vous gagnez des oiseaux d'or :", "Auch bei Niederlage gibt es Goldvögel:", "即使失败也获得了金鸟：", "負けても黄金の鳥を獲得：", "हार में भी सुनहरे पक्षी मिले:", "حتى بالخسارة ربحت طيورًا ذهبية:"],
+  win_gb:      ["Reward:", "Награда:", "Recompensa:", "Recompensa:", "Récompense :", "Belohnung:", "奖励：", "報酬：", "इनाम:", "المكافأة:"],
+  run_note:    ["This run is complete — its save slot is now free.", "Прохождение завершено — его слот сохранения освобождён.", "Partida terminada: su ranura queda libre.", "Jogo concluído — o slot ficou livre.", "Partie terminée — l'emplacement est libéré.", "Durchgang beendet — der Speicherplatz ist frei.", "本局结束，存档位已释放。", "クリア済み — スロットが空きました。", "यह खेल पूरा — सेव स्लॉट ख़ाली हुआ।", "انتهت الجولة — تحررت خانة الحفظ."],
+});
+
+</script>
+<script>
+'use strict';
 // ============ Процедурная музыка и звуки (WebAudio, без файлов) ============
 const Sound = (() => {
   let ctx = null, master, musicGain, sfxGain, ambGain, noiseBuf;
@@ -1305,6 +1414,7 @@ const Sound = (() => {
         o.connect(g); g.connect(sfxGain); o.start(t); o.stop(t + 0.55);
         noise(t, 0.35, 0.35 * vol, 'lowpass', 700, null); break;
       }
+      case 'rotor': { const f = noise(t, 0.09, 0.5 * vol, 'lowpass', 260, null, 1.2); void f; tone(48, t, 0.08, 'sine', 0.25 * vol, sfxGain); break; }
       case 'gun': noise(t, 0.05, 0.35 * vol, 'bandpass', 1800, null, 1.5); tone(140, t, 0.05, 'square', 0.06 * vol, sfxGain); break;
       case 'rocket': noise(t, 0.6, 0.35 * vol, 'bandpass', 900, null, 0.7); tone(220, t, 0.5, 'sawtooth', 0.04 * vol, sfxGain); break;
       case 'arrow': noise(t, 0.12, 0.2 * vol, 'bandpass', 3000, null, 3); break;
@@ -1572,6 +1682,10 @@ const Models = (() => {
     defender: { skin: 0xf1c7a0, shirt: 0x3d7a3a, pants: 0x5a4632, boots: 0x3a2a1a, hair: 0x6a3e1e, width: 0.56 },
     builder:  { skin: 0xe8b890, shirt: 0xe07a20, pants: 0x2c5a9a, boots: 0x4a3018, hair: 0x7a4a24, width: 0.7 },
     hunter:   { skin: 0xf3cfa8, shirt: 0x8a5a32, pants: 0x4a4a34, boots: 0x2a1e12, hair: 0x2a1a10, width: 0.5 },
+    knight:   { skin: 0xf0c4a0, shirt: 0x9aa0aa, pants: 0x6a6e78, boots: 0x3a3c44, hair: 0x5a3a1e, width: 0.62 },
+    ranger:   { skin: 0xe8c09a, shirt: 0x2f5a3a, pants: 0x3a3a2a, boots: 0x2a1e12, hair: 0xc89a4a, width: 0.5 },
+    engineer: { skin: 0xd8a888, shirt: 0x3a5a8a, pants: 0x2a3a5a, boots: 0x222222, hair: 0x2a2a2a, width: 0.58 },
+    druid:    { skin: 0xf0d0b0, shirt: 0x5a3a8a, pants: 0x4a2a6a, boots: 0x3a2a1a, hair: 0xe8e8e8, width: 0.54 },
   };
   function makeHero(type) {
     const L = HERO_LOOK[type]; const root = new THREE.Group(); const P = { root };
@@ -1613,6 +1727,37 @@ const Models = (() => {
       box(L.width * 0.7, 0.4, 0.04, 0x2c5a9a, 0, 0.3, 0.17, torso); // комбинезон
       [-1, 1].forEach(sx => box(0.07, 0.36, 0.03, 0x2c5a9a, sx * 0.18, 0.62, 0.17, torso, false));
       box(0.3, 0.25, 0.2, 0x7a5a3a, 0, 0.3, -0.25, torso); // сумка
+    } else if (type === 'knight') {
+      const steel = mat(0xb8bec8, { metalness: 0.7, roughness: 0.3 });
+      sph(0.42, 0.42, 0.42, steel, 0, 0.04, -0.01, head, true);
+      box(0.3, 0.05, 0.05, 0x1a1a1e, 0, 0.04, 0.2, head, false); // прорезь шлема
+      const pl = cone(0.05, 0.35, 0xd02020, 0, 0.32, -0.05, head, 5); pl.rotation.x = -0.4;
+      box(L.width + 0.06, 0.4, 0.36, steel, 0, 0.45, 0, torso); // нагрудник
+      [-1, 1].forEach(sx => sph(0.26, 0.18, 0.26, steel, sx * (L.width / 2 + 0.06), 0.66, 0, torso, true));
+      const sh = cyl(0.32, 0.32, 0.07, 0x2a4aa0, 0, 0.4, -0.26, torso, 6); sh.rotation.x = Math.PI / 2;
+      box(0.08, 0.4, 0.02, 0xd8b040, 0, 0.4, -0.3, torso, false); box(0.3, 0.08, 0.02, 0xd8b040, 0, 0.45, -0.3, torso, false);
+      const cape = box(L.width + 0.08, 0.9, 0.05, 0xb02a2a, 0, 0.2, -0.24, torso); P.cape = cape;
+    } else if (type === 'ranger') {
+      sph(0.44, 0.44, 0.44, 0x2f5a3a, 0, 0.05, -0.05, head, true); // капюшон
+      sph(0.36, 0.14, 0.3, L.hair, 0, 0.1, 0.06, head, true);
+      const cape = box(L.width + 0.1, 0.95, 0.05, 0x24482e, 0, 0.2, -0.2, torso); P.cape = cape;
+      const q = cyl(0.11, 0.09, 0.6, 0x6a3a1a, -0.12, 0.42, -0.24, torso, 8); q.rotation.z = -0.35;
+      for (let i = 0; i < 4; i++) { const ar = box(0.02, 0.3, 0.02, 0xf0f0f0, -0.16 - i * 0.03, 0.78, -0.24 + (i - 1.5) * 0.03, torso, false); ar.rotation.z = -0.35; }
+    } else if (type === 'engineer') {
+      sph(0.42, 0.22, 0.42, 0xf28a1a, 0, 0.14, 0, head, true);
+      box(0.36, 0.1, 0.06, 0x2a2a2e, 0, 0.13, 0.19, head, false); // очки-гоглы
+      [-1, 1].forEach(sx => sph(0.11, 0.11, 0.05, mat(0x80d0ff, { metalness: 0.3, roughness: 0.2 }), sx * 0.09, 0.13, 0.22, head, true, false));
+      box(L.width * 0.75, 0.45, 0.04, 0xd8a040, 0, 0.32, 0.17, torso); // жилет
+      box(L.width + 0.04, 0.12, 0.36, 0x5a3a1a, 0, 0.06, 0, torso);
+      for (let i = 0; i < 3; i++) box(0.06, 0.14, 0.06, [0xc0c0c8, 0xd03020, 0xd8b040][i], -0.2 + i * 0.12, 0.04, 0.2, torso, false);
+      box(0.32, 0.36, 0.22, 0x5a6a7a, 0, 0.4, -0.24, torso); cyl(0.04, 0.04, 0.4, 0x8a8a90, 0.1, 0.75, -0.26, torso, 5);
+    } else if (type === 'druid') {
+      sph(0.42, 0.2, 0.42, L.hair, 0, 0.12, 0, head, true);
+      const beard = cone(0.16, 0.5, 0xeeeeee, 0, -0.32, 0.12, head, 6); beard.rotation.x = Math.PI;
+      const wreath = torus(0.2, 0.04, 0x3f8f32, 0, 0.19, 0, head, 10); wreath.rotation.x = Math.PI / 2;
+      for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; sph(0.06, 0.06, 0.06, 0xe8e040, Math.cos(a) * 0.2, 0.21, Math.sin(a) * 0.2, head, true, false); }
+      const robe = box(L.width + 0.1, 1.0, 0.4, L.shirt, 0, -0.1, 0, torso); void robe;
+      const cape = box(L.width + 0.12, 1.1, 0.05, 0x3a2a5a, 0, 0.1, -0.22, torso); P.cape = cape;
     } else {
       sph(0.4, 0.18, 0.4, L.hair, 0, 0.13, -0.02, head, true);
       const hat = cone(0.3, 0.3, 0x3e5a2a, 0, 0.3, 0, head, 8); cyl(0.36, 0.36, 0.03, 0x3e5a2a, 0, 0.17, 0, head, 12);
@@ -1624,6 +1769,25 @@ const Models = (() => {
     root.userData.parts = P;
     root.userData.type = type;
     return root;
+  }
+  // Спасательный вертолёт (финальная сцена)
+  function makeHelicopter() {
+    const g = new THREE.Group(); const red = mat(0xd8302a, { roughness: 0.5 }), white = mat(0xf2f2f2, { roughness: 0.5 });
+    sph(3.0, 2.4, 4.6, red, 0, 2.2, 0, g);
+    sph(2.6, 1.8, 2.2, mat(0x8ad0ff, { metalness: 0.4, roughness: 0.1, transparent: true, opacity: 0.75 }), 0, 2.5, 1.6, g, false, false);
+    box(3.02, 0.5, 3.0, white, 0, 2.0, -0.3, g);
+    const boom = cyl(0.3, 0.55, 5.5, red, 0, 2.6, -4.6, g, 8); boom.rotation.x = Math.PI / 2;
+    box(0.15, 1.6, 1.0, white, 0, 3.3, -7.2, g);
+    const tailRotor = group(g, 0.22, 3.4, -7.2); for (let i = 0; i < 2; i++) { const b = box(0.06, 1.6, 0.18, 0x2a2a2e, 0, 0, 0, tailRotor, false); b.rotation.x = i * Math.PI / 2; }
+    [-1, 1].forEach(sx => { box(0.12, 0.12, 4.2, 0x2a2a2e, sx * 1.2, 0.35, 0.2, g); [-1, 1].forEach(sz => box(0.1, 0.9, 0.1, 0x2a2a2e, sx * 1.1, 0.8, sz * 1.2, g, false)); });
+    cyl(0.25, 0.3, 0.6, 0x3a3a40, 0, 3.6, 0.2, g, 8);
+    const rotor = group(g, 0, 3.95, 0.2); for (let i = 0; i < 4; i++) { const b = box(0.35, 0.06, 6.5, 0x2a2a2e, 0, 0, 3.1, rotor, false); const piv = group(rotor); piv.rotation.y = i * Math.PI / 2; piv.add(b); }
+    box(1.4, 1.4, 0.06, white, 0, 2.3, -0.05 + 1.0, g, false).position.set(1.52, 2.3, -0.4);
+    const crossH = box(0.06, 0.25, 0.8, red, 1.56, 2.3, -0.4, g, false); void crossH; box(0.06, 0.8, 0.25, red, 1.56, 2.3, -0.4, g, false);
+    const lamp = sph(0.2, 0.2, 0.2, mat(0xff3030, { emissive: 0xff2020, emissiveIntensity: 2 }), 0, 4.05, -6.8, g, true, false); void lamp;
+    g.userData.rotor = rotor; g.userData.tailRotor = tailRotor;
+    g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+    return g;
   }
   // Снаряжение: лампа в левой руке или каска с прожектором
   function setGear(root, gear) {
@@ -1656,6 +1820,24 @@ const Models = (() => {
       const b = box(0.06, 0.06, 0.32, mat(headC, metal), 0, 0.58, -0.14, g); b.rotation.x = -0.35;
     } else if (kind === 'hammer') {
       box(0.14, 0.14, 0.26, 0x5a5a5a, 0, 0.56, 0, g);
+    } else if (kind === 'sword') {
+      g.children[0].visible = false;
+      const steel = mat(0xdde2ea, { metalness: 0.8, roughness: 0.25 });
+      cyl(0.035, 0.035, 0.22, 0x5a3a1a, 0, 0.0, 0, g, 6);
+      box(0.3, 0.05, 0.08, 0xd8b040, 0, 0.12, 0, g);
+      box(0.08, 0.85, 0.025, steel, 0, 0.56, 0, g);
+      cone(0.04, 0.12, steel, 0, 1.04, 0, g, 4, false);
+    } else if (kind === 'bow') {
+      g.children[0].visible = false;
+      for (let i = 0; i < 7; i++) { const a = -0.9 + i * 0.3; const seg = box(0.05, 0.2, 0.05, 0x7a4a24, 0, 0.25 + Math.sin(a) * 0.5, Math.cos(a) * 0.22 - 0.12, g); seg.rotation.x = -a; }
+      box(0.01, 1.0, 0.01, 0xeeeeee, 0, 0.25, -0.14, g, false);
+    } else if (kind === 'wrench') {
+      const steel = mat(0xb0b6c0, { metalness: 0.7, roughness: 0.35 });
+      box(0.08, 0.16, 0.24, steel, 0, 0.58, 0.04, g); box(0.08, 0.1, 0.08, steel, 0, 0.66, -0.1, g);
+    } else if (kind === 'staff') {
+      g.children[0].scale.y = 1.6; g.children[0].position.y = 0.45;
+      sph(0.18, 0.18, 0.18, mat(0x7ae860, { emissive: 0x40d020, emissiveIntensity: 1.6 }), 0, 1.05, 0, g, true, false);
+      for (let i = 0; i < 3; i++) { const l = sph(0.08, 0.03, 0.14, 0x3f8f32, Math.cos(i * 2.1) * 0.1, 0.92, Math.sin(i * 2.1) * 0.1, g, true, false); l.rotation.y = i * 2.1; }
     }
     g.rotation.x = Math.PI / 2; g.position.set(0, -0.02, 0.02);
     return g;
@@ -1702,6 +1884,9 @@ const Models = (() => {
       elk:     { c: 0x6a4a2e, c2: 0x4a3420, belly: 0x9a7a54, len: 1.8, h: 1.0, w: 0.8, legH: 1.15, head: 0.5 },
       alpha:   { c: 0x1e1e24, c2: 0x101014, belly: 0x4a4a52, len: 1.9, h: 0.85, w: 0.75, legH: 0.8, head: 0.6 },
       bearking:{ c: 0x4a2e18, c2: 0x2e1c0e, belly: 0x6a4428, len: 2.6, h: 1.6, w: 1.5, legH: 0.9, head: 0.9 },
+      werewolf:{ c: 0x4a3e36, c2: 0x2e2620, belly: 0x6a5e54, len: 1.5, h: 0.85, w: 0.7, legH: 0.85, head: 0.5 },
+      direboar:{ c: 0x3a2a20, c2: 0x241812, belly: 0x4a3a2c, len: 1.6, h: 0.95, w: 0.85, legH: 0.5, head: 0.58 },
+      troll:   { c: 0x5a6a4a, c2: 0x3e4a32, belly: 0x7a8a62, len: 2.0, h: 1.7, w: 1.4, legH: 1.0, head: 0.75 },
       treant:  { c: 0x5a4028, c2: 0x3e2c1a, belly: 0x6e5236, len: 2.4, h: 1.8, w: 1.3, legH: 1.1, head: 0.8 },
     })[type];
     const body = group(root, 0, d.legH + d.h / 2, 0); P.body = body;
@@ -1710,12 +1895,15 @@ const Models = (() => {
     sph(d.w, d.h, d.len, bodyMat, 0, 0, 0, body);
     sph(d.w * 0.95, d.h * 0.7, d.len * 0.55, d.c2, 0, d.h * 0.2, -d.len * 0.1, body, true);
     sph(d.w * 0.8, d.h * 0.6, d.len * 0.6, d.belly, 0, -d.h * 0.15, d.len * 0.08, body, true);
-    if (type === 'wolf' || type === 'monster' || type === 'alpha') sph(d.w * 1.05, d.h * 1.0, d.len * 0.45, d.c, 0, 0.05, d.len * 0.25, body, true); // грива
+    if (type === 'wolf' || type === 'monster' || type === 'alpha' || type === 'werewolf') sph(d.w * 1.05, d.h * 1.0, d.len * 0.45, d.c, 0, 0.05, d.len * 0.25, body, true); // грива
     if (type === 'boar') for (let i = 0; i < 6; i++) cone(0.05, 0.22, 0x1a120c, 0, d.h * 0.5, d.len * 0.35 - i * 0.14, body, 4, false);
     if (type === 'wolverine') box(d.w * 0.9, 0.06, d.len * 0.8, 0xc8a870, 0, d.h * 0.32, -d.len * 0.05, body, false);
     if (type === 'alpha') for (let i = 0; i < 6; i++) { const sp = cone(0.08, 0.4, 0x3a3a44, 0, d.h * 0.48, d.len * 0.3 - i * 0.18, body, 4, false); sp.rotation.x = -0.5; }
     if (type === 'bearking') { box(d.w * 1.05, d.h * 0.5, d.len * 0.55, mat(0x7a7e88, { metalness: 0.6, roughness: 0.4 }), 0, d.h * 0.3, -d.len * 0.05, body); for (let i = 0; i < 4; i++) cone(0.12, 0.4, mat(0xd8b040, { metalness: 0.7, roughness: 0.3 }), 0, d.h * 0.62, d.len * 0.15 - i * 0.25, body, 5, false); }
     if (type === 'treant') { for (let i = 0; i < 6; i++) { const lf = sph(1.1 + (i % 3) * 0.3, 0.8, 1.1, i % 2 ? 0x3f7f32 : 0x4c8f3a, (i % 2 ? 0.4 : -0.4), d.h * 0.55 + (i % 3) * 0.2, d.len * 0.3 - i * 0.28, body, true); void lf; } for (let i = 0; i < 4; i++) { const br = cyl(0.06, 0.12, 1.2, 0x4a3420, (i % 2 ? 0.6 : -0.6), d.h * 0.7, d.len * 0.1 - i * 0.3, body, 5); br.rotation.z = (i % 2 ? -0.7 : 0.7); } }
+    if (type === 'direboar') { const steel = mat(0x8a8e98, { metalness: 0.7, roughness: 0.35 }); for (let i = 0; i < 4; i++) box(d.w * 1.02, 0.12, 0.3, steel, 0, d.h * 0.35, d.len * 0.3 - i * 0.32, body); for (let i = 0; i < 6; i++) cone(0.06, 0.3, 0x2a2a2e, 0, d.h * 0.52, d.len * 0.35 - i * 0.2, body, 4, false); }
+    if (type === 'werewolf') { sph(d.w * 1.1, d.h * 1.1, d.len * 0.5, d.c2, 0, 0.1, d.len * 0.22, body, true); for (let i = 0; i < 5; i++) { const sp = cone(0.07, 0.3, d.c2, 0, d.h * 0.55, d.len * 0.25 - i * 0.18, body, 4, false); sp.rotation.x = -0.6; } }
+    if (type === 'troll') { const club = group(body, d.w * 0.6, -d.h * 0.1, d.len * 0.3); const c1 = cyl(0.12, 0.28, 1.8, 0x6a4a2a, 0, -0.4, 0.3, club, 7); c1.rotation.x = 0.9; for (let i = 0; i < 4; i++) cone(0.06, 0.2, 0x9a9aa4, 0.15 * Math.cos(i * 1.6), -0.9, 0.95 + 0.15 * Math.sin(i * 1.6), club, 4, false); sph(d.w * 0.9, d.h * 0.4, d.len * 0.4, 0x8a6a3a, 0, -d.h * 0.25, 0, body, true); }
     if (type === 'raccoon') { for (let i = 0; i < 3; i++) { const r = cyl(0.13, 0.13, 0.08, 0x2a2a2e, 0, -0.05 - i * 0.02, -0.15 - i * 0.16, null, 8, false); void r; } }
     if (type === 'monster') for (let i = 0; i < 5; i++) { const sp = cone(0.14, 0.55, 0x5a6a3a, 0, d.h * 0.48, d.len * 0.3 - i * 0.32, body, 5); sp.rotation.x = -0.4; }
     // голова
@@ -1726,13 +1914,14 @@ const Models = (() => {
     if (type === 'boar') { box(d.head * 0.55, d.head * 0.45, 0.06, 0xd89a90, 0, -d.head * 0.12, d.head * 0.45 + snoutL, head, false); [-1, 1].forEach(sx => { const t = cone(0.04, 0.22, 0xf4ecd8, sx * 0.13, -d.head * 0.1, d.head * 0.55 + snoutL * 0.6, head, 5); t.rotation.x = -0.6; }); }
     else sph(0.08 * d.head / 0.35, 0.06 * d.head / 0.35, 0.06, 0x111111, 0, -d.head * 0.04, d.head * 0.45 + snoutL - 0.04, head, true, false);
     void sn;
-    const eyeMat = (type === 'alpha' || type === 'bearking') ? mat(0xff2010, { emissive: 0xff1000, emissiveIntensity: 2.2 }) : type === 'treant' ? mat(0x9aff60, { emissive: 0x60ff20, emissiveIntensity: 2 }) : type === 'monster' ? mat(0xff3010, { emissive: 0xff2000, emissiveIntensity: 2 }) : mat(0x111111);
+    const eyeMat = (type === 'werewolf') ? mat(0xffd020, { emissive: 0xffb000, emissiveIntensity: 2.4 }) : (type === 'alpha' || type === 'bearking' || type === 'direboar') ? mat(0xff2010, { emissive: 0xff1000, emissiveIntensity: 2.2 }) : type === 'treant' ? mat(0x9aff60, { emissive: 0x60ff20, emissiveIntensity: 2 }) : type === 'monster' ? mat(0xff3010, { emissive: 0xff2000, emissiveIntensity: 2 }) : mat(0x111111);
     [-1, 1].forEach(sx => {
       sph(d.head * 0.15, d.head * 0.15, d.head * 0.1, eyeMat, sx * d.head * 0.28, d.head * 0.12, d.head * 0.42, head, true, false);
       // уши
       if (type === 'elk') { const ant = group(head, sx * d.head * 0.3, d.head * 0.45, -d.head * 0.1); const a1 = cyl(0.04, 0.06, 0.7, 0xd8c8a0, 0, 0.3, 0, ant, 5); a1.rotation.z = -sx * 0.6; const pal = box(0.6, 0.08, 0.35, 0xd8c8a0, sx * 0.45, 0.62, 0, ant); pal.rotation.z = -sx * 0.3; for (let k = 0; k < 3; k++) cone(0.04, 0.25, 0xd8c8a0, sx * (0.25 + k * 0.17), 0.78, 0, ant, 4, false); }
       else if (type === 'treant') { const hb = cyl(0.05, 0.1, 0.9, 0x4a3420, sx * d.head * 0.4, d.head * 0.6, 0, head, 5); hb.rotation.z = -sx * 0.5; }
-      else if (type === 'bear' || type === 'boar' || type === 'bearking' || type === 'raccoon' && false) sph(d.head * 0.3, d.head * 0.3, d.head * 0.12, d.c2, sx * d.head * 0.35, d.head * 0.42, -d.head * 0.05, head, true);
+      else if (type === 'troll') { const t2 = cone(0.08, 0.35, 0xf0e8d0, sx * d.head * 0.25, -d.head * 0.15, d.head * 0.5, head, 5); t2.rotation.x = -2.6; sph(d.head * 0.35, d.head * 0.25, d.head * 0.1, d.c2, sx * d.head * 0.5, d.head * 0.1, 0, head, true); }
+      else if (type === 'bear' || type === 'boar' || type === 'bearking' || type === 'direboar' || type === 'raccoon' && false) sph(d.head * 0.3, d.head * 0.3, d.head * 0.12, d.c2, sx * d.head * 0.35, d.head * 0.42, -d.head * 0.05, head, true);
       else if (type === 'monster') { const h = cone(0.12, 0.7, 0xd8ccb0, sx * d.head * 0.4, d.head * 0.5, 0, head, 6); h.rotation.z = -sx * 0.5; h.rotation.x = -0.3; }
       else {
         const e = cone(d.head * 0.22, d.head * 0.5, type === 'fox' ? 0x2a1a10 : d.c2, sx * d.head * 0.25, d.head * 0.5, -d.head * 0.05, head, 4); e.rotation.z = -sx * 0.15;
@@ -1759,7 +1948,7 @@ const Models = (() => {
     else if (type === 'boar') { const t = cyl(0.025, 0.025, 0.3, d.c2, 0, -0.12, -0.05, tail, 4); t.rotation.x = 0.4; }
     else if (type === 'monster') { const t = cone(0.3, 1.2, d.c2, 0, -0.2, -0.5, tail, 6); t.rotation.x = -Math.PI / 2 - 0.4; }
     root.userData.parts = P; root.userData.d = d;
-    root.userData.baseScale = { monster: 1.1, alpha: 1.15, bearking: 1.25, treant: 1.2 }[type] || 1;
+    root.userData.baseScale = { monster: 1.1, alpha: 1.15, bearking: 1.25, treant: 1.2, troll: 1.1 }[type] || 1;
     root.scale.setScalar(root.userData.baseScale);
     return root;
   }
@@ -1810,6 +1999,29 @@ const Models = (() => {
       [0.5, 1.2, 1.9].forEach(y => { box(4.05, 0.16, 0.14, WOOD_D, 0, y, 0.27, g); box(4.05, 0.06, 0.16, 0x4a4a50, 0, y, 0.29, g, false); });
       box(4, 0.12, 0.8, WOOD_L, 0, H - 0.5, -0.3, g);
       [-1.8, 1.8].forEach(x => box(0.3, H, 0.3, WOOD_D, x, H / 2, -0.55, g));
+    } else if (lvl === 6) {
+      const plate = texMat(canvasTex('steelplate', 128, 128, (c, w, hh) => { c.fillStyle = '#5a5f6a'; c.fillRect(0, 0, w, hh); c.strokeStyle = '#2e3138'; c.lineWidth = 3; for (let i = 0; i <= 2; i++) { c.strokeRect(2, i * 64 + 2, w - 4, 60); } c.fillStyle = '#9aa0aa'; for (let y = 8; y < hh; y += 32) for (let x = 8; x < w; x += 28) { c.beginPath(); c.arc(x, y, 2.5, 0, 7); c.fill(); } }), { metalness: 0.6, roughness: 0.4 });
+      plate.map.repeat.set(2, 1.4);
+      box(4, H, 1.4, plate, 0, H / 2, 0, g);
+      box(4.1, 0.3, 1.55, 0x2e3138, 0, 0.15, 0, g);
+      for (let i = 0; i < 5; i++) box(0.55, 0.55, 0.5, plate, -1.6 + i * 0.8, H + 0.27, 0.45, g);
+      for (let i = 0; i < 6; i++) { const sp = cone(0.08, 0.55, mat(0xc8ccd6, { metalness: 0.8, roughness: 0.25 }), -1.75 + i * 0.7, H * 0.45, 0.95, g, 5); sp.rotation.x = Math.PI / 2; }
+      box(4.12, 0.14, 1.5, mat(0xd8b040, { metalness: 0.7, roughness: 0.35 }), 0, H * 0.78, 0, g, false);
+      // два прожектора, светят наружу
+      const beamMat = new THREE.MeshBasicMaterial({ color: 0xfff4c8, transparent: true, opacity: 0.0, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false });
+      g.userData.beams = [];
+      [-1.25, 1.25].forEach((x, i) => {
+        const sp = group(g, x, H + 0.15, -0.1);
+        box(0.3, 0.35, 0.3, 0x2a2c32, 0, 0.17, 0, sp);
+        const head = group(sp, 0, 0.45, 0);
+        const housing = cyl(0.26, 0.2, 0.45, 0x3a3e48, 0, 0, 0, head, 10); housing.rotation.x = Math.PI / 2;
+        const lens = cyl(0.23, 0.23, 0.03, mat(0xffffff, { emissive: 0xfff4c0, emissiveIntensity: 2.8 }), 0, 0, 0.24, head, 10, false); lens.rotation.x = Math.PI / 2;
+        const beam = new THREE.Mesh(new THREE.ConeGeometry(2.6, 14, 16, 1, true), beamMat); beam.rotation.x = -Math.PI / 2; beam.position.set(0, 0, 7.2); head.add(beam);
+        head.rotation.x = 0.28; head.userData.phase = i * 1.7;
+        g.userData.beams.push(head);
+      });
+      g.userData.beamMat = beamMat;
+      g.userData.lightPos = new THREE.Vector3(0, H + 0.8, 1.6); g.userData.lightPower = 1.5;
     } else {
       const th = lvl === 3 ? 1.0 : (lvl === 4 ? 1.1 : 1.3);
       box(4, H, th, brickMat(lvl), 0, H / 2, 0, g);
@@ -2148,7 +2360,7 @@ const Models = (() => {
     return { stone, coal, iron, berry };
   }
 
-  return { setGear, mat, texMat, T, box, sph, cyl, cone, torus, group, makeBird, animBird, makeHero, makeTool, animHero, makeEnemy, animEnemy, makeBuilding, makeCannon, merge, mtx, treeGeos, rockGeos, WALL_H: l => WALL_LEVELS[l - 1].h };
+  return { makeHelicopter, setGear, mat, texMat, T, box, sph, cyl, cone, torus, group, makeBird, animBird, makeHero, makeTool, animHero, makeEnemy, animEnemy, makeBuilding, makeCannon, merge, mtx, treeGeos, rockGeos, WALL_H: l => WALL_LEVELS[l - 1].h };
 })();
 
 </script>
@@ -2176,6 +2388,7 @@ const World = (() => {
     { id: 'summer', name: 'Летний лес', grass: [0x5e9f38, 0x86b84a], trees: { pine: [0x2f6e34, 0x3a8040, 0x46924a], oak: [0x4f9a3a, 0x5aa844, 0x468a34, 0x62b04a], birch: [0x8ac850, 0x9ad458] }, mix: [0.55, 0.85], count: 430, dens: 0.42, flowers: 1, bush: 0x3f7f32, snow: 42 },
     { id: 'autumn', name: 'Осенний лес', grass: [0x8a9a3a, 0xb4a648], trees: { pine: [0x2a5e30, 0x356e38, 0x407a40], oak: [0xd8742a, 0xe8a030, 0xc0482a, 0xf0b840], birch: [0xf0c838, 0xe8d860] }, mix: [0.3, 0.75], count: 420, dens: 0.42, flowers: 0.5, bush: 0xa86a2a, snow: 42 },
     { id: 'taiga', name: 'Тайга', grass: [0x4a7a3a, 0x648c4a], trees: { pine: [0x1f5a34, 0x2a6a3a, 0x356f42], oak: [0x3f7a34, 0x4a8a3a, 0x3a6e30, 0x52923f], birch: [0x7ab048, 0x86bc50], snowy: true }, mix: [0.85, 0.9], count: 540, dens: 0.38, flowers: 0.3, bush: 0x2f6a30, snow: 26 },
+    { id: 'winter', name: 'Зимний лес', grass: [0xe6edf3, 0xf7f9fc], trees: { pine: [0x2a5a3e, 0x34684a, 0x3e7452], oak: [0xdfe8ef, 0xeef3f7, 0xd2dde6, 0xf4f7fa], birch: [0xe4ecf2, 0xf2f6f9], snowy: true }, mix: [0.75, 0.9], count: 440, dens: 0.4, flowers: 0.04, bush: 0xd6e2ea, snow: 14, water: 0x9ac8e0, waterNight: 0x3a5878 },
     { id: 'bloom', name: 'Цветущий луг', grass: [0x74b844, 0xa0d05a], trees: { pine: [0x2f6e34, 0x3a8040, 0x46924a], oak: [0xf0a8c8, 0xf8c0d8, 0xe890b8, 0xffd0e0], birch: [0x9ad458, 0xb0e060] }, mix: [0.25, 0.7], count: 300, dens: 0.5, flowers: 2.4, bush: 0x4c9a3a, snow: 42 },
   ];
   const WATER_Y = -0.9;
@@ -2192,11 +2405,14 @@ const World = (() => {
     let h = 2166136261; for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619); }
     return (h >>> 0) || 1;
   }
-  function biomeOf(seed) { return BIOMES[Math.floor(mulberry32(seed ^ 0x9e3779b9)() * BIOMES.length)]; }
-  function setupSeed(seed) {
+  // n = 4 — старые сохранения (до зимнего биома), чтобы их мир не изменился
+  function biomeOf(seed, n) { const r = mulberry32(seed ^ 0x9e3779b9)(); return n === 4 ? [BIOMES[0], BIOMES[1], BIOMES[2], BIOMES[4]][Math.floor(r * 4)] : BIOMES[Math.floor(r * BIOMES.length)]; }
+  const biomeById = id => BIOMES.find(b => b.id === id) || null;
+  function setupSeed(seed, biomeId) {
     W.seed = seed; shufflePerm(seed);
     const r = mulberry32(seed ^ 0x9e3779b9);
     W.biome = BIOMES[Math.floor(r() * BIOMES.length)];
+    if (biomeId) W.biome = biomeById(biomeId) || W.biome;
     W.hScale = 8 + r() * 14; W.hFreq = 0.008 + r() * 0.009; W.mtn = 40 + r() * 45;
     W.rA = r() * Math.PI; W.rC = Math.cos(W.rA); W.rS = Math.sin(W.rA);
     W.rOff = (r() < 0.5 ? -1 : 1) * (58 + r() * 25); W.rAmp = 8 + r() * 18; W.rFreq = 0.015 + r() * 0.02; W.river = r() < 0.88;
@@ -2266,12 +2482,12 @@ const World = (() => {
     generate(20240611);
   }
   // Полностью пересоздаёт мир по сиду
-  function generate(seed) {
+  function generate(seed, biomeId) {
     if (root) { scene.remove(root); owned.forEach(g => g.dispose()); owned = []; }
     nodes.length = 0; grid.clear();
     root = new THREE.Group(); scene.add(root);
-    setupSeed(seed);
-    const BI = W.biome;
+    setupSeed(seed, biomeId);
+    const BI = W.biome; W.biomeId = BI.id;
     // ----- Рельеф -----
     const SIZE = 460, SEG = 150;
     const tg = own(new THREE.PlaneGeometry(SIZE, SIZE, SEG, SEG)); tg.rotateX(-Math.PI / 2);
@@ -2542,7 +2758,7 @@ const World = (() => {
     stars.material.opacity = Math.max(0, 1 - daylight * 2.5);
     stars.position.copy(center);
     clouds.forEach(c => { c.position.x += c.userData.v * dt; if (c.position.x > center.x + 280) c.position.x = center.x - 280; c.material.color.setScalar(0.35 + 0.65 * daylight); });
-    water.material.color.setHex(daylight > 0.3 ? 0x3a8ac8 : 0x1a3a68);
+    water.material.color.setHex(daylight > 0.3 ? (W.biome.water || 0x3a8ac8) : (W.biome.waterNight || 0x1a3a68));
     water.position.y = WATER_Y + Math.sin(time * 0.8) * 0.04;
     flock.forEach((b, i) => {
       const f = b.userData.fl, ang = time * f.sp + f.ph;
@@ -2564,7 +2780,7 @@ const World = (() => {
     if (sun.shadow.mapSize.x !== ms) { sun.shadow.mapSize.set(ms, ms); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
   }
 
-  return { build, generate, seedFrom, biomeOf, heightAt, groundAt, inWater, inMine, nodes, nodesNear, updateNodeMatrix, updateSky, applyQuality, WATER_Y, MINE, LAKE, CAVE, BIOMES, get seed() { return W.seed; }, get biome() { return W.biome; }, get daylight() { return daylight; }, get sun() { return sun; } };
+  return { build, generate, seedFrom, biomeOf, heightAt, groundAt, inWater, inMine, nodes, nodesNear, updateNodeMatrix, updateSky, applyQuality, WATER_Y, MINE, LAKE, CAVE, BIOMES, get seed() { return W.seed; }, get biome() { return W.biome; }, get biomeId() { return W.biome.id; }, biomeById, get daylight() { return daylight; }, get sun() { return sun; } };
 })();
 
 </script>
@@ -2594,11 +2810,15 @@ const G = window.G = {};
   G.paused = false;
 
   // ---------------- Инициализация ----------------
-  G.init = function (canvas) {
+  G.initRenderer = function (canvas) {
     const q = G.settings.quality;
     renderer = new THREE.WebGLRenderer({ canvas, antialias: q !== 'low', powerPreference: 'high-performance' });
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  };
+  G.init = function (canvas) { if (!renderer) G.initRenderer(canvas); G.initWorld(); };
+  G.initWorld = function () {
+    const q = G.settings.quality;
     scene = new THREE.Scene();
     scene.fog = new THREE.Fog(0x8fd0f4, 60, 240);
     camera = new THREE.PerspectiveCamera(55, 1, 0.3, 1000);
@@ -2669,16 +2889,19 @@ const G = window.G = {};
     PR.forEach(p => scene.remove(p.mesh)); PR.length = 0;
     PART.forEach(p => scene.remove(p.mesh)); PART.length = 0;
     deadNodes.length = 0;
+    if (cut) { scene.remove(cut.heli); cut = null; UI.cutscene(false); }
     World.nodes.forEach(n => { n.alive = true; n.hp = n.maxHp; n.grow = 1; n.shake = 0; n.acc = 0; World.updateNodeMatrix(n); });
     if (P) scene.remove(P.mesh);
     if (build) G.cancelBuild();
     nextId = 1;
   }
 
-  G.newGame = function (hero, diff, seed) {
+  G.newGame = function (hero, diff, seed, biomeId, slot) {
     clearWorld();
     seed = seed || 20240611;
-    if (World.seed !== seed) World.generate(seed);
+    if (slot) G.slot = slot;
+    const wantBiome = biomeId || World.biomeOf(seed).id;
+    if (World.seed !== seed || World.biomeId !== wantBiome) World.generate(seed, wantBiome);
     S = newState(hero, diff); S.seed = seed;
     // стартовая база: кольцо из частокола, ворота, гнездо, скворечники, пушка
     addBuilding('core', 0, 0, 0);
@@ -2713,11 +2936,13 @@ const G = window.G = {};
   }
   function setTool(kind) {
     if (kind === 'pick' && S.tools.pick < 0) kind = 'axe';
-    const tier = kind === 'axe' ? S.tools.axe : S.tools.pick;
+    const weapon = HEROES[S.hero].weapon;
+    if (kind === 'weapon' && !weapon) kind = 'axe';
+    const tier = kind === 'axe' ? S.tools.axe : kind === 'pick' ? S.tools.pick : 0;
     if (P.tool === kind && P.toolTier === tier) return;
     const hand = P.mesh.userData.parts.hand;
     while (hand.children.length) hand.remove(hand.children[0]);
-    hand.add(Models.makeTool(kind, tier));
+    hand.add(Models.makeTool(kind === 'weapon' ? weapon : kind, tier));
     P.tool = kind; P.toolTier = tier;
   }
   G.selectTool = k => { if (k === 'pick' && S.tools.pick < 0) { UI.toast(tr('no_pick_yet'), 'warn'); return; } setTool(k); };
@@ -2731,6 +2956,7 @@ const G = window.G = {};
   const LEVELS = { wall: WALL_LEVELS, cannon: CANNON_LEVELS, gate: GATE_LEVELS, ballista: BALLISTA_LEVELS, mineshaft: SHAFT_LEVELS };
   G.LEVELS = LEVELS;
   function maxHpOf(b) {
+    if (b.t === 'core') return Math.round(BUILD.core.hp * (DF().core || 1));
     if (b.t === 'wall' || b.t === 'gate' || b.t === 'ballista' || b.t === 'mineshaft') return LEVELS[b.t][b.lvl - 1].hp;
     if (b.t === 'cannon') return BUILD.cannon.hp + (b.lvl - 1) * 110;
     return BUILD[b.t].hp;
@@ -2741,7 +2967,7 @@ const G = window.G = {};
     return { min: m, max: M };
   }
   function wallTopY(w) {
-    const H = WALL_LEVELS[w.lvl - 1].h; return w.y + [H - 0.25, H - 0.2, H + 0.15, H, H][w.lvl - 1];
+    const H = WALL_LEVELS[w.lvl - 1].h; return w.y + [H - 0.25, H - 0.2, H + 0.15, H, H, H + 0.05][w.lvl - 1];
   }
   function addBuilding(t, x, z, rot, lvl = 1, hp = null, onWall = null, id = null) {
     const b = { id: id || nextId++, t, x, z, rot, lvl, onWall, cannonId: null, cd: Math.random(), yaw: rot * Math.PI / 2, gunner: null, prodT: 0, prod2: 0, prod3: 0, hitT: 0, spin: 0 };
@@ -3181,10 +3407,10 @@ const G = window.G = {};
         if (bird && bird.state !== 'gunner') bird = null;
         if (!bird && b.lvl < 4) continue; // без птицы стреляют только автоматические пушки
         const bs = bird ? BIRDS[bird.sp] : { dmg: 1, rate: 0.6, range: 1 };
-        dmg = L.dmg * bs.dmg * (S.hero === 'defender' ? 1.15 : 1) * (bird && bs.special === 'night' && night ? 1.7 : 1);
+        dmg = L.dmg * bs.dmg * (S.hero === 'defender' ? 1.15 : S.hero === 'engineer' ? 1.25 : 1) * (S.hero === 'druid' && bird ? 1.25 : 1) * (bird && bs.special === 'night' && night ? 1.7 : 1);
         rate = L.rate * bs.rate; range = L.range * bs.range; splash = L.splash * (bird && bs.special === 'splash' ? 1.5 : 1); kind = 'ball';
-      } else if (b.t === 'ballista') { const L = BALLISTA_LEVELS[b.lvl - 1]; dmg = L.dmg; rate = L.rate; range = L.range; splash = L.splash; kind = L.kind; }
-      else { const D = BUILD[b.t]; dmg = D.dmg; rate = D.rate; range = D.range; kind = 'arrow'; }
+      } else if (b.t === 'ballista') { const L = BALLISTA_LEVELS[b.lvl - 1]; dmg = L.dmg * (S.hero === 'engineer' ? 1.25 : 1); rate = L.rate; range = L.range; splash = L.splash; kind = L.kind; }
+      else { const D = BUILD[b.t]; dmg = D.dmg * (S.hero === 'engineer' ? 1.25 : 1); rate = D.rate; range = D.range; kind = 'arrow'; }
       const mp = b.mesh.position; const e = nearestEnemy(mp.x, mp.z, range);
       if (b.mesh.userData.spin && isCannon) b.mesh.userData.spin.rotation.z += dt * (e ? 14 : 1);
       if (!e) continue;
@@ -3264,7 +3490,7 @@ const G = window.G = {};
   // ---------------- Игрок ----------------
   function hurtPlayer(dmg) {
     if (P.dead) return;
-    P.hp -= dmg; P.lastHurt = time;
+    P.hp -= dmg * (HEROES[S.hero].armor || 1); P.lastHurt = time;
     Sound.play('hurt'); UI.flash();
     if (P.hp <= 0) {
       P.hp = 0; P.dead = 5; P.mesh.rotation.x = -Math.PI / 2;
@@ -3295,7 +3521,7 @@ const G = window.G = {};
     if (P.swing > 0 || P.atkCd > 0 || P.dead) return;
     const t = findActTarget(); if (!t) return;
     if (t.n && !nodeOK(t.n)) return;
-    if (t.n) setTool(NODE_INFO[t.n.kind].tool === 'pick' ? 'pick' : 'axe'); else setTool('axe');
+    if (t.n) setTool(NODE_INFO[t.n.kind].tool === 'pick' ? 'pick' : 'axe'); else setTool('weapon');
     P.swing = 0.0001; P.swingTarget = t; P.hitDone = false;
     const tx = t.e ? t.e.pos.x : t.n.x, tz = t.e ? t.e.pos.z : t.n.z;
     P.yaw = Math.atan2(tx - P.pos.x, tz - P.pos.z);
@@ -3402,6 +3628,18 @@ const G = window.G = {};
     P.pos.y = Math.max(World.groundAt(P.pos.x, P.pos.z), World.WATER_Y - 1.1);
     // действие
     P.atkCd -= dt;
+    if (hero.bowRange) {
+      P.bowCd = (P.bowCd || 0) - dt;
+      if (P.bowCd <= 0 && P.swing <= 0) {
+        const e = nearestEnemy(P.pos.x, P.pos.z, hero.bowRange);
+        if (e) {
+          P.bowCd = 1 / hero.atkRate; setTool('weapon');
+          P.yaw = Math.atan2(e.pos.x - P.pos.x, e.pos.z - P.pos.z);
+          fire(V(P.pos.x, P.pos.y + 1.5, P.pos.z), e, { kind: 'arrow', dmg: hero.dmg, splash: 0 });
+          Sound.play('arrow');
+        }
+      }
+    }
     if (input.action || G.settings.autoAct) playerAct();
     if (P.swing > 0) {
       P.swing += dt / (1 / hero.atkRate * 0.85);
@@ -3611,6 +3849,11 @@ const G = window.G = {};
       const lamps = B.filter(b => b.mesh.userData.lightPos).sort((a, b) => Math.hypot(a.x - P.pos.x, a.z - P.pos.z) - Math.hypot(b.x - P.pos.x, b.z - P.pos.z));
       lightPool.forEach((l, i) => { const b = lamps[i]; l.userData.b = b || null; if (b) l.position.copy(b.mesh.localToWorld(b.mesh.userData.lightPos.clone())); });
     }
+    for (const b of B) {
+      const bm = b.mesh.userData.beams; if (!bm) continue;
+      b.mesh.userData.beamMat.opacity = night * 0.16;
+      bm.forEach(hd => { hd.rotation.y = Math.sin(time * 0.35 + hd.userData.phase) * 0.55; hd.visible = true; });
+    }
     lightPool.forEach(l => {
       const b = l.userData.b;
       if (!b || !B.includes(b) || night <= 0) { l.intensity = 0; return; }
@@ -3639,6 +3882,8 @@ const G = window.G = {};
         if (b.prod3 >= 24) { b.prod3 = 0; addRes('iron', 1, near ? V(b.x, b.y + 3.2, b.z) : null); }
         if (b.mesh.userData.spin) b.mesh.userData.spin.rotation.z += dt * 2;
       }
+      if (S.hero === 'engineer' && b.hp < b.maxHp && Math.hypot(P.pos.x - b.x, P.pos.z - b.z) < 15) b.hp = Math.min(b.maxHp, b.hp + b.maxHp * 0.015 * dt);
+      if (S.hero === 'druid' && b.t === 'core' && b.hp < b.maxHp) b.hp = Math.min(b.maxHp, b.hp + 2 * dt);
       if (b.t === 'core' && b.mesh.userData.flag) b.mesh.userData.flag.rotation.y = Math.sin(time * 2) * 0.3;
     }
   }
@@ -3670,7 +3915,7 @@ const G = window.G = {};
     const key = S.hero + P.tool + P.toolTier;
     if (key !== vmKey) {
       vmKey = key; while (vm.children.length) vm.remove(vm.children[0]);
-      const look = { defender: [0x3d7a3a, 0xf1c7a0], builder: [0xe8b890, 0xe8b890], hunter: [0x8a5a32, 0xf3cfa8] }[S.hero];
+      const look = { defender: [0x3d7a3a, 0xf1c7a0], builder: [0xe8b890, 0xe8b890], hunter: [0x8a5a32, 0xf3cfa8], knight: [0x9aa0aa, 0xf0c4a0], ranger: [0x2f5a3a, 0xe8c09a], engineer: [0x3a5a8a, 0xd8a888], druid: [0x5a3a8a, 0xf0d0b0] }[S.hero] || [0x3d7a3a, 0xf1c7a0];
       // Та же рука, что у героя от 3-го лица: плечо → рука → кисть с инструментом.
       // rig развёрнут на 180°, чтобы «вперёд» героя совпадало со взглядом камеры.
       const rig = new THREE.Group(); rig.rotation.y = Math.PI; vm.add(rig); vm.userData.rig = rig;
@@ -3758,6 +4003,11 @@ const G = window.G = {};
       renderer.render(selScene, selCam);
       return;
     }
+    if (G.state === 'cutscene') {
+      if (!G.paused) updateCutscene(dt);
+      renderer.render(scene, camera);
+      return;
+    }
     if (G.state === 'play' || G.state === 'over') {
       if (G.state === 'play' && !G.paused) update(dt);
       updateCamera(dt);
@@ -3767,7 +4017,7 @@ const G = window.G = {};
   };
   function update(dt) {
     S.stats.time = (S.stats.time || 0) + dt;
-    S.dayTime += dt / 300; if (S.dayTime >= 1) { S.dayTime -= 1; S.day++; UI.toast(tr('new_day', { n: S.day }), 'info'); }
+    S.dayTime += dt / 300; if (S.dayTime >= 1) { S.dayTime -= 1; S.day++; UI.toast(tr('new_day', { n: S.day }), 'info'); if (S.day >= GOAL_DAYS && !S.won) { startCutscene(); return; } }
     const dl = World.updateSky(S.dayTime, V(P.pos.x, 0, P.pos.z), dt, time);
     Sound.setNight(dl < 0.2);
     updatePlayer(dt);
@@ -3806,18 +4056,100 @@ const G = window.G = {};
   G.enemiesLeft = () => E.filter(e => !e.dying && !e.flee).length + (S.spawnList ? S.spawnList.length : 0);
 
   // ---------------- Конец игры ----------------
+  // ---------------- Золотые птицы (сохраняются между прохождениями) ----------------
+  const META_KEY = 'birdwars_meta_v1';
+  G.meta = { gb: 0, unlocked: [], wins: 0 };
+  try { Object.assign(G.meta, JSON.parse(localStorage.getItem(META_KEY)) || {}); } catch (e) { }
+  const saveMeta = () => { try { localStorage.setItem(META_KEY, JSON.stringify(G.meta)); } catch (e) { } };
+  G.heroUnlocked = id => !HEROES[id].price || G.meta.unlocked.includes(id);
+  G.buyHero = function (id) {
+    const h = HEROES[id]; if (G.heroUnlocked(id)) return true;
+    if (G.meta.gb < h.price) { UI.toast(tr('hero_noGB'), 'warn'); Sound.play('error'); return false; }
+    G.meta.gb -= h.price; G.meta.unlocked.push(id); saveMeta();
+    Sound.play('win'); UI.toast(tr('hero_bought', { name: h.name }), 'good'); return true;
+  };
+  function awardGB(n) { n = Math.max(1, Math.round(n)); G.meta.gb += n; saveMeta(); return n; }
+  function runStats() { return Object.assign({ wave: S.wave, day: S.day, hero: S.hero, diff: S.diff, seed: S.seed, biome: World.biome.name }, S.stats); }
+
   function gameOver() {
     G.state = 'over'; Sound.play('lose'); Sound.setMode('calm');
-    G.deleteSave(); // поражение: прохождение начинается заново
-    UI.gameOver(Object.assign({ wave: S.wave, day: S.day, hero: S.hero, diff: S.diff, seed: S.seed, biome: World.biome.name }, S.stats));
+    G.deleteSave(G.slot); // поражение: прохождение начинается заново
+    const gb = awardGB(Math.floor(S.day / 3) * (DF().tokens || 1));
+    UI.gameOver(Object.assign(runStats(), { gb, gbTotal: G.meta.gb }));
   }
+  function victory() {
+    G.state = 'over'; Sound.play('win'); Sound.setMode('calm');
+    G.deleteSave(G.slot);
+    G.meta.wins = (G.meta.wins || 0) + 1;
+    const gb = awardGB(10 * (DF().tokens || 1));
+    UI.gameOver(Object.assign(runStats(), { gb, gbTotal: G.meta.gb, win: true }));
+  }
+
+  // ---------------- Финал: вертолёт забирает героя и улетает в закат ----------------
+  let cut = null;
+  function startCutscene() {
+    S.won = true;
+    G.cancelBuild();
+    S.waveActive = false; S.spawnList = [];
+    E.forEach(e => { if (!e.dying) { e.dying = 1.6; } });
+    G.state = 'cutscene'; Sound.setMode('calm');
+    UI.cutscene(true);
+    UI.toast(tr('heli_coming'), 'good', 5000);
+    const heli = Models.makeHelicopter(); scene.add(heli);
+    // площадка посадки — рядом с героем, на ровной земле базы
+    const land = V(P.pos.x + 4, 0, P.pos.z + 1); land.y = World.groundAt(land.x, land.z);
+    // солнце садится с этой стороны (0.47 дня), туда вертолёт и улетит
+    const a = 0.492 * Math.PI * 2, sunDir = V(Math.cos(a) * 0.8, 0, 0.45).normalize();
+    const start = land.clone().addScaledVector(sunDir, -110); start.y = land.y + 40;
+    heli.position.copy(start);
+    cut = { t: 0, heli, land, start, sunDir, day0: S.dayTime, rotorT: 0, heroGone: false, camPos: camera.position.clone() };
+  }
+  function updateCutscene(dt) {
+    const c = cut; if (!c) return;
+    c.t += dt; time += dt; const t = c.t, h = c.heli, ease = x => x * x * (3 - 2 * x);
+    // небо плавно переходит в закат
+    S.dayTime = c.day0 + (0.492 - c.day0) * Math.min(1, t / 9);
+    World.updateSky(S.dayTime, V(c.land.x, 0, c.land.z), dt, time);
+    updateParticles(dt); updateEnemies(dt); updateBirds(dt); updateLights(dt);
+    // винты
+    h.userData.rotor.rotation.y += dt * 28; h.userData.tailRotor.rotation.x += dt * 34;
+    c.rotorT -= dt; if (c.rotorT <= 0) { c.rotorT = 0.11; Sound.play('rotor', Math.max(0.15, 1 - h.position.distanceTo(camera.position) / 120)); }
+    const hover = V(c.land.x, c.land.y + 12, c.land.z);
+    const look = (from, to) => { const d = to.clone().sub(from); if (d.lengthSq() > 1e-4) h.rotation.y = Math.atan2(d.x, d.z); };
+    let target;
+    if (t < 7) { const u = ease(t / 7); target = c.start.clone().lerp(hover, u); look(h.position, hover); h.rotation.z = Math.sin(t) * 0.05; }
+    else if (t < 10) { target = hover.clone().lerp(c.land, ease((t - 7) / 3)); }
+    else if (t < 13) { target = c.land.clone(); }
+    else if (t < 16) { target = c.land.clone().lerp(hover.clone().setY(c.land.y + 16), ease((t - 13) / 3)); }
+    else { const u = (t - 16) / 9; target = V(c.land.x, c.land.y + 16, c.land.z).addScaledVector(c.sunDir, u * u * 260); target.y += u * 8; h.rotation.y += ((Math.atan2(c.sunDir.x, c.sunDir.z)) - h.rotation.y) * Math.min(1, dt * 1.5); h.rotation.x = 0.18; }
+    h.position.copy(target);
+    // герой идёт к вертолёту и садится в него
+    if (t >= 10 && t < 12.6) {
+      const door = c.land.clone().add(V(-1.9, 0, -0.4));
+      const d = door.clone().sub(P.pos); d.y = 0; const dist = d.length();
+      if (dist > 0.15) { P.pos.addScaledVector(d.normalize(), Math.min(dist, dt * 3.2)); P.yaw = Math.atan2(d.x, d.z); }
+      P.pos.y = World.groundAt(P.pos.x, P.pos.z);
+      P.mesh.position.copy(P.pos); P.mesh.rotation.y = P.yaw; P.animT += dt;
+      Models.animHero(P.mesh, dist > 0.15 ? 'walk' : 'idle', P.animT, 1, 0);
+    } else if (t >= 12.6 && !c.heroGone) { c.heroGone = true; P.mesh.visible = false; Sound.play('pickup'); }
+    else if (t < 10) { P.animT += dt; Models.animHero(P.mesh, 'idle', P.animT, 1, 0); P.mesh.rotation.y += ((Math.atan2(h.position.x - P.pos.x, h.position.z - P.pos.z)) - P.mesh.rotation.y) * Math.min(1, dt * 3); }
+    // камера: сначала за героем, потом с земли смотрим, как вертолёт уходит в закат
+    let cp, lk;
+    if (t < 13) { cp = V(P.pos.x - c.sunDir.x * 9 + 6, P.pos.y + 6, P.pos.z - c.sunDir.z * 9 + 6); lk = h.position.clone().lerp(P.pos.clone().add(V(0, 1.5, 0)), t < 7 ? 0.3 : 0.6); }
+    else { cp = V(c.land.x - c.sunDir.x * 14, c.land.y + 3.5, c.land.z - c.sunDir.z * 14); lk = h.position.clone(); }
+    camera.position.lerp(cp, 1 - Math.exp(-dt * 2.5)); camera.lookAt(lk);
+    if (vm) vm.visible = false;
+    if (t > 25.5) { scene.remove(h); cut = null; UI.cutscene(false); victory(); }
+  }
+  G.cutscene = () => cut;
+  G._cutStep = (dt, n) => { for (let i = 0; i < n && cut; i++) updateCutscene(dt); };
 
   // ---------------- Выбор героя ----------------
   G.selRot = 0;
   G.showHero = function (type) {
     if (selHero) selScene.remove(selHero);
     selHero = Models.makeHero(type); selScene.add(selHero);
-    const hand = selHero.userData.parts.hand; hand.add(Models.makeTool(type === 'builder' ? 'hammer' : 'axe', type === 'hunter' ? 1 : 0));
+    const hand = selHero.userData.parts.hand; hand.add(Models.makeTool(HEROES[type].weapon || (type === 'builder' ? 'hammer' : 'axe'), type === 'hunter' ? 1 : 0));
   };
 
 
@@ -3849,28 +4181,34 @@ const G = window.G = {};
   };
   G.portrait = sp => portraits[sp] || '';
 
-  // ---------------- Сохранение ----------------
-  const SAVE_KEY = 'birdfortress_save_v1';
-  G.hasSave = () => { try { return !!localStorage.getItem(SAVE_KEY); } catch (e) { return false; } };
+  // ---------------- Сохранение: 3 слота ----------------
+  const SLOT_KEY = n => 'birdwars_slot_' + n;
+  G.slot = 1;
+  // перенос старого единственного сохранения в слот 1
+  try { const old = localStorage.getItem('birdfortress_save_v1'); if (old && !localStorage.getItem(SLOT_KEY(1))) { localStorage.setItem(SLOT_KEY(1), old); } if (old) localStorage.removeItem('birdfortress_save_v1'); } catch (e) { }
+  const readSlot = n => { try { return JSON.parse(localStorage.getItem(SLOT_KEY(n))); } catch (e) { return null; } };
+  G.hasSave = n => n ? !!readSlot(n) : [1, 2, 3].some(k => readSlot(k));
+  G.saveCount = () => [1, 2, 3].filter(k => readSlot(k)).length;
   G.save = function (auto) {
-    if (!S || G.state === 'over') return;
+    if (!S || G.state === 'over' || G.state === 'cutscene') return;
     S.player = { x: P.pos.x, z: P.pos.z, hp: P.hp };
     const data = Object.assign({}, S, {
-      waveActive: false, spawnList: null, waveTimer: S.waveActive ? 30 : S.waveTimer,
+      waveActive: false, spawnList: null, waveTimer: S.waveActive ? 30 : S.waveTimer, biomeId: World.biomeId,
       buildings: B.map(b => ({ id: b.id, t: b.t, x: b.x, z: b.z, r: b.rot, l: b.lvl, hp: Math.round(b.hp), w: b.onWall || 0 })),
       birds: BD.map(b => ({ sp: b.sp, hp: b.hp, c: b.cannon ? b.cannon.id : 0 })),
       nodes: World.nodes.filter(n => !n.alive).map(n => [n.idx, Math.round(n.regrow)]),
       cam: { yaw: cam.yaw, pitch: cam.pitch }, savedAt: Date.now(),
     });
-    try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); if (!auto) UI.toast(tr('saved'), 'info'); else UI.saveIcon(); } catch (e) { UI.toast(tr('save_fail'), 'bad'); }
+    try { localStorage.setItem(SLOT_KEY(G.slot), JSON.stringify(data)); if (!auto) UI.toast(tr('saved'), 'info'); else UI.saveIcon(); } catch (e) { UI.toast(tr('save_fail'), 'bad'); }
   };
-  G.load = function () {
-    let data;
-    try { data = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) { data = null; }
+  G.load = function (slot) {
+    const n = slot || G.slot; const data = readSlot(n);
     if (!data) return false;
+    G.slot = n;
     clearWorld();
     if (!data.seed) data.seed = 20240611;
-    if (World.seed !== data.seed) World.generate(data.seed);
+    if (!data.biomeId) data.biomeId = World.biomeOf(data.seed, 4).id; // старые сохранения
+    if (World.seed !== data.seed || World.biomeId !== data.biomeId) World.generate(data.seed, data.biomeId);
     S = data; const blds = data.buildings, birds = data.birds, nodes = data.nodes;
     delete S.buildings; delete S.birds; delete S.nodes;
     if (!S.diff) S.diff = 'normal';
@@ -3887,9 +4225,11 @@ const G = window.G = {};
     G.state = 'play'; Sound.setMode('calm');
     return true;
   };
-  G.deleteSave = () => { try { localStorage.removeItem(SAVE_KEY); } catch (e) { } };
-  G.saveInfo = function () {
-    try { const d = JSON.parse(localStorage.getItem(SAVE_KEY)); if (!d) return null; return { hero: d.hero, wave: d.wave, day: d.day, at: d.savedAt, diff: d.diff || 'normal' }; } catch (e) { return null; }
+  G.deleteSave = n => { try { localStorage.removeItem(SLOT_KEY(n || G.slot)); } catch (e) { } };
+  G.saveInfo = function (n) {
+    const d = readSlot(n || G.slot); if (!d) return null;
+    const bio = World.biomeById(d.biomeId || World.biomeOf(d.seed || 20240611, 4).id);
+    return { hero: d.hero, wave: d.wave, day: d.day, at: d.savedAt, diff: d.diff || 'normal', biome: bio ? bio.name : '' };
   };
 })();
 
@@ -3911,6 +4251,9 @@ const UI = window.UI = {};
   const applyUiScale = () => document.documentElement.style.setProperty('--ui', (G.settings.uiScale || 100) / 100);
   applyUiScale();
 
+  // Золотая птица — особая валюта между прохождениями
+  const GB_ICON = '<svg class="gbi" viewBox="0 0 32 32"><defs><linearGradient id="gbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff3a0"/><stop offset=".5" stop-color="#f2c230"/><stop offset="1" stop-color="#b07a10"/></linearGradient></defs><circle cx="16" cy="16" r="15" fill="url(#gbg)" stroke="#8a5a08" stroke-width="1.5"/><path d="M7 19c3-1 5-4 6-7 1-2 3-3 5-3 2 0 3 1 4 2l3 0-2 2c0 4-3 7-7 8l3 3h-3l-2-2c-3 0-5-1-7-3z" fill="#7a4a06"/><circle cx="20" cy="12" r="1.2" fill="#fff3a0"/></svg>';
+  UI.GB_ICON = GB_ICON;
   function h(tag, attrs, ...kids) {
     const e = document.createElement(tag);
     if (attrs) for (const k in attrs) { if (k === 'on') for (const ev in attrs.on) e.addEventListener(ev, attrs.on[ev]); else if (k === 'html') e.innerHTML = attrs[k]; else if (k === 'cls') e.className = attrs[k]; else e.setAttribute(k, attrs[k]); }
@@ -3928,18 +4271,25 @@ const UI = window.UI = {};
   function show(...ids) { screens.forEach(s => $(s).classList.toggle('hidden', !ids.includes(s))); }
 
   // ---------------- Загрузка ----------------
-  const setLoad = (p, t) => { $('loadbar').style.width = p + '%'; $('loadtxt').textContent = t; };
+  const setLoad = (p, t) => { p = Math.round(p); $('loadbar').style.width = p + '%'; $('loadpct').textContent = p + '%'; $('loadtxt').textContent = t; };
+  function placeLoadBirds() {
+    const box = $('ld-birds'); box.innerHTML = '';
+    BIRD_ORDER.forEach((sp, i) => { const a = i / BIRD_ORDER.length * Math.PI * 2 - Math.PI / 2; const im = h('img', { src: G.portrait(sp), cls: 'ldb', style: `left:calc(50% + ${Math.cos(a) * 40}vw * var(--rx));top:calc(41% + ${Math.sin(a) * 27}vh);animation-delay:${(i * 0.17).toFixed(2)}s` }); box.append(im); });
+  }
   const nextFrame = () => new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
   async function boot() {
     setLang(G.settings.lang || 'en');
-    setLoad(10, tr('load_trees')); await nextFrame();
-    try { G.init($('c')); } catch (e) { setLoad(100, tr('webgl_err') + e.message); console.error(e); return; }
-    setLoad(70, tr('load_birds')); await nextFrame();
+    setLoad(4, tr('loading')); await nextFrame();
+    try { G.initRenderer($('c')); } catch (e) { setLoad(100, tr('webgl_err') + e.message); console.error(e); return; }
+    setLoad(12, tr('load_birds')); await nextFrame();
+    try { G.makePortraits(); placeLoadBirds(); } catch (e) { console.warn(e); }
+    setLoad(30, tr('load_trees')); await nextFrame(); await nextFrame();
+    try { G.initWorld(); } catch (e) { setLoad(100, tr('webgl_err') + e.message); console.error(e); return; }
+    setLoad(85, tr('load_trees')); await nextFrame();
     G.applyQuality();
-    try { G.makePortraits(); } catch (e) { console.warn(e); }
-    setLoad(100, tr('load_done')); await nextFrame();
+    setLoad(100, tr('load_done')); await nextFrame(); await new Promise(r => setTimeout(r, 350));
     G.state = 'menu';
-    show('menu');
+    show('menu'); refreshGB();
     if (!G.settings.lang) openLangPicker(true);
     loop(performance.now());
   }
@@ -3985,17 +4335,42 @@ const UI = window.UI = {};
     if (a === 'back') { $('m-play').classList.add('hidden'); $('m-main').classList.remove('hidden'); }
     if (a === 'settings') openSettings('menu');
     if (a === 'exit') exitGame();
-    if (a === 'continue') { withLoading(tr('load_world'), () => G.load()).then(ok => { if (ok) enterGame(); else show('menu'); }); }
-    if (a === 'new') {
-      if (G.hasSave() && !b.dataset.armed) { b.dataset.armed = '1'; b.innerHTML = tr('newgame_confirm'); setTimeout(() => { delete b.dataset.armed; b.textContent = tr('newgame'); }, 4000); return; }
-      delete b.dataset.armed; b.textContent = tr('newgame');
-      openSelect();
-    }
+    if (a === 'continue') openSlots('load');
+    if (a === 'new') openSlots('new');
+    if (a === 'slots-back') { $('m-slots').classList.add('hidden'); $('m-play').classList.remove('hidden'); refreshContinue(); }
   }));
   function refreshContinue() {
-    const info = G.saveInfo();
-    $('btn-continue').disabled = !info;
-    $('saveinfo').textContent = info ? tr('save_info', { hero: HEROES[info.hero] ? HEROES[info.hero].name : '', diff: (DIFFICULTY[info.diff] || DIFFICULTY.normal).name, wave: info.wave }) : tr('no_save');
+    const n = G.saveCount();
+    $('btn-continue').disabled = !n;
+    $('saveinfo').textContent = n ? tr('saves_n', { n }) : tr('no_save');
+  }
+  function refreshGB() { $('gbBadge').innerHTML = `${GB_ICON}<b>${G.meta.gb}</b>`; }
+  UI.refreshGB = refreshGB;
+  let selSlot = 1;
+  function openSlots(mode) {
+    $('m-play').classList.add('hidden'); $('m-main').classList.add('hidden'); $('m-slots').classList.remove('hidden');
+    $('slotsTitle').textContent = tr(mode === 'new' ? 'slots_new' : 'slots_load');
+    const list = $('slotList'); list.innerHTML = '';
+    [1, 2, 3].forEach(n => {
+      const info = G.saveInfo(n);
+      const main = h('button', { cls: 'slotbtn' + (info ? '' : ' empty') },
+        h('b', null, tr('slot', { n })),
+        h('small', null, info ? tr('slot_line', { hero: HEROES[info.hero] ? HEROES[info.hero].name : '', diff: (DIFFICULTY[info.diff] || DIFFICULTY.normal).name, day: info.day, wave: info.wave }) : tr('slot_empty')),
+        info ? h('small', { cls: 'sl2' }, '🌍 ' + info.biome + (info.at ? ' · ' + new Date(info.at).toLocaleString() : '')) : null);
+      if (mode === 'load' && !info) main.disabled = true;
+      tap(main, () => {
+        if (mode === 'load') { withLoading(tr('load_world'), () => G.load(n)).then(ok => { if (ok) enterGame(); else show('menu'); }); return; }
+        if (info && !main.dataset.armed) { main.dataset.armed = '1'; main.querySelector('small').textContent = tr('overwrite'); main.classList.add('warn'); return; }
+        selSlot = n; openSelect();
+      });
+      const row = h('div', { cls: 'slotrow' }, main);
+      if (info) {
+        const del = h('button', { cls: 'slotdel' }, tr('del_slot'));
+        tap(del, () => { if (!del.dataset.armed) { del.dataset.armed = '1'; del.textContent = tr('del_sure'); return; } G.deleteSave(n); openSlots(mode); refreshContinue(); });
+        row.append(del);
+      }
+      list.append(row);
+    });
   }
   function exitGame() {
     if (G.state === 'play') G.save(true);
@@ -4038,15 +4413,19 @@ const UI = window.UI = {};
   }
 
   // ---------------- Выбор героя ----------------
-  let selIdx = 0, selDiff = 'normal', selSeed = '';
+  let selIdx = 0, selDiff = 'normal', selSeed = '', selBiome = '';
   function openSelect() {
     G.state = 'select'; show('select'); selIdx = 0; G.selRot = 0.4; selSeed = String(Math.floor(Math.random() * 1e9)); renderHero(); goFullscreenMobile();
   }
   function renderHero() {
-    const id = HERO_ORDER[selIdx], d = HEROES[id];
+    const id = HERO_ORDER[selIdx], d = HEROES[id], locked = !G.heroUnlocked(id);
     G.showHero(id);
+    $('sel-go').innerHTML = locked ? tr('hero_buy', { n: d.price }) + ' ' + GB_ICON : tr('start');
+    $('sel-go').classList.toggle('gold', locked);
     const bar = (lbl, v, max) => h('div', { cls: 'stat' }, h('b', null, lbl), h('div', { cls: 'sb' }, h('i', { style: `width:${Math.min(100, v / max * 100)}%` })));
     const c = $('heroCard'); c.innerHTML = '';
+    c.append(h('div', { cls: 'gbline', html: `${GB_ICON} <b>${G.meta.gb}</b> · ${tr('gbirds')} · ${selIdx + 1}/${HERO_ORDER.length}` }));
+    if (locked) c.append(h('div', { cls: 'lockline', html: tr('hero_locked', { n: d.price }) + ' ' + GB_ICON }));
     c.append(h('h3', null, d.name), h('p', null, d.desc),
       h('div', { cls: 'stats' }, bar(tr('st_hp'), d.hp, 160), bar(tr('st_speed'), d.speed, 8), bar(tr('st_attack'), d.dmg * d.atkRate, 56), bar(tr('st_gather'), d.gather, 1.4), bar(tr('st_build'), 1 / d.buildMul, 1.4)),
       h('div', { cls: 'perk' }, '⭐ ' + d.perk));
@@ -4054,19 +4433,26 @@ const UI = window.UI = {};
     DIFF_ORDER.forEach(k => { const D = DIFFICULTY[k]; const b = h('button', { cls: (k === selDiff ? 'on ' : '') + 'd-' + k }, D.icon + ' ' + D.name); tap(b, () => { selDiff = k; renderHero(); }); seg.append(b); });
     c.append(h('div', { style: 'margin-top:8px;font-weight:800' }, tr('difficulty')), seg, h('div', { cls: 'ddesc', style: 'font-size:12px;margin-top:3px;opacity:.85' }, DIFFICULTY[selDiff].desc + tr('prep', { t: `${Math.floor(DIFFICULTY[selDiff].prep / 60)}:${String(DIFFICULTY[selDiff].prep % 60).padStart(2, '0')}` })));
     // мир (сид) — как в Майнкрафте: одинаковый сид даёт одинаковую карту
-    const biomeLbl = h('span', { cls: 'biome' }, '🌍 ' + World.biomeOf(World.seedFrom(selSeed)).name);
+    const bioName = () => tr('biome_seed') + ' (' + World.biomeOf(World.seedFrom(selSeed || '1')).name + ')';
+    const biomeLbl = { set textContent(v) { const o = document.querySelector('#biomeSel option[value=""]'); if (o) o.textContent = v; } };
     const inp = h('input', { id: 'seedIn', type: 'text', inputmode: 'text', maxlength: '24', value: selSeed, placeholder: tr('seed_ph'), autocomplete: 'off' });
-    inp.addEventListener('input', () => { selSeed = inp.value; biomeLbl.textContent = '🌍 ' + World.biomeOf(World.seedFrom(selSeed || '1')).name; });
+    inp.addEventListener('input', () => { selSeed = inp.value; biomeLbl.textContent = bioName(); });
     const dice = h('button', { cls: 'btn blue', style: 'padding:6px 10px' }, '🎲');
-    tap(dice, () => { selSeed = String(Math.floor(Math.random() * 1e9)); inp.value = selSeed; biomeLbl.textContent = '🌍 ' + World.biomeOf(World.seedFrom(selSeed)).name; });
-    c.append(h('div', { cls: 'seedrow' }, h('b', null, tr('world')), inp, dice, biomeLbl));
+    tap(dice, () => { selSeed = String(Math.floor(Math.random() * 1e9)); inp.value = selSeed; biomeLbl.textContent = bioName(); });
+    const bsel = h('select', { id: 'biomeSel' });
+    [['', bioName()], ...World.BIOMES.map(b => [b.id, ({ summer: '☀️ ', autumn: '🍂 ', taiga: '🌲 ', winter: '❄️ ', bloom: '🌸 ' }[b.id] || '') + b.name])].forEach(([v, l]) => { const o = document.createElement('option'); o.value = v; o.textContent = l; if (v === selBiome) o.selected = true; bsel.append(o); });
+    bsel.addEventListener('change', () => { selBiome = bsel.value; biomeLbl.textContent = bioName(); });
+    c.append(h('div', { cls: 'seedrow' }, h('b', null, tr('world')), inp, dice, bsel));
   }
-  tap($('sel-prev'), () => { selIdx = (selIdx + 2) % 3; renderHero(); });
-  tap($('sel-next'), () => { selIdx = (selIdx + 1) % 3; renderHero(); });
-  tap($('sel-back'), () => { G.state = 'menu'; show('menu'); });
+  tap($('sel-prev'), () => { selIdx = (selIdx + HERO_ORDER.length - 1) % HERO_ORDER.length; renderHero(); });
+  tap($('sel-next'), () => { selIdx = (selIdx + 1) % HERO_ORDER.length; renderHero(); });
+  tap($('sel-back'), () => { G.state = 'menu'; show('menu'); refreshGB(); });
   tap($('sel-go'), async () => {
+    const hid = HERO_ORDER[selIdx];
+    if (!G.heroUnlocked(hid)) { if (G.buyHero(hid)) { renderHero(); refreshGB(); } return; }
     const seed = World.seedFrom(selSeed || String(Math.floor(Math.random() * 1e9)));
-    await withLoading(tr('load_gen', { name: World.biomeOf(seed).name }), () => G.newGame(HERO_ORDER[selIdx], selDiff, seed));
+    const bio = selBiome || World.biomeOf(seed).id;
+    await withLoading(tr('load_gen', { name: World.biomeById(bio).name }), () => G.newGame(hid, selDiff, seed, bio, selSlot));
     enterGame(); toast(tr('welcome', { biome: World.biome.name, seed }), 'good', 4500);
   });
   async function withLoading(text, fn) {
@@ -4087,8 +4473,8 @@ const UI = window.UI = {};
   tap($('rot-ok'), () => { rotateOk = true; document.body.classList.remove('ask-rotate'); });
 
   // ---------------- Пауза ----------------
-  function openPause() { if (G.state !== 'play') return; G.paused = true; $('pause').classList.remove('hidden'); Sound.setMode('menu'); }
-  function closePause() { $('pause').classList.add('hidden'); G.paused = modalOpen(); Sound.setMode(G.S().waveActive ? 'battle' : 'calm'); }
+  function openPause() { if (G.state !== 'play' && G.state !== 'cutscene') return; G.paused = true; $('pause').classList.remove('hidden'); Sound.setMode('menu'); }
+  function closePause() { $('pause').classList.add('hidden'); G.paused = modalOpen(); Sound.setMode(G.S() && G.S().waveActive ? 'battle' : 'calm'); }
   tap($('btn-pause'), openPause);
   press($('btn-view'), () => { setView(G.settings.view === 'first' ? 'third' : 'first'); toast(G.settings.view === 'first' ? tr('view_fp') : tr('view_tp'), 'info'); });
   document.querySelectorAll('#pause [data-p]').forEach(b => tap(b, () => {
@@ -4099,13 +4485,21 @@ const UI = window.UI = {};
     if (a === 'menu') { G.save(true); G.cancelBuild(); G.state = 'menu'; $('pause').classList.add('hidden'); show('menu'); backToMain(); clearFloats(); }
   }));
   // Конец игры
+  UI.cutscene = function (on) {
+    document.body.classList.toggle('cutscene', on);
+    if (on) { closeModal(); clearFloats(); G.input.mx = G.input.mz = G.input.camX = G.input.camY = 0; G.input.run = false; }
+  };
   UI.gameOver = function (st) {
+    $('over').querySelector('h1').textContent = st.win ? tr('victory') : tr('over_title');
+    $('over').classList.toggle('win', !!st.win);
     const t = Math.floor(st.time || 0), hh = Math.floor(t / 3600), mm = Math.floor(t / 60) % 60, ss = t % 60;
     const tstr = (hh ? hh + ':' + String(mm).padStart(2, '0') : mm) + ':' + String(ss).padStart(2, '0');
     const D = DIFFICULTY[st.diff] || DIFFICULTY.normal;
     const cell = (ic, lbl, v) => `<div class="rs"><span class="ri">${ic}</span><span class="rl">${lbl}</span><b>${v}</b></div>`;
     $('overtxt').innerHTML = `
-      <div class="rnote">${tr('over_note')}</div>
+      ${st.win ? `<div class="wintxt">${tr('victory_txt')}</div>` : ''}
+      <div class="gbreward">${tr(st.win ? 'win_gb' : 'defeat_gb')} ${GB_ICON} <b>+${st.gb}</b> <small>(${tr('gb_earned', { n: st.gb, t: st.gbTotal })})</small></div>
+      <div class="rnote">${st.win ? tr('run_note') : tr('over_note')}</div>
       <div class="rsub">${HEROES[st.hero] ? HEROES[st.hero].name : ''} · ${D.icon} ${D.name} · 🌍 ${st.biome} (${tr('seed')} ${st.seed})</div>
       <div class="rgrid">
         ${cell('🌊', tr('r_waves'), Math.max(0, st.wave - 1))}
@@ -4125,7 +4519,7 @@ const UI = window.UI = {};
 `;
     setTimeout(() => { $('over').classList.remove('hidden'); }, 1400);
   };
-  tap($('over-menu'), () => { $('over').classList.add('hidden'); G.state = 'menu'; show('menu'); backToMain(); clearFloats(); });
+  tap($('over-menu'), () => { refreshGB(); document.body.classList.remove('cutscene'); $('over').classList.add('hidden'); G.state = 'menu'; show('menu'); backToMain(); clearFloats(); });
 
   // ---------------- HUD ----------------
   const RES_KEYS = ['wood', 'stone', 'iron', 'coal', 'food', 'coins'];
@@ -4154,7 +4548,7 @@ const UI = window.UI = {};
       $('phptxt').textContent = P.dead ? tr('wounded') : `${Math.ceil(P.hp)}/${P.maxHp}`;
       const dl = World.daylight;
       const dc = G.dayClock(), mmss = n => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`;
-      $('daytxt').innerHTML = `${dc.night ? '🌙' : '☀️'} ${tr('day', { n: S.day })} · ${G.diff().icon}<br><small>${tr(dc.night ? 'morning_in' : 'night_in', { t: mmss(dc.left) })}</small>`;
+      $('daytxt').innerHTML = `${dc.night ? '🌙' : '☀️'} ${tr('goal_day', { n: S.day })} · ${G.diff().icon}<br><small>${tr(dc.night ? 'morning_in' : 'night_in', { t: mmss(dc.left) })}</small>`;
       const st = P.st / P.maxSt; $('pst').style.width = (st * 100) + '%'; $('pst').className = P.tired ? 'tired' : '';
       $('btn-run').classList.toggle('on', !!G.input.run);
       const boss = G.boss(); $('bossbar').classList.toggle('hidden', !boss);
@@ -4558,6 +4952,7 @@ const UI = window.UI = {};
     if (e.code === 'KeyE') k = 'e'; if (e.code === 'KeyB') k = 'b'; if (e.code === 'KeyI') k = 'i'; if (e.code === 'KeyP') k = 'p'; if (e.code === 'KeyR') k = 'r'; if (e.code === 'KeyF') k = 'f'; if (e.code === 'KeyN') k = 'n';
     Sound.init();
     if (k === 'escape') {
+      if (G.state === 'cutscene') { if ($('pause').classList.contains('hidden')) openPause(); else closePause(); return; }
       if (G.state !== 'play') return;
       if (modal) closeModal(); else if (G.building()) G.cancelBuild(); else if (!$('settings').classList.contains('hidden')) { $('settings').classList.add('hidden'); $('pause').classList.remove('hidden'); } else if ($('pause').classList.contains('hidden')) openPause(); else closePause();
       return;

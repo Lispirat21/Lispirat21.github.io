@@ -182,6 +182,7 @@ const Sound = (() => {
         o.connect(g); g.connect(sfxGain); o.start(t); o.stop(t + 0.55);
         noise(t, 0.35, 0.35 * vol, 'lowpass', 700, null); break;
       }
+      case 'rotor': { const f = noise(t, 0.09, 0.5 * vol, 'lowpass', 260, null, 1.2); void f; tone(48, t, 0.08, 'sine', 0.25 * vol, sfxGain); break; }
       case 'gun': noise(t, 0.05, 0.35 * vol, 'bandpass', 1800, null, 1.5); tone(140, t, 0.05, 'square', 0.06 * vol, sfxGain); break;
       case 'rocket': noise(t, 0.6, 0.35 * vol, 'bandpass', 900, null, 0.7); tone(220, t, 0.5, 'sawtooth', 0.04 * vol, sfxGain); break;
       case 'arrow': noise(t, 0.12, 0.2 * vol, 'bandpass', 3000, null, 3); break;

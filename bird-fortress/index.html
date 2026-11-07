@@ -225,6 +225,40 @@ body.fp #crosshair { display:block; }
 #lp-list button .fl { font-size:28px; line-height:1; }
 #lp-list button.on { border-color:#4caf50; background:#eaf7e2; box-shadow:0 0 0 2px #4caf50 inset; }
 .langbtn { position:fixed; right:max(12px,env(safe-area-inset-right)); top:max(12px,env(safe-area-inset-top)); width:48px; height:48px; border-radius:50%; border:2px solid #fff8; background:#0008; font-size:24px; color:#fff; }
+/* ---------- загрузка: название, птицы по кругу, жёлтая полоска ---------- */
+#loading { background:radial-gradient(ellipse at 50% 45%,#4f9a3c 0%,#2d6a2a 55%,#173d18 100%); --rx:1; }
+@media (orientation:portrait) { #loading { --rx:1.1; } }
+#ld-birds { position:absolute; inset:0; pointer-events:none; }
+.ldb { position:absolute; width:clamp(54px,9vmin,96px); height:clamp(54px,9vmin,96px); margin:calc(clamp(54px,9vmin,96px) / -2); border-radius:50%; background:#e6f4d4; border:3px solid #ffd24a; box-shadow:0 4px 12px #0006; object-fit:cover; animation:ldbob 2.2s ease-in-out infinite; }
+@keyframes ldbob { 50% { transform:translateY(-8px) rotate(-4deg); } }
+.ld-title { position:absolute; left:0; right:0; top:41%; transform:translateY(-50%); text-align:center; font-size:clamp(46px,12vmin,110px); font-weight:900; color:#ffd24a; letter-spacing:2px; text-shadow:0 4px 0 #7a4512,0 8px 0 #4a2a0a,0 14px 30px rgba(0,0,0,.6); }
+.ld-bottom { position:absolute; left:0; right:0; bottom:max(24px,env(safe-area-inset-bottom)); display:flex; flex-direction:column; align-items:center; gap:6px; }
+#loading .lbar { position:relative; width:min(78vw,520px); height:26px; background:#0007; border:3px solid #fff8; border-radius:14px; }
+#loading .lbar i { background:linear-gradient(#ffe56a,#f2b81a); border-radius:10px; }
+#loadpct { position:absolute; inset:0; text-align:center; font-weight:900; font-size:15px; line-height:20px; color:#3a2a08; text-shadow:0 1px 0 #fff8; }
+/* ---------- слоты сохранений ---------- */
+#slotsTitle { font-size:18px; font-weight:900; text-shadow:0 2px 4px #000; }
+#slotList { display:flex; flex-direction:column; gap:8px; }
+.slotrow { display:flex; gap:6px; }
+.slotbtn { flex:1; display:flex; flex-direction:column; align-items:flex-start; gap:2px; text-align:left; border:none; border-radius:12px; padding:9px 12px; background:linear-gradient(#4aa8e0,#2a6ab0); color:#fff; box-shadow:0 4px 0 #1a3a6a; font-size:16px; }
+.slotbtn small { font-size:12px; opacity:.95; } .slotbtn .sl2 { font-size:11px; opacity:.8; }
+.slotbtn.empty { background:linear-gradient(#6cc04a,#3a8a2a); box-shadow:0 4px 0 #24561a; }
+.slotbtn.warn { background:linear-gradient(#e8a03a,#b0661a); }
+.slotbtn:disabled { filter:grayscale(1) brightness(.7); }
+.slotdel { border:none; border-radius:12px; padding:0 10px; background:linear-gradient(#e86a4a,#b03a2a); color:#fff; font-weight:800; font-size:12px; box-shadow:0 4px 0 #6a1a10; }
+/* ---------- Золотые птицы ---------- */
+.gbi { width:1.25em; height:1.25em; vertical-align:-0.3em; display:inline-block; }
+#gbBadge { position:fixed; right:calc(max(12px,env(safe-area-inset-right)) + 58px); top:max(16px,env(safe-area-inset-top)); background:#0008; border:2px solid #ffd24a88; border-radius:20px; padding:6px 12px; font-size:18px; color:#ffd24a; }
+.gbline { font-size:13px; margin-bottom:4px; color:#6a3a10; }
+.lockline { background:#fff3c8; border:2px dashed #d8a020; border-radius:8px; padding:4px 8px; font-weight:800; font-size:13px; margin:4px 0; color:#8a5a08; }
+#sel-go.gold { background:linear-gradient(#ffd24a,#d89a10); color:#4a2a08; box-shadow:0 5px 0 #8a5a08; text-shadow:none; }
+.gbreward { margin:6px 0; font-size:16px; } .gbreward small { font-size:12px; opacity:.8; }
+.wintxt { margin:4px 0 8px; font-size:15px; font-weight:700; color:#2a6a2a; }
+#over.win .results h1 { color:#c89a10; }
+#biomeSel { font-size:14px; padding:4px 6px; border-radius:8px; border:2px solid #c8a060; }
+/* ---------- кат-сцена: остаётся только пауза ---------- */
+body.cutscene #hud > *:not(#topright), body.cutscene #topright > *:not(#btn-pause), body.cutscene #bars, body.cutscene #floats { display:none !important; }
+body.cutscene #touch { pointer-events:none; }
 /* ---------- масштаб интерфейса (только GUI, мир не меняется) ---------- */
 :root { --ui: 1; }
 .rico { width:1.05em; height:1.05em; display:inline-block; vertical-align:-0.18em; }
@@ -251,7 +285,7 @@ body.fp #crosshair { display:block; }
 #selNav { pointer-events:none; } #selNav > * { pointer-events:auto; }
 #heroCard .stats { display:grid; grid-template-columns:1fr 1fr; column-gap:10px; }
 #heroCard .stat b { width:66px; }
-@media (max-height:430px) { #heroCard { padding:8px 10px; width:min(50vw,390px); } #heroCard > p, #heroCard .ddesc, #heroCard .perk { display:none; } .seedrow { margin-top:5px; } .seedrow input { width:100px; padding:3px 6px; } .seg.diff { flex-wrap:nowrap; gap:3px; } .seg.diff button { padding:5px 4px; font-size:11px; white-space:nowrap; } #heroCard h3 { font-size:17px; } #heroCard p { font-size:12px; margin:2px 0; } #heroCard .stat { margin:1px 0; font-size:12px; } #heroCard .perk { font-size:12px; padding:4px 6px; margin-top:4px; } #dragHint { display:none; } }
+@media (max-height:430px) { #heroCard { padding:8px 10px; width:min(50vw,390px); } #heroCard > p, #heroCard .ddesc, #heroCard .perk, #heroCard .gbline { display:none; } #biomeSel { max-width:150px; font-size:12px; } #heroCard h3 { margin:0; } .seedrow { margin-top:5px; } .seedrow input { width:100px; padding:3px 6px; } .seg.diff { flex-wrap:nowrap; gap:3px; } .seg.diff button { padding:5px 4px; font-size:11px; white-space:nowrap; } #heroCard h3 { font-size:17px; } #heroCard p { font-size:12px; margin:2px 0; } #heroCard .stat { margin:1px 0; font-size:12px; } #heroCard .perk { font-size:12px; padding:4px 6px; margin-top:4px; } #dragHint { display:none; } }
 #selNav { transform:scale(var(--ui)); transform-origin:bottom center; }
 #selTitle { transform:scale(var(--ui)); transform-origin:top center; }
 @media (max-height:430px) {
@@ -272,9 +306,12 @@ body.fp #crosshair { display:block; }
 <div id="touch"></div>
 
 <div id="loading" class="screen">
-  <div class="logo">🪺 <span data-i18n="title">Bird Wars</span></div>
-  <div class="lbar"><i id="loadbar"></i></div>
-  <div id="loadtxt" data-i18n="loading">Loading…</div>
+  <div id="ld-birds"></div>
+  <div class="ld-title">Bird Wars</div>
+  <div class="ld-bottom">
+    <div class="lbar"><i id="loadbar"></i><span id="loadpct">0%</span></div>
+    <div id="loadtxt">Loading…</div>
+  </div>
 </div>
 
 <div id="menu" class="screen hidden">
@@ -290,8 +327,14 @@ body.fp #crosshair { display:block; }
     <button class="big blue" data-act="continue" id="btn-continue"><span data-i18n="continue"></span><small id="saveinfo"></small></button>
     <button class="big gray" data-act="back" data-i18n="back"></button>
   </div>
+  <div class="menu-col hidden" id="m-slots">
+    <div id="slotsTitle"></div>
+    <div id="slotList"></div>
+    <button class="big gray" data-act="slots-back" data-i18n="back"></button>
+  </div>
   <div class="ver" data-i18n="ver"></div>
   <button class="langbtn" id="btn-lang">🌍</button>
+  <div id="gbBadge" title="Golden Birds"></div>
 </div>
 
 <div id="settings" class="screen hidden" style="background:rgba(0,0,0,.55)">
@@ -423,6 +466,7 @@ body.fp #crosshair { display:block; }
 <script src="js/data.js"></script>
 <script src="js/i18n_data.js"></script>
 <script src="js/i18n.js"></script>
+<script src="js/i18n_extra.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/models.js"></script>
 <script src="js/world.js"></script>
