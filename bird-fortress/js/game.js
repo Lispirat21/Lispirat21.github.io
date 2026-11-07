@@ -149,7 +149,7 @@ const G = window.G = {};
     hand.add(Models.makeTool(kind, tier));
     P.tool = kind; P.toolTier = tier;
   }
-  G.selectTool = k => { if (k === 'pick' && S.tools.pick < 0) { UI.toast('Кирки пока нет — сделайте её в мастерской', 'warn'); return; } setTool(k); };
+  G.selectTool = k => { if (k === 'pick' && S.tools.pick < 0) { UI.toast(tr('no_pick_yet'), 'warn'); return; } setTool(k); };
   G.playerTool = () => P ? P.tool : 'axe';
 
   // ---------------- Постройки ----------------
@@ -210,7 +210,7 @@ const G = window.G = {};
     spawnParticles(V(b.x, b.mesh.position.y + 1.2, b.z), c, 26, 6, 0.35, 1.4);
     spawnParticles(V(b.x, b.mesh.position.y + 0.5, b.z), 0xbfae90, 12, 2.5, 0.6, 1.2);
     Sound.play('crumble');
-    UI.toast(`${BUILD[b.t].name} разрушен${b.t === 'wall' ? 'а' : ''}!`, 'bad');
+    UI.toast(tr('destroyed', { name: BUILD[b.t].name }), 'bad');
     if (b.t === 'core') { removeBuilding(b); gameOver(); return; }
     removeBuilding(b);
   }
@@ -220,8 +220,8 @@ const G = window.G = {};
     if (b.hp <= 0) destroyBuilding(b);
   }
   G.buildingLabel = b => {
-    if (b.t === 'wall') return `${WALL_LEVELS[b.lvl - 1].name} (ур. ${b.lvl})`;
-    if (LEVELS[b.t]) return `${LEVELS[b.t][b.lvl - 1].name} (ур. ${b.lvl})`;
+    if (b.t === 'wall') return tr('lvl', { name: WALL_LEVELS[b.lvl - 1].name, l: b.lvl });
+    if (LEVELS[b.t]) return tr('lvl', { name: LEVELS[b.t][b.lvl - 1].name, l: b.lvl });
     return BUILD[b.t].name;
   };
 
@@ -232,7 +232,7 @@ const G = window.G = {};
   G.missing = cost => Object.keys(cost).filter(k => (S.res[k] || 0) < cost[k]).map(k => `${RES_INFO[k].icon}${cost[k] - (S.res[k] || 0)}`).join(' ');
   function pay(cost) { for (const k in cost) S.res[k] -= cost[k]; }
   function tryPay(cost) {
-    if (!G.canAfford(cost)) { UI.toast('Не хватает ресурсов: ' + G.missing(cost), 'warn'); Sound.play('error'); return false; }
+    if (!G.canAfford(cost)) { UI.toast(tr('not_enough') + G.missing(cost), 'warn'); Sound.play('error'); return false; }
     pay(cost); return true;
   }
   function addRes(k, n, at) {
@@ -241,7 +241,7 @@ const G = window.G = {};
     const before = S.res[k];
     S.res[k] = Math.min(cap, S.res[k] + n);
     const got = S.res[k] - before;
-    if (got <= 0) { if (at) UI.floatText(at, 'Склад полон!', '#ff8a6a'); return; }
+    if (got <= 0) { if (at) UI.floatText(at, tr('storage_full'), '#ff8a6a'); return; }
     if (S.stats[k] !== undefined) S.stats[k] += got;
     if (at) UI.floatText(at, `+${Math.round(got * 10) / 10 === Math.round(got) ? Math.round(got) : got.toFixed(1)} ${RES_INFO[k].icon}`, k === 'coins' ? '#ffe066' : '#ffffff');
   }
@@ -270,7 +270,7 @@ const G = window.G = {};
     if (bird.cannon) bird.cannon.gunner = null;
     bird.cannon = c; c.gunner = bird; bird.hidden = false; bird.mesh.visible = true; bird.state = 'gunner'; bird.perchB = null;
   }
-  G.assignBird = (bird, c) => { assignBird(bird, c); Sound.play('chirp'); UI.toast(`${BIRDS[bird.sp].name} садится за пушку!`, 'good'); };
+  G.assignBird = (bird, c) => { assignBird(bird, c); Sound.play('chirp'); UI.toast(tr('takes_cannon', { name: BIRDS[bird.sp].name }), 'good'); };
   G.unassignBird = bird => { if (bird.cannon) { bird.cannon.gunner = null; bird.cannon = null; } bird.state = 'walk'; flyTo(bird, randomGroundPoint(), 'walk'); };
   G.freeCannons = () => B.filter(b => b.t === 'cannon' && !b.gunner);
   function autoAssign() {
@@ -279,12 +279,12 @@ const G = window.G = {};
   }
   G.buyBird = function (sp) {
     const d = BIRDS[sp];
-    if (d.market && G.countB('market') === 0) { UI.toast('Нужен «Птичий рынок» для этой птицы', 'warn'); Sound.play('error'); return false; }
-    if (BD.length >= G.birdCap()) { UI.toast('Нет мест! Постройте скворечник или птичник', 'warn'); Sound.play('error'); return false; }
+    if (d.market && G.countB('market') === 0) { UI.toast(tr('need_market_t'), 'warn'); Sound.play('error'); return false; }
+    if (BD.length >= G.birdCap()) { UI.toast(tr('no_slots'), 'warn'); Sound.play('error'); return false; }
     if (!tryPay({ coins: d.price, food: d.food })) return false;
     const b = addBird(sp); S.stats.boughtBirds++;
     Sound.play('coin'); Sound.play('chirp');
-    UI.toast(`Куплен(а): ${d.name}!`, 'good');
+    UI.toast(tr('bought', { name: d.name }), 'good');
     const c = G.freeCannons()[0]; if (c) G.assignBird(b, c);
     return true;
   };
@@ -315,7 +315,7 @@ const G = window.G = {};
   let dangerPrev = false;
   function updateBirds(dt) {
     const danger = E.some(e => !e.dying && e.pos.length() < 34);
-    if (danger && !dangerPrev) { Sound.play('chirp'); if (BD.some(b => !b.cannon)) UI.toast('Птицы прячутся от врагов!', 'warn'); }
+    if (danger && !dangerPrev) { Sound.play('chirp'); if (BD.some(b => !b.cannon)) UI.toast(tr('birds_hide'), 'warn'); }
     dangerPrev = danger;
     const night = World.daylight < 0.12 && !S.waveActive;
     for (const b of BD) {
@@ -395,7 +395,7 @@ const G = window.G = {};
     b.hp -= dmg;
     spawnParticles(b.mesh.position.clone().add(V(0, 0.5, 0)), 0xffffff, 5, 2.5, 0.12, 0.8);
     if (b.hp <= 0) {
-      UI.toast(`Погибла птица: ${BIRDS[b.sp].name}!`, 'bad');
+      UI.toast(tr('bird_died', { name: BIRDS[b.sp].name }), 'bad');
       spawnParticles(b.mesh.position.clone().add(V(0, 0.5, 0)), 0xeeeeee, 14, 3, 0.15, 1.5);
       if (b.cannon) b.cannon.gunner = null;
       scene.remove(b.mesh); BD.splice(BD.indexOf(b), 1);
@@ -416,8 +416,8 @@ const G = window.G = {};
   function startWave() {
     S.waveActive = true; S.spawnList = waveList(S.wave); S.spawnCd = 0; S.waveDir = Math.random() * Math.PI * 2;
     Sound.play('horn'); Sound.setMode('battle');
-    UI.toast(`🐺 Волна ${S.wave}! Звери нападают!`, 'bad', 3500);
-    UI.banner(`ВОЛНА ${S.wave}`);
+    UI.toast(tr('wave_start', { n: S.wave }), 'bad', 3500);
+    UI.banner(tr('wave_banner', { n: S.wave }));
   }
   G.startWaveNow = function () { if (S && !S.waveActive) { S.waveTimer = 0; S.earlyBonus = true; } };
   function spawnEnemy(type, pos) {
@@ -427,7 +427,7 @@ const G = window.G = {};
     const e = { type, d, mesh, pos: pos.clone(), vel: V(0, 0, 0), yaw: 0, hp: d.hp * hpMul, maxHp: d.hp * hpMul, dmg: d.dmg * (1 + (n - 1) * 0.06) * DF().dmg, atkCd: 0, target: null, tkind: null, retarget: 0, slow: 0, dying: 0, mode: 'walk', t: Math.random() * 10, hitT: 0, flee: false, stuck: 0 };
     mesh.position.copy(pos);
     E.push(e);
-    if (d.boss) { UI.toast(`⚠️ БОСС: ${d.name}!${d.desc ? ' ' + d.desc + '.' : ''}`, 'bad', 4500); UI.banner('БОСС!'); Sound.play('growl', 1.6); e.summonT = 6; }
+    if (d.boss) { UI.toast(tr('boss_appears', { name: d.name, desc: d.desc ? ' ' + d.desc + '.' : '' }), 'bad', 4500); UI.banner(tr('boss_banner')); Sound.play('growl', 1.6); e.summonT = 6; }
     return e;
   }
   function updateWaves(dt) {
@@ -449,7 +449,7 @@ const G = window.G = {};
       S.waveActive = false;
       const bonus = Math.round((15 + S.wave * 6) * (S.earlyBonus ? 1.25 : 1) * DF().reward);
       addRes('coins', bonus);
-      UI.toast(`✅ Волна ${S.wave} отбита! +${bonus} 🪙`, 'good', 3500);
+      UI.toast(tr('wave_done', { n: S.wave, c: bonus }), 'good', 3500);
       Sound.play('win'); Sound.setMode('calm');
       S.wave++; S.earlyBonus = false;
       S.waveTimer = Math.round(DF().prep * Math.max(0.75, 1 - (S.wave - 1) * 0.01));
@@ -503,10 +503,10 @@ const G = window.G = {};
       if (e.burn) { e.burn.t -= dt; hurtEnemy(e, e.burn.dps * dt, true); if (Math.random() < 0.3) spawnParticles(e.pos.clone().add(V(0, 0.8 * e.d.size, 0)), Math.random() < 0.5 ? 0xff7a20 : 0xffd040, 1, 1, 0.18, 0.4, -0.5); if (e.burn.t <= 0) e.burn = null; if (e.dying > 0) continue; }
       if (e.stun > 0) { e.stun -= dt; m.rotation.z = Math.sin(e.t * 20) * 0.05; Models.animEnemy(m, 'idle', e.t, e.d.speed); continue; }
       e.atkCd -= dt;
-      if (e.type === 'alpha') { e.summonT -= dt; if (e.summonT <= 0 && E.length < 70) { e.summonT = 12; for (let k = 0; k < 2; k++) spawnEnemy('wolf', V(e.pos.x + rand(-3, 3), 0, e.pos.z + rand(-3, 3))); UI.floatText(e.pos.clone().add(V(0, 3, 0)), 'Ау-у-у!', '#ff8080'); Sound.play('growl', 1.2); } }
+      if (e.type === 'alpha') { e.summonT -= dt; if (e.summonT <= 0 && E.length < 70) { e.summonT = 12; for (let k = 0; k < 2; k++) spawnEnemy('wolf', V(e.pos.x + rand(-3, 3), 0, e.pos.z + rand(-3, 3))); UI.floatText(e.pos.clone().add(V(0, 3, 0)), tr('howl'), '#ff8080'); Sound.play('growl', 1.2); } }
       if (e.type === 'treant' && e.hp < e.maxHp) e.hp = Math.min(e.maxHp, e.hp + e.maxHp * 0.012 * dt);
       // бегство (лиса при малом здоровье)
-      if (!e.flee && e.type === 'fox' && e.hp < e.maxHp * 0.3) { e.flee = true; UI.floatText(e.pos.clone().add(V(0, 1.5, 0)), 'Убегает!', '#ffd080'); }
+      if (!e.flee && e.type === 'fox' && e.hp < e.maxHp * 0.3) { e.flee = true; UI.floatText(e.pos.clone().add(V(0, 1.5, 0)), tr('flees'), '#ffd080'); }
       let tx, tz, reach = 0;
       if (e.flee) {
         const l = e.pos.length() || 1; tx = e.pos.x / l * 120; tz = e.pos.z / l * 120;
@@ -561,7 +561,7 @@ const G = window.G = {};
     e.hp -= dmg; if (!quiet) e.hitT = 0.15;
     if (e.hp <= 0) {
       e.dying = 1.6; e.mesh.scale.setScalar(e.mesh.userData.baseScale);
-      if (e.d.boss) { S.stats.bosses++; UI.toast(`🏆 Босс повержен: ${e.d.name}!`, 'good', 4000); }
+      if (e.d.boss) { S.stats.bosses++; UI.toast(tr('boss_down', { name: e.d.name }), 'good', 4000); }
       const c = Math.max(1, Math.round(e.d.coins * HEROES[S.hero].coinMul * (1 + S.wave * 0.03) * DF().reward));
       addRes('coins', c, e.pos.clone().add(V(0, 1.6, 0)));
       if (e.d.food) addRes('food', e.d.food, e.pos.clone().add(V(0, 2.3, 0)));
@@ -663,7 +663,7 @@ const G = window.G = {};
           const e = p.target && !p.target.dying && p.target.pos.distanceTo(p.to) < 2.5 ? p.target : nearestEnemy(p.to.x, p.to.z, 1.6);
           if (e) { hurtEnemy(e, p.dmg); applyFx(e, p); }
         }
-        if (p.crit) UI.floatText(p.to.clone().add(V(0, 1.5, 0)), 'КРИТ!', '#ff5050');
+        if (p.crit) UI.floatText(p.to.clone().add(V(0, 1.5, 0)), tr('crit'), '#ff5050');
       }
     }
   }
@@ -697,13 +697,13 @@ const G = window.G = {};
     Sound.play('hurt'); UI.flash();
     if (P.hp <= 0) {
       P.hp = 0; P.dead = 5; P.mesh.rotation.x = -Math.PI / 2;
-      UI.toast('Вы ранены! Возвращение на базу через 5 сек…', 'bad', 4500);
+      UI.toast(tr('you_down'), 'bad', 4500);
     }
   }
   function nodeOK(n) {
     const info = NODE_INFO[n.kind];
     if (info.tool === 'pick' && S.tools.pick < info.minPick) {
-      if (time - P.hintT > 3) { P.hintT = time; UI.toast(S.tools.pick < 0 ? 'Нужна кирка! Постройте мастерскую и сделайте её.' : 'Для железа нужна улучшенная кирка', 'warn'); }
+      if (time - P.hintT > 3) { P.hintT = time; UI.toast(S.tools.pick < 0 ? tr('need_pick') : tr('need_pick2'), 'warn'); }
       return false;
     }
     return true;
@@ -795,7 +795,7 @@ const G = window.G = {};
     const hero = HEROES[S.hero], m = P.mesh;
     if (P.dead > 0) {
       P.dead -= dt;
-      if (P.dead <= 0) { P.dead = 0; P.hp = P.maxHp; P.pos.set(0, 0, 5); m.rotation.x = 0; UI.toast('Вы снова в строю!', 'good'); }
+      if (P.dead <= 0) { P.dead = 0; P.hp = P.maxHp; P.pos.set(0, 0, 5); m.rotation.x = 0; UI.toast(tr('back_in_action'), 'good'); }
       m.position.set(P.pos.x, World.groundAt(P.pos.x, P.pos.z) + 0.3, P.pos.z);
       return;
     }
@@ -806,7 +806,7 @@ const G = window.G = {};
     const fx = -Math.sin(cam.yaw), fz = -Math.cos(cam.yaw), rx = Math.cos(cam.yaw), rz = -Math.sin(cam.yaw);
     let mx = fx * iz + rx * ix, mz = fz * iz + rz * ix; const ml = Math.hypot(mx, mz);
     const wantRun = input.run && mag > 0.1 && !P.tired;
-    if (wantRun) { P.st -= 20 * dt; P.stRest = 0.8; if (P.st <= 0) { P.st = 0; P.tired = true; input.run = false; UI.toast('Выдохся! Отдохните немного', 'warn'); } }
+    if (wantRun) { P.st -= 20 * dt; P.stRest = 0.8; if (P.st <= 0) { P.st = 0; P.tired = true; input.run = false; UI.toast(tr('exhausted'), 'warn'); } }
     else { P.stRest -= dt; if (P.stRest <= 0) P.st = Math.min(P.maxSt, P.st + 20 * dt); if (P.tired && P.st > P.maxSt * 0.3) P.tired = false; }
     const running = wantRun && P.st > 0;
     P.moving = 0;
@@ -848,7 +848,7 @@ const G = window.G = {};
     if (!S.gear) S.gear = { own: {}, eq: null };
     if (S.gear.own[id]) return G.equipGear(id);
     if (!tryPay(GEAR[id].cost)) return false;
-    S.gear.own[id] = true; Sound.play('upgrade'); UI.toast(`Куплено: ${GEAR[id].name}!`, 'good');
+    S.gear.own[id] = true; Sound.play('upgrade'); UI.toast(tr('gear_bought', { name: GEAR[id].name }), 'good');
     return G.equipGear(id);
   };
   G.equipGear = function (id) {
@@ -857,8 +857,8 @@ const G = window.G = {};
     return true;
   };
   G.eat = function () {
-    if (S.res.food < 3) { UI.toast('Нужно 3 🍖', 'warn'); Sound.play('error'); return; }
-    if (P.hp >= P.maxHp) { UI.toast('Здоровье уже полное', 'info'); return; }
+    if (S.res.food < 3) { UI.toast(tr('need_food'), 'warn'); Sound.play('error'); return; }
+    if (P.hp >= P.maxHp) { UI.toast(tr('hp_full'), 'info'); return; }
     S.res.food -= 3; P.hp = Math.min(P.maxHp, P.hp + 35); Sound.play('pickup'); UI.toast('+35 ❤️', 'good');
   };
 
@@ -880,14 +880,14 @@ const G = window.G = {};
   };
   G.upgrade = function (b) {
     const u = G.upgradeCost(b); if (!u) return false;
-    if (u.req && !S.tech[u.req]) { UI.toast(`Нужна технология «${TECH[u.req].name}»`, 'warn'); Sound.play('error'); return false; }
+    if (u.req && !S.tech[u.req]) { UI.toast(tr('need_tech_t', { name: TECH[u.req].name }), 'warn'); Sound.play('error'); return false; }
     if (!tryPay(u.cost)) return false;
     const frac = b.hp / b.maxHp; void frac;
     b.lvl++; b.maxHp = maxHpOf(b); b.hp = b.maxHp;
     buildMesh(b);
     if (b.cannonId && byId[b.cannonId]) buildMesh(byId[b.cannonId]);
     Sound.play('upgrade'); spawnParticles(V(b.x, b.mesh.position.y + 2, b.z), 0xffe066, 16, 4, 0.18, 1);
-    UI.toast(`Улучшено: ${G.buildingLabel(b)}`, 'good');
+    UI.toast(tr('upgraded', { name: G.buildingLabel(b) }), 'good');
     return true;
   };
   G.repairCost = function (b) {
@@ -903,7 +903,7 @@ const G = window.G = {};
     const c = G.repairCost(b); if (!c) return;
     if (!tryPay(c)) return;
     b.hp = b.maxHp; Sound.play('build'); spawnParticles(V(b.x, b.mesh.position.y + 1.5, b.z), 0x80ff80, 10, 3, 0.15, 0.8);
-    UI.toast('Отремонтировано!', 'good');
+    UI.toast(tr('repaired'), 'good');
   };
   G.demolish = function (b) {
     if (b.t === 'core') return;
@@ -918,21 +918,21 @@ const G = window.G = {};
   // ---------------- Мастерская ----------------
   G.hasWorkshop = () => G.countB('workshop') > 0;
   G.craftTool = function (kind) {
-    if (!G.hasWorkshop()) { UI.toast('Сначала постройте мастерскую', 'warn'); return false; }
+    if (!G.hasWorkshop()) { UI.toast(tr('build_ws_first'), 'warn'); return false; }
     const list = kind === 'axe' ? AXES : PICKS; const cur = S.tools[kind]; const next = list[cur + 1];
     if (!next) return false;
-    if (next.req && !S.tech[next.req]) { UI.toast(`Нужна технология «${TECH[next.req].name}»`, 'warn'); Sound.play('error'); return false; }
+    if (next.req && !S.tech[next.req]) { UI.toast(tr('need_tech_t', { name: TECH[next.req].name }), 'warn'); Sound.play('error'); return false; }
     if (!tryPay(next.cost)) return false;
     S.tools[kind]++; P.toolTier = -9; setTool(kind);
-    Sound.play('upgrade'); UI.toast(`Создано: ${next.name}!`, 'good');
+    Sound.play('upgrade'); UI.toast(tr('crafted', { name: next.name }), 'good');
     return true;
   };
   G.research = function (id) {
-    if (!G.hasWorkshop()) { UI.toast('Сначала постройте мастерскую', 'warn'); return false; }
-    const t = TECH[id]; if (S.tech[id]) return false;
-    if (t.need && !S.tech[t.need]) { UI.toast(`Сначала изучите «${TECH[t.need].name}»`, 'warn'); Sound.play('error'); return false; }
-    if (!tryPay(t.cost)) return false;
-    S.tech[id] = true; Sound.play('win'); UI.toast(`Изучено: ${t.name}!`, 'good', 3000);
+    if (!G.hasWorkshop()) { UI.toast(tr('build_ws_first'), 'warn'); return false; }
+    const tt = TECH[id]; if (S.tech[id]) return false;
+    if (tt.need && !S.tech[tt.need]) { UI.toast(tr('research_first', { name: TECH[tt.need].name }), 'warn'); Sound.play('error'); return false; }
+    if (!tryPay(tt.cost)) return false;
+    S.tech[id] = true; Sound.play('win'); UI.toast(tr('researched', { name: tt.name }), 'good', 3000);
     return true;
   };
 
@@ -946,8 +946,8 @@ const G = window.G = {};
   }
   G.enterBuild = function (t) {
     const d = BUILD[t];
-    if (d.req && !S.tech[d.req]) { UI.toast(`Нужна технология «${TECH[d.req].name}» (мастерская)`, 'warn'); Sound.play('error'); return false; }
-    if (G.countB(t) >= (d.max || 99)) { UI.toast(`Лимит: ${d.name} — максимум ${d.max} шт.`, 'warn'); Sound.play('error'); return false; }
+    if (d.req && !S.tech[d.req]) { UI.toast(tr('need_tech_ws', { name: TECH[d.req].name }), 'warn'); Sound.play('error'); return false; }
+    if (G.countB(t) >= (d.max || 99)) { UI.toast(tr('limit_t', { name: d.name, n: d.max }), 'warn'); Sound.play('error'); return false; }
     if (build) G.cancelBuild();
     build = { t, rot: 0, ghost: makeGhost(t, false), ghostWall: t === 'cannon' ? makeGhost(t, true) : null, x: 0, z: 0, valid: false, reason: '', onWall: null };
     return true;
@@ -987,15 +987,15 @@ const G = window.G = {};
     const [w, dd] = footprint(t, rot);
     if (!build.onWall) {
       const minx = x - w / 2, maxx = x + w / 2, minz = z - dd / 2, maxz = z + dd / 2, sh = 0.3;
-      for (const b of B) { if (b.onWall) continue; const s2 = WALLISH[t] && WALLISH[b.t] ? 0.75 : sh; if (minx + s2 < b.maxx && maxx - s2 > b.minx && minz + s2 < b.maxz && maxz - s2 > b.minz) { valid = false; reason = 'Место занято'; break; } }
-      if (valid) for (const n of World.nodesNear(x, z, 6, nearTmp)) { if (!n.alive) continue; const cx = clamp(n.x, minx, maxx), cz = clamp(n.z, minz, maxz); if (Math.hypot(n.x - cx, n.z - cz) < n.r * 0.8) { valid = false; reason = 'Мешает ' + NODE_INFO[n.kind].name.toLowerCase(); break; } }
+      for (const b of B) { if (b.onWall) continue; const s2 = WALLISH[t] && WALLISH[b.t] ? 0.75 : sh; if (minx + s2 < b.maxx && maxx - s2 > b.minx && minz + s2 < b.maxz && maxz - s2 > b.minz) { valid = false; reason = tr('occupied'); break; } }
+      if (valid) for (const n of World.nodesNear(x, z, 6, nearTmp)) { if (!n.alive) continue; const cx = clamp(n.x, minx, maxx), cz = clamp(n.z, minz, maxz); if (Math.hypot(n.x - cx, n.z - cz) < n.r * 0.8) { valid = false; reason = tr('blocked_by', { name: NODE_INFO[n.kind].name }); break; } }
       const by = baseY(t, x, z, rot);
-      if (valid && by.min < World.WATER_Y + 0.1) { valid = false; reason = 'Нельзя строить в воде'; }
-      if (valid && by.max - by.min > 1.6) { valid = false; reason = 'Слишком круто'; }
-      if (valid && Math.hypot(x, z) > 160) { valid = false; reason = 'Слишком далеко'; }
-      if (valid && Math.hypot(P.pos.x - x, P.pos.z - z) < 0.5) { valid = false; reason = 'Отойдите'; }
-      if (valid && t === 'minelift' && !World.inMine(x, z)) { valid = false; reason = 'Только в карьере (восток)'; }
-      if (valid && P.pos.x > minx - 0.35 && P.pos.x < maxx + 0.35 && P.pos.z > minz - 0.35 && P.pos.z < maxz + 0.35 && !PASS_PLAYER[t]) { valid = false; reason = 'Вы стоите на месте'; }
+      if (valid && by.min < World.WATER_Y + 0.1) { valid = false; reason = tr('in_water'); }
+      if (valid && by.max - by.min > 1.6) { valid = false; reason = tr('too_steep'); }
+      if (valid && Math.hypot(x, z) > 160) { valid = false; reason = tr('too_far'); }
+      if (valid && Math.hypot(P.pos.x - x, P.pos.z - z) < 0.5) { valid = false; reason = tr('step_away'); }
+      if (valid && t === 'minelift' && !World.inMine(x, z)) { valid = false; reason = tr('quarry_only'); }
+      if (valid && P.pos.x > minx - 0.35 && P.pos.x < maxx + 0.35 && P.pos.z > minz - 0.35 && P.pos.z < maxz + 0.35 && !PASS_PLAYER[t]) { valid = false; reason = tr('standing_here'); }
     }
     build.x = x; build.z = z; build.valid = valid; build.reason = reason;
     const g = build.onWall ? build.ghostWall : build.ghost;
@@ -1007,9 +1007,9 @@ const G = window.G = {};
   }
   G.placeBuild = function () {
     if (!build) return;
-    if (!build.valid) { UI.toast(build.reason || 'Здесь нельзя строить', 'warn'); Sound.play('error'); return; }
+    if (!build.valid) { UI.toast(build.reason || tr('cant_build'), 'warn'); Sound.play('error'); return; }
     const t = build.t, cost = G.scaleCost(BUILD[t].cost);
-    if (G.countB(t) >= (BUILD[t].max || 99)) { UI.toast(`Лимит: ${BUILD[t].name} — максимум ${BUILD[t].max} шт.`, 'warn'); Sound.play('error'); G.cancelBuild(); return; }
+    if (G.countB(t) >= (BUILD[t].max || 99)) { UI.toast(tr('limit_t', { name: BUILD[t].name, n: BUILD[t].max }), 'warn'); Sound.play('error'); G.cancelBuild(); return; }
     if (!tryPay(cost)) return;
     let b;
     if (build.onWall) b = addBuilding('cannon', build.x, build.z, build.onWall.rot, 1, null, build.onWall.id);
@@ -1017,8 +1017,8 @@ const G = window.G = {};
     S.stats.built++;
     Sound.play('build');
     spawnParticles(V(b.x, b.mesh.position.y + 0.3, b.z), 0xc8b090, 14, 3, 0.35, 0.9);
-    if (t === 'cannon') { const bird = BD.find(x => !x.cannon); if (bird) G.assignBird(bird, b); else UI.toast('Купите птицу, чтобы она села за пушку (🐦)', 'info', 3500); }
-    if (G.countB(t) >= (BUILD[t].max || 99)) { G.cancelBuild(); if (BUILD[t].max > 1) UI.toast(`Построено максимум: ${BUILD[t].name} ${BUILD[t].max}/${BUILD[t].max}`, 'info'); }
+    if (t === 'cannon') { const bird = BD.find(x => !x.cannon); if (bird) G.assignBird(bird, b); else UI.toast(tr('buy_for_cannon'), 'info', 3500); }
+    if (G.countB(t) >= (BUILD[t].max || 99)) { G.cancelBuild(); if (BUILD[t].max > 1) UI.toast(tr('limit_done', { name: BUILD[t].name, n: BUILD[t].max }), 'info'); }
   };
 
   // ---------------- Производство ----------------
@@ -1079,10 +1079,10 @@ const G = window.G = {};
     const q = QUESTS[S.quest];
     if (q && q.check(S)) {
       S.quest++; addRes('coins', q.reward);
-      UI.toast(`🏆 Задание выполнено: ${q.text} (+${q.reward} 🪙)`, 'good', 4000); Sound.play('win');
+      UI.toast(tr('quest_done', { q: q.text, r: q.reward }), 'good', 4000); Sound.play('win');
     }
   }
-  G.questText = () => { const q = QUESTS[S.quest]; return q ? q.text : 'Защищайте птиц как можно дольше!'; };
+  G.questText = () => { const q = QUESTS[S.quest]; return q ? q.text : tr('quest_free'); };
   G.questTarget = () => { const i = S.quest; if (i === 5 || i === 10) return World.MINE; return null; };
 
   // ---------------- Камера ----------------
@@ -1189,7 +1189,7 @@ const G = window.G = {};
   };
   function update(dt) {
     S.stats.time = (S.stats.time || 0) + dt;
-    S.dayTime += dt / 300; if (S.dayTime >= 1) { S.dayTime -= 1; S.day++; UI.toast(`☀️ День ${S.day}`, 'info'); }
+    S.dayTime += dt / 300; if (S.dayTime >= 1) { S.dayTime -= 1; S.day++; UI.toast(tr('new_day', { n: S.day }), 'info'); }
     const dl = World.updateSky(S.dayTime, V(P.pos.x, 0, P.pos.z), dt, time);
     Sound.setNight(dl < 0.2);
     updatePlayer(dt);
@@ -1284,7 +1284,7 @@ const G = window.G = {};
       nodes: World.nodes.filter(n => !n.alive).map(n => [n.idx, Math.round(n.regrow)]),
       cam: { yaw: cam.yaw, pitch: cam.pitch }, savedAt: Date.now(),
     });
-    try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); if (!auto) UI.toast('💾 Игра сохранена', 'info'); else UI.saveIcon(); } catch (e) { UI.toast('Не удалось сохранить', 'bad'); }
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); if (!auto) UI.toast(tr('saved'), 'info'); else UI.saveIcon(); } catch (e) { UI.toast(tr('save_fail'), 'bad'); }
   };
   G.load = function () {
     let data;

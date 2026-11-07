@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1d3a24">
-<title>Птичья Крепость</title>
+<title>Bird Wars</title>
 <link rel="manifest" href="manifest.json">
 <style>
 :root { --gold:#ffd24a; --green:#4caf50; --dark:rgba(18,28,20,.86); --panel:#f6ecd4; --wood:#8a5a2a; --red:#e04a3a; }
@@ -218,6 +218,13 @@ body.fp #crosshair { display:block; }
 #daytxt small { font-size:10px; font-weight:700; opacity:.9; }
 #bossbar { margin:4px auto 0; width:90%; background:#3a0a0acc; border:2px solid #ff6a4a; border-radius:10px; padding:2px 8px 4px; font-size:12px; font-weight:900; }
 #bossbar .bb { height:8px; background:#0008; border-radius:4px; overflow:hidden; margin-top:2px; } #bossbar .bb i { display:block; height:100%; background:linear-gradient(90deg,#ff3a2a,#ff9a4a); }
+#langpick { background:radial-gradient(circle at 50% 40%,#2e5a34ee,#0e1a10f5); z-index:55; }
+#langpick .lp { width:min(94vw,560px); max-height:92vh; overflow-y:auto; padding:14px 16px; touch-action:pan-y; }
+#lp-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; }
+#lp-list button { display:flex; align-items:center; gap:10px; border:2px solid #e0c890; background:#fff; border-radius:12px; padding:10px 12px; font-size:17px; font-weight:800; color:#3a2a14; text-align:left; }
+#lp-list button .fl { font-size:28px; line-height:1; }
+#lp-list button.on { border-color:#4caf50; background:#eaf7e2; box-shadow:0 0 0 2px #4caf50 inset; }
+.langbtn { position:fixed; right:max(12px,env(safe-area-inset-right)); top:max(12px,env(safe-area-inset-top)); width:48px; height:48px; border-radius:50%; border:2px solid #fff8; background:#0008; font-size:24px; color:#fff; }
 /* ---------- масштаб интерфейса (только GUI, мир не меняется) ---------- */
 :root { --ui: 1; }
 .rico { width:1.05em; height:1.05em; display:inline-block; vertical-align:-0.18em; }
@@ -265,56 +272,58 @@ body.fp #crosshair { display:block; }
 <div id="touch"></div>
 
 <div id="loading" class="screen">
-  <div class="logo">🪺 Птичья Крепость</div>
+  <div class="logo">🪺 <span data-i18n="title">Bird Wars</span></div>
   <div class="lbar"><i id="loadbar"></i></div>
-  <div id="loadtxt">Загрузка…</div>
+  <div id="loadtxt" data-i18n="loading">Loading…</div>
 </div>
 
 <div id="menu" class="screen hidden">
-  <h1 class="title">Птичья<br>Крепость</h1>
-  <div class="sub">Построй крепость и защити птиц от зверей!</div>
+  <h1 class="title" data-i18n-html="title_html">Bird<br>Wars</h1>
+  <div class="sub" data-i18n="subtitle"></div>
   <div class="menu-col" id="m-main">
-    <button class="big" data-act="play">▶ ИГРАТЬ</button>
-    <button class="big blue" data-act="settings">⚙ НАСТРОЙКИ</button>
-    <button class="big red" data-act="exit">✖ ВЫЙТИ ИЗ ИГРЫ</button>
+    <button class="big" data-act="play" data-i18n="play"></button>
+    <button class="big blue" data-act="settings" data-i18n="settings_b"></button>
+    <button class="big red" data-act="exit" data-i18n="exit"></button>
   </div>
   <div class="menu-col hidden" id="m-play">
-    <button class="big" data-act="new">🌱 НОВАЯ ИГРА</button>
-    <button class="big blue" data-act="continue" id="btn-continue">💾 ПРОДОЛЖИТЬ<small id="saveinfo"></small></button>
-    <button class="big gray" data-act="back">◀ НАЗАД</button>
+    <button class="big" data-act="new" data-i18n="newgame"></button>
+    <button class="big blue" data-act="continue" id="btn-continue"><span data-i18n="continue"></span><small id="saveinfo"></small></button>
+    <button class="big gray" data-act="back" data-i18n="back"></button>
   </div>
-  <div class="ver">v1.0 · управление: стики на телефоне или WASD + мышь</div>
+  <div class="ver" data-i18n="ver"></div>
+  <button class="langbtn" id="btn-lang">🌍</button>
 </div>
 
 <div id="settings" class="screen hidden" style="background:rgba(0,0,0,.55)">
   <div class="card">
-    <h2>⚙ Настройки</h2>
-    <div class="row"><label>Графика</label><div class="seg" id="s-quality">
-      <button data-v="low">Низкая</button><button data-v="medium">Средняя</button><button data-v="high">Высокая</button><button data-v="ultra">Ультра</button></div></div>
-    <div class="row"><label>Разрешение</label><select id="s-res">
-      <option value="auto">Авто (экран)</option><option value="480">854×480</option><option value="540">960×540</option><option value="720">1280×720</option><option value="900">1600×900</option><option value="1080">1920×1080</option><option value="1440">2560×1440</option></select></div>
-    <div class="row"><label>Вид камеры</label><div class="seg" id="s-view"><button data-v="third">🎥 От 3-го лица</button><button data-v="first">👁 От 1-го лица</button></div></div>
-    <div class="row"><label>Размер интерфейса <span id="s-uiScaleV"></span></label><input type="range" id="s-uiScale" min="60" max="150" step="5"></div>
-    <div class="row"><label>Музыка</label><button class="tog" id="s-musicOn"></button></div>
-    <div class="row"><label>Громкость музыки</label><input type="range" id="s-musicVol" min="0" max="100"></div>
-    <div class="row"><label>Звуки</label><button class="tog" id="s-sfxOn"></button></div>
-    <div class="row"><label>Громкость звуков</label><input type="range" id="s-sfxVol" min="0" max="100"></div>
-    <div class="row"><label>Авто-добыча и атака</label><button class="tog" id="s-autoAct"></button></div>
-    <div class="row"><label>Дальность камеры</label><input type="range" id="s-camDist" min="60" max="160"></div>
-    <div class="row"><label>Чувствительность камеры</label><input type="range" id="s-sens" min="30" max="200"></div>
-    <div class="row"><label>Полный экран</label><button class="btn blue" id="s-full">⛶ Вкл/выкл</button></div>
-    <div style="text-align:center;margin-top:12px"><button class="big gray" id="s-back" style="width:220px">◀ НАЗАД</button></div>
+    <h2 data-i18n="s_title"></h2>
+    <div class="row"><label data-i18n="s_lang"></label><select id="s-lang"></select></div>
+    <div class="row"><label data-i18n="s_graphics"></label><div class="seg" id="s-quality">
+      <button data-v="low" data-i18n="q_low"></button><button data-v="medium" data-i18n="q_medium"></button><button data-v="high" data-i18n="q_high"></button><button data-v="ultra" data-i18n="q_ultra"></button></div></div>
+    <div class="row"><label data-i18n="s_res"></label><select id="s-res">
+      <option value="auto" data-i18n="res_auto"></option><option value="480">854×480</option><option value="540">960×540</option><option value="720">1280×720</option><option value="900">1600×900</option><option value="1080">1920×1080</option><option value="1440">2560×1440</option></select></div>
+    <div class="row"><label data-i18n="s_view"></label><div class="seg" id="s-view"><button data-v="third" data-i18n="view_third"></button><button data-v="first" data-i18n="view_first"></button></div></div>
+    <div class="row"><label><span data-i18n="s_ui"></span> <span id="s-uiScaleV"></span></label><input type="range" id="s-uiScale" min="60" max="150" step="5"></div>
+    <div class="row"><label data-i18n="s_music"></label><button class="tog" id="s-musicOn"></button></div>
+    <div class="row"><label data-i18n="s_musicVol"></label><input type="range" id="s-musicVol" min="0" max="100"></div>
+    <div class="row"><label data-i18n="s_sfx"></label><button class="tog" id="s-sfxOn"></button></div>
+    <div class="row"><label data-i18n="s_sfxVol"></label><input type="range" id="s-sfxVol" min="0" max="100"></div>
+    <div class="row"><label data-i18n="s_auto"></label><button class="tog" id="s-autoAct"></button></div>
+    <div class="row"><label data-i18n="s_camDist"></label><input type="range" id="s-camDist" min="60" max="160"></div>
+    <div class="row"><label data-i18n="s_sens"></label><input type="range" id="s-sens" min="30" max="200"></div>
+    <div class="row"><label data-i18n="s_full"></label><button class="btn blue" id="s-full" data-i18n="s_fullBtn"></button></div>
+    <div style="text-align:center;margin-top:12px"><button class="big gray" id="s-back" style="width:220px" data-i18n="back"></button></div>
   </div>
 </div>
 
 <div id="select" class="screen hidden">
-  <div id="selTitle">Выберите героя</div>
+  <div id="selTitle" data-i18n="sel_title"></div>
   <div id="heroCard" class="card"></div>
-  <div id="dragHint">👆 Проведите пальцем по экрану, чтобы вращать героя</div>
+  <div id="dragHint" data-i18n="drag_hint"></div>
   <div id="selNav">
     <button class="big gray" id="sel-back" style="padding:12px 16px">◀</button>
     <button class="arrow" id="sel-prev">‹</button>
-    <button class="big" id="sel-go">НАЧАТЬ ИГРУ</button>
+    <button class="big" id="sel-go" data-i18n="start"></button>
     <button class="arrow" id="sel-next">›</button>
   </div>
 </div>
@@ -323,42 +332,42 @@ body.fp #crosshair { display:block; }
   <div id="topbar">
     <div id="res"></div>
     <div id="basebox">
-      <div class="lbl">🪺 ВЕЛИКОЕ ГНЕЗДО — здоровье базы</div>
+      <div class="lbl" data-i18n="base_lbl"></div>
       <div class="hpbar"><i id="basehp"></i><span id="basehptxt"></span></div>
       <div id="waveinfo"></div>
       <div id="bossbar" class="hidden"><span id="bossname"></span><div class="bb"><i id="bosshp"></i></div></div>
     </div>
-    <div id="topright"><span id="daytxt"></span><button class="sq" id="btn-view" title="Вид: 1-е / 3-е лицо (V)">👁</button><button class="sq" id="btn-pause">⏸</button></div>
+    <div id="topright"><span id="daytxt"></span><button class="sq" id="btn-view" title="1st / 3rd person (V)">👁</button><button class="sq" id="btn-pause">⏸</button></div>
   </div>
   <div id="leftinfo">
     <div class="phb">❤️<div class="hpbar"><i id="php"></i><span id="phptxt"></span></div></div>
-    <div class="stb" title="Выносливость"><span>⚡</span><div class="stbar"><i id="pst"></i></div></div>
+    <div class="stb"><span>⚡</span><div class="stbar"><i id="pst"></i></div></div>
     <div id="quest"></div>
     <div id="birdcount"></div>
   </div>
   <div id="compass" class="hidden">➤</div>
   <div id="crosshair"></div>
-  <button id="btn-wave">⏩ Волна сейчас</button>
+  <button id="btn-wave" data-i18n="wave_now"></button>
   <div id="prompt"></div>
-  <div id="stickL" class="stick"><div class="lbl">ДВИЖЕНИЕ</div><div class="knob"></div></div>
-  <div id="stickR" class="stick"><div class="lbl">КАМЕРА</div><div class="knob"></div></div>
+  <div id="stickL" class="stick"><div class="lbl" data-i18n="move"></div><div class="knob"></div></div>
+  <div id="stickR" class="stick"><div class="lbl" data-i18n="camera"></div><div class="knob"></div></div>
   <div id="actions">
-    <button class="round" id="btn-run" title="Shift — бег">🏃</button>
+    <button class="round" id="btn-run" title="Shift">🏃</button>
     <button class="round" id="btn-use" title="E">✋</button>
-    <button class="round bigr" id="btn-act" title="Пробел">🪓</button>
+    <button class="round bigr" id="btn-act" title="Space">🪓</button>
   </div>
   <div id="buildbar" class="hidden">
     <div id="bb-info"></div>
     <button id="bb-rot">↻</button>
-    <button id="bb-place">✔ Поставить</button>
+    <button id="bb-place" data-i18n="place"></button>
     <button id="bb-cancel">✖</button>
   </div>
   <div id="toolbar">
-    <button class="slot" data-slot="axe">🪓<small>Топор</small></button>
-    <button class="slot" data-slot="pick">⛏️<small>Кирка</small></button>
-    <button class="slot" data-slot="build">🔨<small>Стройка</small></button>
-    <button class="slot" data-slot="inv">🎒<small>Инвентарь</small></button>
-    <button class="slot" data-slot="birds">🐦<small>Птицы</small></button>
+    <button class="slot" data-slot="axe">🪓<small data-i18n="tb_axe"></small></button>
+    <button class="slot" data-slot="pick">⛏️<small data-i18n="tb_pick"></small></button>
+    <button class="slot" data-slot="build">🔨<small data-i18n="tb_build"></small></button>
+    <button class="slot" data-slot="inv">🎒<small data-i18n="tb_inv"></small></button>
+    <button class="slot" data-slot="birds">🐦<small data-i18n="tb_birds"></small></button>
   </div>
 </div>
 <div id="bars"></div>
@@ -374,37 +383,46 @@ body.fp #crosshair { display:block; }
 </div></div>
 
 <div id="pause" class="screen hidden">
-  <h1 class="title" style="font-size:48px;margin-bottom:16px">Пауза</h1>
+  <h1 class="title" style="font-size:48px;margin-bottom:16px" data-i18n="pause"></h1>
   <div class="menu-col">
-    <button class="big" data-p="resume">▶ ПРОДОЛЖИТЬ</button>
-    <button class="big blue" data-p="save">💾 СОХРАНИТЬ</button>
-    <button class="big blue" data-p="settings">⚙ НАСТРОЙКИ</button>
-    <button class="big red" data-p="menu">🏠 ГЛАВНОЕ МЕНЮ</button>
+    <button class="big" data-p="resume" data-i18n="resume"></button>
+    <button class="big blue" data-p="save" data-i18n="save_b"></button>
+    <button class="big blue" data-p="settings" data-i18n="settings_b"></button>
+    <button class="big red" data-p="menu" data-i18n="mainmenu"></button>
   </div>
 </div>
 
 <div id="over" class="screen hidden">
   <div class="card results">
-    <h1>🪺 База разрушена!</h1>
+    <h1 data-i18n="over_title"></h1>
     <div id="overtxt"></div>
-    <button class="big" id="over-menu">🏠 ГЛАВНОЕ МЕНЮ</button>
+    <button class="big" id="over-menu" data-i18n="mainmenu"></button>
   </div>
 </div>
 
 <div id="bye" class="screen hidden">
-  <h1 class="title">Спасибо за игру!</h1>
-  <p>Прогресс сохранён. Можно закрыть вкладку.</p>
-  <button class="big" id="bye-back" style="width:260px">◀ В МЕНЮ</button>
+  <h1 class="title" data-i18n="bye_title"></h1>
+  <p data-i18n="bye_txt"></p>
+  <button class="big" id="bye-back" style="width:260px" data-i18n="bye_back"></button>
+</div>
+
+<div id="langpick" class="screen hidden">
+  <div class="card lp">
+    <h2 id="lp-title">🌍 Choose your language</h2>
+    <div id="lp-list"></div>
+  </div>
 </div>
 
 <div id="rotate">
   <div class="ph">📱</div>
-  <div>Поверните телефон <b>горизонтально</b> — так удобнее играть</div>
-  <button class="big" id="rot-ok" style="width:240px">Играть так</button>
+  <div data-i18n-html="rotate_txt"></div>
+  <button class="big" id="rot-ok" style="width:240px" data-i18n="rotate_ok"></button>
 </div>
 
 <script src="js/three.min.js"></script>
 <script src="js/data.js"></script>
+<script src="js/i18n_data.js"></script>
+<script src="js/i18n.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/models.js"></script>
 <script src="js/world.js"></script>

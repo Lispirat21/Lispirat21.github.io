@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1d3a24">
-<title>Птичья Крепость</title>
+<title>Bird Wars</title>
 <style>
 :root { --gold:#ffd24a; --green:#4caf50; --dark:rgba(18,28,20,.86); --panel:#f6ecd4; --wood:#8a5a2a; --red:#e04a3a; }
 * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -217,6 +217,13 @@ body.fp #crosshair { display:block; }
 #daytxt small { font-size:10px; font-weight:700; opacity:.9; }
 #bossbar { margin:4px auto 0; width:90%; background:#3a0a0acc; border:2px solid #ff6a4a; border-radius:10px; padding:2px 8px 4px; font-size:12px; font-weight:900; }
 #bossbar .bb { height:8px; background:#0008; border-radius:4px; overflow:hidden; margin-top:2px; } #bossbar .bb i { display:block; height:100%; background:linear-gradient(90deg,#ff3a2a,#ff9a4a); }
+#langpick { background:radial-gradient(circle at 50% 40%,#2e5a34ee,#0e1a10f5); z-index:55; }
+#langpick .lp { width:min(94vw,560px); max-height:92vh; overflow-y:auto; padding:14px 16px; touch-action:pan-y; }
+#lp-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; }
+#lp-list button { display:flex; align-items:center; gap:10px; border:2px solid #e0c890; background:#fff; border-radius:12px; padding:10px 12px; font-size:17px; font-weight:800; color:#3a2a14; text-align:left; }
+#lp-list button .fl { font-size:28px; line-height:1; }
+#lp-list button.on { border-color:#4caf50; background:#eaf7e2; box-shadow:0 0 0 2px #4caf50 inset; }
+.langbtn { position:fixed; right:max(12px,env(safe-area-inset-right)); top:max(12px,env(safe-area-inset-top)); width:48px; height:48px; border-radius:50%; border:2px solid #fff8; background:#0008; font-size:24px; color:#fff; }
 /* ---------- масштаб интерфейса (только GUI, мир не меняется) ---------- */
 :root { --ui: 1; }
 .rico { width:1.05em; height:1.05em; display:inline-block; vertical-align:-0.18em; }
@@ -264,56 +271,58 @@ body.fp #crosshair { display:block; }
 <div id="touch"></div>
 
 <div id="loading" class="screen">
-  <div class="logo">🪺 Птичья Крепость</div>
+  <div class="logo">🪺 <span data-i18n="title">Bird Wars</span></div>
   <div class="lbar"><i id="loadbar"></i></div>
-  <div id="loadtxt">Загрузка…</div>
+  <div id="loadtxt" data-i18n="loading">Loading…</div>
 </div>
 
 <div id="menu" class="screen hidden">
-  <h1 class="title">Птичья<br>Крепость</h1>
-  <div class="sub">Построй крепость и защити птиц от зверей!</div>
+  <h1 class="title" data-i18n-html="title_html">Bird<br>Wars</h1>
+  <div class="sub" data-i18n="subtitle"></div>
   <div class="menu-col" id="m-main">
-    <button class="big" data-act="play">▶ ИГРАТЬ</button>
-    <button class="big blue" data-act="settings">⚙ НАСТРОЙКИ</button>
-    <button class="big red" data-act="exit">✖ ВЫЙТИ ИЗ ИГРЫ</button>
+    <button class="big" data-act="play" data-i18n="play"></button>
+    <button class="big blue" data-act="settings" data-i18n="settings_b"></button>
+    <button class="big red" data-act="exit" data-i18n="exit"></button>
   </div>
   <div class="menu-col hidden" id="m-play">
-    <button class="big" data-act="new">🌱 НОВАЯ ИГРА</button>
-    <button class="big blue" data-act="continue" id="btn-continue">💾 ПРОДОЛЖИТЬ<small id="saveinfo"></small></button>
-    <button class="big gray" data-act="back">◀ НАЗАД</button>
+    <button class="big" data-act="new" data-i18n="newgame"></button>
+    <button class="big blue" data-act="continue" id="btn-continue"><span data-i18n="continue"></span><small id="saveinfo"></small></button>
+    <button class="big gray" data-act="back" data-i18n="back"></button>
   </div>
-  <div class="ver">v1.0 · управление: стики на телефоне или WASD + мышь</div>
+  <div class="ver" data-i18n="ver"></div>
+  <button class="langbtn" id="btn-lang">🌍</button>
 </div>
 
 <div id="settings" class="screen hidden" style="background:rgba(0,0,0,.55)">
   <div class="card">
-    <h2>⚙ Настройки</h2>
-    <div class="row"><label>Графика</label><div class="seg" id="s-quality">
-      <button data-v="low">Низкая</button><button data-v="medium">Средняя</button><button data-v="high">Высокая</button><button data-v="ultra">Ультра</button></div></div>
-    <div class="row"><label>Разрешение</label><select id="s-res">
-      <option value="auto">Авто (экран)</option><option value="480">854×480</option><option value="540">960×540</option><option value="720">1280×720</option><option value="900">1600×900</option><option value="1080">1920×1080</option><option value="1440">2560×1440</option></select></div>
-    <div class="row"><label>Вид камеры</label><div class="seg" id="s-view"><button data-v="third">🎥 От 3-го лица</button><button data-v="first">👁 От 1-го лица</button></div></div>
-    <div class="row"><label>Размер интерфейса <span id="s-uiScaleV"></span></label><input type="range" id="s-uiScale" min="60" max="150" step="5"></div>
-    <div class="row"><label>Музыка</label><button class="tog" id="s-musicOn"></button></div>
-    <div class="row"><label>Громкость музыки</label><input type="range" id="s-musicVol" min="0" max="100"></div>
-    <div class="row"><label>Звуки</label><button class="tog" id="s-sfxOn"></button></div>
-    <div class="row"><label>Громкость звуков</label><input type="range" id="s-sfxVol" min="0" max="100"></div>
-    <div class="row"><label>Авто-добыча и атака</label><button class="tog" id="s-autoAct"></button></div>
-    <div class="row"><label>Дальность камеры</label><input type="range" id="s-camDist" min="60" max="160"></div>
-    <div class="row"><label>Чувствительность камеры</label><input type="range" id="s-sens" min="30" max="200"></div>
-    <div class="row"><label>Полный экран</label><button class="btn blue" id="s-full">⛶ Вкл/выкл</button></div>
-    <div style="text-align:center;margin-top:12px"><button class="big gray" id="s-back" style="width:220px">◀ НАЗАД</button></div>
+    <h2 data-i18n="s_title"></h2>
+    <div class="row"><label data-i18n="s_lang"></label><select id="s-lang"></select></div>
+    <div class="row"><label data-i18n="s_graphics"></label><div class="seg" id="s-quality">
+      <button data-v="low" data-i18n="q_low"></button><button data-v="medium" data-i18n="q_medium"></button><button data-v="high" data-i18n="q_high"></button><button data-v="ultra" data-i18n="q_ultra"></button></div></div>
+    <div class="row"><label data-i18n="s_res"></label><select id="s-res">
+      <option value="auto" data-i18n="res_auto"></option><option value="480">854×480</option><option value="540">960×540</option><option value="720">1280×720</option><option value="900">1600×900</option><option value="1080">1920×1080</option><option value="1440">2560×1440</option></select></div>
+    <div class="row"><label data-i18n="s_view"></label><div class="seg" id="s-view"><button data-v="third" data-i18n="view_third"></button><button data-v="first" data-i18n="view_first"></button></div></div>
+    <div class="row"><label><span data-i18n="s_ui"></span> <span id="s-uiScaleV"></span></label><input type="range" id="s-uiScale" min="60" max="150" step="5"></div>
+    <div class="row"><label data-i18n="s_music"></label><button class="tog" id="s-musicOn"></button></div>
+    <div class="row"><label data-i18n="s_musicVol"></label><input type="range" id="s-musicVol" min="0" max="100"></div>
+    <div class="row"><label data-i18n="s_sfx"></label><button class="tog" id="s-sfxOn"></button></div>
+    <div class="row"><label data-i18n="s_sfxVol"></label><input type="range" id="s-sfxVol" min="0" max="100"></div>
+    <div class="row"><label data-i18n="s_auto"></label><button class="tog" id="s-autoAct"></button></div>
+    <div class="row"><label data-i18n="s_camDist"></label><input type="range" id="s-camDist" min="60" max="160"></div>
+    <div class="row"><label data-i18n="s_sens"></label><input type="range" id="s-sens" min="30" max="200"></div>
+    <div class="row"><label data-i18n="s_full"></label><button class="btn blue" id="s-full" data-i18n="s_fullBtn"></button></div>
+    <div style="text-align:center;margin-top:12px"><button class="big gray" id="s-back" style="width:220px" data-i18n="back"></button></div>
   </div>
 </div>
 
 <div id="select" class="screen hidden">
-  <div id="selTitle">Выберите героя</div>
+  <div id="selTitle" data-i18n="sel_title"></div>
   <div id="heroCard" class="card"></div>
-  <div id="dragHint">👆 Проведите пальцем по экрану, чтобы вращать героя</div>
+  <div id="dragHint" data-i18n="drag_hint"></div>
   <div id="selNav">
     <button class="big gray" id="sel-back" style="padding:12px 16px">◀</button>
     <button class="arrow" id="sel-prev">‹</button>
-    <button class="big" id="sel-go">НАЧАТЬ ИГРУ</button>
+    <button class="big" id="sel-go" data-i18n="start"></button>
     <button class="arrow" id="sel-next">›</button>
   </div>
 </div>
@@ -322,42 +331,42 @@ body.fp #crosshair { display:block; }
   <div id="topbar">
     <div id="res"></div>
     <div id="basebox">
-      <div class="lbl">🪺 ВЕЛИКОЕ ГНЕЗДО — здоровье базы</div>
+      <div class="lbl" data-i18n="base_lbl"></div>
       <div class="hpbar"><i id="basehp"></i><span id="basehptxt"></span></div>
       <div id="waveinfo"></div>
       <div id="bossbar" class="hidden"><span id="bossname"></span><div class="bb"><i id="bosshp"></i></div></div>
     </div>
-    <div id="topright"><span id="daytxt"></span><button class="sq" id="btn-view" title="Вид: 1-е / 3-е лицо (V)">👁</button><button class="sq" id="btn-pause">⏸</button></div>
+    <div id="topright"><span id="daytxt"></span><button class="sq" id="btn-view" title="1st / 3rd person (V)">👁</button><button class="sq" id="btn-pause">⏸</button></div>
   </div>
   <div id="leftinfo">
     <div class="phb">❤️<div class="hpbar"><i id="php"></i><span id="phptxt"></span></div></div>
-    <div class="stb" title="Выносливость"><span>⚡</span><div class="stbar"><i id="pst"></i></div></div>
+    <div class="stb"><span>⚡</span><div class="stbar"><i id="pst"></i></div></div>
     <div id="quest"></div>
     <div id="birdcount"></div>
   </div>
   <div id="compass" class="hidden">➤</div>
   <div id="crosshair"></div>
-  <button id="btn-wave">⏩ Волна сейчас</button>
+  <button id="btn-wave" data-i18n="wave_now"></button>
   <div id="prompt"></div>
-  <div id="stickL" class="stick"><div class="lbl">ДВИЖЕНИЕ</div><div class="knob"></div></div>
-  <div id="stickR" class="stick"><div class="lbl">КАМЕРА</div><div class="knob"></div></div>
+  <div id="stickL" class="stick"><div class="lbl" data-i18n="move"></div><div class="knob"></div></div>
+  <div id="stickR" class="stick"><div class="lbl" data-i18n="camera"></div><div class="knob"></div></div>
   <div id="actions">
-    <button class="round" id="btn-run" title="Shift — бег">🏃</button>
+    <button class="round" id="btn-run" title="Shift">🏃</button>
     <button class="round" id="btn-use" title="E">✋</button>
-    <button class="round bigr" id="btn-act" title="Пробел">🪓</button>
+    <button class="round bigr" id="btn-act" title="Space">🪓</button>
   </div>
   <div id="buildbar" class="hidden">
     <div id="bb-info"></div>
     <button id="bb-rot">↻</button>
-    <button id="bb-place">✔ Поставить</button>
+    <button id="bb-place" data-i18n="place"></button>
     <button id="bb-cancel">✖</button>
   </div>
   <div id="toolbar">
-    <button class="slot" data-slot="axe">🪓<small>Топор</small></button>
-    <button class="slot" data-slot="pick">⛏️<small>Кирка</small></button>
-    <button class="slot" data-slot="build">🔨<small>Стройка</small></button>
-    <button class="slot" data-slot="inv">🎒<small>Инвентарь</small></button>
-    <button class="slot" data-slot="birds">🐦<small>Птицы</small></button>
+    <button class="slot" data-slot="axe">🪓<small data-i18n="tb_axe"></small></button>
+    <button class="slot" data-slot="pick">⛏️<small data-i18n="tb_pick"></small></button>
+    <button class="slot" data-slot="build">🔨<small data-i18n="tb_build"></small></button>
+    <button class="slot" data-slot="inv">🎒<small data-i18n="tb_inv"></small></button>
+    <button class="slot" data-slot="birds">🐦<small data-i18n="tb_birds"></small></button>
   </div>
 </div>
 <div id="bars"></div>
@@ -373,33 +382,40 @@ body.fp #crosshair { display:block; }
 </div></div>
 
 <div id="pause" class="screen hidden">
-  <h1 class="title" style="font-size:48px;margin-bottom:16px">Пауза</h1>
+  <h1 class="title" style="font-size:48px;margin-bottom:16px" data-i18n="pause"></h1>
   <div class="menu-col">
-    <button class="big" data-p="resume">▶ ПРОДОЛЖИТЬ</button>
-    <button class="big blue" data-p="save">💾 СОХРАНИТЬ</button>
-    <button class="big blue" data-p="settings">⚙ НАСТРОЙКИ</button>
-    <button class="big red" data-p="menu">🏠 ГЛАВНОЕ МЕНЮ</button>
+    <button class="big" data-p="resume" data-i18n="resume"></button>
+    <button class="big blue" data-p="save" data-i18n="save_b"></button>
+    <button class="big blue" data-p="settings" data-i18n="settings_b"></button>
+    <button class="big red" data-p="menu" data-i18n="mainmenu"></button>
   </div>
 </div>
 
 <div id="over" class="screen hidden">
   <div class="card results">
-    <h1>🪺 База разрушена!</h1>
+    <h1 data-i18n="over_title"></h1>
     <div id="overtxt"></div>
-    <button class="big" id="over-menu">🏠 ГЛАВНОЕ МЕНЮ</button>
+    <button class="big" id="over-menu" data-i18n="mainmenu"></button>
   </div>
 </div>
 
 <div id="bye" class="screen hidden">
-  <h1 class="title">Спасибо за игру!</h1>
-  <p>Прогресс сохранён. Можно закрыть вкладку.</p>
-  <button class="big" id="bye-back" style="width:260px">◀ В МЕНЮ</button>
+  <h1 class="title" data-i18n="bye_title"></h1>
+  <p data-i18n="bye_txt"></p>
+  <button class="big" id="bye-back" style="width:260px" data-i18n="bye_back"></button>
+</div>
+
+<div id="langpick" class="screen hidden">
+  <div class="card lp">
+    <h2 id="lp-title">🌍 Choose your language</h2>
+    <div id="lp-list"></div>
+  </div>
 </div>
 
 <div id="rotate">
   <div class="ph">📱</div>
-  <div>Поверните телефон <b>горизонтально</b> — так удобнее играть</div>
-  <button class="big" id="rot-ok" style="width:240px">Играть так</button>
+  <div data-i18n-html="rotate_txt"></div>
+  <button class="big" id="rot-ok" style="width:240px" data-i18n="rotate_ok"></button>
 </div>
 
 <script>
@@ -589,6 +605,519 @@ const GEAR = {
   lamp:   { name: 'Ручная лампа',          icon: '🪔', cost: { wood: 10, coal: 3, coins: 30 },   desc: 'Слабо светит вокруг героя в темноте.' },
   helmet: { name: 'Каска с прожектором',   icon: '⛑️', cost: { iron: 8, coal: 6, coins: 120 },  desc: 'Мощный луч света туда, куда смотрит герой.' },
 };
+
+</script>
+<script>
+'use strict';
+// ============ Переводы игровых данных ============
+// Порядок языков: en, ru, es, pt, fr, de, zh, ja, hi, ar
+const TR_DATA = {
+  // ----- ресурсы -----
+  'r.wood':  ["Wood", "Дерево", "Madera", "Madeira", "Bois", "Holz", "木材", "木材", "लकड़ी", "خشب"],
+  'r.stone': ["Stone", "Камень", "Piedra", "Pedra", "Pierre", "Stein", "石头", "石", "पत्थर", "حجر"],
+  'r.iron':  ["Iron", "Железо", "Hierro", "Ferro", "Fer", "Eisen", "铁", "鉄", "लोहा", "حديد"],
+  'r.coal':  ["Coal", "Уголь", "Carbón", "Carvão", "Charbon", "Kohle", "煤炭", "石炭", "कोयला", "فحم"],
+  'r.food':  ["Food", "Еда", "Comida", "Comida", "Nourriture", "Nahrung", "食物", "食料", "भोजन", "طعام"],
+  'r.coins': ["Coins", "Монеты", "Monedas", "Moedas", "Pièces", "Münzen", "金币", "コイン", "सिक्के", "عملات"],
+
+  // ----- птицы -----
+  'b.sparrow':     ["Grasshopper Sparrow", "Луговой воробей", "Gorrión chapulín", "Pardal-do-campo", "Moineau des prés", "Heuschreckenammer", "草蝗雀", "バッタヒメドリ", "घास गौरैया", "عصفور المروج"],
+  'bd.sparrow':    ["Cheap and quick shooter.", "Дешёвый и шустрый стрелок.", "Tirador barato y ágil.", "Atirador barato e ágil.", "Tireur rapide et pas cher.", "Günstiger, flinker Schütze.", "便宜又敏捷的射手。", "安くて素早い射手。", "सस्ता और फुर्तीला निशानेबाज़।", "رامٍ رخيص وسريع."],
+  'b.tit':         ["Great Tit", "Большая синица", "Carbonero común", "Chapim-real", "Mésange charbonnière", "Kohlmeise", "大山雀", "シジュウカラ", "बड़ी चिड़िया", "القرقف الكبير"],
+  'bd.tit':        ["Reloads the cannon very fast.", "Очень быстро перезаряжает пушку.", "Recarga el cañón muy rápido.", "Recarrega o canhão muito rápido.", "Recharge le canon très vite.", "Lädt die Kanone sehr schnell nach.", "装填大炮非常快。", "大砲の装填がとても速い。", "तोप बहुत तेज़ी से भरती है।", "تعيد تلقيم المدفع بسرعة كبيرة."],
+  'b.bullfinch':   ["Bullfinch", "Снегирь", "Camachuelo", "Dom-fafe", "Bouvreuil", "Gimpel", "红腹灰雀", "ウソ", "बुलफिंच", "الدغناش"],
+  'bd.bullfinch':  ["Ice cannonballs slow enemies down.", "Ледяные ядра замедляют врагов.", "Balas de hielo ralentizan a los enemigos.", "Balas de gelo deixam inimigos lentos.", "Boulets de glace qui ralentissent.", "Eiskugeln verlangsamen Feinde.", "冰弹让敌人减速。", "氷の弾が敵を遅くする。", "बर्फ़ीले गोले दुश्मनों को धीमा करते हैं।", "قذائف جليدية تبطئ الأعداء."],
+  'b.guinea':      ["Guinea Fowl", "Цесарка", "Gallina de Guinea", "Galinha-d'angola", "Pintade", "Perlhuhn", "珍珠鸡", "ホロホロチョウ", "गिनी फाउल", "دجاج غينيا"],
+  'bd.guinea':     ["Reliable shooter with fast fire.", "Надёжный стрелок с быстрой стрельбой.", "Tirador fiable de disparo rápido.", "Atiradora confiável e rápida.", "Tireur fiable au tir rapide.", "Zuverlässiger Schnellschütze.", "可靠的快速射手。", "連射が速い頼れる射手。", "तेज़ फ़ायर वाला भरोसेमंद निशानेबाज़।", "رامٍ موثوق سريع الإطلاق."],
+  'b.woodpecker':  ["Woodpecker", "Дятел", "Pájaro carpintero", "Pica-pau", "Pic-vert", "Specht", "啄木鸟", "キツツキ", "कठफोड़वा", "نقار الخشب"],
+  'bd.woodpecker': ["25% chance of a ×2.5 critical hit.", "25% шанс критического удара ×2.5.", "25% de golpe crítico ×2.5.", "25% de chance de crítico ×2.5.", "25 % de coup critique ×2,5.", "25 % Chance auf kritischen Treffer ×2,5.", "25%几率暴击×2.5。", "25%の確率で会心×2.5。", "25% संभावना से ×2.5 क्रिटिकल वार।", "فرصة 25% لضربة حرجة ×2.5."],
+  'b.loon':        ["Common Loon", "Гагара", "Colimbo grande", "Mobelha", "Plongeon huard", "Eistaucher", "普通潜鸟", "ハシグロアビ", "लून", "الغواص الشائع"],
+  'bd.loon':       ["Sharp-eyed: greatly increases range.", "Зоркая птица: сильно увеличивает дальность.", "Vista aguda: gran alcance.", "Visão aguçada: alcance muito maior.", "Œil perçant : grande portée.", "Scharfes Auge: viel mehr Reichweite.", "眼神锐利：大幅提升射程。", "鋭い目：射程が大きく伸びる。", "तेज़ नज़र: मार दूरी बहुत बढ़ाती है।", "حادة البصر: تزيد المدى كثيرًا."],
+  'b.turkey':      ["Turkey", "Индюк", "Pavo", "Peru", "Dindon", "Truthahn", "火鸡", "シチメンチョウ", "टर्की", "ديك رومي"],
+  'bd.turkey':     ["Heavy cannonballs with a big blast.", "Тяжёлые ядра с большим взрывом.", "Balas pesadas con gran explosión.", "Balas pesadas com grande explosão.", "Boulets lourds, grosse explosion.", "Schwere Kugeln, große Explosion.", "重型炮弹，爆炸范围大。", "重い弾で大爆発。", "भारी गोले, बड़ा धमाका।", "قذائف ثقيلة بانفجار كبير."],
+  'b.owl':         ["Eagle Owl", "Филин", "Búho real", "Bufo-real", "Grand-duc", "Uhu", "雕鸮", "ワシミミズク", "उल्लू", "البومة النسارية"],
+  'bd.owl':        ["Damage ×1.7 at night.", "Ночью урон ×1.7.", "De noche daño ×1.7.", "À noite dano ×1,7.", "Dégâts ×1,7 la nuit.", "Nachts Schaden ×1,7.", "夜间伤害×1.7。", "夜はダメージ×1.7。", "रात में नुकसान ×1.7।", "الضرر ×1.7 ليلًا."],
+  'b.parrot':      ["Macaw", "Ара", "Guacamayo", "Arara", "Ara", "Ara", "金刚鹦鹉", "コンゴウインコ", "मकाउ तोता", "الببغاء المكاو"],
+  'bd.parrot':     ["Fires two cannonballs at once.", "Стреляет двумя ядрами сразу.", "Dispara dos balas a la vez.", "Dispara duas balas de uma vez.", "Tire deux boulets à la fois.", "Feuert zwei Kugeln gleichzeitig.", "一次发射两枚炮弹。", "一度に2発撃つ。", "एक साथ दो गोले दागता है।", "يطلق قذيفتين معًا."],
+  'b.eagle':       ["Golden Eagle", "Беркут", "Águila real", "Águia-real", "Aigle royal", "Steinadler", "金雕", "イヌワシ", "सुनहरा बाज़", "العقاب الذهبي"],
+  'bd.eagle':      ["King of the sky. Huge damage.", "Король неба. Огромный урон.", "Rey del cielo. Daño enorme.", "Rei do céu. Dano enorme.", "Roi du ciel. Dégâts énormes.", "König der Lüfte. Riesiger Schaden.", "天空之王，伤害巨大。", "空の王者。大ダメージ。", "आकाश का राजा। भारी नुकसान।", "ملك السماء. ضرر هائل."],
+  'b.hummingbird': ["Hummingbird", "Колибри", "Colibrí", "Beija-flor", "Colibri", "Kolibri", "蜂鸟", "ハチドリ", "हमिंगबर्ड", "الطائر الطنان"],
+  'bd.hummingbird':["Tiny, but fires like a machine gun.", "Крошечная, но стреляет как пулемёт.", "Diminuto, pero dispara como ametralladora.", "Minúsculo, mas atira como metralhadora.", "Minuscule, mais tire comme une mitrailleuse.", "Winzig, schießt aber wie ein MG.", "体型小，但射速如机枪。", "小さいがマシンガン並みの連射。", "छोटी, पर मशीनगन जैसी फ़ायरिंग।", "صغير لكنه يطلق كالرشاش."],
+  'b.flamingo':    ["Flamingo", "Фламинго", "Flamenco", "Flamingo", "Flamant rose", "Flamingo", "火烈鸟", "フラミンゴ", "राजहंस", "فلامنغو"],
+  'bd.flamingo':   ["Sees farther than any bird.", "Видит дальше всех птиц.", "Ve más lejos que ningún ave.", "Enxerga mais longe que todos.", "Voit plus loin que tous.", "Sieht weiter als alle Vögel.", "视野比所有鸟都远。", "どの鳥より遠くを見る。", "सबसे दूर तक देखता है।", "يرى أبعد من كل الطيور."],
+  'b.peacock':     ["Peacock", "Павлин", "Pavo real", "Pavão", "Paon", "Pfau", "孔雀", "クジャク", "मोर", "طاووس"],
+  'bd.peacock':    ["Shots stun beasts (25% chance).", "Ядра оглушают зверей (25% шанс).", "Aturde a las bestias (25%).", "Atordoa as feras (25%).", "Étourdit les bêtes (25 %).", "Betäubt Tiere (25 %).", "炮弹可眩晕野兽（25%）。", "獣を気絶させる（25%）。", "जानवरों को सुन्न करता है (25%)।", "تصعق الوحوش (25%)."],
+  'b.phoenix':     ["Phoenix", "Феникс", "Fénix", "Fênix", "Phénix", "Phönix", "凤凰", "フェニックス", "फ़ीनिक्स", "العنقاء"],
+  'bd.phoenix':    ["Fiery shots set enemies ablaze.", "Огненные ядра поджигают врагов.", "Disparos de fuego que queman.", "Tiros de fogo incendeiam inimigos.", "Tirs enflammés qui brûlent.", "Feuerkugeln setzen Feinde in Brand.", "火焰炮弹点燃敌人。", "炎の弾で敵を燃やす。", "आग के गोले दुश्मन जलाते हैं।", "قذائف نارية تحرق الأعداء."],
+
+  // ----- герои -----
+  'h.defender':  ["Forest Defender", "Лесной защитник", "Defensor del bosque", "Defensor da floresta", "Défenseur de la forêt", "Waldverteidiger", "森林守护者", "森の守り手", "वन रक्षक", "حارس الغابة"],
+  'hd.defender': ["A balanced fighter with a shield and a green cloak.", "Сбалансированный боец. Щит за спиной и зелёный плащ.", "Luchador equilibrado con escudo y capa verde.", "Lutador equilibrado com escudo e capa verde.", "Combattant équilibré, bouclier et cape verte.", "Ausgewogener Kämpfer mit Schild und grünem Umhang.", "均衡的战士，背着盾牌，披着绿斗篷。", "盾と緑のマントを持つバランス型。", "ढाल और हरे लबादे वाला संतुलित योद्धा।", "مقاتل متوازن بدرع وعباءة خضراء."],
+  'hp.defender': ["Cannons deal 15% more damage. Heals faster.", "Пушки бьют на 15% сильнее. Восстанавливает здоровье быстрее.", "Cañones +15% de daño. Se cura más rápido.", "Canhões +15% de dano. Cura mais rápido.", "Canons +15 % de dégâts. Se soigne plus vite.", "Kanonen +15 % Schaden. Heilt schneller.", "大炮伤害+15%，回血更快。", "大砲ダメージ+15%。回復が速い。", "तोपें 15% ज़्यादा नुकसान। तेज़ी से ठीक होता है।", "المدافع +15% ضررًا. يشفى أسرع."],
+  'h.builder':   ["Strong Builder", "Сильный строитель", "Constructor fuerte", "Construtor forte", "Bâtisseur costaud", "Starker Baumeister", "强壮的建造者", "力持ちの大工", "मज़बूत निर्माता", "البنّاء القوي"],
+  'hd.builder':  ["A sturdy craftsman in a hard hat. Builds fast and cheap.", "Крепкий мастер в каске. Строит быстро и дёшево.", "Artesano robusto con casco. Construye rápido y barato.", "Artesão robusto de capacete. Constrói rápido e barato.", "Artisan solide casqué. Construit vite et pas cher.", "Kräftiger Handwerker mit Helm. Baut schnell und günstig.", "戴安全帽的结实工匠，建造又快又省。", "ヘルメットの職人。速く安く建てる。", "हेलमेट वाला मज़बूत कारीगर। तेज़ और सस्ता बनाता है।", "حِرَفي قوي بخوذة. يبني بسرعة وبتكلفة أقل."],
+  'hp.builder':  ["Buildings and upgrades 25% cheaper. Gathering +35%.", "Постройки и улучшения дешевле на 25%. Добыча +35%.", "Construcciones y mejoras −25%. Recolección +35%.", "Construções e melhorias −25%. Coleta +35%.", "Constructions et améliorations −25 %. Récolte +35 %.", "Bauten und Upgrades −25 %. Sammeln +35 %.", "建造和升级便宜25%，采集+35%。", "建設と強化が25%安い。採集+35%。", "निर्माण व अपग्रेड 25% सस्ते। संग्रह +35%।", "البناء والتطوير أرخص بـ25%. الجمع +35%."],
+  'h.hunter':    ["Swift Hunter", "Быстрый охотник", "Cazador veloz", "Caçador veloz", "Chasseur rapide", "Flinker Jäger", "敏捷的猎人", "俊足の狩人", "फुर्तीला शिकारी", "الصياد السريع"],
+  'hd.hunter':   ["A nimble tracker with a quiver and a feathered hat.", "Ловкий следопыт с колчаном и шляпой с пером.", "Rastreador ágil con carcaj y sombrero de pluma.", "Rastreador ágil com aljava e chapéu de pena.", "Pisteur agile, carquois et chapeau à plume.", "Geschickter Fährtenleser mit Köcher und Federhut.", "背着箭筒、戴羽毛帽的灵巧追踪者。", "矢筒と羽根帽子の身軽な追跡者。", "तरकश और पंख वाली टोपी वाला चुस्त खोजी।", "متعقّب رشيق بجعبة وقبعة ريشة."],
+  'hp.hunter':   ["The fastest. +50% coins from beasts.", "Самый быстрый. +50% монет за победу над зверями.", "El más rápido. +50% de monedas por bestias.", "O mais rápido. +50% de moedas por feras.", "Le plus rapide. +50 % de pièces par bête.", "Am schnellsten. +50 % Münzen für Tiere.", "速度最快，击败野兽金币+50%。", "最速。獣討伐のコイン+50%。", "सबसे तेज़। जानवरों से +50% सिक्के।", "الأسرع. +50% عملات من الوحوش."],
+
+  // ----- враги -----
+  'e.wolf':      ["Wolf", "Волк", "Lobo", "Lobo", "Loup", "Wolf", "狼", "オオカミ", "भेड़िया", "ذئب"],
+  'e.fox':       ["Fox", "Лиса", "Zorro", "Raposa", "Renard", "Fuchs", "狐狸", "キツネ", "लोमड़ी", "ثعلب"],
+  'e.boar':      ["Wild Boar", "Кабан", "Jabalí", "Javali", "Sanglier", "Wildschwein", "野猪", "イノシシ", "जंगली सूअर", "خنزير بري"],
+  'e.bear':      ["Bear", "Медведь", "Oso", "Urso", "Ours", "Bär", "熊", "クマ", "भालू", "دب"],
+  'e.lynx':      ["Lynx", "Рысь", "Lince", "Lince", "Lynx", "Luchs", "猞猁", "オオヤマネコ", "बनबिलाव", "وشق"],
+  'e.raccoon':   ["Thief Raccoon", "Енот-воришка", "Mapache ladrón", "Guaxinim ladrão", "Raton voleur", "Diebischer Waschbär", "小偷浣熊", "泥棒アライグマ", "चोर रैकून", "راكون لص"],
+  'e.wolverine': ["Wolverine", "Росомаха", "Glotón", "Carcaju", "Glouton", "Vielfraß", "狼獾", "クズリ", "वूल्वरीन", "الغرير الشره"],
+  'e.elk':       ["Mad Elk", "Бешеный лось", "Alce furioso", "Alce furioso", "Élan enragé", "Wilder Elch", "狂暴驼鹿", "暴れヘラジカ", "पागल बारहसिंगा", "الأيل الهائج"],
+  'e.monster':   ["Forest Monster", "Лесное чудище", "Monstruo del bosque", "Monstro da floresta", "Monstre de la forêt", "Waldmonster", "森林怪物", "森の怪物", "जंगल का राक्षस", "وحش الغابة"],
+  'e.alpha':     ["Pack Alpha", "Вожак стаи", "Lobo alfa", "Alfa da matilha", "Chef de meute", "Rudelführer", "狼群首领", "群れのボス", "झुंड का सरदार", "قائد القطيع"],
+  'ed.alpha':    ["Summons wolves", "Призывает волков", "Invoca lobos", "Invoca lobos", "Invoque des loups", "Ruft Wölfe herbei", "召唤狼群", "オオカミを呼ぶ", "भेड़ियों को बुलाता है", "يستدعي الذئاب"],
+  'e.bearking':  ["Giant Bear King", "Медведь-великан", "Oso gigante", "Urso gigante", "Ours géant", "Riesenbär", "巨熊王", "巨大熊王", "विशाल भालू राजा", "الدب العملاق"],
+  'ed.bearking': ["Smashes walls in one blow", "Ломает стены с одного удара", "Rompe muros de un golpe", "Quebra muros com um golpe", "Brise les murs d'un coup", "Zerschlägt Mauern mit einem Hieb", "一击摧毁城墙", "一撃で壁を壊す", "एक वार में दीवारें तोड़ता है", "يحطم الأسوار بضربة واحدة"],
+  'e.treant':    ["Ancient Treant", "Древень", "Ent ancestral", "Ent ancião", "Ent ancestral", "Uralter Baumhirte", "远古树人", "古代の樹人", "प्राचीन वृक्षमानव", "العملاق الشجري"],
+  'ed.treant':   ["Regenerates health", "Восстанавливает здоровье", "Regenera salud", "Regenera vida", "Régénère sa vie", "Regeneriert Leben", "会恢复生命", "体力が回復する", "स्वास्थ्य वापस भरता है", "يستعيد صحته"],
+
+  // ----- постройки -----
+  'B.fence':      ["Fence", "Забор", "Valla", "Cerca", "Clôture", "Zaun", "栅栏", "柵", "बाड़", "سياج"],
+  'Bd.fence':     ["Cheap enclosure.", "Дешёвое ограждение.", "Cerco barato.", "Cercado barato.", "Clôture bon marché.", "Günstige Umzäunung.", "便宜的围栏。", "安い囲い。", "सस्ती घेराबंदी।", "سياج رخيص."],
+  'B.wall':       ["Wall", "Стена", "Muro", "Muro", "Mur", "Mauer", "城墙", "壁", "दीवार", "سور"],
+  'Bd.wall':      ["Upgrades to level 5. A cannon can be placed on top.", "Улучшается до 5 уровня. На стену можно поставить пушку.", "Mejora hasta nivel 5. Admite un cañón encima.", "Melhora até o nível 5. Aceita um canhão em cima.", "Améliorable au niveau 5. Peut porter un canon.", "Bis Stufe 5 ausbaubar. Trägt eine Kanone.", "可升级到5级，上面可放大炮。", "レベル5まで強化。上に大砲を置ける。", "स्तर 5 तक अपग्रेड। ऊपर तोप रख सकते हैं।", "يُطوَّر حتى المستوى 5. يمكن وضع مدفع فوقه."],
+  'B.tower':      ["Wooden Watchtower", "Деревянная вышка", "Atalaya de madera", "Torre de vigia", "Tour de guet", "Holzwachturm", "木制哨塔", "木の見張り台", "लकड़ी की मीनार", "برج مراقبة خشبي"],
+  'Bd.tower':     ["Shoots arrows at enemies by itself.", "Сама стреляет стрелами по врагам.", "Dispara flechas sola.", "Atira flechas sozinha.", "Tire des flèches toute seule.", "Schießt selbst Pfeile.", "自动向敌人射箭。", "自動で矢を放つ。", "अपने आप तीर चलाती है।", "تطلق السهام تلقائيًا."],
+  'B.stonetower': ["Stone Tower", "Каменная башня", "Torre de piedra", "Torre de pedra", "Tour de pierre", "Steinturm", "石塔", "石の塔", "पत्थर की मीनार", "برج حجري"],
+  'Bd.stonetower':["Sturdy tower with long-range fire.", "Прочная башня с дальним обстрелом.", "Torre robusta de largo alcance.", "Torre robusta de longo alcance.", "Tour solide à longue portée.", "Robuster Turm mit großer Reichweite.", "坚固的远程塔。", "頑丈な長射程の塔。", "लंबी मार वाली मज़बूत मीनार।", "برج متين بعيد المدى."],
+  'B.gate':       ["Gate", "Ворота", "Puerta", "Portão", "Porte", "Tor", "大门", "門", "फाटक", "بوابة"],
+  'Bd.gate':      ["You pass, enemies don't. Upgrades to level 5.", "Вы проходите, враги — нет. Улучшаются до 5 уровня.", "Tú pasas, los enemigos no. Mejora a nivel 5.", "Você passa, inimigos não. Melhora até o nível 5.", "Vous passez, pas les ennemis. Niveau 5 max.", "Du kommst durch, Feinde nicht. Bis Stufe 5.", "你能通过，敌人不能。可升到5级。", "自分は通れ、敵は通れない。Lv5まで。", "आप गुज़रते हैं, दुश्मन नहीं। स्तर 5 तक।", "تمر أنت ولا يمر الأعداء. حتى المستوى 5."],
+  'B.stonegate':  ["Stone Gate", "Каменные ворота", "Puerta de piedra", "Portão de pedra", "Porte de pierre", "Steintor", "石门", "石の門", "पत्थर का फाटक", "بوابة حجرية"],
+  'Bd.stonegate': ["Very strong gate.", "Очень прочные ворота.", "Puerta muy resistente.", "Portão muito resistente.", "Porte très solide.", "Sehr stabiles Tor.", "非常坚固的大门。", "とても頑丈な門。", "बहुत मज़बूत फाटक।", "بوابة متينة جدًا."],
+  'B.birdhouse':  ["Birdhouse", "Скворечник", "Casita de pájaros", "Casinha de pássaro", "Nichoir", "Vogelhaus", "鸟屋", "巣箱", "पक्षी घर", "بيت طيور"],
+  'Bd.birdhouse': ["+3 bird slots. Birds hide here.", "+3 места для птиц. Птицы прячутся тут.", "+3 plazas. Las aves se esconden aquí.", "+3 vagas. Os pássaros se escondem aqui.", "+3 places. Les oiseaux s'y cachent.", "+3 Plätze. Vögel verstecken sich hier.", "+3鸟位，鸟会躲在这里。", "鳥枠+3。鳥が隠れる。", "+3 जगह। पक्षी यहाँ छिपते हैं।", "+3 أماكن. تختبئ الطيور هنا."],
+  'B.aviary':     ["Aviary", "Птичник", "Pajarera", "Viveiro", "Volière", "Voliere", "鸟舍", "鳥小屋", "पक्षीशाला", "قفص طيور كبير"],
+  'Bd.aviary':    ["+6 bird slots.", "+6 мест для птиц.", "+6 plazas para aves.", "+6 vagas para pássaros.", "+6 places pour oiseaux.", "+6 Vogelplätze.", "+6鸟位。", "鳥枠+6。", "+6 पक्षी जगह।", "+6 أماكن للطيور."],
+  'B.lantern':    ["Lantern", "Фонарь", "Farol", "Lanterna", "Lanterne", "Laterne", "灯笼", "ランタン", "लालटेन", "فانوس"],
+  'Bd.lantern':   ["Lights the base at night. Birds love to sit on it.", "Освещает базу ночью. Птицы любят на нём сидеть.", "Ilumina la base de noche.", "Ilumina a base à noite.", "Éclaire la base la nuit.", "Beleuchtet die Basis nachts.", "夜间照亮基地，鸟儿爱停在上面。", "夜に基地を照らす。", "रात में बेस रोशन करती है।", "يضيء القاعدة ليلًا."],
+  'B.torch':      ["Coal Brazier", "Большой фонарь", "Brasero de carbón", "Braseiro de carvão", "Brasero à charbon", "Kohlebecken", "煤火盆", "石炭のかがり火", "कोयले का अलाव", "موقد فحم"],
+  'Bd.torch':     ["A bright coal fire: shines farther and stronger.", "Яркий угольный фонарь: светит дальше и сильнее.", "Fuego brillante: ilumina más lejos.", "Fogo brilhante: ilumina mais longe.", "Feu vif : éclaire plus loin.", "Helles Feuer: leuchtet weiter.", "明亮的煤火，照得更远更亮。", "明るい火。遠くまで照らす。", "तेज़ आग: दूर तक रोशनी।", "نار ساطعة تضيء أبعد."],
+  'B.market':     ["Bird Market", "Птичий рынок", "Mercado de aves", "Mercado de pássaros", "Marché aux oiseaux", "Vogelmarkt", "鸟市", "鳥市場", "पक्षी बाज़ार", "سوق الطيور"],
+  'Bd.market':    ["Unlocks rare birds for purchase.", "Открывает редких птиц для покупки.", "Desbloquea aves raras.", "Libera pássaros raros.", "Débloque des oiseaux rares.", "Schaltet seltene Vögel frei.", "解锁稀有鸟类。", "珍しい鳥を解放。", "दुर्लभ पक्षी खोलता है।", "يفتح طيورًا نادرة."],
+  'B.cannon':     ["Cannon", "Пушка", "Cañón", "Canhão", "Canon", "Kanone", "大炮", "大砲", "तोप", "مدفع"],
+  'Bd.cannon':    ["Goes on a wall or a tower. A bird sits behind it.", "Ставится на стену или на вышку. За пушку садится птица.", "Va en un muro o torre. Un ave la maneja.", "Vai num muro ou torre. Um pássaro opera.", "Sur un mur ou une tour. Un oiseau le sert.", "Auf Mauer oder Turm. Ein Vogel bedient sie.", "放在城墙或塔上，由鸟操作。", "壁か台に置き、鳥が操作。", "दीवार या मीनार पर। पक्षी चलाता है।", "يوضع على سور أو برج ويديره طائر."],
+  'B.spikes':     ["Spikes", "Шипы", "Pinchos", "Espinhos", "Pieux", "Stacheln", "尖刺", "スパイク", "काँटे", "أشواك"],
+  'Bd.spikes':    ["Hurt beasts that walk over them.", "Ранят зверей, которые по ним проходят.", "Hieren a las bestias que pasan.", "Ferem as feras que passam.", "Blessent les bêtes qui passent.", "Verletzen Tiere, die darüber laufen.", "伤害经过的野兽。", "通る獣を傷つける。", "गुज़रते जानवरों को घायल करते हैं।", "تجرح الوحوش المارة."],
+  'B.ballista':   ["Auto-Turret", "Авто-турель", "Torreta automática", "Torreta automática", "Tourelle auto", "Auto-Geschütz", "自动炮塔", "自動タレット", "स्वचालित बुर्ज", "برج آلي"],
+  'Bd.ballista':  ["Automatic: crossbow → machine gun → rocket launcher. Upgrades to level 3.", "Автоматический механизм: арбалет → пулемёт → ракетница. Улучшается до 3 уровня.", "Automática: ballesta → ametralladora → lanzacohetes. Nivel 3.", "Automática: besta → metralhadora → lança-foguetes. Nível 3.", "Automatique : arbalète → mitrailleuse → lance-roquettes. Niveau 3.", "Automatisch: Armbrust → MG → Raketenwerfer. Bis Stufe 3.", "自动：弩→机枪→火箭炮，可升到3级。", "自動：弩→機関銃→ロケット。Lv3まで。", "स्वचालित: क्रॉसबो → मशीनगन → रॉकेट। स्तर 3 तक।", "آلي: قوس → رشاش → قاذف صواريخ. حتى المستوى 3."],
+  'B.storage':    ["Storehouse", "Склад", "Almacén", "Armazém", "Entrepôt", "Lager", "仓库", "倉庫", "गोदाम", "مخزن"],
+  'Bd.storage':   ["+150 resource capacity.", "+150 к вместимости ресурсов.", "+150 de capacidad.", "+150 de capacidade.", "+150 de capacité.", "+150 Kapazität.", "资源容量+150。", "資源上限+150。", "+150 भंडारण।", "+150 سعة موارد."],
+  'B.workshop':   ["Workshop", "Мастерская", "Taller", "Oficina", "Atelier", "Werkstatt", "工坊", "工房", "कार्यशाला", "ورشة"],
+  'Bd.workshop':  ["Tools and technologies.", "Инструменты и технологии.", "Herramientas y tecnologías.", "Ferramentas e tecnologias.", "Outils et technologies.", "Werkzeuge und Technologien.", "工具与科技。", "道具と技術。", "औज़ार और तकनीक।", "أدوات وتقنيات."],
+  'B.farm':       ["Farm", "Ферма", "Granja", "Fazenda", "Ferme", "Bauernhof", "农场", "畑", "खेत", "مزرعة"],
+  'Bd.farm':      ["Produces food.", "Производит еду.", "Produce comida.", "Produz comida.", "Produit de la nourriture.", "Produziert Nahrung.", "生产食物。", "食料を生産。", "भोजन बनाता है।", "تنتج الطعام."],
+  'B.mineshaft':  ["Own Mine", "Своя шахта", "Mina propia", "Mina própria", "Mine perso", "Eigene Mine", "自建矿井", "自分の鉱山", "अपनी खान", "منجم خاص"],
+  'Bd.mineshaft': ["Place anywhere. Mines stone, coal and iron by itself. Up to level 3.", "Ставится где угодно. Сама добывает камень, уголь и железо. Улучшается до 3 уровня.", "Donde quieras. Extrae piedra, carbón y hierro. Nivel 3.", "Em qualquer lugar. Extrai pedra, carvão e ferro. Nível 3.", "N'importe où. Extrait pierre, charbon et fer. Niveau 3.", "Überall. Fördert Stein, Kohle und Eisen. Bis Stufe 3.", "可放任意处，自动开采石头、煤和铁，可升到3级。", "どこでも設置。石・石炭・鉄を採掘。Lv3まで。", "कहीं भी। पत्थर, कोयला, लोहा खोदती है। स्तर 3 तक।", "في أي مكان. يستخرج الحجر والفحم والحديد. حتى المستوى 3."],
+  'B.minelift':   ["Mine Hoist", "Шахтный подъёмник", "Montacargas", "Elevador de mina", "Chevalement", "Förderturm", "矿井升降机", "鉱山リフト", "खान लिफ्ट", "رافعة المنجم"],
+  'Bd.minelift':  ["Only in the quarry. Mines stone, coal and iron by itself.", "Ставится в карьере. Сам добывает камень, уголь и железо.", "Solo en la cantera. Extrae recursos.", "Só na pedreira. Extrai recursos.", "Seulement dans la carrière.", "Nur im Steinbruch. Fördert Rohstoffe.", "只能建在采石场，自动开采。", "採石場のみ。自動採掘。", "सिर्फ़ खदान में। अपने आप खोदता है।", "في المحجر فقط. يستخرج تلقائيًا."],
+  'B.core':       ["Great Nest", "Великое гнездо", "Gran Nido", "Grande Ninho", "Grand Nid", "Großes Nest", "伟大之巢", "大いなる巣", "महान घोंसला", "العش العظيم"],
+  'Bd.core':      ["Heart of the base. If it falls, the game is over.", "Сердце базы. Если его разрушат — игра окончена.", "Corazón de la base. Si cae, pierdes.", "Coração da base. Se cair, fim de jogo.", "Cœur de la base. S'il tombe, c'est perdu.", "Herz der Basis. Fällt es, ist das Spiel aus.", "基地核心，被毁则游戏结束。", "基地の心臓。壊されたら終了。", "बेस का दिल। टूटा तो खेल ख़त्म।", "قلب القاعدة. إن سقط انتهت اللعبة."],
+
+  'cat.walls':   ["Walls", "Стены", "Muros", "Muros", "Murs", "Mauern", "城墙", "壁", "दीवारें", "أسوار"],
+  'cat.towers':  ["Towers", "Башни", "Torres", "Torres", "Tours", "Türme", "塔楼", "塔", "मीनारें", "أبراج"],
+  'cat.gates':   ["Gates", "Ворота", "Puertas", "Portões", "Portes", "Tore", "大门", "門", "फाटक", "بوابات"],
+  'cat.houses':  ["Houses", "Домики", "Casas", "Casas", "Maisons", "Häuser", "房屋", "家", "घर", "بيوت"],
+  'cat.light':   ["Lighting", "Освещение", "Luz", "Iluminação", "Éclairage", "Licht", "照明", "照明", "रोशनी", "إضاءة"],
+  'cat.defense': ["Defense", "Оборона", "Defensa", "Defesa", "Défense", "Verteidigung", "防御", "防衛", "रक्षा", "دفاع"],
+  'cat.prod':    ["Production", "Производство", "Producción", "Produção", "Production", "Produktion", "生产", "生産", "उत्पादन", "إنتاج"],
+
+  // ----- уровни -----
+  'wl1': ["Wooden Wall", "Деревянная стена", "Muro de madera", "Muro de madeira", "Mur en bois", "Holzwand", "木墙", "木の壁", "लकड़ी की दीवार", "سور خشبي"],
+  'wl2': ["Reinforced Wooden Wall", "Укреплённая деревянная", "Muro de madera reforzado", "Muro de madeira reforçado", "Mur en bois renforcé", "Verstärkte Holzwand", "加固木墙", "補強木壁", "मज़बूत लकड़ी की दीवार", "سور خشبي مدعّم"],
+  'wl3': ["Stone Wall", "Каменная стена", "Muro de piedra", "Muro de pedra", "Mur de pierre", "Steinmauer", "石墙", "石の壁", "पत्थर की दीवार", "سور حجري"],
+  'wl4': ["Reinforced Stone Wall", "Усиленная каменная", "Muro de piedra reforzado", "Muro de pedra reforçado", "Mur de pierre renforcé", "Verstärkte Steinmauer", "加固石墙", "補強石壁", "मज़बूत पत्थर की दीवार", "سور حجري مدعّم"],
+  'wl5': ["Mighty Fortress Wall", "Мощная крепостная стена", "Muralla de fortaleza", "Muralha de fortaleza", "Rempart de forteresse", "Festungsmauer", "坚固要塞墙", "要塞の城壁", "शक्तिशाली क़िले की दीवार", "سور قلعة منيع"],
+  'cl1': ["Simple Cannon", "Простая пушка", "Cañón simple", "Canhão simples", "Canon simple", "Einfache Kanone", "普通大炮", "シンプルな大砲", "साधारण तोप", "مدفع بسيط"],
+  'cl2': ["Reinforced Cannon", "Усиленная пушка", "Cañón reforzado", "Canhão reforçado", "Canon renforcé", "Verstärkte Kanone", "加强大炮", "強化大砲", "मज़बूत तोप", "مدفع مدعّم"],
+  'cl3': ["Bronze Double Cannon", "Бронзовая двуствольная", "Cañón doble de bronce", "Canhão duplo de bronze", "Double canon de bronze", "Bronze-Doppelkanone", "青铜双管炮", "青銅の二連砲", "कांसे की दोनली तोप", "مدفع برونزي مزدوج"],
+  'cl4': ["Automatic Cannon", "Автоматическая пушка", "Cañón automático", "Canhão automático", "Canon automatique", "Automatikkanone", "自动大炮", "自動大砲", "स्वचालित तोप", "مدفع آلي"],
+  'cl5': ["Heavy Autocannon", "Тяжёлый автомат", "Autocañón pesado", "Autocanhão pesado", "Autocanon lourd", "Schwere Maschinenkanone", "重型自动炮", "重機関砲", "भारी स्वचालित तोप", "مدفع آلي ثقيل"],
+  'gl1': ["Wooden Gate", "Деревянные ворота", "Puerta de madera", "Portão de madeira", "Porte en bois", "Holztor", "木门", "木の門", "लकड़ी का फाटक", "بوابة خشبية"],
+  'gl2': ["Iron-bound Gate", "Окованные ворота", "Puerta herrada", "Portão reforçado", "Porte ferrée", "Beschlagenes Tor", "铁箍大门", "鉄張りの門", "लोहे जड़ा फाटक", "بوابة مصفحة"],
+  'gl3': ["Stone Gate", "Каменные ворота", "Puerta de piedra", "Portão de pedra", "Porte de pierre", "Steintor", "石门", "石の門", "पत्थर का फाटक", "بوابة حجرية"],
+  'gl4': ["Fortress Gate", "Крепостные ворота", "Puerta de fortaleza", "Portão da fortaleza", "Porte de forteresse", "Festungstor", "要塞大门", "要塞の門", "क़िले का फाटक", "بوابة القلعة"],
+  'gl5': ["Steel Portcullis", "Стальные ворота-решётка", "Rastrillo de acero", "Grade de aço", "Herse d'acier", "Stahlfallgitter", "钢铁闸门", "鋼の落とし格子", "इस्पात का जालीदार फाटक", "بوابة فولاذية"],
+  'bl1': ["Auto-Crossbow", "Авто-арбалет", "Ballesta automática", "Besta automática", "Arbalète auto", "Auto-Armbrust", "自动弩", "自動弩", "स्वचालित क्रॉसबो", "قوس آلي"],
+  'bl2': ["Machine Gun", "Пулемёт", "Ametralladora", "Metralhadora", "Mitrailleuse", "Maschinengewehr", "机枪", "機関銃", "मशीनगन", "رشاش"],
+  'bl3': ["Rocket Launcher", "Ракетница", "Lanzacohetes", "Lança-foguetes", "Lance-roquettes", "Raketenwerfer", "火箭炮", "ロケットランチャー", "रॉकेट लॉन्चर", "قاذف صواريخ"],
+  'sl1': ["Mine", "Шахта", "Mina", "Mina", "Mine", "Mine", "矿井", "鉱山", "खान", "منجم"],
+  'sl2': ["Deep Mine", "Глубокая шахта", "Mina profunda", "Mina profunda", "Mine profonde", "Tiefe Mine", "深层矿井", "深い鉱山", "गहरी खान", "منجم عميق"],
+  'sl3': ["Mechanized Mine", "Механическая шахта", "Mina mecanizada", "Mina mecanizada", "Mine mécanisée", "Maschinenmine", "机械化矿井", "機械化鉱山", "यांत्रिक खान", "منجم آلي"],
+
+  // ----- технологии и инструменты -----
+  't.stone':  ["Masonry", "Каменное дело", "Albañilería", "Alvenaria", "Maçonnerie", "Steinbau", "石工", "石工術", "राजगीरी", "فن البناء بالحجر"],
+  'td.stone': ["Stone walls (lv 3–4), towers, gates, hoist, cannons lv 3.", "Каменные стены (ур.3–4), башни, ворота, подъёмник, пушки ур.3.", "Muros de piedra (nv 3–4), torres, puertas, cañones nv 3.", "Muros de pedra (nv 3–4), torres, portões, canhões nv 3.", "Murs de pierre (nv 3–4), tours, portes, canons nv 3.", "Steinmauern (St. 3–4), Türme, Tore, Kanonen St. 3.", "石墙（3–4级）、塔、门、升降机、3级大炮。", "石壁(Lv3–4)、塔、門、リフト、大砲Lv3。", "पत्थर की दीवारें (3–4), मीनारें, फाटक, तोप स्तर 3।", "أسوار حجرية (3–4)، أبراج، بوابات، مدافع مستوى 3."],
+  't.metal':  ["Metallurgy", "Металлургия", "Metalurgia", "Metalurgia", "Métallurgie", "Metallurgie", "冶金", "冶金", "धातुकर्म", "علم المعادن"],
+  'td.metal': ["Walls lv 5, iron tools.", "Стены ур.5, железные инструменты.", "Muros nv 5, herramientas de hierro.", "Muros nv 5, ferramentas de ferro.", "Murs nv 5, outils en fer.", "Mauern St. 5, Eisenwerkzeuge.", "5级城墙、铁制工具。", "壁Lv5、鉄の道具。", "दीवार स्तर 5, लोहे के औज़ार।", "أسوار مستوى 5، أدوات حديدية."],
+  't.mech':   ["Mechanisms", "Механизмы", "Mecanismos", "Mecanismos", "Mécanismes", "Mechanik", "机械", "機械", "यंत्र", "الآليات"],
+  'td.mech':  ["Automatic cannons (lv 4–5) and the auto-turret.", "Автоматические пушки (ур.4–5) и авто-турель.", "Cañones automáticos (nv 4–5) y torreta.", "Canhões automáticos (nv 4–5) e torreta.", "Canons auto (nv 4–5) et tourelle.", "Automatikkanonen (St. 4–5) und Geschütz.", "自动大炮（4–5级）和自动炮塔。", "自動大砲(Lv4–5)とタレット。", "स्वचालित तोपें (4–5) और बुर्ज।", "مدافع آلية (4–5) وبرج آلي."],
+  'ax0': ["Wooden Axe", "Деревянный топор", "Hacha de madera", "Machado de madeira", "Hache en bois", "Holzaxt", "木斧", "木の斧", "लकड़ी की कुल्हाड़ी", "فأس خشبي"],
+  'ax1': ["Stone Axe", "Каменный топор", "Hacha de piedra", "Machado de pedra", "Hache en pierre", "Steinaxt", "石斧", "石の斧", "पत्थर की कुल्हाड़ी", "فأس حجري"],
+  'ax2': ["Iron Axe", "Железный топор", "Hacha de hierro", "Machado de ferro", "Hache en fer", "Eisenaxt", "铁斧", "鉄の斧", "लोहे की कुल्हाड़ी", "فأس حديدي"],
+  'pk0': ["Pickaxe", "Кирка", "Pico", "Picareta", "Pioche", "Spitzhacke", "镐", "ツルハシ", "कुदाल", "معول"],
+  'pk1': ["Improved Pickaxe", "Улучшенная кирка", "Pico mejorado", "Picareta melhorada", "Pioche améliorée", "Bessere Spitzhacke", "改良镐", "改良ツルハシ", "बेहतर कुदाल", "معول محسّن"],
+  'pk2': ["Iron Pickaxe", "Железная кирка", "Pico de hierro", "Picareta de ferro", "Pioche en fer", "Eisenspitzhacke", "铁镐", "鉄のツルハシ", "लोहे की कुदाल", "معول حديدي"],
+  'n.tree':  ["tree", "дерево", "árbol", "árvore", "arbre", "Baum", "树", "木", "पेड़", "شجرة"],
+  'n.stone': ["rock", "камень", "roca", "rocha", "rocher", "Fels", "岩石", "岩", "चट्टान", "صخرة"],
+  'n.coal':  ["coal", "уголь", "carbón", "carvão", "charbon", "Kohle", "煤", "石炭", "कोयला", "فحم"],
+  'n.iron':  ["iron ore", "железная руда", "mineral de hierro", "minério de ferro", "minerai de fer", "Eisenerz", "铁矿", "鉄鉱石", "लौह अयस्क", "خام حديد"],
+  'n.berry': ["berry bush", "ягодный куст", "arbusto de bayas", "arbusto de frutas", "buisson de baies", "Beerenstrauch", "浆果丛", "ベリーの茂み", "बेर की झाड़ी", "شجيرة توت"],
+
+  // ----- снаряжение -----
+  'g.lamp':    ["Hand Lamp", "Ручная лампа", "Lámpara de mano", "Lamparina", "Lampe à main", "Handlampe", "手提灯", "手持ちランプ", "हाथ का लैंप", "مصباح يدوي"],
+  'gd.lamp':   ["Softly lights up the area around the hero in the dark.", "Слабо светит вокруг героя в темноте.", "Ilumina suave alrededor del héroe.", "Ilumina de leve ao redor do herói.", "Éclaire doucement autour du héros.", "Leuchtet sanft um den Helden.", "在黑暗中微微照亮英雄周围。", "暗闇で主人公の周りをほのかに照らす。", "अंधेरे में नायक के आसपास हल्की रोशनी।", "يضيء بلطف حول البطل في الظلام."],
+  'g.helmet':  ["Helmet with Spotlight", "Каска с прожектором", "Casco con foco", "Capacete com holofote", "Casque à projecteur", "Helm mit Scheinwerfer", "探照灯头盔", "ライト付きヘルメット", "सर्चलाइट हेलमेट", "خوذة بكشاف"],
+  'gd.helmet': ["A powerful beam wherever the hero looks.", "Мощный луч света туда, куда смотрит герой.", "Un potente haz hacia donde mira.", "Um feixe forte para onde olha.", "Un faisceau puissant là où il regarde.", "Starker Lichtstrahl in Blickrichtung.", "朝英雄视线方向射出强光。", "見ている方向に強い光。", "जिधर नायक देखे उधर तेज़ रोशनी।", "شعاع قوي حيث ينظر البطل."],
+
+  // ----- сложность -----
+  'd.easy':        ["Easy", "Лёгкая", "Fácil", "Fácil", "Facile", "Leicht", "简单", "かんたん", "आसान", "سهل"],
+  'dd.easy':       ["Weak beasts that come less often. Good for learning.", "Звери слабые и приходят реже. Для знакомства с игрой.", "Bestias débiles y menos frecuentes.", "Feras fracas e menos frequentes.", "Bêtes faibles et plus rares.", "Schwache, seltene Tiere.", "野兽弱且来得少，适合入门。", "獣は弱く、来るのも少ない。", "कमज़ोर और कम आने वाले जानवर।", "وحوش ضعيفة وأقل تكرارًا."],
+  'd.normal':      ["Normal", "Средняя", "Normal", "Normal", "Normal", "Normal", "普通", "ふつう", "सामान्य", "عادي"],
+  'dd.normal':     ["The standard balance.", "Обычный баланс.", "Equilibrio estándar.", "Equilíbrio padrão.", "Équilibre standard.", "Standard-Balance.", "标准平衡。", "標準のバランス。", "सामान्य संतुलन।", "توازن قياسي."],
+  'd.hard':        ["Hard", "Сложная", "Difícil", "Difícil", "Difficile", "Schwer", "困难", "むずかしい", "कठिन", "صعب"],
+  'dd.hard':       ["More strong beasts, less time to prepare.", "Больше сильных зверей, меньше времени на подготовку.", "Más bestias fuertes, menos tiempo.", "Mais feras fortes, menos tempo.", "Plus de bêtes fortes, moins de temps.", "Mehr starke Tiere, weniger Zeit.", "更多强敌，准备时间更短。", "強い獣が増え、準備時間が短い。", "ज़्यादा ताक़तवर जानवर, कम समय।", "وحوش أقوى ووقت أقل."],
+  'd.impossible':  ["Impossible", "Невозможная", "Imposible", "Impossível", "Impossible", "Unmöglich", "不可能", "不可能", "असंभव", "مستحيل"],
+  'dd.impossible': ["Huge packs, very little time. Masters only.", "Огромные стаи, очень мало времени. Только для мастеров.", "Manadas enormes, poco tiempo. Solo expertos.", "Bandos enormes, pouco tempo. Só mestres.", "Meutes énormes, peu de temps. Experts.", "Riesige Rudel, kaum Zeit. Nur für Profis.", "巨大兽群，时间极少，仅限高手。", "巨大な群れ、時間わずか。達人向け。", "विशाल झुंड, बहुत कम समय। सिर्फ़ उस्ताद।", "قطعان هائلة ووقت قليل. للمحترفين فقط."],
+
+  // ----- биомы -----
+  'bio.summer': ["Summer Forest", "Летний лес", "Bosque de verano", "Floresta de verão", "Forêt d'été", "Sommerwald", "夏日森林", "夏の森", "ग्रीष्म वन", "غابة الصيف"],
+  'bio.autumn': ["Autumn Forest", "Осенний лес", "Bosque otoñal", "Floresta de outono", "Forêt d'automne", "Herbstwald", "秋日森林", "秋の森", "शरद वन", "غابة الخريف"],
+  'bio.taiga':  ["Taiga", "Тайга", "Taiga", "Taiga", "Taïga", "Taiga", "针叶林", "タイガ", "टैगा", "التايغا"],
+  'bio.bloom':  ["Blooming Meadow", "Цветущий луг", "Prado florido", "Prado florido", "Prairie fleurie", "Blühende Wiese", "花海草原", "花咲く草原", "फूलों का मैदान", "مرج مزهر"],
+
+  // ----- задания -----
+  'q0':  ["Chop 10 wood", "Нарубите 10 дерева", "Tala 10 de madera", "Corte 10 de madeira", "Coupez 10 bois", "Hacke 10 Holz", "砍10个木材", "木材を10集める", "10 लकड़ी काटें", "اقطع 10 خشب"],
+  'q1':  ["Build a new wall or fence", "Постройте новую стену или забор", "Construye un muro o valla", "Construa um muro ou cerca", "Construisez un mur ou une clôture", "Baue eine Mauer oder einen Zaun", "建造新的城墙或栅栏", "壁か柵を建てる", "नई दीवार या बाड़ बनाएँ", "ابنِ سورًا أو سياجًا"],
+  'q2':  ["Repel the first wave of beasts", "Отбейте первую волну зверей", "Repele la primera oleada", "Repila a primeira onda", "Repoussez la première vague", "Wehre die erste Welle ab", "击退第一波野兽", "最初の襲撃を撃退する", "पहली लहर को रोकें", "اصدّ الموجة الأولى"],
+  'q3':  ["Build a workshop", "Постройте мастерскую", "Construye un taller", "Construa uma oficina", "Construisez un atelier", "Baue eine Werkstatt", "建造工坊", "工房を建てる", "कार्यशाला बनाएँ", "ابنِ ورشة"],
+  'q4':  ["Craft a pickaxe in the workshop", "Сделайте кирку в мастерской", "Fabrica un pico en el taller", "Faça uma picareta na oficina", "Fabriquez une pioche", "Stelle eine Spitzhacke her", "在工坊制作镐", "工房でツルハシを作る", "कार्यशाला में कुदाल बनाएँ", "اصنع معولًا في الورشة"],
+  'q5':  ["Mine 10 stone (quarry: follow the arrow)", "Добудьте 10 камня (карьер — по стрелке)", "Extrae 10 de piedra (cantera: sigue la flecha)", "Extraia 10 de pedra (pedreira: siga a seta)", "Extrayez 10 pierres (carrière : suivez la flèche)", "Baue 10 Stein ab (Steinbruch: Pfeil folgen)", "开采10块石头（采石场：跟随箭头）", "石を10掘る（採石場は矢印の先）", "10 पत्थर खोदें (खदान: तीर देखें)", "استخرج 10 حجارة (المحجر: اتبع السهم)"],
+  'q6':  ["Research “Masonry”", "Изучите «Каменное дело»", "Investiga «Albañilería»", "Pesquise «Alvenaria»", "Recherchez « Maçonnerie »", "Erforsche „Steinbau“", "研究“石工”", "「石工術」を研究", "“राजगीरी” सीखें", "ابحث «فن البناء بالحجر»"],
+  'q7':  ["Upgrade a wall to level 3", "Улучшите стену до 3 уровня", "Mejora un muro a nivel 3", "Melhore um muro ao nível 3", "Améliorez un mur au niveau 3", "Verbessere eine Mauer auf Stufe 3", "将城墙升到3级", "壁をLv3にする", "दीवार को स्तर 3 तक बढ़ाएँ", "طوّر سورًا للمستوى 3"],
+  'q8':  ["Buy a new bird", "Купите новую птицу", "Compra un ave nueva", "Compre um pássaro novo", "Achetez un nouvel oiseau", "Kaufe einen neuen Vogel", "购买一只新鸟", "新しい鳥を買う", "नया पक्षी ख़रीदें", "اشترِ طائرًا جديدًا"],
+  'q9':  ["Upgrade a cannon to level 2", "Улучшите пушку до 2 уровня", "Mejora un cañón a nivel 2", "Melhore um canhão ao nível 2", "Améliorez un canon au niveau 2", "Verbessere eine Kanone auf Stufe 2", "将大炮升到2级", "大砲をLv2にする", "तोप को स्तर 2 तक बढ़ाएँ", "طوّر مدفعًا للمستوى 2"],
+  'q10': ["Mine 5 iron in the quarry", "Добудьте 5 железа в карьере", "Extrae 5 de hierro en la cantera", "Extraia 5 de ferro na pedreira", "Extrayez 5 fers à la carrière", "Baue 5 Eisen im Steinbruch ab", "在采石场开采5个铁", "採石場で鉄を5掘る", "खदान से 5 लोहा निकालें", "استخرج 5 حديد من المحجر"],
+  'q11': ["Research “Metallurgy”", "Изучите «Металлургию»", "Investiga «Metalurgia»", "Pesquise «Metalurgia»", "Recherchez « Métallurgie »", "Erforsche „Metallurgie“", "研究“冶金”", "「冶金」を研究", "“धातुकर्म” सीखें", "ابحث «علم المعادن»"],
+  'q12': ["Research “Mechanisms”", "Изучите «Механизмы»", "Investiga «Mecanismos»", "Pesquise «Mecanismos»", "Recherchez « Mécanismes »", "Erforsche „Mechanik“", "研究“机械”", "「機械」を研究", "“यंत्र” सीखें", "ابحث «الآليات»"],
+  'q13': ["Survive 10 waves", "Продержитесь 10 волн", "Sobrevive 10 oleadas", "Sobreviva a 10 ondas", "Survivez à 10 vagues", "Überlebe 10 Wellen", "坚持10波", "10ウェーブ耐える", "10 लहरें झेलें", "اصمد 10 موجات"],
+};
+
+</script>
+<script>
+'use strict';
+// ============ Языки: интерфейс, сообщения и движок перевода ============
+// Порядок: en, ru, es, pt, fr, de, zh, ja, hi, ar
+const LANGS = [
+  { id: 'en', name: 'English',   flag: '🇬🇧' },
+  { id: 'ru', name: 'Русский',   flag: '🇷🇺' },
+  { id: 'es', name: 'Español',   flag: '🇪🇸' },
+  { id: 'pt', name: 'Português', flag: '🇧🇷' },
+  { id: 'fr', name: 'Français',  flag: '🇫🇷' },
+  { id: 'de', name: 'Deutsch',   flag: '🇩🇪' },
+  { id: 'zh', name: '中文',       flag: '🇨🇳' },
+  { id: 'ja', name: '日本語',     flag: '🇯🇵' },
+  { id: 'hi', name: 'हिन्दी',      flag: '🇮🇳' },
+  { id: 'ar', name: 'العربية',    flag: '🇸🇦' },
+];
+const TR_UI = {
+  // ----- название и главное меню -----
+  title:     ["Bird Wars", "Птичьи Войны", "Guerra de Aves", "Guerra dos Pássaros", "La Guerre des Oiseaux", "Vogelkriege", "鸟之战争", "バードウォーズ", "पक्षी युद्ध", "حرب الطيور"],
+  title_html:["Bird<br>Wars", "Птичьи<br>Войны", "Guerra<br>de Aves", "Guerra dos<br>Pássaros", "La Guerre<br>des Oiseaux", "Vogel<br>kriege", "鸟之<br>战争", "バード<br>ウォーズ", "पक्षी<br>युद्ध", "حرب<br>الطيور"],
+  subtitle:  ["Build a fortress and protect the birds from beasts!", "Построй крепость и защити птиц от зверей!", "¡Construye una fortaleza y protege a las aves!", "Construa uma fortaleza e proteja os pássaros!", "Bâtis une forteresse et protège les oiseaux !", "Baue eine Festung und schütze die Vögel!", "建造堡垒，保护鸟儿免受野兽侵害！", "砦を築き、鳥たちを獣から守れ！", "क़िला बनाओ और पक्षियों को जानवरों से बचाओ!", "ابنِ حصنًا واحمِ الطيور من الوحوش!"],
+  loading:   ["Loading…", "Загрузка…", "Cargando…", "Carregando…", "Chargement…", "Lädt…", "加载中…", "読み込み中…", "लोड हो रहा है…", "جارٍ التحميل…"],
+  load_trees:["Planting trees…", "Сажаем деревья…", "Plantando árboles…", "Plantando árvores…", "On plante les arbres…", "Bäume werden gepflanzt…", "正在种树…", "木を植えています…", "पेड़ लगाए जा रहे हैं…", "نزرع الأشجار…"],
+  load_birds:["The birds are arriving…", "Птицы прилетают…", "Llegan las aves…", "Os pássaros estão chegando…", "Les oiseaux arrivent…", "Die Vögel kommen…", "鸟儿飞来了…", "鳥たちがやってくる…", "पक्षी आ रहे हैं…", "الطيور تصل…"],
+  load_done: ["Ready!", "Готово!", "¡Listo!", "Pronto!", "Prêt !", "Fertig!", "准备就绪！", "準備完了！", "तैयार!", "جاهز!"],
+  load_world:["Loading the world…", "Загружаем мир…", "Cargando el mundo…", "Carregando o mundo…", "Chargement du monde…", "Welt wird geladen…", "正在加载世界…", "世界を読み込み中…", "दुनिया लोड हो रही है…", "تحميل العالم…"],
+  load_gen:  ["Creating the world “{name}”…", "Создаём мир «{name}»…", "Creando el mundo «{name}»…", "Criando o mundo «{name}»…", "Création du monde « {name} »…", "Erschaffe die Welt „{name}“…", "正在创建世界“{name}”…", "世界「{name}」を作成中…", "दुनिया “{name}” बन रही है…", "إنشاء العالم «{name}»…"],
+  webgl_err: ["WebGL failed to start: ", "Ошибка запуска WebGL: ", "Error al iniciar WebGL: ", "Erro ao iniciar WebGL: ", "Échec du démarrage WebGL : ", "WebGL-Startfehler: ", "WebGL启动失败：", "WebGLの起動に失敗：", "WebGL शुरू नहीं हुआ: ", "فشل تشغيل WebGL: "],
+  play:      ["▶ PLAY", "▶ ИГРАТЬ", "▶ JUGAR", "▶ JOGAR", "▶ JOUER", "▶ SPIELEN", "▶ 开始", "▶ プレイ", "▶ खेलें", "▶ العب"],
+  settings_b:["⚙ SETTINGS", "⚙ НАСТРОЙКИ", "⚙ AJUSTES", "⚙ CONFIGURAÇÕES", "⚙ RÉGLAGES", "⚙ EINSTELLUNGEN", "⚙ 设置", "⚙ 設定", "⚙ सेटिंग्स", "⚙ الإعدادات"],
+  exit:      ["✖ EXIT GAME", "✖ ВЫЙТИ ИЗ ИГРЫ", "✖ SALIR", "✖ SAIR", "✖ QUITTER", "✖ BEENDEN", "✖ 退出游戏", "✖ ゲーム終了", "✖ खेल से बाहर", "✖ خروج"],
+  newgame:   ["🌱 NEW GAME", "🌱 НОВАЯ ИГРА", "🌱 NUEVA PARTIDA", "🌱 NOVO JOGO", "🌱 NOUVELLE PARTIE", "🌱 NEUES SPIEL", "🌱 新游戏", "🌱 ニューゲーム", "🌱 नया खेल", "🌱 لعبة جديدة"],
+  newgame_confirm: ["⚠️ AGAIN — START OVER<small>your current save will be replaced</small>", "⚠️ ЕЩЁ РАЗ — НАЧАТЬ ЗАНОВО<small>текущее сохранение будет заменено</small>", "⚠️ OTRA VEZ — EMPEZAR<small>se reemplazará tu partida</small>", "⚠️ DE NOVO — RECOMEÇAR<small>o save atual será substituído</small>", "⚠️ ENCORE — RECOMMENCER<small>la sauvegarde sera remplacée</small>", "⚠️ NOCHMAL — NEU STARTEN<small>Spielstand wird ersetzt</small>", "⚠️ 再点一次重新开始<small>当前存档将被覆盖</small>", "⚠️ もう一度で最初から<small>現在のセーブは上書きされます</small>", "⚠️ फिर दबाएँ — नया शुरू<small>मौजूदा सेव बदल जाएगा</small>", "⚠️ مرة أخرى للبدء من جديد<small>سيُستبدل الحفظ الحالي</small>"],
+  continue:  ["💾 CONTINUE", "💾 ПРОДОЛЖИТЬ", "💾 CONTINUAR", "💾 CONTINUAR", "💾 CONTINUER", "💾 FORTSETZEN", "💾 继续", "💾 つづきから", "💾 जारी रखें", "💾 متابعة"],
+  back:      ["◀ BACK", "◀ НАЗАД", "◀ ATRÁS", "◀ VOLTAR", "◀ RETOUR", "◀ ZURÜCK", "◀ 返回", "◀ もどる", "◀ वापस", "◀ رجوع"],
+  no_save:   ["no save", "нет сохранения", "sin partida", "sem save", "aucune sauvegarde", "kein Spielstand", "无存档", "セーブなし", "कोई सेव नहीं", "لا يوجد حفظ"],
+  save_info: ["{hero} · {diff} · wave {wave}", "{hero} · {diff} · волна {wave}", "{hero} · {diff} · oleada {wave}", "{hero} · {diff} · onda {wave}", "{hero} · {diff} · vague {wave}", "{hero} · {diff} · Welle {wave}", "{hero} · {diff} · 第{wave}波", "{hero} · {diff} · ウェーブ{wave}", "{hero} · {diff} · लहर {wave}", "{hero} · {diff} · الموجة {wave}"],
+  ver:       ["v1.1 · controls: sticks on phone or WASD + mouse", "v1.1 · управление: стики на телефоне или WASD + мышь", "v1.1 · controles: sticks en móvil o WASD + ratón", "v1.1 · controles: sticks no celular ou WASD + mouse", "v1.1 · contrôles : sticks sur mobile ou WASD + souris", "v1.1 · Steuerung: Sticks am Handy oder WASD + Maus", "v1.1 · 操作：手机摇杆或 WASD + 鼠标", "v1.1 · 操作：スマホはスティック、PCはWASD+マウス", "v1.1 · नियंत्रण: फ़ोन पर स्टिक या WASD + माउस", "v1.1 · التحكم: عصي على الهاتف أو WASD + الفأرة"],
+  lang_pick: ["🌍 Choose your language", "🌍 Выберите язык", "🌍 Elige tu idioma", "🌍 Escolha seu idioma", "🌍 Choisissez votre langue", "🌍 Sprache wählen", "🌍 选择语言", "🌍 言語を選択", "🌍 भाषा चुनें", "🌍 اختر لغتك"],
+
+  // ----- настройки -----
+  s_title:   ["⚙ Settings", "⚙ Настройки", "⚙ Ajustes", "⚙ Configurações", "⚙ Réglages", "⚙ Einstellungen", "⚙ 设置", "⚙ 設定", "⚙ सेटिंग्स", "⚙ الإعدادات"],
+  s_lang:    ["Language", "Язык", "Idioma", "Idioma", "Langue", "Sprache", "语言", "言語", "भाषा", "اللغة"],
+  s_graphics:["Graphics", "Графика", "Gráficos", "Gráficos", "Graphismes", "Grafik", "画质", "グラフィック", "ग्राफ़िक्स", "الرسومات"],
+  q_low:     ["Low", "Низкая", "Baja", "Baixa", "Basse", "Niedrig", "低", "低", "कम", "منخفضة"],
+  q_medium:  ["Medium", "Средняя", "Media", "Média", "Moyenne", "Mittel", "中", "中", "मध्यम", "متوسطة"],
+  q_high:    ["High", "Высокая", "Alta", "Alta", "Haute", "Hoch", "高", "高", "उच्च", "عالية"],
+  q_ultra:   ["Ultra", "Ультра", "Ultra", "Ultra", "Ultra", "Ultra", "极高", "ウルトラ", "अल्ट्रा", "فائقة"],
+  s_res:     ["Resolution", "Разрешение", "Resolución", "Resolução", "Résolution", "Auflösung", "分辨率", "解像度", "रिज़ॉल्यूशन", "الدقة"],
+  res_auto:  ["Auto (screen)", "Авто (экран)", "Auto (pantalla)", "Auto (tela)", "Auto (écran)", "Auto (Bildschirm)", "自动（屏幕）", "自動（画面）", "ऑटो (स्क्रीन)", "تلقائي (الشاشة)"],
+  s_view:    ["Camera view", "Вид камеры", "Vista de cámara", "Visão da câmera", "Vue caméra", "Kameraansicht", "视角", "カメラ視点", "कैमरा दृश्य", "منظور الكاميرا"],
+  view_third:["🎥 3rd person", "🎥 От 3-го лица", "🎥 3.ª persona", "🎥 3ª pessoa", "🎥 3e personne", "🎥 3. Person", "🎥 第三人称", "🎥 三人称", "🎥 तीसरा व्यक्ति", "🎥 الشخص الثالث"],
+  view_first:["👁 1st person", "👁 От 1-го лица", "👁 1.ª persona", "👁 1ª pessoa", "👁 1re personne", "👁 1. Person", "👁 第一人称", "👁 一人称", "👁 पहला व्यक्ति", "👁 الشخص الأول"],
+  s_ui:      ["Interface size", "Размер интерфейса", "Tamaño de interfaz", "Tamanho da interface", "Taille de l'interface", "UI-Größe", "界面大小", "UIサイズ", "इंटरफ़ेस आकार", "حجم الواجهة"],
+  s_music:   ["Music", "Музыка", "Música", "Música", "Musique", "Musik", "音乐", "音楽", "संगीत", "الموسيقى"],
+  s_musicVol:["Music volume", "Громкость музыки", "Volumen de música", "Volume da música", "Volume musique", "Musiklautstärke", "音乐音量", "音楽の音量", "संगीत की आवाज़", "مستوى الموسيقى"],
+  s_sfx:     ["Sounds", "Звуки", "Sonidos", "Sons", "Sons", "Geräusche", "音效", "効果音", "ध्वनियाँ", "الأصوات"],
+  s_sfxVol:  ["Sound volume", "Громкость звуков", "Volumen de sonidos", "Volume dos sons", "Volume des sons", "Effektlautstärke", "音效音量", "効果音の音量", "ध्वनि की आवाज़", "مستوى الأصوات"],
+  s_auto:    ["Auto gather & attack", "Авто-добыча и атака", "Recolectar y atacar auto", "Coletar e atacar auto", "Récolte et attaque auto", "Auto-Sammeln & Angriff", "自动采集与攻击", "自動採集と攻撃", "ऑटो संग्रह और हमला", "جمع وهجوم تلقائي"],
+  s_camDist: ["Camera distance", "Дальность камеры", "Distancia de cámara", "Distância da câmera", "Distance caméra", "Kameraabstand", "镜头距离", "カメラ距離", "कैमरा दूरी", "بُعد الكاميرا"],
+  s_sens:    ["Camera sensitivity", "Чувствительность камеры", "Sensibilidad de cámara", "Sensibilidade da câmera", "Sensibilité caméra", "Kameraempfindlichkeit", "镜头灵敏度", "カメラ感度", "कैमरा संवेदनशीलता", "حساسية الكاميرا"],
+  s_full:    ["Fullscreen", "Полный экран", "Pantalla completa", "Tela cheia", "Plein écran", "Vollbild", "全屏", "全画面", "पूर्ण स्क्रीन", "ملء الشاشة"],
+  s_fullBtn: ["⛶ On/off", "⛶ Вкл/выкл", "⛶ Sí/no", "⛶ Liga/desliga", "⛶ Oui/non", "⛶ An/aus", "⛶ 开/关", "⛶ オン/オフ", "⛶ चालू/बंद", "⛶ تشغيل/إيقاف"],
+  full_na:   ["Fullscreen is not supported by this browser", "Полный экран не поддерживается этим браузером", "Este navegador no admite pantalla completa", "Este navegador não suporta tela cheia", "Plein écran non pris en charge", "Vollbild wird nicht unterstützt", "此浏览器不支持全屏", "このブラウザは全画面非対応", "यह ब्राउज़र पूर्ण स्क्रीन नहीं करता", "المتصفح لا يدعم ملء الشاشة"],
+
+  // ----- выбор героя -----
+  sel_title: ["Choose your hero", "Выберите героя", "Elige tu héroe", "Escolha seu herói", "Choisissez votre héros", "Wähle deinen Helden", "选择英雄", "ヒーローを選ぼう", "अपना नायक चुनें", "اختر بطلك"],
+  drag_hint: ["👆 Swipe the screen to rotate the hero", "👆 Проведите пальцем по экрану, чтобы вращать героя", "👆 Desliza para girar al héroe", "👆 Deslize para girar o herói", "👆 Glissez pour tourner le héros", "👆 Wischen, um den Helden zu drehen", "👆 滑动屏幕旋转英雄", "👆 スワイプでヒーローを回転", "👆 नायक घुमाने के लिए स्वाइप करें", "👆 اسحب لتدوير البطل"],
+  start:     ["START GAME", "НАЧАТЬ ИГРУ", "EMPEZAR", "COMEÇAR", "COMMENCER", "SPIEL STARTEN", "开始游戏", "ゲーム開始", "खेल शुरू करें", "ابدأ اللعب"],
+  st_hp:     ["Health", "Здоровье", "Salud", "Vida", "Santé", "Leben", "生命", "体力", "स्वास्थ्य", "الصحة"],
+  st_speed:  ["Speed", "Скорость", "Velocidad", "Velocidade", "Vitesse", "Tempo", "速度", "速さ", "गति", "السرعة"],
+  st_attack: ["Attack", "Атака", "Ataque", "Ataque", "Attaque", "Angriff", "攻击", "攻撃", "हमला", "الهجوم"],
+  st_gather: ["Gathering", "Добыча", "Recolección", "Coleta", "Récolte", "Sammeln", "采集", "採集", "संग्रह", "الجمع"],
+  st_build:  ["Building", "Стройка", "Construcción", "Construção", "Construction", "Bauen", "建造", "建築", "निर्माण", "البناء"],
+  difficulty:["Difficulty:", "Сложность:", "Dificultad:", "Dificuldade:", "Difficulté :", "Schwierigkeit:", "难度：", "難易度：", "कठिनाई:", "الصعوبة:"],
+  prep:      [" Time to prepare for a wave: {t}.", " Подготовка к волне: {t}.", " Preparación por oleada: {t}.", " Preparo por onda: {t}.", " Préparation par vague : {t}.", " Vorbereitung je Welle: {t}.", " 每波准备时间：{t}。", " 準備時間：{t}。", " हर लहर की तैयारी: {t}।", " وقت التحضير للموجة: {t}."],
+  world:     ["World:", "Мир:", "Mundo:", "Mundo:", "Monde :", "Welt:", "世界：", "ワールド：", "दुनिया:", "العالم:"],
+  seed_ph:   ["world seed", "сид мира", "semilla", "semente", "graine", "Seed", "世界种子", "シード", "सीड", "البذرة"],
+  welcome:   ["Welcome! World: {biome} (seed {seed}). Chop trees and protect the birds 🐦", "Добро пожаловать! Мир: {biome} (сид {seed}). Рубите деревья и защищайте птиц 🐦", "¡Bienvenido! Mundo: {biome} (semilla {seed}). Tala árboles y protege a las aves 🐦", "Bem-vindo! Mundo: {biome} (semente {seed}). Corte árvores e proteja os pássaros 🐦", "Bienvenue ! Monde : {biome} (graine {seed}). Coupez du bois et protégez les oiseaux 🐦", "Willkommen! Welt: {biome} (Seed {seed}). Fälle Bäume und schütze die Vögel 🐦", "欢迎！世界：{biome}（种子 {seed}）。砍树并保护鸟儿 🐦", "ようこそ！ワールド：{biome}（シード {seed}）。木を切り鳥を守ろう 🐦", "स्वागत है! दुनिया: {biome} (सीड {seed})। पेड़ काटें और पक्षियों को बचाएँ 🐦", "أهلًا! العالم: {biome} (البذرة {seed}). اقطع الأشجار واحمِ الطيور 🐦"],
+
+  // ----- HUD -----
+  base_lbl:  ["🪺 GREAT NEST — base health", "🪺 ВЕЛИКОЕ ГНЕЗДО — здоровье базы", "🪺 GRAN NIDO — salud de la base", "🪺 GRANDE NINHO — vida da base", "🪺 GRAND NID — santé de la base", "🪺 GROSSES NEST — Basis-Leben", "🪺 伟大之巢 — 基地生命", "🪺 大いなる巣 — 基地の体力", "🪺 महान घोंसला — बेस स्वास्थ्य", "🪺 العش العظيم — صحة القاعدة"],
+  wave_now:  ["⏩ Wave now", "⏩ Волна сейчас", "⏩ Oleada ya", "⏩ Onda agora", "⏩ Vague maintenant", "⏩ Welle jetzt", "⏩ 立即开波", "⏩ 今すぐウェーブ", "⏩ अभी लहर", "⏩ الموجة الآن"],
+  wave_early:["Beasts come early! +25% reward", "Звери идут раньше! +25% награды", "¡Las bestias llegan antes! +25% de premio", "As feras vêm antes! +25% de prêmio", "Les bêtes arrivent plus tôt ! +25 %", "Tiere kommen früher! +25 % Belohnung", "野兽提前来袭！奖励+25%", "獣が早く来る！報酬+25%", "जानवर जल्दी आए! +25% इनाम", "الوحوش تأتي مبكرًا! +25% مكافأة"],
+  move:      ["MOVE", "ДВИЖЕНИЕ", "MOVER", "MOVER", "DÉPLACER", "BEWEGEN", "移动", "移動", "चलें", "تحرك"],
+  camera:    ["CAMERA", "КАМЕРА", "CÁMARA", "CÂMERA", "CAMÉRA", "KAMERA", "镜头", "カメラ", "कैमरा", "الكاميرا"],
+  place:     ["✔ Place", "✔ Поставить", "✔ Colocar", "✔ Colocar", "✔ Poser", "✔ Setzen", "✔ 放置", "✔ 設置", "✔ रखें", "✔ ضع"],
+  tb_axe:    ["Axe", "Топор", "Hacha", "Machado", "Hache", "Axt", "斧头", "斧", "कुल्हाड़ी", "فأس"],
+  tb_pick:   ["Pickaxe", "Кирка", "Pico", "Picareta", "Pioche", "Hacke", "镐", "ツルハシ", "कुदाल", "معول"],
+  tb_build:  ["Build", "Стройка", "Construir", "Construir", "Bâtir", "Bauen", "建造", "建築", "निर्माण", "بناء"],
+  tb_inv:    ["Inventory", "Инвентарь", "Inventario", "Inventário", "Inventaire", "Inventar", "背包", "持ち物", "सामान", "الحقيبة"],
+  tb_birds:  ["Birds", "Птицы", "Aves", "Pássaros", "Oiseaux", "Vögel", "鸟类", "鳥", "पक्षी", "الطيور"],
+  wave_in:   ["Wave {n} in {t}", "Волна {n} через {t}", "Oleada {n} en {t}", "Onda {n} em {t}", "Vague {n} dans {t}", "Welle {n} in {t}", "第{n}波 {t} 后", "ウェーブ{n}まで {t}", "लहर {n}: {t} में", "الموجة {n} بعد {t}"],
+  wave_on:   ["⚔️ Wave {n} · beasts: {k}", "⚔️ Волна {n} · зверей: {k}", "⚔️ Oleada {n} · bestias: {k}", "⚔️ Onda {n} · feras: {k}", "⚔️ Vague {n} · bêtes : {k}", "⚔️ Welle {n} · Tiere: {k}", "⚔️ 第{n}波 · 野兽：{k}", "⚔️ ウェーブ{n} · 獣：{k}", "⚔️ लहर {n} · जानवर: {k}", "⚔️ الموجة {n} · وحوش: {k}"],
+  wounded:   ["wounded…", "ранен…", "herido…", "ferido…", "blessé…", "verwundet…", "受伤…", "負傷…", "घायल…", "مصاب…"],
+  day:       ["Day {n}", "День {n}", "Día {n}", "Dia {n}", "Jour {n}", "Tag {n}", "第{n}天", "{n}日目", "दिन {n}", "اليوم {n}"],
+  night_in:  ["🌙 night in {t}", "🌙 ночь через {t}", "🌙 noche en {t}", "🌙 noite em {t}", "🌙 nuit dans {t}", "🌙 Nacht in {t}", "🌙 {t} 后入夜", "🌙 夜まで {t}", "🌙 रात {t} में", "🌙 الليل بعد {t}"],
+  morning_in:["☀️ morning in {t}", "☀️ утро через {t}", "☀️ mañana en {t}", "☀️ manhã em {t}", "☀️ matin dans {t}", "☀️ Morgen in {t}", "☀️ {t} 后天亮", "☀️ 朝まで {t}", "☀️ सुबह {t} में", "☀️ الصباح بعد {t}"],
+  quest:     ["Quest:", "Задание:", "Misión:", "Missão:", "Quête :", "Aufgabe:", "任务：", "クエスト：", "काम:", "المهمة:"],
+  quest_free:["Protect the birds as long as you can!", "Защищайте птиц как можно дольше!", "¡Protege a las aves todo lo que puedas!", "Proteja os pássaros o máximo possível!", "Protégez les oiseaux le plus longtemps possible !", "Schütze die Vögel so lange du kannst!", "尽可能久地保护鸟儿！", "できるだけ長く鳥を守れ！", "जितना हो सके पक्षियों को बचाएँ!", "احمِ الطيور أطول وقت ممكن!"],
+  bird_count:["🐦 Birds: {n}/{cap} · at cannons: {c}", "🐦 Птиц: {n}/{cap} · у пушек: {c}", "🐦 Aves: {n}/{cap} · en cañones: {c}", "🐦 Pássaros: {n}/{cap} · nos canhões: {c}", "🐦 Oiseaux : {n}/{cap} · aux canons : {c}", "🐦 Vögel: {n}/{cap} · an Kanonen: {c}", "🐦 鸟：{n}/{cap} · 炮位：{c}", "🐦 鳥：{n}/{cap} · 砲手：{c}", "🐦 पक्षी: {n}/{cap} · तोपों पर: {c}", "🐦 الطيور: {n}/{cap} · عند المدافع: {c}"],
+  on_wall:   [" (on wall)", " (на стену)", " (en muro)", " (no muro)", " (sur mur)", " (auf Mauer)", "（城墙上）", "（壁の上）", " (दीवार पर)", " (على السور)"],
+  free:      ["free", "бесплатно", "gratis", "grátis", "gratuit", "gratis", "免费", "無料", "मुफ़्त", "مجانًا"],
+  lvl:       ["{name} (lv {l})", "{name} (ур. {l})", "{name} (nv {l})", "{name} (nv {l})", "{name} (nv {l})", "{name} (St. {l})", "{name}（{l}级）", "{name}（Lv{l}）", "{name} (स्तर {l})", "{name} (مستوى {l})"],
+  view_fp:   ["👁 First-person view", "👁 Вид от первого лица", "👁 Vista en 1.ª persona", "👁 Visão em 1ª pessoa", "👁 Vue à la 1re personne", "👁 Ich-Perspektive", "👁 第一人称视角", "👁 一人称視点", "👁 पहले व्यक्ति का दृश्य", "👁 منظور الشخص الأول"],
+  view_tp:   ["🎥 Third-person view", "🎥 Вид от третьего лица", "🎥 Vista en 3.ª persona", "🎥 Visão em 3ª pessoa", "🎥 Vue à la 3e personne", "🎥 Verfolgerperspektive", "🎥 第三人称视角", "🎥 三人称視点", "🎥 तीसरे व्यक्ति का दृश्य", "🎥 منظور الشخص الثالث"],
+  no_stamina:["Too tired to run — catch your breath", "Нет сил бежать — восстановите выносливость", "Sin fuerzas para correr — descansa", "Sem fôlego para correr — descanse", "Trop fatigué pour courir — reposez-vous", "Zu erschöpft zum Laufen — kurz ausruhen", "体力不足，先休息一下", "走る体力がない — 休もう", "दौड़ने की ताक़त नहीं — आराम करें", "متعب جدًا للركض — استرح"],
+  hint_place_touch: ["Aim with the camera and tap “Place”", "Наведите камерой и нажмите «Поставить»", "Apunta con la cámara y pulsa «Colocar»", "Mire com a câmera e toque «Colocar»", "Visez avec la caméra et touchez « Poser »", "Mit der Kamera zielen und „Setzen“ tippen", "用镜头瞄准后点“放置”", "カメラで狙って「設置」", "कैमरे से निशाना लगाएँ और “रखें” दबाएँ", "صوّب بالكاميرا ثم اضغط «ضع»"],
+  hint_place_pc:    ["Pick a spot: LMB / Enter — place, R — rotate", "Выберите место: ЛКМ / Enter — поставить, R — повернуть", "Elige sitio: clic / Enter — colocar, R — girar", "Escolha o local: clique / Enter — colocar, R — girar", "Choisissez : clic / Entrée — poser, R — tourner", "Ort wählen: LMT / Enter — setzen, R — drehen", "选位置：左键/回车放置，R旋转", "場所を選択：左クリック/Enterで設置、Rで回転", "जगह चुनें: क्लिक / Enter — रखें, R — घुमाएँ", "اختر المكان: نقرة/Enter للوضع، R للتدوير"],
+  move_closer:      ["Move closer to a building", "Подойдите ближе к постройке", "Acércate a un edificio", "Chegue mais perto de uma construção", "Approchez-vous d'un bâtiment", "Geh näher an ein Gebäude", "靠近建筑", "建物に近づこう", "किसी इमारत के पास जाएँ", "اقترب من مبنى"],
+  rotate_txt:       ["Turn your phone <b>sideways</b> — it's easier to play", "Поверните телефон <b>горизонтально</b> — так удобнее играть", "Gira el teléfono <b>en horizontal</b> — es más cómodo", "Vire o celular <b>na horizontal</b> — é mais confortável", "Tournez le téléphone <b>à l'horizontale</b> — c'est plus pratique", "Dreh das Handy <b>quer</b> — so spielt es sich besser", "请<b>横屏</b>游玩，体验更佳", "スマホを<b>横向き</b>にすると遊びやすい", "फ़ोन को <b>आड़ा</b> करें — खेलना आसान होगा", "أدر الهاتف <b>أفقيًا</b> — اللعب أسهل"],
+  rotate_ok:        ["Play like this", "Играть так", "Jugar así", "Jogar assim", "Jouer ainsi", "So spielen", "就这样玩", "このまま遊ぶ", "ऐसे ही खेलें", "العب هكذا"],
+
+  // ----- пауза / конец -----
+  pause:     ["Pause", "Пауза", "Pausa", "Pausa", "Pause", "Pause", "暂停", "ポーズ", "विराम", "إيقاف مؤقت"],
+  resume:    ["▶ RESUME", "▶ ПРОДОЛЖИТЬ", "▶ CONTINUAR", "▶ CONTINUAR", "▶ REPRENDRE", "▶ WEITER", "▶ 继续", "▶ 再開", "▶ जारी रखें", "▶ متابعة"],
+  save_b:    ["💾 SAVE", "💾 СОХРАНИТЬ", "💾 GUARDAR", "💾 SALVAR", "💾 SAUVEGARDER", "💾 SPEICHERN", "💾 保存", "💾 セーブ", "💾 सेव करें", "💾 حفظ"],
+  mainmenu:  ["🏠 MAIN MENU", "🏠 ГЛАВНОЕ МЕНЮ", "🏠 MENÚ PRINCIPAL", "🏠 MENU PRINCIPAL", "🏠 MENU PRINCIPAL", "🏠 HAUPTMENÜ", "🏠 主菜单", "🏠 メインメニュー", "🏠 मुख्य मेनू", "🏠 القائمة الرئيسية"],
+  over_title:["🪺 Base destroyed!", "🪺 База разрушена!", "🪺 ¡Base destruida!", "🪺 Base destruída!", "🪺 Base détruite !", "🪺 Basis zerstört!", "🪺 基地被摧毁！", "🪺 基地が壊された！", "🪺 बेस नष्ट हो गया!", "🪺 دُمّرت القاعدة!"],
+  over_note: ["Save deleted — a new run starts from scratch.", "Сохранение удалено — новое прохождение начнётся с начала.", "Partida borrada: empezarás desde cero.", "Save apagado — recomece do zero.", "Sauvegarde supprimée — recommencez à zéro.", "Spielstand gelöscht — Neustart von vorn.", "存档已删除，新的一局将从头开始。", "セーブは削除されました。最初からやり直しです。", "सेव हट गया — नया खेल शुरू से होगा।", "حُذف الحفظ — ستبدأ من جديد."],
+  r_waves:   ["Waves repelled", "Волн отбито", "Oleadas superadas", "Ondas repelidas", "Vagues repoussées", "Abgewehrte Wellen", "击退波数", "撃退したウェーブ", "रोकी गई लहरें", "موجات صُدّت"],
+  r_time:    ["Play time", "Время игры", "Tiempo de juego", "Tempo de jogo", "Temps de jeu", "Spielzeit", "游戏时间", "プレイ時間", "खेल का समय", "مدة اللعب"],
+  r_days:    ["Days survived", "Дней прожито", "Días vividos", "Dias vividos", "Jours survécus", "Überlebte Tage", "存活天数", "生き延びた日数", "बचे दिन", "أيام النجاة"],
+  r_kills:   ["Beasts defeated", "Побеждено зверей", "Bestias vencidas", "Feras vencidas", "Bêtes vaincues", "Besiegte Tiere", "击败野兽", "倒した獣", "हराए जानवर", "وحوش مهزومة"],
+  r_bosses:  ["Bosses defeated", "Побеждено боссов", "Jefes vencidos", "Chefes vencidos", "Boss vaincus", "Besiegte Bosse", "击败首领", "倒したボス", "हराए बॉस", "زعماء مهزومون"],
+  r_built:   ["Built", "Построено", "Construido", "Construído", "Construit", "Gebaut", "建造数", "建てた数", "बनाया", "بُني"],
+  r_wood:    ["Wood gathered", "Добыто дерева", "Madera reunida", "Madeira coletada", "Bois récolté", "Holz gesammelt", "采集木材", "集めた木材", "लकड़ी जमा", "خشب مجموع"],
+  r_stone:   ["Stone mined", "Добыто камня", "Piedra extraída", "Pedra extraída", "Pierre extraite", "Stein abgebaut", "开采石头", "掘った石", "पत्थर खोदा", "حجر مستخرج"],
+  r_coal:    ["Coal mined", "Добыто угля", "Carbón extraído", "Carvão extraído", "Charbon extrait", "Kohle abgebaut", "开采煤炭", "掘った石炭", "कोयला खोदा", "فحم مستخرج"],
+  r_iron:    ["Iron mined", "Добыто железа", "Hierro extraído", "Ferro extraído", "Fer extrait", "Eisen abgebaut", "开采铁", "掘った鉄", "लोहा खोदा", "حديد مستخرج"],
+  r_food:    ["Food gathered", "Собрано еды", "Comida reunida", "Comida coletada", "Nourriture récoltée", "Nahrung gesammelt", "收集食物", "集めた食料", "भोजन जमा", "طعام مجموع"],
+  r_coins:   ["Coins earned", "Заработано монет", "Monedas ganadas", "Moedas ganhas", "Pièces gagnées", "Verdiente Münzen", "赚取金币", "稼いだコイン", "कमाए सिक्के", "عملات مكتسبة"],
+  r_birds:   ["Birds bought", "Куплено птиц", "Aves compradas", "Pássaros comprados", "Oiseaux achetés", "Gekaufte Vögel", "购买鸟类", "買った鳥", "ख़रीदे पक्षी", "طيور مشتراة"],
+  seed:      ["seed", "сид", "semilla", "semente", "graine", "Seed", "种子", "シード", "सीड", "البذرة"],
+  bye_title: ["Thanks for playing!", "Спасибо за игру!", "¡Gracias por jugar!", "Obrigado por jogar!", "Merci d'avoir joué !", "Danke fürs Spielen!", "感谢游玩！", "遊んでくれてありがとう！", "खेलने के लिए धन्यवाद!", "شكرًا للعب!"],
+  bye_txt:   ["Progress saved. You can close the tab.", "Прогресс сохранён. Можно закрыть вкладку.", "Progreso guardado. Puedes cerrar la pestaña.", "Progresso salvo. Pode fechar a aba.", "Progression sauvegardée. Vous pouvez fermer l'onglet.", "Fortschritt gespeichert. Tab kann geschlossen werden.", "进度已保存，可以关闭页面。", "進行状況を保存しました。タブを閉じても大丈夫。", "प्रगति सेव हो गई। टैब बंद कर सकते हैं।", "تم الحفظ. يمكنك إغلاق الصفحة."],
+  bye_back:  ["◀ TO MENU", "◀ В МЕНЮ", "◀ AL MENÚ", "◀ AO MENU", "◀ AU MENU", "◀ ZUM MENÜ", "◀ 返回菜单", "◀ メニューへ", "◀ मेनू पर", "◀ إلى القائمة"],
+
+  // ----- окна -----
+  m_build:   ["🔨 Building", "🔨 Строительство", "🔨 Construcción", "🔨 Construção", "🔨 Construction", "🔨 Bauen", "🔨 建造", "🔨 建築", "🔨 निर्माण", "🔨 البناء"],
+  need_tech: ["🔒 Requires “{name}”", "🔒 Нужна технология «{name}»", "🔒 Requiere «{name}»", "🔒 Requer «{name}»", "🔒 Nécessite « {name} »", "🔒 Benötigt „{name}“", "🔒 需要“{name}”", "🔒 「{name}」が必要", "🔒 “{name}” चाहिए", "🔒 يتطلب «{name}»"],
+  built_one: ["✔ Already built", "✔ Уже построено", "✔ Ya construido", "✔ Já construído", "✔ Déjà construit", "✔ Bereits gebaut", "✔ 已建造", "✔ 建設済み", "✔ पहले से बना", "✔ مبني بالفعل"],
+  limit_hit: ["Limit of {n} reached", "Достигнут лимит {n} шт.", "Límite de {n} alcanzado", "Limite de {n} atingido", "Limite de {n} atteinte", "Limit von {n} erreicht", "已达上限 {n}", "上限{n}に到達", "{n} की सीमा पूरी", "بلغت الحد {n}"],
+  b_build:   ["Build", "Строить", "Construir", "Construir", "Bâtir", "Bauen", "建造", "建てる", "बनाएँ", "ابنِ"],
+  b_choose:  ["Choose", "Выбрать", "Elegir", "Escolher", "Choisir", "Wählen", "选择", "選ぶ", "चुनें", "اختر"],
+  levels_n:  ["Levels: {s}", "Уровни: {s}", "Niveles: {s}", "Níveis: {s}", "Niveaux : {s}", "Stufen: {s}", "等级：{s}", "レベル：{s}", "स्तर: {s}", "المستويات: {s}"],
+  built_cnt: ["Built: {n}/{m}", "Построено: {n}/{m}", "Construido: {n}/{m}", "Construído: {n}/{m}", "Construit : {n}/{m}", "Gebaut: {n}/{m}", "已建：{n}/{m}", "建設数：{n}/{m}", "बने: {n}/{m}", "مبني: {n}/{m}"],
+  cannon_on_wall: ["💣 Cannon on the wall: ", "💣 Пушка на стене: ", "💣 Cañón en el muro: ", "💣 Canhão no muro: ", "💣 Canon sur le mur : ", "💣 Kanone auf der Mauer: ", "💣 城墙上的大炮：", "💣 壁の大砲：", "💣 दीवार पर तोप: ", "💣 مدفع على السور: "],
+  durability:["Durability: {a} / {b}", "Прочность: {a} / {b}", "Resistencia: {a} / {b}", "Resistência: {a} / {b}", "Solidité : {a} / {b}", "Haltbarkeit: {a} / {b}", "耐久：{a} / {b}", "耐久：{a} / {b}", "मज़बूती: {a} / {b}", "المتانة: {a} / {b}"],
+  cannon_stats: ["Damage {d} · Rate {r}/s · Range {g} · Blast {s}", "Урон {d} · Скорость {r}/с · Дальность {g} · Взрыв {s}", "Daño {d} · Cadencia {r}/s · Alcance {g} · Explosión {s}", "Dano {d} · Cadência {r}/s · Alcance {g} · Explosão {s}", "Dégâts {d} · Cadence {r}/s · Portée {g} · Explosion {s}", "Schaden {d} · Rate {r}/s · Reichweite {g} · Explosion {s}", "伤害 {d} · 射速 {r}/秒 · 射程 {g} · 爆炸 {s}", "ダメージ{d} · 速度{r}/秒 · 射程{g} · 爆発{s}", "नुकसान {d} · गति {r}/से · दूरी {g} · धमाका {s}", "الضرر {d} · المعدل {r}/ث · المدى {g} · الانفجار {s}"],
+  cannon_auto:  [" · fires on its own (a bird boosts it)", " · стреляет сама (птица усиливает)", " · dispara sola (un ave la mejora)", " · atira sozinho (pássaro reforça)", " · tire seul (un oiseau le renforce)", " · feuert selbst (Vogel verstärkt)", " · 自动开火（鸟可强化）", " · 自動射撃（鳥で強化）", " · खुद चलती है (पक्षी ताक़त बढ़ाता)", " · تطلق وحدها (الطائر يقويها)"],
+  cannon_need:  [" · needs a bird gunner", " · нужна птица-стрелок", " · necesita un ave tiradora", " · precisa de um pássaro atirador", " · nécessite un oiseau tireur", " · braucht einen Vogelschützen", " · 需要鸟炮手", " · 鳥の砲手が必要", " · पक्षी निशानेबाज़ चाहिए", " · يحتاج طائرًا راميًا"],
+  farm_info: ["Produces 1 🍖 every 10 s.", "Производит 1 🍖 каждые 10 сек.", "Produce 1 🍖 cada 10 s.", "Produz 1 🍖 a cada 10 s.", "Produit 1 🍖 toutes les 10 s.", "Erzeugt 1 🍖 alle 10 s.", "每10秒生产1 🍖。", "10秒ごとに🍖1。", "हर 10 से. में 1 🍖।", "تنتج 1 🍖 كل 10 ث."],
+  turret_info: ["{name}: damage {d} · rate {r}/s · range {g}{s}. Levels: crossbow → machine gun → rockets.", "{name}: урон {d} · скорость {r}/с · дальность {g}{s}. Уровни: арбалет → пулемёт → ракетница.", "{name}: daño {d} · cadencia {r}/s · alcance {g}{s}. Niveles: ballesta → ametralladora → cohetes.", "{name}: dano {d} · cadência {r}/s · alcance {g}{s}. Níveis: besta → metralhadora → foguetes.", "{name} : dégâts {d} · cadence {r}/s · portée {g}{s}. Niveaux : arbalète → mitrailleuse → roquettes.", "{name}: Schaden {d} · Rate {r}/s · Reichweite {g}{s}. Stufen: Armbrust → MG → Raketen.", "{name}：伤害 {d} · 射速 {r}/秒 · 射程 {g}{s}。等级：弩→机枪→火箭。", "{name}：ダメージ{d} · 速度{r}/秒 · 射程{g}{s}。弩→機関銃→ロケット。", "{name}: नुकसान {d} · गति {r}/से · दूरी {g}{s}। स्तर: क्रॉसबो → मशीनगन → रॉकेट।", "{name}: الضرر {d} · المعدل {r}/ث · المدى {g}{s}. المستويات: قوس ← رشاش ← صواريخ."],
+  blast:     [" · blast {s}", " · взрыв {s}", " · explosión {s}", " · explosão {s}", " · explosion {s}", " · Explosion {s}", " · 爆炸 {s}", " · 爆発{s}", " · धमाका {s}", " · انفجار {s}"],
+  mine_info: ["Mines: {a} every {x}s, {b} every {y}s, {c} every {z}s.", "Добывает: {a} раз в {x}с, {b} раз в {y}с, {c} раз в {z}с.", "Extrae: {a} cada {x}s, {b} cada {y}s, {c} cada {z}s.", "Extrai: {a} a cada {x}s, {b} a cada {y}s, {c} a cada {z}s.", "Extrait : {a} toutes les {x}s, {b} toutes les {y}s, {c} toutes les {z}s.", "Fördert: {a} alle {x}s, {b} alle {y}s, {c} alle {z}s.", "产出：{a} 每{x}秒，{b} 每{y}秒，{c} 每{z}秒。", "採掘：{a} {x}秒毎、{b} {y}秒毎、{c} {z}秒毎。", "खोदती है: {a} हर {x}से, {b} हर {y}से, {c} हर {z}से।", "يستخرج: {a} كل {x}ث، {b} كل {y}ث، {c} كل {z}ث."],
+  gate_info: ["Levels: wooden → iron-bound → stone → fortress → steel.", "Уровни: деревянные → окованные → каменные → крепостные → стальные.", "Niveles: madera → herrada → piedra → fortaleza → acero.", "Níveis: madeira → reforçado → pedra → fortaleza → aço.", "Niveaux : bois → ferrée → pierre → forteresse → acier.", "Stufen: Holz → beschlagen → Stein → Festung → Stahl.", "等级：木→铁箍→石→要塞→钢。", "木→鉄張り→石→要塞→鋼。", "स्तर: लकड़ी → लोहा जड़ा → पत्थर → क़िला → इस्पात।", "المستويات: خشب ← مصفح ← حجر ← قلعة ← فولاذ."],
+  cap_info:  ["Resource capacity: {n}", "Вместимость ресурсов: {n}", "Capacidad: {n}", "Capacidade: {n}", "Capacité : {n}", "Kapazität: {n}", "资源容量：{n}", "資源上限：{n}", "भंडारण क्षमता: {n}", "سعة الموارد: {n}"],
+  bird_slots:["Bird slots: +{n} (total {t})", "Места для птиц: +{n} (всего {t})", "Plazas de aves: +{n} (total {t})", "Vagas: +{n} (total {t})", "Places : +{n} (total {t})", "Vogelplätze: +{n} (gesamt {t})", "鸟位：+{n}（共{t}）", "鳥枠：+{n}（計{t}）", "पक्षी जगह: +{n} (कुल {t})", "أماكن الطيور: +{n} (المجموع {t})"],
+  upgrade_to:["⬆ Upgrade to “{name}” — {cost}", "⬆ Улучшить до «{name}» — {cost}", "⬆ Mejorar a «{name}» — {cost}", "⬆ Melhorar para «{name}» — {cost}", "⬆ Améliorer en « {name} » — {cost}", "⬆ Ausbauen zu „{name}“ — {cost}", "⬆ 升级为“{name}” — {cost}", "⬆ 「{name}」に強化 — {cost}", "⬆ “{name}” तक बढ़ाएँ — {cost}", "⬆ طوّر إلى «{name}» — {cost}"],
+  max_level: ["★ Max level", "★ Максимальный уровень", "★ Nivel máximo", "★ Nível máximo", "★ Niveau max", "★ Maximalstufe", "★ 已满级", "★ 最大レベル", "★ अधिकतम स्तर", "★ أعلى مستوى"],
+  repair:    ["🔧 Repair — {cost}", "🔧 Починить — {cost}", "🔧 Reparar — {cost}", "🔧 Consertar — {cost}", "🔧 Réparer — {cost}", "🔧 Reparieren — {cost}", "🔧 修理 — {cost}", "🔧 修理 — {cost}", "🔧 मरम्मत — {cost}", "🔧 إصلاح — {cost}"],
+  demolish:  ["🗑 Demolish", "🗑 Снести", "🗑 Demoler", "🗑 Demolir", "🗑 Démolir", "🗑 Abreißen", "🗑 拆除", "🗑 解体", "🗑 गिराएँ", "🗑 هدم"],
+  demolish_ok:["Sure? (50% refunded)", "Точно снести? (вернётся 50%)", "¿Seguro? (se devuelve 50%)", "Certeza? (50% de volta)", "Sûr ? (50 % rendus)", "Sicher? (50 % zurück)", "确定？（返还50%）", "本当に？（50%返却）", "पक्का? (50% वापस)", "متأكد؟ (يُسترد 50%)"],
+  market_btn:["🐦 Bird market & my birds", "🐦 Птичий рынок и мои птицы", "🐦 Mercado y mis aves", "🐦 Mercado e meus pássaros", "🐦 Marché et mes oiseaux", "🐦 Vogelmarkt & meine Vögel", "🐦 鸟市和我的鸟", "🐦 鳥市場と自分の鳥", "🐦 पक्षी बाज़ार और मेरे पक्षी", "🐦 سوق الطيور وطيوري"],
+  eat_btn:   ["🍖 Eat (+35 ❤️ for 3 food)", "🍖 Съесть (+35 ❤️ за 3 еды)", "🍖 Comer (+35 ❤️ por 3 comida)", "🍖 Comer (+35 ❤️ por 3 comida)", "🍖 Manger (+35 ❤️ pour 3)", "🍖 Essen (+35 ❤️ für 3)", "🍖 进食（3食物 +35 ❤️）", "🍖 食べる（食料3で❤️+35）", "🍖 खाएँ (3 भोजन से +35 ❤️)", "🍖 كُل (+35 ❤️ مقابل 3 طعام)"],
+  gunner:    ["🐦 Gunner", "🐦 Стрелок", "🐦 Tirador", "🐦 Atirador", "🐦 Tireur", "🐦 Schütze", "🐦 炮手", "🐦 砲手", "🐦 निशानेबाज़", "🐦 الرامي"],
+  take_off:  ["Remove from cannon", "Снять с пушки", "Quitar del cañón", "Tirar do canhão", "Retirer du canon", "Von Kanone nehmen", "撤下炮位", "砲から降ろす", "तोप से हटाएँ", "أزله من المدفع"],
+  no_gunner: ["Nobody is manning this cannon. Seat a bird:", "За пушкой никого нет. Посадите птицу:", "Nadie maneja el cañón. Pon un ave:", "Ninguém no canhão. Coloque um pássaro:", "Personne au canon. Placez un oiseau :", "Niemand an der Kanone. Setze einen Vogel:", "没有鸟操作大炮，派一只鸟：", "砲手がいない。鳥を座らせよう：", "तोप पर कोई नहीं। पक्षी बिठाएँ:", "لا أحد عند المدفع. ضع طائرًا:"],
+  buy_bird:  ["🛒 Buy a bird", "🛒 Купить птицу", "🛒 Comprar ave", "🛒 Comprar pássaro", "🛒 Acheter un oiseau", "🛒 Vogel kaufen", "🛒 购买鸟", "🛒 鳥を買う", "🛒 पक्षी ख़रीदें", "🛒 اشترِ طائرًا"],
+  replace:   ["Replace", "Заменить", "Cambiar", "Trocar", "Remplacer", "Ersetzen", "替换", "交代", "बदलें", "استبدال"],
+  seat:      ["Seat", "Посадить", "Colocar", "Colocar", "Placer", "Einsetzen", "就位", "座らせる", "बिठाएँ", "أجلِس"],
+  bird_stats:["Damage ×{d} · Rate ×{r} · Range ×{g}", "Урон ×{d} · Скор. ×{r} · Дальн. ×{g}", "Daño ×{d} · Cad. ×{r} · Alc. ×{g}", "Dano ×{d} · Cad. ×{r} · Alc. ×{g}", "Dégâts ×{d} · Cad. ×{r} · Port. ×{g}", "Schaden ×{d} · Rate ×{r} · Reichw. ×{g}", "伤害×{d} · 射速×{r} · 射程×{g}", "攻撃×{d} · 速度×{r} · 射程×{g}", "नुकसान ×{d} · गति ×{r} · दूरी ×{g}", "الضرر ×{d} · المعدل ×{r} · المدى ×{g}"],
+  ws_need:   ["⚒️ Build a “Workshop” (Build → Production) to craft tools and research technologies.", "⚒️ Постройте «Мастерскую» (Стройка → Производство), чтобы создавать инструменты и изучать технологии.", "⚒️ Construye un «Taller» (Construir → Producción) para herramientas y tecnologías.", "⚒️ Construa uma «Oficina» (Construir → Produção) para ferramentas e tecnologias.", "⚒️ Construisez un « Atelier » (Bâtir → Production) pour outils et technologies.", "⚒️ Baue eine „Werkstatt“ (Bauen → Produktion) für Werkzeuge und Technologien.", "⚒️ 建造“工坊”（建造→生产）来制作工具和研究科技。", "⚒️ 「工房」（建築→生産）を建てて道具と技術を手に入れよう。", "⚒️ औज़ार और तकनीक के लिए “कार्यशाला” बनाएँ (निर्माण → उत्पादन)।", "⚒️ ابنِ «ورشة» (بناء ← إنتاج) لصنع الأدوات والتقنيات."],
+  gear_title:["🔦 Gear — light in the dark", "🔦 Снаряжение — свет в темноте", "🔦 Equipo — luz en la oscuridad", "🔦 Equipamento — luz no escuro", "🔦 Équipement — lumière dans le noir", "🔦 Ausrüstung — Licht im Dunkeln", "🔦 装备 — 黑暗中的光", "🔦 装備 — 暗闇の灯り", "🔦 सामान — अंधेरे में रोशनी", "🔦 العتاد — ضوء في الظلام"],
+  take_off2: ["Take off", "Снять", "Quitar", "Tirar", "Retirer", "Ablegen", "卸下", "外す", "उतारें", "اخلع"],
+  put_on:    ["Put on", "Надеть", "Equipar", "Equipar", "Équiper", "Anlegen", "装备", "装備", "पहनें", "ارتدِ"],
+  buy:       ["Buy", "Купить", "Comprar", "Comprar", "Acheter", "Kaufen", "购买", "買う", "ख़रीदें", "اشترِ"],
+  tools:     ["🛠 Tools", "🛠 Инструменты", "🛠 Herramientas", "🛠 Ferramentas", "🛠 Outils", "🛠 Werkzeuge", "🛠 工具", "🛠 道具", "🛠 औज़ार", "🛠 الأدوات"],
+  none:      ["none", "нет", "ninguno", "nenhum", "aucun", "keine", "无", "なし", "कोई नहीं", "لا شيء"],
+  now:       ["Current: {name}", "Сейчас: {name}", "Actual: {name}", "Atual: {name}", "Actuel : {name}", "Aktuell: {name}", "当前：{name}", "現在：{name}", "अभी: {name}", "الحالي: {name}"],
+  power:     ["Gathering power: {n}", "Сила добычи: {n}", "Poder de recolección: {n}", "Poder de coleta: {n}", "Puissance de récolte : {n}", "Sammelkraft: {n}", "采集力：{n}", "採集力：{n}", "संग्रह शक्ति: {n}", "قوة الجمع: {n}"],
+  pick_need: ["Needed to mine stone, coal and iron", "Нужна для добычи камня, угля и железа", "Necesario para piedra, carbón y hierro", "Necessária para pedra, carvão e ferro", "Nécessaire pour pierre, charbon et fer", "Nötig für Stein, Kohle und Eisen", "开采石头、煤和铁需要它", "石・石炭・鉄の採掘に必要", "पत्थर, कोयला और लोहे के लिए ज़रूरी", "لازم لاستخراج الحجر والفحم والحديد"],
+  craft:     ["Craft", "Создать", "Fabricar", "Fabricar", "Fabriquer", "Herstellen", "制作", "作る", "बनाएँ", "اصنع"],
+  best_tool: ["★ Best tool", "★ Лучший инструмент", "★ Mejor herramienta", "★ Melhor ferramenta", "★ Meilleur outil", "★ Bestes Werkzeug", "★ 最佳工具", "★ 最高の道具", "★ सबसे अच्छा औज़ार", "★ أفضل أداة"],
+  techs:     ["📜 Technologies", "📜 Технологии", "📜 Tecnologías", "📜 Tecnologias", "📜 Technologies", "📜 Technologien", "📜 科技", "📜 技術", "📜 तकनीकें", "📜 التقنيات"],
+  first_req: ["🔒 First: {name}", "🔒 Сначала: {name}", "🔒 Primero: {name}", "🔒 Primeiro: {name}", "🔒 D'abord : {name}", "🔒 Zuerst: {name}", "🔒 先研究：{name}", "🔒 先に：{name}", "🔒 पहले: {name}", "🔒 أولًا: {name}"],
+  research:  ["Research", "Изучить", "Investigar", "Pesquisar", "Rechercher", "Erforschen", "研究", "研究", "सीखें", "ابحث"],
+  m_inv:     ["🎒 Inventory", "🎒 Инвентарь", "🎒 Inventario", "🎒 Inventário", "🎒 Inventaire", "🎒 Inventar", "🎒 背包", "🎒 持ち物", "🎒 सामान", "🎒 الحقيبة"],
+  tab_res:   ["Resources", "Ресурсы", "Recursos", "Recursos", "Ressources", "Rohstoffe", "资源", "資源", "संसाधन", "الموارد"],
+  tab_work:  ["Workshop", "Мастерская", "Taller", "Oficina", "Atelier", "Werkstatt", "工坊", "工房", "कार्यशाला", "الورشة"],
+  tab_hero:  ["Hero", "Герой", "Héroe", "Herói", "Héros", "Held", "英雄", "ヒーロー", "नायक", "البطل"],
+  where:     ["Where to gather: 🪵 — trees around the base; 🪨 — grey rocks and the quarry (the arrow shows the way); coal and 🔩 — in the quarry and near the cave; 🍖 — berry bushes, farms and boars. Storehouses raise capacity.", "Где добывать: 🪵 — деревья вокруг базы; 🪨 — серые камни и карьер (путь показывает стрелка); уголь и 🔩 — в карьере и у пещеры; 🍖 — ягодные кусты, ферма и кабаны. Склад увеличивает вместимость.", "Dónde recolectar: 🪵 — árboles; 🪨 — rocas y la cantera (sigue la flecha); carbón y 🔩 — cantera y cueva; 🍖 — bayas, granjas y jabalíes. Los almacenes amplían la capacidad.", "Onde coletar: 🪵 — árvores; 🪨 — rochas e a pedreira (siga a seta); carvão e 🔩 — pedreira e caverna; 🍖 — frutas, fazendas e javalis. Armazéns aumentam a capacidade.", "Où récolter : 🪵 — arbres ; 🪨 — rochers et carrière (suivez la flèche) ; charbon et 🔩 — carrière et grotte ; 🍖 — baies, fermes et sangliers. Les entrepôts augmentent la capacité.", "Wo sammeln: 🪵 — Bäume; 🪨 — Felsen und Steinbruch (Pfeil folgen); Kohle und 🔩 — Steinbruch und Höhle; 🍖 — Beeren, Höfe und Wildschweine. Lager erhöhen die Kapazität.", "采集地点：🪵 基地周围的树；🪨 灰色岩石和采石场（看箭头）；煤和🔩 采石场与洞穴；🍖 浆果丛、农场和野猪。仓库可提升容量。", "採集場所：🪵 基地周りの木；🪨 岩と採石場（矢印へ）；石炭と🔩 採石場と洞窟；🍖 ベリー・畑・イノシシ。倉庫で上限アップ。", "कहाँ से लें: 🪵 — पेड़; 🪨 — चट्टानें और खदान (तीर देखें); कोयला और 🔩 — खदान और गुफा; 🍖 — बेर, खेत और सूअर। गोदाम क्षमता बढ़ाते हैं।", "أماكن الجمع: 🪵 الأشجار؛ 🪨 الصخور والمحجر (اتبع السهم)؛ الفحم و🔩 المحجر والكهف؛ 🍖 التوت والمزارع والخنازير. المخازن تزيد السعة."],
+  hero_line: ["❤️ {hp}/{max} · 🏃 speed {s} · ⚔️ damage {d}", "❤️ {hp}/{max} · 🏃 скорость {s} · ⚔️ урон {d}", "❤️ {hp}/{max} · 🏃 velocidad {s} · ⚔️ daño {d}", "❤️ {hp}/{max} · 🏃 velocidade {s} · ⚔️ dano {d}", "❤️ {hp}/{max} · 🏃 vitesse {s} · ⚔️ dégâts {d}", "❤️ {hp}/{max} · 🏃 Tempo {s} · ⚔️ Schaden {d}", "❤️ {hp}/{max} · 🏃 速度 {s} · ⚔️ 伤害 {d}", "❤️ {hp}/{max} · 🏃 速さ{s} · ⚔️ 攻撃{d}", "❤️ {hp}/{max} · 🏃 गति {s} · ⚔️ नुकसान {d}", "❤️ {hp}/{max} · 🏃 السرعة {s} · ⚔️ الضرر {d}"],
+  tools_line:["Tools: {a}, {b}", "Инструменты: {a}, {b}", "Herramientas: {a}, {b}", "Ferramentas: {a}, {b}", "Outils : {a}, {b}", "Werkzeuge: {a}, {b}", "工具：{a}，{b}", "道具：{a}、{b}", "औज़ार: {a}, {b}", "الأدوات: {a}، {b}"],
+  no_pick:   ["no pickaxe", "кирки нет", "sin pico", "sem picareta", "pas de pioche", "keine Spitzhacke", "没有镐", "ツルハシなし", "कुदाल नहीं", "لا معول"],
+  tech_line: ["Technologies: {a}", "Технологии: {a}", "Tecnologías: {a}", "Tecnologias: {a}", "Technologies : {a}", "Technologien: {a}", "科技：{a}", "技術：{a}", "तकनीकें: {a}", "التقنيات: {a}"],
+  world_line:["World: {b} · seed {s} (enter it in a new game to get the same map)", "Мир: {b} · сид {s} (введите его при новой игре, чтобы получить такую же карту)", "Mundo: {b} · semilla {s} (úsala en una nueva partida para el mismo mapa)", "Mundo: {b} · semente {s} (use num novo jogo para o mesmo mapa)", "Monde : {b} · graine {s} (saisissez-la pour la même carte)", "Welt: {b} · Seed {s} (im neuen Spiel eingeben für dieselbe Karte)", "世界：{b} · 种子 {s}（新游戏中输入可得到相同地图）", "ワールド：{b} · シード {s}（新規ゲームで入力すると同じマップ）", "दुनिया: {b} · सीड {s} (नए खेल में डालें तो वही नक्शा)", "العالم: {b} · البذرة {s} (أدخلها في لعبة جديدة لنفس الخريطة)"],
+  stats_line:["Stats: wave {w}, day {d}, beasts defeated {k}, built {b}", "Статистика: волна {w}, день {d}, побеждено зверей {k}, построено {b}", "Estadísticas: oleada {w}, día {d}, bestias {k}, construido {b}", "Estatísticas: onda {w}, dia {d}, feras {k}, construído {b}", "Stats : vague {w}, jour {d}, bêtes {k}, construit {b}", "Statistik: Welle {w}, Tag {d}, Tiere {k}, gebaut {b}", "统计：第{w}波，第{d}天，击败野兽{k}，建造{b}", "統計：ウェーブ{w}、{d}日目、獣{k}、建設{b}", "आँकड़े: लहर {w}, दिन {d}, जानवर {k}, बने {b}", "إحصاءات: الموجة {w}، اليوم {d}، وحوش {k}، مبانٍ {b}"],
+  m_birds:   ["🐦 Birds", "🐦 Птицы", "🐦 Aves", "🐦 Pássaros", "🐦 Oiseaux", "🐦 Vögel", "🐦 鸟类", "🐦 鳥", "🐦 पक्षी", "🐦 الطيور"],
+  tab_mine:  ["My birds", "Мои птицы", "Mis aves", "Meus pássaros", "Mes oiseaux", "Meine Vögel", "我的鸟", "自分の鳥", "मेरे पक्षी", "طيوري"],
+  tab_shop:  ["Bird market", "Птичий рынок", "Mercado", "Mercado", "Marché", "Vogelmarkt", "鸟市", "鳥市場", "पक्षी बाज़ार", "سوق الطيور"],
+  birds_info:["Birds: {n} / {cap} slots. Free cannons: {f}", "Птиц: {n} / {cap} мест. Свободных пушек: {f}", "Aves: {n} / {cap}. Cañones libres: {f}", "Pássaros: {n} / {cap}. Canhões livres: {f}", "Oiseaux : {n} / {cap}. Canons libres : {f}", "Vögel: {n} / {cap}. Freie Kanonen: {f}", "鸟：{n}/{cap}。空闲大炮：{f}", "鳥：{n}/{cap}。空き大砲：{f}", "पक्षी: {n} / {cap}। ख़ाली तोपें: {f}", "الطيور: {n} / {cap}. مدافع شاغرة: {f}"],
+  no_birds:  ["You have no birds! Buy some at the market.", "У вас нет птиц! Купите их на рынке.", "¡No tienes aves! Cómpralas en el mercado.", "Você não tem pássaros! Compre no mercado.", "Aucun oiseau ! Achetez-en au marché.", "Keine Vögel! Kaufe welche auf dem Markt.", "你没有鸟！去鸟市买吧。", "鳥がいない！市場で買おう。", "आपके पास पक्षी नहीं! बाज़ार से ख़रीदें।", "ليس لديك طيور! اشترِ من السوق."],
+  st_cannon: ["💣 at cannon", "💣 у пушки", "💣 en cañón", "💣 no canhão", "💣 au canon", "💣 an Kanone", "💣 在炮位", "💣 砲手", "💣 तोप पर", "💣 عند المدفع"],
+  st_hide:   ["🏠 hiding", "🏠 прячется", "🏠 escondida", "🏠 escondido", "🏠 cachée", "🏠 versteckt", "🏠 躲藏中", "🏠 隠れ中", "🏠 छिपा", "🏠 مختبئ"],
+  st_walk:   ["🌿 strolling", "🌿 гуляет", "🌿 paseando", "🌿 passeando", "🌿 se promène", "🌿 spaziert", "🌿 散步中", "🌿 散歩中", "🌿 टहल रहा", "🌿 يتجول"],
+  remove:    ["Remove", "Снять", "Quitar", "Tirar", "Retirer", "Abziehen", "撤下", "外す", "हटाएँ", "أزل"],
+  to_cannon: ["To cannon", "За пушку", "Al cañón", "Ao canhão", "Au canon", "Zur Kanone", "上炮位", "砲へ", "तोप पर", "إلى المدفع"],
+  release:   ["Release (+{n}🪙)", "Отпустить (+{n}🪙)", "Liberar (+{n}🪙)", "Soltar (+{n}🪙)", "Libérer (+{n}🪙)", "Freilassen (+{n}🪙)", "放生（+{n}🪙）", "放す（+{n}🪙）", "छोड़ें (+{n}🪙)", "أطلق (+{n}🪙)"],
+  shop_info: ["Bought birds man free cannons on the walls. Slots: {n}/{cap}.", "Купленные птицы садятся за свободные пушки на стенах. Мест: {n}/{cap}.", "Las aves compradas manejan cañones libres. Plazas: {n}/{cap}.", "Pássaros comprados ocupam canhões livres. Vagas: {n}/{cap}.", "Les oiseaux achetés servent les canons libres. Places : {n}/{cap}.", "Gekaufte Vögel besetzen freie Kanonen. Plätze: {n}/{cap}.", "购买的鸟会操作空闲大炮。鸟位：{n}/{cap}。", "買った鳥は空いた大砲に座る。枠：{n}/{cap}。", "ख़रीदे पक्षी ख़ाली तोपें सँभालते हैं। जगह: {n}/{cap}।", "الطيور المشتراة تدير المدافع الشاغرة. الأماكن: {n}/{cap}."],
+  shop_rare: [" Rare birds unlock with the “Bird Market”.", " Редкие птицы — после постройки «Птичьего рынка».", " Las aves raras requieren el «Mercado de aves».", " Pássaros raros exigem o «Mercado de pássaros».", " Oiseaux rares avec le « Marché aux oiseaux ».", " Seltene Vögel mit dem „Vogelmarkt“.", " 稀有鸟需建造“鸟市”。", " 珍しい鳥は「鳥市場」で解放。", " दुर्लभ पक्षी “पक्षी बाज़ार” से खुलते हैं।", " الطيور النادرة تتطلب «سوق الطيور»."],
+  need_market:["🔒 Requires the Bird Market", "🔒 Нужен Птичий рынок", "🔒 Requiere el Mercado de aves", "🔒 Requer o Mercado de pássaros", "🔒 Nécessite le Marché aux oiseaux", "🔒 Benötigt den Vogelmarkt", "🔒 需要鸟市", "🔒 鳥市場が必要", "🔒 पक्षी बाज़ार चाहिए", "🔒 يتطلب سوق الطيور"],
+
+  // ----- сообщения игры -----
+  no_pick_yet:    ["No pickaxe yet — craft one in the workshop", "Кирки пока нет — сделайте её в мастерской", "Aún no hay pico — fabrícalo en el taller", "Ainda sem picareta — faça na oficina", "Pas encore de pioche — fabriquez-la à l'atelier", "Noch keine Spitzhacke — in der Werkstatt bauen", "还没有镐，去工坊制作", "ツルハシがない — 工房で作ろう", "अभी कुदाल नहीं — कार्यशाला में बनाएँ", "لا معول بعد — اصنعه في الورشة"],
+  destroyed:      ["{name} destroyed!", "{name}: разрушено!", "¡{name} destruido!", "{name} destruído!", "{name} détruit !", "{name} zerstört!", "{name}被摧毁！", "{name}が壊された！", "{name} नष्ट!", "دُمّر {name}!"],
+  not_enough:     ["Not enough resources: ", "Не хватает ресурсов: ", "Faltan recursos: ", "Recursos insuficientes: ", "Ressources insuffisantes : ", "Nicht genug Rohstoffe: ", "资源不足：", "資源が足りない：", "संसाधन कम हैं: ", "موارد غير كافية: "],
+  storage_full:   ["Storage full!", "Склад полон!", "¡Almacén lleno!", "Armazém cheio!", "Entrepôt plein !", "Lager voll!", "仓库已满！", "倉庫がいっぱい！", "गोदाम भरा!", "المخزن ممتلئ!"],
+  takes_cannon:   ["{name} takes the cannon!", "{name} садится за пушку!", "¡{name} toma el cañón!", "{name} assume o canhão!", "{name} prend le canon !", "{name} übernimmt die Kanone!", "{name}登上炮位！", "{name}が砲につく！", "{name} तोप सँभालता है!", "{name} يتولى المدفع!"],
+  need_market_t:  ["You need the “Bird Market” for this bird", "Нужен «Птичий рынок» для этой птицы", "Necesitas el «Mercado de aves»", "Precisa do «Mercado de pássaros»", "Il faut le « Marché aux oiseaux »", "Dafür brauchst du den „Vogelmarkt“", "需要“鸟市”才能购买", "この鳥には「鳥市場」が必要", "इस पक्षी के लिए “पक्षी बाज़ार” चाहिए", "تحتاج «سوق الطيور» لهذا الطائر"],
+  no_slots:       ["No room! Build a birdhouse or an aviary", "Нет мест! Постройте скворечник или птичник", "¡Sin sitio! Construye una casita o pajarera", "Sem vagas! Construa casinha ou viveiro", "Plus de place ! Construisez un nichoir ou une volière", "Kein Platz! Baue ein Vogelhaus oder eine Voliere", "没有空位！建造鸟屋或鸟舍", "空きがない！巣箱か鳥小屋を建てよう", "जगह नहीं! पक्षी घर या पक्षीशाला बनाएँ", "لا مكان! ابنِ بيت طيور أو قفصًا"],
+  bought:         ["Bought: {name}!", "Куплено: {name}!", "Comprado: {name}!", "Comprado: {name}!", "Acheté : {name} !", "Gekauft: {name}!", "已购买：{name}！", "購入：{name}！", "ख़रीदा: {name}!", "تم الشراء: {name}!"],
+  birds_hide:     ["Birds are hiding from the beasts!", "Птицы прячутся от врагов!", "¡Las aves se esconden!", "Os pássaros se escondem!", "Les oiseaux se cachent !", "Die Vögel verstecken sich!", "鸟儿躲起来了！", "鳥たちが隠れた！", "पक्षी छिप रहे हैं!", "الطيور تختبئ!"],
+  bird_died:      ["A bird was lost: {name}!", "Погибла птица: {name}!", "¡Ave perdida: {name}!", "Pássaro perdido: {name}!", "Oiseau perdu : {name} !", "Vogel verloren: {name}!", "失去了一只鸟：{name}！", "鳥がやられた：{name}！", "पक्षी खो गया: {name}!", "فُقد طائر: {name}!"],
+  wave_start:     ["🐺 Wave {n}! The beasts attack!", "🐺 Волна {n}! Звери нападают!", "🐺 ¡Oleada {n}! ¡Atacan las bestias!", "🐺 Onda {n}! As feras atacam!", "🐺 Vague {n} ! Les bêtes attaquent !", "🐺 Welle {n}! Die Tiere greifen an!", "🐺 第{n}波！野兽来袭！", "🐺 ウェーブ{n}！獣の襲撃！", "🐺 लहर {n}! जानवरों का हमला!", "🐺 الموجة {n}! الوحوش تهاجم!"],
+  wave_banner:    ["WAVE {n}", "ВОЛНА {n}", "OLEADA {n}", "ONDA {n}", "VAGUE {n}", "WELLE {n}", "第{n}波", "ウェーブ{n}", "लहर {n}", "الموجة {n}"],
+  boss_appears:   ["⚠️ BOSS: {name}!{desc}", "⚠️ БОСС: {name}!{desc}", "⚠️ JEFE: {name}!{desc}", "⚠️ CHEFE: {name}!{desc}", "⚠️ BOSS : {name} !{desc}", "⚠️ BOSS: {name}!{desc}", "⚠️ 首领：{name}！{desc}", "⚠️ ボス：{name}！{desc}", "⚠️ बॉस: {name}!{desc}", "⚠️ زعيم: {name}!{desc}"],
+  boss_banner:    ["BOSS!", "БОСС!", "¡JEFE!", "CHEFE!", "BOSS !", "BOSS!", "首领！", "ボス！", "बॉस!", "زعيم!"],
+  wave_done:      ["✅ Wave {n} repelled! +{c} 🪙", "✅ Волна {n} отбита! +{c} 🪙", "✅ ¡Oleada {n} superada! +{c} 🪙", "✅ Onda {n} repelida! +{c} 🪙", "✅ Vague {n} repoussée ! +{c} 🪙", "✅ Welle {n} abgewehrt! +{c} 🪙", "✅ 第{n}波已击退！+{c} 🪙", "✅ ウェーブ{n}撃退！+{c} 🪙", "✅ लहर {n} रोकी! +{c} 🪙", "✅ صُدّت الموجة {n}! +{c} 🪙"],
+  howl:           ["Awoo!", "Ау-у-у!", "¡Auuu!", "Auuu!", "Aouuu !", "Auuu!", "嗷呜！", "アオーン！", "आऊ-ऊ!", "عووو!"],
+  flees:          ["Runs away!", "Убегает!", "¡Huye!", "Foge!", "S'enfuit !", "Flieht!", "逃跑了！", "逃げた！", "भागा!", "يهرب!"],
+  boss_down:      ["🏆 Boss defeated: {name}!", "🏆 Босс повержен: {name}!", "🏆 Jefe vencido: {name}!", "🏆 Chefe derrotado: {name}!", "🏆 Boss vaincu : {name} !", "🏆 Boss besiegt: {name}!", "🏆 击败首领：{name}！", "🏆 ボス撃破：{name}！", "🏆 बॉस हारा: {name}!", "🏆 هُزم الزعيم: {name}!"],
+  crit:           ["CRIT!", "КРИТ!", "¡CRÍTICO!", "CRÍTICO!", "CRITIQUE !", "KRIT!", "暴击！", "会心！", "क्रिट!", "حرجة!"],
+  you_down:       ["You're wounded! Back to base in 5 s…", "Вы ранены! Возвращение на базу через 5 сек…", "¡Herido! Vuelves a la base en 5 s…", "Ferido! Volta à base em 5 s…", "Blessé ! Retour à la base dans 5 s…", "Verwundet! Zurück zur Basis in 5 s…", "你受伤了！5秒后返回基地…", "負傷！5秒後に基地へ…", "आप घायल! 5 से. में बेस पर…", "أُصبت! العودة للقاعدة خلال 5 ث…"],
+  need_pick:      ["You need a pickaxe! Build a workshop and craft one.", "Нужна кирка! Постройте мастерскую и сделайте её.", "¡Necesitas un pico! Construye un taller.", "Precisa de picareta! Construa uma oficina.", "Il faut une pioche ! Construisez un atelier.", "Du brauchst eine Spitzhacke! Baue eine Werkstatt.", "需要镐！建造工坊并制作。", "ツルハシが必要！工房で作ろう。", "कुदाल चाहिए! कार्यशाला बनाएँ।", "تحتاج معولًا! ابنِ ورشة."],
+  need_pick2:     ["Iron needs an improved pickaxe", "Для железа нужна улучшенная кирка", "El hierro requiere un pico mejorado", "Ferro exige picareta melhorada", "Le fer exige une pioche améliorée", "Eisen braucht eine bessere Spitzhacke", "铁需要改良镐", "鉄には改良ツルハシが必要", "लोहे के लिए बेहतर कुदाल चाहिए", "الحديد يحتاج معولًا محسّنًا"],
+  back_in_action: ["Back in action!", "Вы снова в строю!", "¡De vuelta en acción!", "De volta à ação!", "De retour !", "Wieder im Einsatz!", "重新出发！", "復活！", "फिर से तैयार!", "عُدت للمعركة!"],
+  exhausted:      ["Out of breath! Rest a little", "Выдохся! Отдохните немного", "¡Sin aliento! Descansa", "Sem fôlego! Descanse", "À bout de souffle ! Reposez-vous", "Außer Atem! Kurz ausruhen", "喘不过气了！休息一下", "息切れ！少し休もう", "साँस फूल गई! आराम करें", "انقطع نفسك! استرح قليلًا"],
+  need_food:      ["You need 3 🍖", "Нужно 3 🍖", "Necesitas 3 🍖", "Precisa de 3 🍖", "Il faut 3 🍖", "Du brauchst 3 🍖", "需要3 🍖", "🍖が3必要", "3 🍖 चाहिए", "تحتاج 3 🍖"],
+  hp_full:        ["Health is already full", "Здоровье уже полное", "La salud ya está llena", "A vida já está cheia", "Santé déjà pleine", "Leben ist schon voll", "生命已满", "体力は満タン", "स्वास्थ्य पहले से पूरा", "الصحة ممتلئة"],
+  need_tech_t:    ["Requires the “{name}” technology", "Нужна технология «{name}»", "Requiere la tecnología «{name}»", "Requer a tecnologia «{name}»", "Nécessite la technologie « {name} »", "Benötigt die Technologie „{name}“", "需要科技“{name}”", "技術「{name}」が必要", "“{name}” तकनीक चाहिए", "يتطلب تقنية «{name}»"],
+  need_tech_ws:   ["Requires the “{name}” technology (workshop)", "Нужна технология «{name}» (мастерская)", "Requiere «{name}» (taller)", "Requer «{name}» (oficina)", "Nécessite « {name} » (atelier)", "Benötigt „{name}“ (Werkstatt)", "需要科技“{name}”（工坊）", "技術「{name}」が必要（工房）", "“{name}” तकनीक चाहिए (कार्यशाला)", "يتطلب «{name}» (الورشة)"],
+  upgraded:       ["Upgraded: {name}", "Улучшено: {name}", "Mejorado: {name}", "Melhorado: {name}", "Amélioré : {name}", "Verbessert: {name}", "已升级：{name}", "強化：{name}", "बढ़ाया: {name}", "تم التطوير: {name}"],
+  repaired:       ["Repaired!", "Отремонтировано!", "¡Reparado!", "Consertado!", "Réparé !", "Repariert!", "已修复！", "修理完了！", "मरम्मत हो गई!", "تم الإصلاح!"],
+  build_ws_first: ["Build a workshop first", "Сначала постройте мастерскую", "Primero construye un taller", "Construa uma oficina primeiro", "Construisez d'abord un atelier", "Baue zuerst eine Werkstatt", "先建造工坊", "まず工房を建てよう", "पहले कार्यशाला बनाएँ", "ابنِ ورشة أولًا"],
+  crafted:        ["Crafted: {name}!", "Создано: {name}!", "¡Fabricado: {name}!", "Fabricado: {name}!", "Fabriqué : {name} !", "Hergestellt: {name}!", "已制作：{name}！", "作成：{name}！", "बनाया: {name}!", "تم الصنع: {name}!"],
+  research_first: ["Research “{name}” first", "Сначала изучите «{name}»", "Primero investiga «{name}»", "Pesquise «{name}» primeiro", "Recherchez d'abord « {name} »", "Erforsche zuerst „{name}“", "先研究“{name}”", "先に「{name}」を研究", "पहले “{name}” सीखें", "ابحث «{name}» أولًا"],
+  researched:     ["Researched: {name}!", "Изучено: {name}!", "¡Investigado: {name}!", "Pesquisado: {name}!", "Recherché : {name} !", "Erforscht: {name}!", "已研究：{name}！", "研究完了：{name}！", "सीख लिया: {name}!", "تم البحث: {name}!"],
+  limit_t:        ["Limit: {name} — max {n}", "Лимит: {name} — максимум {n} шт.", "Límite: {name} — máx. {n}", "Limite: {name} — máx. {n}", "Limite : {name} — max {n}", "Limit: {name} — max. {n}", "上限：{name}最多{n}个", "上限：{name}は最大{n}", "सीमा: {name} — अधिकतम {n}", "الحد: {name} — بحد أقصى {n}"],
+  limit_done:     ["Max built: {name} {n}/{n}", "Построено максимум: {name} {n}/{n}", "Máximo construido: {name} {n}/{n}", "Máximo construído: {name} {n}/{n}", "Maximum construit : {name} {n}/{n}", "Maximum gebaut: {name} {n}/{n}", "已达上限：{name} {n}/{n}", "最大数建設：{name} {n}/{n}", "अधिकतम बने: {name} {n}/{n}", "بُني الحد الأقصى: {name} {n}/{n}"],
+  occupied:       ["Space occupied", "Место занято", "Espacio ocupado", "Espaço ocupado", "Place occupée", "Platz belegt", "位置被占用", "場所がふさがっている", "जगह भरी है", "المكان مشغول"],
+  blocked_by:     ["Blocked by a {name}", "Мешает: {name}", "Lo bloquea: {name}", "Bloqueado por: {name}", "Bloqué par : {name}", "Blockiert durch: {name}", "被挡住：{name}", "じゃま：{name}", "रुकावट: {name}", "يعيقه: {name}"],
+  in_water:       ["Can't build in water", "Нельзя строить в воде", "No se puede construir en el agua", "Não dá para construir na água", "Impossible de bâtir dans l'eau", "Nicht im Wasser bauen", "不能建在水中", "水の中には建てられない", "पानी में नहीं बना सकते", "لا يمكن البناء في الماء"],
+  too_steep:      ["Too steep", "Слишком круто", "Demasiado empinado", "Muito íngreme", "Trop en pente", "Zu steil", "太陡了", "急すぎる", "बहुत ढलान", "شديد الانحدار"],
+  too_far:        ["Too far", "Слишком далеко", "Demasiado lejos", "Muito longe", "Trop loin", "Zu weit", "太远了", "遠すぎる", "बहुत दूर", "بعيد جدًا"],
+  step_away:      ["Step away", "Отойдите", "Aléjate", "Afaste-se", "Reculez", "Geh zurück", "请走开", "離れて", "हटें", "ابتعد"],
+  quarry_only:    ["Quarry only (follow the arrow)", "Только в карьере (по стрелке)", "Solo en la cantera (sigue la flecha)", "Só na pedreira (siga a seta)", "Seulement dans la carrière (flèche)", "Nur im Steinbruch (Pfeil)", "只能在采石场（看箭头）", "採石場のみ（矢印へ）", "सिर्फ़ खदान में (तीर देखें)", "في المحجر فقط (اتبع السهم)"],
+  standing_here:  ["You're standing there", "Вы стоите на месте", "Estás encima", "Você está em cima", "Vous êtes dessus", "Du stehst dort", "你站在这里", "そこに立っている", "आप वहाँ खड़े हैं", "أنت تقف هنا"],
+  cant_build:     ["You can't build here", "Здесь нельзя строить", "No se puede construir aquí", "Não dá para construir aqui", "Impossible de bâtir ici", "Hier kann man nicht bauen", "此处无法建造", "ここには建てられない", "यहाँ नहीं बना सकते", "لا يمكن البناء هنا"],
+  buy_for_cannon: ["Buy a bird to man the cannon (🐦)", "Купите птицу, чтобы она села за пушку (🐦)", "Compra un ave para el cañón (🐦)", "Compre um pássaro para o canhão (🐦)", "Achetez un oiseau pour le canon (🐦)", "Kaufe einen Vogel für die Kanone (🐦)", "购买鸟来操作大炮（🐦）", "大砲用に鳥を買おう（🐦）", "तोप के लिए पक्षी ख़रीदें (🐦)", "اشترِ طائرًا للمدفع (🐦)"],
+  quest_done:     ["🏆 Quest complete: {q} (+{r} 🪙)", "🏆 Задание выполнено: {q} (+{r} 🪙)", "🏆 Misión cumplida: {q} (+{r} 🪙)", "🏆 Missão cumprida: {q} (+{r} 🪙)", "🏆 Quête réussie : {q} (+{r} 🪙)", "🏆 Aufgabe erledigt: {q} (+{r} 🪙)", "🏆 完成任务：{q}（+{r} 🪙）", "🏆 クエスト達成：{q}（+{r} 🪙）", "🏆 काम पूरा: {q} (+{r} 🪙)", "🏆 أُنجزت المهمة: {q} (+{r} 🪙)"],
+  new_day:        ["☀️ Day {n}", "☀️ День {n}", "☀️ Día {n}", "☀️ Dia {n}", "☀️ Jour {n}", "☀️ Tag {n}", "☀️ 第{n}天", "☀️ {n}日目", "☀️ दिन {n}", "☀️ اليوم {n}"],
+  saved:          ["💾 Game saved", "💾 Игра сохранена", "💾 Partida guardada", "💾 Jogo salvo", "💾 Partie sauvegardée", "💾 Spiel gespeichert", "💾 已保存", "💾 セーブしました", "💾 खेल सेव हुआ", "💾 تم الحفظ"],
+  save_fail:      ["Couldn't save", "Не удалось сохранить", "No se pudo guardar", "Não foi possível salvar", "Échec de la sauvegarde", "Speichern fehlgeschlagen", "保存失败", "セーブできませんでした", "सेव नहीं हुआ", "تعذّر الحفظ"],
+  gear_bought:    ["Bought: {name}!", "Куплено: {name}!", "¡Comprado: {name}!", "Comprado: {name}!", "Acheté : {name} !", "Gekauft: {name}!", "已购买：{name}！", "購入：{name}！", "ख़रीदा: {name}!", "تم الشراء: {name}!"],
+};
+
+// ----- движок -----
+const LANG_IDX = { en: 0, ru: 1, es: 2, pt: 3, fr: 4, de: 5, zh: 6, ja: 7, hi: 8, ar: 9 };
+let LANG = 'en';
+function tr(key, vars) {
+  const row = TR_UI[key] || TR_DATA[key];
+  let s = row ? (row[LANG_IDX[LANG]] || row[0]) : key;
+  if (vars) s = s.replace(/\{(\w+)\}/g, (m, k) => (vars[k] !== undefined ? vars[k] : m));
+  return s;
+}
+// Переводит названия и описания в игровых таблицах
+function applyDataLang() {
+  for (const k in RES_INFO) RES_INFO[k].name = tr('r.' + k);
+  for (const k in BIRDS) { BIRDS[k].name = tr('b.' + k); BIRDS[k].desc = tr('bd.' + k); }
+  for (const k in HEROES) { HEROES[k].name = tr('h.' + k); HEROES[k].desc = tr('hd.' + k); HEROES[k].perk = tr('hp.' + k); }
+  for (const k in ENEMIES) { ENEMIES[k].name = tr('e.' + k); if (TR_DATA['ed.' + k]) ENEMIES[k].desc = tr('ed.' + k); }
+  for (const k in BUILD) { BUILD[k].name = tr('B.' + k); BUILD[k].desc = tr('Bd.' + k); }
+  BUILD_CATS.forEach(c => c[1] = tr('cat.' + c[0]));
+  WALL_LEVELS.forEach((l, i) => l.name = tr('wl' + (i + 1)));
+  CANNON_LEVELS.forEach((l, i) => l.name = tr('cl' + (i + 1)));
+  GATE_LEVELS.forEach((l, i) => l.name = tr('gl' + (i + 1)));
+  BALLISTA_LEVELS.forEach((l, i) => l.name = tr('bl' + (i + 1)));
+  SHAFT_LEVELS.forEach((l, i) => l.name = tr('sl' + (i + 1)));
+  for (const k in TECH) { TECH[k].name = tr('t.' + k); TECH[k].desc = tr('td.' + k); }
+  AXES.forEach((a, i) => a.name = tr('ax' + i));
+  PICKS.forEach((a, i) => a.name = tr('pk' + i));
+  for (const k in NODE_INFO) NODE_INFO[k].name = tr('n.' + k);
+  for (const k in GEAR) { GEAR[k].name = tr('g.' + k); GEAR[k].desc = tr('gd.' + k); }
+  for (const k in DIFFICULTY) { DIFFICULTY[k].name = tr('d.' + k); DIFFICULTY[k].desc = tr('dd.' + k); }
+  QUESTS.forEach((q, i) => q.text = tr('q' + i));
+  if (typeof World !== 'undefined' && World.BIOMES) World.BIOMES.forEach(b => b.name = tr('bio.' + b.id));
+}
+function setLang(id) {
+  LANG = LANG_IDX[id] !== undefined ? id : 'en';
+  document.documentElement.lang = LANG;
+  applyDataLang();
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = tr(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-html]').forEach(el => { el.innerHTML = tr(el.dataset.i18nHtml); });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = tr(el.dataset.i18nTitle); });
+  document.title = tr('title');
+}
 
 </script>
 <script>
@@ -2191,7 +2720,7 @@ const G = window.G = {};
     hand.add(Models.makeTool(kind, tier));
     P.tool = kind; P.toolTier = tier;
   }
-  G.selectTool = k => { if (k === 'pick' && S.tools.pick < 0) { UI.toast('Кирки пока нет — сделайте её в мастерской', 'warn'); return; } setTool(k); };
+  G.selectTool = k => { if (k === 'pick' && S.tools.pick < 0) { UI.toast(tr('no_pick_yet'), 'warn'); return; } setTool(k); };
   G.playerTool = () => P ? P.tool : 'axe';
 
   // ---------------- Постройки ----------------
@@ -2252,7 +2781,7 @@ const G = window.G = {};
     spawnParticles(V(b.x, b.mesh.position.y + 1.2, b.z), c, 26, 6, 0.35, 1.4);
     spawnParticles(V(b.x, b.mesh.position.y + 0.5, b.z), 0xbfae90, 12, 2.5, 0.6, 1.2);
     Sound.play('crumble');
-    UI.toast(`${BUILD[b.t].name} разрушен${b.t === 'wall' ? 'а' : ''}!`, 'bad');
+    UI.toast(tr('destroyed', { name: BUILD[b.t].name }), 'bad');
     if (b.t === 'core') { removeBuilding(b); gameOver(); return; }
     removeBuilding(b);
   }
@@ -2262,8 +2791,8 @@ const G = window.G = {};
     if (b.hp <= 0) destroyBuilding(b);
   }
   G.buildingLabel = b => {
-    if (b.t === 'wall') return `${WALL_LEVELS[b.lvl - 1].name} (ур. ${b.lvl})`;
-    if (LEVELS[b.t]) return `${LEVELS[b.t][b.lvl - 1].name} (ур. ${b.lvl})`;
+    if (b.t === 'wall') return tr('lvl', { name: WALL_LEVELS[b.lvl - 1].name, l: b.lvl });
+    if (LEVELS[b.t]) return tr('lvl', { name: LEVELS[b.t][b.lvl - 1].name, l: b.lvl });
     return BUILD[b.t].name;
   };
 
@@ -2274,7 +2803,7 @@ const G = window.G = {};
   G.missing = cost => Object.keys(cost).filter(k => (S.res[k] || 0) < cost[k]).map(k => `${RES_INFO[k].icon}${cost[k] - (S.res[k] || 0)}`).join(' ');
   function pay(cost) { for (const k in cost) S.res[k] -= cost[k]; }
   function tryPay(cost) {
-    if (!G.canAfford(cost)) { UI.toast('Не хватает ресурсов: ' + G.missing(cost), 'warn'); Sound.play('error'); return false; }
+    if (!G.canAfford(cost)) { UI.toast(tr('not_enough') + G.missing(cost), 'warn'); Sound.play('error'); return false; }
     pay(cost); return true;
   }
   function addRes(k, n, at) {
@@ -2283,7 +2812,7 @@ const G = window.G = {};
     const before = S.res[k];
     S.res[k] = Math.min(cap, S.res[k] + n);
     const got = S.res[k] - before;
-    if (got <= 0) { if (at) UI.floatText(at, 'Склад полон!', '#ff8a6a'); return; }
+    if (got <= 0) { if (at) UI.floatText(at, tr('storage_full'), '#ff8a6a'); return; }
     if (S.stats[k] !== undefined) S.stats[k] += got;
     if (at) UI.floatText(at, `+${Math.round(got * 10) / 10 === Math.round(got) ? Math.round(got) : got.toFixed(1)} ${RES_INFO[k].icon}`, k === 'coins' ? '#ffe066' : '#ffffff');
   }
@@ -2312,7 +2841,7 @@ const G = window.G = {};
     if (bird.cannon) bird.cannon.gunner = null;
     bird.cannon = c; c.gunner = bird; bird.hidden = false; bird.mesh.visible = true; bird.state = 'gunner'; bird.perchB = null;
   }
-  G.assignBird = (bird, c) => { assignBird(bird, c); Sound.play('chirp'); UI.toast(`${BIRDS[bird.sp].name} садится за пушку!`, 'good'); };
+  G.assignBird = (bird, c) => { assignBird(bird, c); Sound.play('chirp'); UI.toast(tr('takes_cannon', { name: BIRDS[bird.sp].name }), 'good'); };
   G.unassignBird = bird => { if (bird.cannon) { bird.cannon.gunner = null; bird.cannon = null; } bird.state = 'walk'; flyTo(bird, randomGroundPoint(), 'walk'); };
   G.freeCannons = () => B.filter(b => b.t === 'cannon' && !b.gunner);
   function autoAssign() {
@@ -2321,12 +2850,12 @@ const G = window.G = {};
   }
   G.buyBird = function (sp) {
     const d = BIRDS[sp];
-    if (d.market && G.countB('market') === 0) { UI.toast('Нужен «Птичий рынок» для этой птицы', 'warn'); Sound.play('error'); return false; }
-    if (BD.length >= G.birdCap()) { UI.toast('Нет мест! Постройте скворечник или птичник', 'warn'); Sound.play('error'); return false; }
+    if (d.market && G.countB('market') === 0) { UI.toast(tr('need_market_t'), 'warn'); Sound.play('error'); return false; }
+    if (BD.length >= G.birdCap()) { UI.toast(tr('no_slots'), 'warn'); Sound.play('error'); return false; }
     if (!tryPay({ coins: d.price, food: d.food })) return false;
     const b = addBird(sp); S.stats.boughtBirds++;
     Sound.play('coin'); Sound.play('chirp');
-    UI.toast(`Куплен(а): ${d.name}!`, 'good');
+    UI.toast(tr('bought', { name: d.name }), 'good');
     const c = G.freeCannons()[0]; if (c) G.assignBird(b, c);
     return true;
   };
@@ -2357,7 +2886,7 @@ const G = window.G = {};
   let dangerPrev = false;
   function updateBirds(dt) {
     const danger = E.some(e => !e.dying && e.pos.length() < 34);
-    if (danger && !dangerPrev) { Sound.play('chirp'); if (BD.some(b => !b.cannon)) UI.toast('Птицы прячутся от врагов!', 'warn'); }
+    if (danger && !dangerPrev) { Sound.play('chirp'); if (BD.some(b => !b.cannon)) UI.toast(tr('birds_hide'), 'warn'); }
     dangerPrev = danger;
     const night = World.daylight < 0.12 && !S.waveActive;
     for (const b of BD) {
@@ -2437,7 +2966,7 @@ const G = window.G = {};
     b.hp -= dmg;
     spawnParticles(b.mesh.position.clone().add(V(0, 0.5, 0)), 0xffffff, 5, 2.5, 0.12, 0.8);
     if (b.hp <= 0) {
-      UI.toast(`Погибла птица: ${BIRDS[b.sp].name}!`, 'bad');
+      UI.toast(tr('bird_died', { name: BIRDS[b.sp].name }), 'bad');
       spawnParticles(b.mesh.position.clone().add(V(0, 0.5, 0)), 0xeeeeee, 14, 3, 0.15, 1.5);
       if (b.cannon) b.cannon.gunner = null;
       scene.remove(b.mesh); BD.splice(BD.indexOf(b), 1);
@@ -2458,8 +2987,8 @@ const G = window.G = {};
   function startWave() {
     S.waveActive = true; S.spawnList = waveList(S.wave); S.spawnCd = 0; S.waveDir = Math.random() * Math.PI * 2;
     Sound.play('horn'); Sound.setMode('battle');
-    UI.toast(`🐺 Волна ${S.wave}! Звери нападают!`, 'bad', 3500);
-    UI.banner(`ВОЛНА ${S.wave}`);
+    UI.toast(tr('wave_start', { n: S.wave }), 'bad', 3500);
+    UI.banner(tr('wave_banner', { n: S.wave }));
   }
   G.startWaveNow = function () { if (S && !S.waveActive) { S.waveTimer = 0; S.earlyBonus = true; } };
   function spawnEnemy(type, pos) {
@@ -2469,7 +2998,7 @@ const G = window.G = {};
     const e = { type, d, mesh, pos: pos.clone(), vel: V(0, 0, 0), yaw: 0, hp: d.hp * hpMul, maxHp: d.hp * hpMul, dmg: d.dmg * (1 + (n - 1) * 0.06) * DF().dmg, atkCd: 0, target: null, tkind: null, retarget: 0, slow: 0, dying: 0, mode: 'walk', t: Math.random() * 10, hitT: 0, flee: false, stuck: 0 };
     mesh.position.copy(pos);
     E.push(e);
-    if (d.boss) { UI.toast(`⚠️ БОСС: ${d.name}!${d.desc ? ' ' + d.desc + '.' : ''}`, 'bad', 4500); UI.banner('БОСС!'); Sound.play('growl', 1.6); e.summonT = 6; }
+    if (d.boss) { UI.toast(tr('boss_appears', { name: d.name, desc: d.desc ? ' ' + d.desc + '.' : '' }), 'bad', 4500); UI.banner(tr('boss_banner')); Sound.play('growl', 1.6); e.summonT = 6; }
     return e;
   }
   function updateWaves(dt) {
@@ -2491,7 +3020,7 @@ const G = window.G = {};
       S.waveActive = false;
       const bonus = Math.round((15 + S.wave * 6) * (S.earlyBonus ? 1.25 : 1) * DF().reward);
       addRes('coins', bonus);
-      UI.toast(`✅ Волна ${S.wave} отбита! +${bonus} 🪙`, 'good', 3500);
+      UI.toast(tr('wave_done', { n: S.wave, c: bonus }), 'good', 3500);
       Sound.play('win'); Sound.setMode('calm');
       S.wave++; S.earlyBonus = false;
       S.waveTimer = Math.round(DF().prep * Math.max(0.75, 1 - (S.wave - 1) * 0.01));
@@ -2545,10 +3074,10 @@ const G = window.G = {};
       if (e.burn) { e.burn.t -= dt; hurtEnemy(e, e.burn.dps * dt, true); if (Math.random() < 0.3) spawnParticles(e.pos.clone().add(V(0, 0.8 * e.d.size, 0)), Math.random() < 0.5 ? 0xff7a20 : 0xffd040, 1, 1, 0.18, 0.4, -0.5); if (e.burn.t <= 0) e.burn = null; if (e.dying > 0) continue; }
       if (e.stun > 0) { e.stun -= dt; m.rotation.z = Math.sin(e.t * 20) * 0.05; Models.animEnemy(m, 'idle', e.t, e.d.speed); continue; }
       e.atkCd -= dt;
-      if (e.type === 'alpha') { e.summonT -= dt; if (e.summonT <= 0 && E.length < 70) { e.summonT = 12; for (let k = 0; k < 2; k++) spawnEnemy('wolf', V(e.pos.x + rand(-3, 3), 0, e.pos.z + rand(-3, 3))); UI.floatText(e.pos.clone().add(V(0, 3, 0)), 'Ау-у-у!', '#ff8080'); Sound.play('growl', 1.2); } }
+      if (e.type === 'alpha') { e.summonT -= dt; if (e.summonT <= 0 && E.length < 70) { e.summonT = 12; for (let k = 0; k < 2; k++) spawnEnemy('wolf', V(e.pos.x + rand(-3, 3), 0, e.pos.z + rand(-3, 3))); UI.floatText(e.pos.clone().add(V(0, 3, 0)), tr('howl'), '#ff8080'); Sound.play('growl', 1.2); } }
       if (e.type === 'treant' && e.hp < e.maxHp) e.hp = Math.min(e.maxHp, e.hp + e.maxHp * 0.012 * dt);
       // бегство (лиса при малом здоровье)
-      if (!e.flee && e.type === 'fox' && e.hp < e.maxHp * 0.3) { e.flee = true; UI.floatText(e.pos.clone().add(V(0, 1.5, 0)), 'Убегает!', '#ffd080'); }
+      if (!e.flee && e.type === 'fox' && e.hp < e.maxHp * 0.3) { e.flee = true; UI.floatText(e.pos.clone().add(V(0, 1.5, 0)), tr('flees'), '#ffd080'); }
       let tx, tz, reach = 0;
       if (e.flee) {
         const l = e.pos.length() || 1; tx = e.pos.x / l * 120; tz = e.pos.z / l * 120;
@@ -2603,7 +3132,7 @@ const G = window.G = {};
     e.hp -= dmg; if (!quiet) e.hitT = 0.15;
     if (e.hp <= 0) {
       e.dying = 1.6; e.mesh.scale.setScalar(e.mesh.userData.baseScale);
-      if (e.d.boss) { S.stats.bosses++; UI.toast(`🏆 Босс повержен: ${e.d.name}!`, 'good', 4000); }
+      if (e.d.boss) { S.stats.bosses++; UI.toast(tr('boss_down', { name: e.d.name }), 'good', 4000); }
       const c = Math.max(1, Math.round(e.d.coins * HEROES[S.hero].coinMul * (1 + S.wave * 0.03) * DF().reward));
       addRes('coins', c, e.pos.clone().add(V(0, 1.6, 0)));
       if (e.d.food) addRes('food', e.d.food, e.pos.clone().add(V(0, 2.3, 0)));
@@ -2705,7 +3234,7 @@ const G = window.G = {};
           const e = p.target && !p.target.dying && p.target.pos.distanceTo(p.to) < 2.5 ? p.target : nearestEnemy(p.to.x, p.to.z, 1.6);
           if (e) { hurtEnemy(e, p.dmg); applyFx(e, p); }
         }
-        if (p.crit) UI.floatText(p.to.clone().add(V(0, 1.5, 0)), 'КРИТ!', '#ff5050');
+        if (p.crit) UI.floatText(p.to.clone().add(V(0, 1.5, 0)), tr('crit'), '#ff5050');
       }
     }
   }
@@ -2739,13 +3268,13 @@ const G = window.G = {};
     Sound.play('hurt'); UI.flash();
     if (P.hp <= 0) {
       P.hp = 0; P.dead = 5; P.mesh.rotation.x = -Math.PI / 2;
-      UI.toast('Вы ранены! Возвращение на базу через 5 сек…', 'bad', 4500);
+      UI.toast(tr('you_down'), 'bad', 4500);
     }
   }
   function nodeOK(n) {
     const info = NODE_INFO[n.kind];
     if (info.tool === 'pick' && S.tools.pick < info.minPick) {
-      if (time - P.hintT > 3) { P.hintT = time; UI.toast(S.tools.pick < 0 ? 'Нужна кирка! Постройте мастерскую и сделайте её.' : 'Для железа нужна улучшенная кирка', 'warn'); }
+      if (time - P.hintT > 3) { P.hintT = time; UI.toast(S.tools.pick < 0 ? tr('need_pick') : tr('need_pick2'), 'warn'); }
       return false;
     }
     return true;
@@ -2837,7 +3366,7 @@ const G = window.G = {};
     const hero = HEROES[S.hero], m = P.mesh;
     if (P.dead > 0) {
       P.dead -= dt;
-      if (P.dead <= 0) { P.dead = 0; P.hp = P.maxHp; P.pos.set(0, 0, 5); m.rotation.x = 0; UI.toast('Вы снова в строю!', 'good'); }
+      if (P.dead <= 0) { P.dead = 0; P.hp = P.maxHp; P.pos.set(0, 0, 5); m.rotation.x = 0; UI.toast(tr('back_in_action'), 'good'); }
       m.position.set(P.pos.x, World.groundAt(P.pos.x, P.pos.z) + 0.3, P.pos.z);
       return;
     }
@@ -2848,7 +3377,7 @@ const G = window.G = {};
     const fx = -Math.sin(cam.yaw), fz = -Math.cos(cam.yaw), rx = Math.cos(cam.yaw), rz = -Math.sin(cam.yaw);
     let mx = fx * iz + rx * ix, mz = fz * iz + rz * ix; const ml = Math.hypot(mx, mz);
     const wantRun = input.run && mag > 0.1 && !P.tired;
-    if (wantRun) { P.st -= 20 * dt; P.stRest = 0.8; if (P.st <= 0) { P.st = 0; P.tired = true; input.run = false; UI.toast('Выдохся! Отдохните немного', 'warn'); } }
+    if (wantRun) { P.st -= 20 * dt; P.stRest = 0.8; if (P.st <= 0) { P.st = 0; P.tired = true; input.run = false; UI.toast(tr('exhausted'), 'warn'); } }
     else { P.stRest -= dt; if (P.stRest <= 0) P.st = Math.min(P.maxSt, P.st + 20 * dt); if (P.tired && P.st > P.maxSt * 0.3) P.tired = false; }
     const running = wantRun && P.st > 0;
     P.moving = 0;
@@ -2890,7 +3419,7 @@ const G = window.G = {};
     if (!S.gear) S.gear = { own: {}, eq: null };
     if (S.gear.own[id]) return G.equipGear(id);
     if (!tryPay(GEAR[id].cost)) return false;
-    S.gear.own[id] = true; Sound.play('upgrade'); UI.toast(`Куплено: ${GEAR[id].name}!`, 'good');
+    S.gear.own[id] = true; Sound.play('upgrade'); UI.toast(tr('gear_bought', { name: GEAR[id].name }), 'good');
     return G.equipGear(id);
   };
   G.equipGear = function (id) {
@@ -2899,8 +3428,8 @@ const G = window.G = {};
     return true;
   };
   G.eat = function () {
-    if (S.res.food < 3) { UI.toast('Нужно 3 🍖', 'warn'); Sound.play('error'); return; }
-    if (P.hp >= P.maxHp) { UI.toast('Здоровье уже полное', 'info'); return; }
+    if (S.res.food < 3) { UI.toast(tr('need_food'), 'warn'); Sound.play('error'); return; }
+    if (P.hp >= P.maxHp) { UI.toast(tr('hp_full'), 'info'); return; }
     S.res.food -= 3; P.hp = Math.min(P.maxHp, P.hp + 35); Sound.play('pickup'); UI.toast('+35 ❤️', 'good');
   };
 
@@ -2922,14 +3451,14 @@ const G = window.G = {};
   };
   G.upgrade = function (b) {
     const u = G.upgradeCost(b); if (!u) return false;
-    if (u.req && !S.tech[u.req]) { UI.toast(`Нужна технология «${TECH[u.req].name}»`, 'warn'); Sound.play('error'); return false; }
+    if (u.req && !S.tech[u.req]) { UI.toast(tr('need_tech_t', { name: TECH[u.req].name }), 'warn'); Sound.play('error'); return false; }
     if (!tryPay(u.cost)) return false;
     const frac = b.hp / b.maxHp; void frac;
     b.lvl++; b.maxHp = maxHpOf(b); b.hp = b.maxHp;
     buildMesh(b);
     if (b.cannonId && byId[b.cannonId]) buildMesh(byId[b.cannonId]);
     Sound.play('upgrade'); spawnParticles(V(b.x, b.mesh.position.y + 2, b.z), 0xffe066, 16, 4, 0.18, 1);
-    UI.toast(`Улучшено: ${G.buildingLabel(b)}`, 'good');
+    UI.toast(tr('upgraded', { name: G.buildingLabel(b) }), 'good');
     return true;
   };
   G.repairCost = function (b) {
@@ -2945,7 +3474,7 @@ const G = window.G = {};
     const c = G.repairCost(b); if (!c) return;
     if (!tryPay(c)) return;
     b.hp = b.maxHp; Sound.play('build'); spawnParticles(V(b.x, b.mesh.position.y + 1.5, b.z), 0x80ff80, 10, 3, 0.15, 0.8);
-    UI.toast('Отремонтировано!', 'good');
+    UI.toast(tr('repaired'), 'good');
   };
   G.demolish = function (b) {
     if (b.t === 'core') return;
@@ -2960,21 +3489,21 @@ const G = window.G = {};
   // ---------------- Мастерская ----------------
   G.hasWorkshop = () => G.countB('workshop') > 0;
   G.craftTool = function (kind) {
-    if (!G.hasWorkshop()) { UI.toast('Сначала постройте мастерскую', 'warn'); return false; }
+    if (!G.hasWorkshop()) { UI.toast(tr('build_ws_first'), 'warn'); return false; }
     const list = kind === 'axe' ? AXES : PICKS; const cur = S.tools[kind]; const next = list[cur + 1];
     if (!next) return false;
-    if (next.req && !S.tech[next.req]) { UI.toast(`Нужна технология «${TECH[next.req].name}»`, 'warn'); Sound.play('error'); return false; }
+    if (next.req && !S.tech[next.req]) { UI.toast(tr('need_tech_t', { name: TECH[next.req].name }), 'warn'); Sound.play('error'); return false; }
     if (!tryPay(next.cost)) return false;
     S.tools[kind]++; P.toolTier = -9; setTool(kind);
-    Sound.play('upgrade'); UI.toast(`Создано: ${next.name}!`, 'good');
+    Sound.play('upgrade'); UI.toast(tr('crafted', { name: next.name }), 'good');
     return true;
   };
   G.research = function (id) {
-    if (!G.hasWorkshop()) { UI.toast('Сначала постройте мастерскую', 'warn'); return false; }
-    const t = TECH[id]; if (S.tech[id]) return false;
-    if (t.need && !S.tech[t.need]) { UI.toast(`Сначала изучите «${TECH[t.need].name}»`, 'warn'); Sound.play('error'); return false; }
-    if (!tryPay(t.cost)) return false;
-    S.tech[id] = true; Sound.play('win'); UI.toast(`Изучено: ${t.name}!`, 'good', 3000);
+    if (!G.hasWorkshop()) { UI.toast(tr('build_ws_first'), 'warn'); return false; }
+    const tt = TECH[id]; if (S.tech[id]) return false;
+    if (tt.need && !S.tech[tt.need]) { UI.toast(tr('research_first', { name: TECH[tt.need].name }), 'warn'); Sound.play('error'); return false; }
+    if (!tryPay(tt.cost)) return false;
+    S.tech[id] = true; Sound.play('win'); UI.toast(tr('researched', { name: tt.name }), 'good', 3000);
     return true;
   };
 
@@ -2988,8 +3517,8 @@ const G = window.G = {};
   }
   G.enterBuild = function (t) {
     const d = BUILD[t];
-    if (d.req && !S.tech[d.req]) { UI.toast(`Нужна технология «${TECH[d.req].name}» (мастерская)`, 'warn'); Sound.play('error'); return false; }
-    if (G.countB(t) >= (d.max || 99)) { UI.toast(`Лимит: ${d.name} — максимум ${d.max} шт.`, 'warn'); Sound.play('error'); return false; }
+    if (d.req && !S.tech[d.req]) { UI.toast(tr('need_tech_ws', { name: TECH[d.req].name }), 'warn'); Sound.play('error'); return false; }
+    if (G.countB(t) >= (d.max || 99)) { UI.toast(tr('limit_t', { name: d.name, n: d.max }), 'warn'); Sound.play('error'); return false; }
     if (build) G.cancelBuild();
     build = { t, rot: 0, ghost: makeGhost(t, false), ghostWall: t === 'cannon' ? makeGhost(t, true) : null, x: 0, z: 0, valid: false, reason: '', onWall: null };
     return true;
@@ -3029,15 +3558,15 @@ const G = window.G = {};
     const [w, dd] = footprint(t, rot);
     if (!build.onWall) {
       const minx = x - w / 2, maxx = x + w / 2, minz = z - dd / 2, maxz = z + dd / 2, sh = 0.3;
-      for (const b of B) { if (b.onWall) continue; const s2 = WALLISH[t] && WALLISH[b.t] ? 0.75 : sh; if (minx + s2 < b.maxx && maxx - s2 > b.minx && minz + s2 < b.maxz && maxz - s2 > b.minz) { valid = false; reason = 'Место занято'; break; } }
-      if (valid) for (const n of World.nodesNear(x, z, 6, nearTmp)) { if (!n.alive) continue; const cx = clamp(n.x, minx, maxx), cz = clamp(n.z, minz, maxz); if (Math.hypot(n.x - cx, n.z - cz) < n.r * 0.8) { valid = false; reason = 'Мешает ' + NODE_INFO[n.kind].name.toLowerCase(); break; } }
+      for (const b of B) { if (b.onWall) continue; const s2 = WALLISH[t] && WALLISH[b.t] ? 0.75 : sh; if (minx + s2 < b.maxx && maxx - s2 > b.minx && minz + s2 < b.maxz && maxz - s2 > b.minz) { valid = false; reason = tr('occupied'); break; } }
+      if (valid) for (const n of World.nodesNear(x, z, 6, nearTmp)) { if (!n.alive) continue; const cx = clamp(n.x, minx, maxx), cz = clamp(n.z, minz, maxz); if (Math.hypot(n.x - cx, n.z - cz) < n.r * 0.8) { valid = false; reason = tr('blocked_by', { name: NODE_INFO[n.kind].name }); break; } }
       const by = baseY(t, x, z, rot);
-      if (valid && by.min < World.WATER_Y + 0.1) { valid = false; reason = 'Нельзя строить в воде'; }
-      if (valid && by.max - by.min > 1.6) { valid = false; reason = 'Слишком круто'; }
-      if (valid && Math.hypot(x, z) > 160) { valid = false; reason = 'Слишком далеко'; }
-      if (valid && Math.hypot(P.pos.x - x, P.pos.z - z) < 0.5) { valid = false; reason = 'Отойдите'; }
-      if (valid && t === 'minelift' && !World.inMine(x, z)) { valid = false; reason = 'Только в карьере (восток)'; }
-      if (valid && P.pos.x > minx - 0.35 && P.pos.x < maxx + 0.35 && P.pos.z > minz - 0.35 && P.pos.z < maxz + 0.35 && !PASS_PLAYER[t]) { valid = false; reason = 'Вы стоите на месте'; }
+      if (valid && by.min < World.WATER_Y + 0.1) { valid = false; reason = tr('in_water'); }
+      if (valid && by.max - by.min > 1.6) { valid = false; reason = tr('too_steep'); }
+      if (valid && Math.hypot(x, z) > 160) { valid = false; reason = tr('too_far'); }
+      if (valid && Math.hypot(P.pos.x - x, P.pos.z - z) < 0.5) { valid = false; reason = tr('step_away'); }
+      if (valid && t === 'minelift' && !World.inMine(x, z)) { valid = false; reason = tr('quarry_only'); }
+      if (valid && P.pos.x > minx - 0.35 && P.pos.x < maxx + 0.35 && P.pos.z > minz - 0.35 && P.pos.z < maxz + 0.35 && !PASS_PLAYER[t]) { valid = false; reason = tr('standing_here'); }
     }
     build.x = x; build.z = z; build.valid = valid; build.reason = reason;
     const g = build.onWall ? build.ghostWall : build.ghost;
@@ -3049,9 +3578,9 @@ const G = window.G = {};
   }
   G.placeBuild = function () {
     if (!build) return;
-    if (!build.valid) { UI.toast(build.reason || 'Здесь нельзя строить', 'warn'); Sound.play('error'); return; }
+    if (!build.valid) { UI.toast(build.reason || tr('cant_build'), 'warn'); Sound.play('error'); return; }
     const t = build.t, cost = G.scaleCost(BUILD[t].cost);
-    if (G.countB(t) >= (BUILD[t].max || 99)) { UI.toast(`Лимит: ${BUILD[t].name} — максимум ${BUILD[t].max} шт.`, 'warn'); Sound.play('error'); G.cancelBuild(); return; }
+    if (G.countB(t) >= (BUILD[t].max || 99)) { UI.toast(tr('limit_t', { name: BUILD[t].name, n: BUILD[t].max }), 'warn'); Sound.play('error'); G.cancelBuild(); return; }
     if (!tryPay(cost)) return;
     let b;
     if (build.onWall) b = addBuilding('cannon', build.x, build.z, build.onWall.rot, 1, null, build.onWall.id);
@@ -3059,8 +3588,8 @@ const G = window.G = {};
     S.stats.built++;
     Sound.play('build');
     spawnParticles(V(b.x, b.mesh.position.y + 0.3, b.z), 0xc8b090, 14, 3, 0.35, 0.9);
-    if (t === 'cannon') { const bird = BD.find(x => !x.cannon); if (bird) G.assignBird(bird, b); else UI.toast('Купите птицу, чтобы она села за пушку (🐦)', 'info', 3500); }
-    if (G.countB(t) >= (BUILD[t].max || 99)) { G.cancelBuild(); if (BUILD[t].max > 1) UI.toast(`Построено максимум: ${BUILD[t].name} ${BUILD[t].max}/${BUILD[t].max}`, 'info'); }
+    if (t === 'cannon') { const bird = BD.find(x => !x.cannon); if (bird) G.assignBird(bird, b); else UI.toast(tr('buy_for_cannon'), 'info', 3500); }
+    if (G.countB(t) >= (BUILD[t].max || 99)) { G.cancelBuild(); if (BUILD[t].max > 1) UI.toast(tr('limit_done', { name: BUILD[t].name, n: BUILD[t].max }), 'info'); }
   };
 
   // ---------------- Производство ----------------
@@ -3121,10 +3650,10 @@ const G = window.G = {};
     const q = QUESTS[S.quest];
     if (q && q.check(S)) {
       S.quest++; addRes('coins', q.reward);
-      UI.toast(`🏆 Задание выполнено: ${q.text} (+${q.reward} 🪙)`, 'good', 4000); Sound.play('win');
+      UI.toast(tr('quest_done', { q: q.text, r: q.reward }), 'good', 4000); Sound.play('win');
     }
   }
-  G.questText = () => { const q = QUESTS[S.quest]; return q ? q.text : 'Защищайте птиц как можно дольше!'; };
+  G.questText = () => { const q = QUESTS[S.quest]; return q ? q.text : tr('quest_free'); };
   G.questTarget = () => { const i = S.quest; if (i === 5 || i === 10) return World.MINE; return null; };
 
   // ---------------- Камера ----------------
@@ -3231,7 +3760,7 @@ const G = window.G = {};
   };
   function update(dt) {
     S.stats.time = (S.stats.time || 0) + dt;
-    S.dayTime += dt / 300; if (S.dayTime >= 1) { S.dayTime -= 1; S.day++; UI.toast(`☀️ День ${S.day}`, 'info'); }
+    S.dayTime += dt / 300; if (S.dayTime >= 1) { S.dayTime -= 1; S.day++; UI.toast(tr('new_day', { n: S.day }), 'info'); }
     const dl = World.updateSky(S.dayTime, V(P.pos.x, 0, P.pos.z), dt, time);
     Sound.setNight(dl < 0.2);
     updatePlayer(dt);
@@ -3326,7 +3855,7 @@ const G = window.G = {};
       nodes: World.nodes.filter(n => !n.alive).map(n => [n.idx, Math.round(n.regrow)]),
       cam: { yaw: cam.yaw, pitch: cam.pitch }, savedAt: Date.now(),
     });
-    try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); if (!auto) UI.toast('💾 Игра сохранена', 'info'); else UI.saveIcon(); } catch (e) { UI.toast('Не удалось сохранить', 'bad'); }
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); if (!auto) UI.toast(tr('saved'), 'info'); else UI.saveIcon(); } catch (e) { UI.toast(tr('save_fail'), 'bad'); }
   };
   G.load = function () {
     let data;
@@ -3395,14 +3924,16 @@ const UI = window.UI = {};
   const setLoad = (p, t) => { $('loadbar').style.width = p + '%'; $('loadtxt').textContent = t; };
   const nextFrame = () => new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
   async function boot() {
-    setLoad(10, 'Сажаем деревья…'); await nextFrame();
-    try { G.init($('c')); } catch (e) { setLoad(100, 'Ошибка запуска WebGL: ' + e.message); console.error(e); return; }
-    setLoad(70, 'Птицы прилетают…'); await nextFrame();
+    setLang(G.settings.lang || 'en');
+    setLoad(10, tr('load_trees')); await nextFrame();
+    try { G.init($('c')); } catch (e) { setLoad(100, tr('webgl_err') + e.message); console.error(e); return; }
+    setLoad(70, tr('load_birds')); await nextFrame();
     G.applyQuality();
     try { G.makePortraits(); } catch (e) { console.warn(e); }
-    setLoad(100, 'Готово!'); await nextFrame();
+    setLoad(100, tr('load_done')); await nextFrame();
     G.state = 'menu';
     show('menu');
+    if (!G.settings.lang) openLangPicker(true);
     loop(performance.now());
   }
   let last = 0;
@@ -3415,6 +3946,30 @@ const UI = window.UI = {};
   window.addEventListener('resize', () => { G.resize(); placeIdleSticks(); });
   ['pointerdown', 'pointerup', 'touchstart', 'touchend', 'mousedown', 'click', 'keydown'].forEach(ev => document.addEventListener(ev, () => Sound.init(), { capture: true, passive: true }));
 
+  // ---------------- Выбор языка ----------------
+  function changeLang(id) {
+    G.settings.lang = id; saveSettings(); setLang(id);
+    renderSettings(); refreshContinue(); buildResChips(); promptKey = '';
+    if (G.state === 'select') renderHero();
+    if (modal) renderModal();
+  }
+  function openLangPicker(first) {
+    const cur = G.settings.lang || 'en';
+    $('lp-title').textContent = tr('lang_pick');
+    const list = $('lp-list'); list.innerHTML = '';
+    LANGS.forEach(L => {
+      const b = h('button', { cls: L.id === cur ? 'on' : '', lang: L.id }, h('span', { cls: 'fl' }, L.flag), h('span', null, L.name));
+      tap(b, () => { changeLang(L.id); $('langpick').classList.add('hidden'); });
+      list.append(b);
+    });
+    $('langpick').classList.remove('hidden');
+    void first;
+  }
+  tap($('btn-lang'), () => openLangPicker(false));
+  const langSel = $('s-lang');
+  LANGS.forEach(L => { const o = document.createElement('option'); o.value = L.id; o.textContent = L.flag + ' ' + L.name; langSel.append(o); });
+  langSel.addEventListener('change', () => changeLang(langSel.value));
+
   // ---------------- Главное меню ----------------
   let settingsFrom = 'menu';
   document.querySelectorAll('#menu [data-act]').forEach(b => tap(b, () => {
@@ -3423,17 +3978,17 @@ const UI = window.UI = {};
     if (a === 'back') { $('m-play').classList.add('hidden'); $('m-main').classList.remove('hidden'); }
     if (a === 'settings') openSettings('menu');
     if (a === 'exit') exitGame();
-    if (a === 'continue') { withLoading('Загружаем мир…', () => G.load()).then(ok => { if (ok) enterGame(); else show('menu'); }); }
+    if (a === 'continue') { withLoading(tr('load_world'), () => G.load()).then(ok => { if (ok) enterGame(); else show('menu'); }); }
     if (a === 'new') {
-      if (G.hasSave() && !b.dataset.armed) { b.dataset.armed = '1'; b.innerHTML = '⚠️ ЕЩЁ РАЗ — НАЧАТЬ ЗАНОВО<small>текущее сохранение будет заменено</small>'; setTimeout(() => { delete b.dataset.armed; b.textContent = '🌱 НОВАЯ ИГРА'; }, 4000); return; }
-      delete b.dataset.armed; b.textContent = '🌱 НОВАЯ ИГРА';
+      if (G.hasSave() && !b.dataset.armed) { b.dataset.armed = '1'; b.innerHTML = tr('newgame_confirm'); setTimeout(() => { delete b.dataset.armed; b.textContent = tr('newgame'); }, 4000); return; }
+      delete b.dataset.armed; b.textContent = tr('newgame');
       openSelect();
     }
   }));
   function refreshContinue() {
     const info = G.saveInfo();
     $('btn-continue').disabled = !info;
-    $('saveinfo').textContent = info ? `${HEROES[info.hero] ? HEROES[info.hero].name : ''} · ${(DIFFICULTY[info.diff] || DIFFICULTY.normal).name} · волна ${info.wave}` : 'нет сохранения';
+    $('saveinfo').textContent = info ? tr('save_info', { hero: HEROES[info.hero] ? HEROES[info.hero].name : '', diff: (DIFFICULTY[info.diff] || DIFFICULTY.normal).name, wave: info.wave }) : tr('no_save');
   }
   function exitGame() {
     if (G.state === 'play') G.save(true);
@@ -3447,6 +4002,7 @@ const UI = window.UI = {};
   function openSettings(from) { settingsFrom = from; renderSettings(); $('settings').classList.remove('hidden'); if (from === 'menu') $('menu').classList.add('hidden'); if (from === 'pause') $('pause').classList.add('hidden'); }
   function renderSettings() {
     const s = G.settings;
+    $('s-lang').value = s.lang || 'en';
     document.querySelectorAll('#s-quality button').forEach(b => b.classList.toggle('on', b.dataset.v === s.quality));
     $('s-res').value = s.resolution;
     document.querySelectorAll('#s-view button').forEach(b => b.classList.toggle('on', b.dataset.v === s.view));
@@ -3466,7 +4022,7 @@ const UI = window.UI = {};
   function toggleFullscreen() {
     const d = document, el = d.documentElement;
     if (d.fullscreenElement || d.webkitFullscreenElement) (d.exitFullscreen || d.webkitExitFullscreen).call(d);
-    else { const r = el.requestFullscreen || el.webkitRequestFullscreen; if (r) { const pr = r.call(el); if (pr && pr.catch) pr.catch(() => { }); } else toast('Полный экран не поддерживается этим браузером', 'warn'); }
+    else { const r = el.requestFullscreen || el.webkitRequestFullscreen; if (r) { const pr = r.call(el); if (pr && pr.catch) pr.catch(() => { }); } else toast(tr('full_na'), 'warn'); }
   }
   function goFullscreenMobile() {
     if (!isTouch) return;
@@ -3485,31 +4041,31 @@ const UI = window.UI = {};
     const bar = (lbl, v, max) => h('div', { cls: 'stat' }, h('b', null, lbl), h('div', { cls: 'sb' }, h('i', { style: `width:${Math.min(100, v / max * 100)}%` })));
     const c = $('heroCard'); c.innerHTML = '';
     c.append(h('h3', null, d.name), h('p', null, d.desc),
-      h('div', { cls: 'stats' }, bar('Здоровье', d.hp, 160), bar('Скорость', d.speed, 8), bar('Атака', d.dmg * d.atkRate, 56), bar('Добыча', d.gather, 1.4), bar('Стройка', 1 / d.buildMul, 1.4)),
+      h('div', { cls: 'stats' }, bar(tr('st_hp'), d.hp, 160), bar(tr('st_speed'), d.speed, 8), bar(tr('st_attack'), d.dmg * d.atkRate, 56), bar(tr('st_gather'), d.gather, 1.4), bar(tr('st_build'), 1 / d.buildMul, 1.4)),
       h('div', { cls: 'perk' }, '⭐ ' + d.perk));
     const seg = h('div', { cls: 'seg diff' });
     DIFF_ORDER.forEach(k => { const D = DIFFICULTY[k]; const b = h('button', { cls: (k === selDiff ? 'on ' : '') + 'd-' + k }, D.icon + ' ' + D.name); tap(b, () => { selDiff = k; renderHero(); }); seg.append(b); });
-    c.append(h('div', { style: 'margin-top:8px;font-weight:800' }, 'Сложность:'), seg, h('div', { cls: 'ddesc', style: 'font-size:12px;margin-top:3px;opacity:.85' }, DIFFICULTY[selDiff].desc + ` Подготовка к волне: ${Math.floor(DIFFICULTY[selDiff].prep / 60)}:${String(DIFFICULTY[selDiff].prep % 60).padStart(2, '0')}.`));
+    c.append(h('div', { style: 'margin-top:8px;font-weight:800' }, tr('difficulty')), seg, h('div', { cls: 'ddesc', style: 'font-size:12px;margin-top:3px;opacity:.85' }, DIFFICULTY[selDiff].desc + tr('prep', { t: `${Math.floor(DIFFICULTY[selDiff].prep / 60)}:${String(DIFFICULTY[selDiff].prep % 60).padStart(2, '0')}` })));
     // мир (сид) — как в Майнкрафте: одинаковый сид даёт одинаковую карту
     const biomeLbl = h('span', { cls: 'biome' }, '🌍 ' + World.biomeOf(World.seedFrom(selSeed)).name);
-    const inp = h('input', { id: 'seedIn', type: 'text', inputmode: 'text', maxlength: '24', value: selSeed, placeholder: 'сид мира', autocomplete: 'off' });
+    const inp = h('input', { id: 'seedIn', type: 'text', inputmode: 'text', maxlength: '24', value: selSeed, placeholder: tr('seed_ph'), autocomplete: 'off' });
     inp.addEventListener('input', () => { selSeed = inp.value; biomeLbl.textContent = '🌍 ' + World.biomeOf(World.seedFrom(selSeed || '1')).name; });
     const dice = h('button', { cls: 'btn blue', style: 'padding:6px 10px' }, '🎲');
     tap(dice, () => { selSeed = String(Math.floor(Math.random() * 1e9)); inp.value = selSeed; biomeLbl.textContent = '🌍 ' + World.biomeOf(World.seedFrom(selSeed)).name; });
-    c.append(h('div', { cls: 'seedrow' }, h('b', null, 'Мир:'), inp, dice, biomeLbl));
+    c.append(h('div', { cls: 'seedrow' }, h('b', null, tr('world')), inp, dice, biomeLbl));
   }
   tap($('sel-prev'), () => { selIdx = (selIdx + 2) % 3; renderHero(); });
   tap($('sel-next'), () => { selIdx = (selIdx + 1) % 3; renderHero(); });
   tap($('sel-back'), () => { G.state = 'menu'; show('menu'); });
   tap($('sel-go'), async () => {
     const seed = World.seedFrom(selSeed || String(Math.floor(Math.random() * 1e9)));
-    await withLoading('Создаём мир «' + World.biomeOf(seed).name + '»…', () => G.newGame(HERO_ORDER[selIdx], selDiff, seed));
-    enterGame(); toast(`Добро пожаловать! Мир: ${World.biome.name} (сид ${seed}). Рубите деревья и защищайте птиц 🐦`, 'good', 4500);
+    await withLoading(tr('load_gen', { name: World.biomeOf(seed).name }), () => G.newGame(HERO_ORDER[selIdx], selDiff, seed));
+    enterGame(); toast(tr('welcome', { biome: World.biome.name, seed }), 'good', 4500);
   });
   async function withLoading(text, fn) {
     show('loading'); setLoad(60, text); await nextFrame(); await nextFrame();
     let r; try { r = fn(); } catch (e) { console.error(e); }
-    setLoad(100, 'Готово!'); return r;
+    setLoad(100, tr('load_done')); return r;
   }
 
   // ---------------- Вход в игру ----------------
@@ -3527,7 +4083,7 @@ const UI = window.UI = {};
   function openPause() { if (G.state !== 'play') return; G.paused = true; $('pause').classList.remove('hidden'); Sound.setMode('menu'); }
   function closePause() { $('pause').classList.add('hidden'); G.paused = modalOpen(); Sound.setMode(G.S().waveActive ? 'battle' : 'calm'); }
   tap($('btn-pause'), openPause);
-  press($('btn-view'), () => { setView(G.settings.view === 'first' ? 'third' : 'first'); toast(G.settings.view === 'first' ? '👁 Вид от первого лица' : '🎥 Вид от третьего лица', 'info'); });
+  press($('btn-view'), () => { setView(G.settings.view === 'first' ? 'third' : 'first'); toast(G.settings.view === 'first' ? tr('view_fp') : tr('view_tp'), 'info'); });
   document.querySelectorAll('#pause [data-p]').forEach(b => tap(b, () => {
     const a = b.dataset.p;
     if (a === 'resume') closePause();
@@ -3542,22 +4098,22 @@ const UI = window.UI = {};
     const D = DIFFICULTY[st.diff] || DIFFICULTY.normal;
     const cell = (ic, lbl, v) => `<div class="rs"><span class="ri">${ic}</span><span class="rl">${lbl}</span><b>${v}</b></div>`;
     $('overtxt').innerHTML = `
-      <div class="rnote">Сохранение удалено — новое прохождение начнётся с начала.</div>
-      <div class="rsub">${HEROES[st.hero] ? HEROES[st.hero].name : ''} · ${D.icon} ${D.name} · 🌍 ${st.biome} (сид ${st.seed})</div>
+      <div class="rnote">${tr('over_note')}</div>
+      <div class="rsub">${HEROES[st.hero] ? HEROES[st.hero].name : ''} · ${D.icon} ${D.name} · 🌍 ${st.biome} (${tr('seed')} ${st.seed})</div>
       <div class="rgrid">
-        ${cell('🌊', 'Волн отбито', Math.max(0, st.wave - 1))}
-        ${cell('⏱️', 'Время игры', tstr)}
-        ${cell('📅', 'Дней прожито', st.day)}
-        ${cell('🐺', 'Побеждено зверей', st.kills)}
-        ${cell('☠️', 'Побеждено боссов', st.bosses || 0)}
-        ${cell('🔨', 'Построено', st.built)}
-        ${cell(RES_INFO.wood.icon, 'Добыто дерева', Math.floor(st.wood))}
-        ${cell(RES_INFO.stone.icon, 'Добыто камня', Math.floor(st.stone))}
-        ${cell(RES_INFO.coal.icon, 'Добыто угля', Math.floor(st.coal || 0))}
-        ${cell(RES_INFO.iron.icon, 'Добыто железа', Math.floor(st.iron))}
-        ${cell(RES_INFO.food.icon, 'Собрано еды', Math.floor(st.food || 0))}
-        ${cell(RES_INFO.coins.icon, 'Заработано монет', Math.floor(st.coins || 0))}
-        ${cell('🐦', 'Куплено птиц', st.boughtBirds)}
+        ${cell('🌊', tr('r_waves'), Math.max(0, st.wave - 1))}
+        ${cell('⏱️', tr('r_time'), tstr)}
+        ${cell('📅', tr('r_days'), st.day)}
+        ${cell('🐺', tr('r_kills'), st.kills)}
+        ${cell('☠️', tr('r_bosses'), st.bosses || 0)}
+        ${cell('🔨', tr('r_built'), st.built)}
+        ${cell(RES_INFO.wood.icon, tr('r_wood'), Math.floor(st.wood))}
+        ${cell(RES_INFO.stone.icon, tr('r_stone'), Math.floor(st.stone))}
+        ${cell(RES_INFO.coal.icon, tr('r_coal'), Math.floor(st.coal || 0))}
+        ${cell(RES_INFO.iron.icon, tr('r_iron'), Math.floor(st.iron))}
+        ${cell(RES_INFO.food.icon, tr('r_food'), Math.floor(st.food || 0))}
+        ${cell(RES_INFO.coins.icon, tr('r_coins'), Math.floor(st.coins || 0))}
+        ${cell('🐦', tr('r_birds'), st.boughtBirds)}
       </div>
 `;
     setTimeout(() => { $('over').classList.remove('hidden'); }, 1400);
@@ -3584,21 +4140,21 @@ const UI = window.UI = {};
       const bh = $('basehp'); bh.style.width = (f * 100) + '%'; bh.className = f < 0.3 ? 'low' : f < 0.6 ? 'mid' : '';
       $('basehptxt').textContent = core ? `${Math.ceil(core.hp)} / ${core.maxHp}` : '0';
       const wi = $('waveinfo');
-      if (S.waveActive) { wi.textContent = `⚔️ Волна ${S.wave} · зверей: ${G.enemiesLeft()}`; wi.classList.add('alarm'); }
-      else { const t = Math.max(0, Math.ceil(S.waveTimer)); wi.textContent = `Волна ${S.wave} через ${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`; wi.classList.remove('alarm'); }
+      if (S.waveActive) { wi.textContent = tr('wave_on', { n: S.wave, k: G.enemiesLeft() }); wi.classList.add('alarm'); }
+      else { const t = Math.max(0, Math.ceil(S.waveTimer)); wi.textContent = tr('wave_in', { n: S.wave, t: `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}` }); wi.classList.remove('alarm'); }
       $('btn-wave').classList.toggle('hidden', S.waveActive);
       const ph = P.hp / P.maxHp; const pe = $('php'); pe.style.width = (ph * 100) + '%'; pe.className = ph < 0.3 ? 'low' : ph < 0.6 ? 'mid' : '';
-      $('phptxt').textContent = P.dead ? 'ранен…' : `${Math.ceil(P.hp)}/${P.maxHp}`;
+      $('phptxt').textContent = P.dead ? tr('wounded') : `${Math.ceil(P.hp)}/${P.maxHp}`;
       const dl = World.daylight;
       const dc = G.dayClock(), mmss = n => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`;
-      $('daytxt').innerHTML = `${dc.night ? '🌙' : '☀️'} День ${S.day} · ${G.diff().icon}<br><small>${dc.night ? '☀️ утро' : '🌙 ночь'} через ${mmss(dc.left)}</small>`;
+      $('daytxt').innerHTML = `${dc.night ? '🌙' : '☀️'} ${tr('day', { n: S.day })} · ${G.diff().icon}<br><small>${tr(dc.night ? 'morning_in' : 'night_in', { t: mmss(dc.left) })}</small>`;
       const st = P.st / P.maxSt; $('pst').style.width = (st * 100) + '%'; $('pst').className = P.tired ? 'tired' : '';
       $('btn-run').classList.toggle('on', !!G.input.run);
       const boss = G.boss(); $('bossbar').classList.toggle('hidden', !boss);
       if (boss) { $('bossname').textContent = '☠️ ' + boss.d.name; $('bosshp').style.width = (boss.hp / boss.maxHp * 100) + '%'; }
-      $('quest').innerHTML = `<b>Задание:</b> ${G.questText()}`;
+      $('quest').innerHTML = `<b>${tr('quest')}</b> ${G.questText()}`;
       const birds = G.birds();
-      $('birdcount').textContent = `🐦 Птиц: ${birds.length}/${G.birdCap()} · у пушек: ${birds.filter(b => b.cannon).length}`;
+      $('birdcount').textContent = tr('bird_count', { n: birds.length, cap: G.birdCap(), c: birds.filter(b => b.cannon).length });
       // кнопка действия и инструмент
       const tool = G.playerTool();
       document.querySelectorAll('.slot').forEach(s => { s.classList.toggle('on', s.dataset.slot === tool); if (s.dataset.slot === 'pick') s.classList.toggle('locked', S.tools.pick < 0); });
@@ -3609,7 +4165,7 @@ const UI = window.UI = {};
       $('prompt').classList.toggle('hidden', !!b);
       if (b) {
         const cost = G.scaleCost(BUILD[b.t].cost);
-        $('bb-info').innerHTML = `<b>${BUILD[b.t].name}${b.onWall ? ' (на стену)' : ''}</b><br>${costHtml(cost)}${b.valid ? '' : `<br><span class="bad">${b.reason}</span>`}`;
+        $('bb-info').innerHTML = `<b>${BUILD[b.t].name}${b.onWall ? tr('on_wall') : ''}</b><br>${costHtml(cost)}${b.valid ? '' : `<br><span class="bad">${b.reason}</span>`}`;
       } else {
         const t = G.interactTarget();
         const key = t ? t.id + ':' + t.lvl + ':' + (t.cannonId || 0) : '';
@@ -3633,7 +4189,7 @@ const UI = window.UI = {};
   let promptKey = '';
   function costHtml(cost) {
     const S = G.S();
-    return Object.keys(cost).map(k => `<span class="${(S.res[k] || 0) < cost[k] ? 'no' : ''}">${RES_INFO[k].icon}${cost[k]}</span>`).join(' ') || 'бесплатно';
+    return Object.keys(cost).map(k => `<span class="${(S.res[k] || 0) < cost[k] ? 'no' : ''}">${RES_INFO[k].icon}${cost[k]}</span>`).join(' ') || tr('free');
   }
   // полоски здоровья над объектами
   const barPool = [];
@@ -3698,21 +4254,21 @@ const UI = window.UI = {};
   // Меню строительства
   function openBuildMenu() {
     G.cancelBuild();
-    openModal('🔨 Строительство', BUILD_CATS, (body, cat) => {
+    openModal(tr('m_build'), BUILD_CATS, (body, cat) => {
       const S = G.S(); const grid = h('div', { cls: 'grid' });
       Object.keys(BUILD).filter(t => BUILD[t].cat === cat).forEach(t => {
         const d = BUILD[t], cost = G.scaleCost(d.cost);
         let lock = '';
-        if (d.req && !S.tech[d.req]) lock = `🔒 Нужна технология «${TECH[d.req].name}»`;
-        else if (G.countB(t) >= (d.max || 99)) lock = d.max === 1 ? '✔ Уже построено' : `Достигнут лимит ${d.max} шт.`;
-        const btn = h('button', { cls: 'btn' + (G.canAfford(cost) ? '' : ' gold') }, G.canAfford(cost) ? 'Строить' : 'Выбрать');
+        if (d.req && !S.tech[d.req]) lock = tr('need_tech', { name: TECH[d.req].name });
+        else if (G.countB(t) >= (d.max || 99)) lock = d.max === 1 ? tr('built_one') : tr('limit_hit', { n: d.max });
+        const btn = h('button', { cls: 'btn' + (G.canAfford(cost) ? '' : ' gold') }, G.canAfford(cost) ? tr('b_build') : tr('b_choose'));
         if (lock) btn.disabled = true;
-        tap(btn, () => { if (G.enterBuild(t)) { closeModal(); toast(isTouch ? 'Наведите камерой и нажмите «Поставить»' : 'Выберите место: ЛКМ / Enter — поставить, R — повернуть', 'info'); } });
+        tap(btn, () => { if (G.enterBuild(t)) { closeModal(); toast(isTouch ? tr('hint_place_touch') : tr('hint_place_pc'), 'info'); } });
         let extra = '';
-        if (t === 'wall') extra = 'Уровни: ' + WALL_LEVELS.map((l, i) => i + 1).join('→');
+        if (t === 'wall') extra = tr('levels_n', { s: WALL_LEVELS.map((l, i) => i + 1).join('→') });
         grid.append(h('div', { cls: 'item' + (lock ? ' lock' : '') }, h('div', { cls: 'ico' }, d.icon), h('div', { cls: 'nm' }, d.name), h('div', { cls: 'ds' }, d.desc + (extra ? ' ' + extra : '')),
           h('div', { cls: 'cost', html: costHtml(cost) }), lock ? h('div', { cls: 'ds' }, lock) : null,
-          h('div', { cls: 'limit' + (G.countB(t) >= (d.max || 99) ? ' full' : '') }, `Построено: ${G.countB(t)}/${d.max || '∞'}`), btn));
+          h('div', { cls: 'limit' + (G.countB(t) >= (d.max || 99) ? ' full' : '') }, tr('built_cnt', { n: G.countB(t), m: d.max || '∞' })), btn));
       });
       body.append(grid);
     });
@@ -3721,7 +4277,7 @@ const UI = window.UI = {};
 
   // Панель постройки
   function openBuildingPanel(b) {
-    if (!b) { toast('Подойдите ближе к постройке', 'info'); return; }
+    if (!b) { toast(tr('move_closer'), 'info'); return; }
     openModal(BUILD[b.t].icon + ' ' + G.buildingLabel(b), [], body => {
       if (!G.byId(b.id)) { closeModal(); return; }
       buildingSection(body, b);
@@ -3732,101 +4288,101 @@ const UI = window.UI = {};
   function buildingSection(body, b, sub) {
     const S = G.S(), d = BUILD[b.t];
     const sect = h('div', { cls: 'sect' });
-    if (sub) sect.append(h('h4', null, '💣 Пушка на стене: ' + G.buildingLabel(b)));
+    if (sub) sect.append(h('h4', null, tr('cannon_on_wall') + G.buildingLabel(b)));
     sect.append(h('div', { cls: 'binfo' }, h('div', { cls: 'ico' }, d.icon), h('div', null,
-      h('div', null, `Прочность: ${Math.ceil(b.hp)} / ${b.maxHp}`), h('div', { cls: 'hpline' }, h('i', { style: `width:${b.hp / b.maxHp * 100}%` })),
+      h('div', null, tr('durability', { a: Math.ceil(b.hp), b: b.maxHp })), h('div', { cls: 'hpline' }, h('i', { style: `width:${b.hp / b.maxHp * 100}%` })),
       h('div', { cls: 'ds', style: 'font-size:12px;margin-top:4px;max-width:420px' }, d.desc))));
     // характеристики
     if (b.t === 'cannon') {
       const L = CANNON_LEVELS[b.lvl - 1];
-      sect.append(h('div', { style: 'margin-top:6px;font-size:13px' }, `Урон ${L.dmg} · Скорость ${L.rate}/с · Дальность ${L.range} · Взрыв ${L.splash}${b.lvl >= 4 ? ' · стреляет сама (птица усиливает)' : ' · нужна птица-стрелок'}`));
+      sect.append(h('div', { style: 'margin-top:6px;font-size:13px' }, tr('cannon_stats', { d: L.dmg, r: L.rate, g: L.range, s: L.splash }) + (b.lvl >= 4 ? tr('cannon_auto') : tr('cannon_need'))));
     }
-    if (b.t === 'farm') sect.append(h('div', null, 'Производит 1 🍖 каждые 10 сек.'));
-    if (b.t === 'ballista') { const L = BALLISTA_LEVELS[b.lvl - 1]; sect.append(h('div', { style: 'margin-top:6px;font-size:13px' }, `${L.name}: урон ${L.dmg} · скорость ${L.rate}/с · дальность ${L.range}${L.splash ? ' · взрыв ' + L.splash : ''}. Уровни: арбалет → пулемёт → ракетница.`)); }
-    if (b.t === 'mineshaft') { const L = SHAFT_LEVELS[b.lvl - 1]; sect.append(h('div', { style: 'margin-top:6px', html: `Добывает: ${RES_INFO.stone.icon} раз в ${L.stone}с, ${RES_INFO.coal.icon} раз в ${L.coal}с, ${RES_INFO.iron.icon} раз в ${L.iron}с.` })); }
-    if (b.t === 'gate') sect.append(h('div', { style: 'margin-top:6px;font-size:13px' }, 'Уровни: деревянные → окованные → каменные → крепостные → стальные.'));
-    if (b.t === 'minelift') sect.append(h('div', null, 'Добывает 🪨 каждые 6с, ⚫ каждые 14с, 🔩 каждые 24с.'));
-    if (b.t === 'storage') sect.append(h('div', null, `Вместимость ресурсов: ${G.cap()}`));
-    if (d.cap) sect.append(h('div', null, `Места для птиц: +${d.cap} (всего ${G.birdCap()})`));
+    if (b.t === 'farm') sect.append(h('div', null, tr('farm_info')));
+    if (b.t === 'ballista') { const L = BALLISTA_LEVELS[b.lvl - 1]; sect.append(h('div', { style: 'margin-top:6px;font-size:13px' }, tr('turret_info', { name: L.name, d: L.dmg, r: L.rate, g: L.range, s: L.splash ? tr('blast', { s: L.splash }) : '' }))); }
+    if (b.t === 'mineshaft') { const L = SHAFT_LEVELS[b.lvl - 1]; sect.append(h('div', { style: 'margin-top:6px', html: tr('mine_info', { a: RES_INFO.stone.icon, x: L.stone, b: RES_INFO.coal.icon, y: L.coal, c: RES_INFO.iron.icon, z: L.iron }) })); }
+    if (b.t === 'gate') sect.append(h('div', { style: 'margin-top:6px;font-size:13px' }, tr('gate_info')));
+    if (b.t === 'minelift') sect.append(h('div', { html: tr('mine_info', { a: RES_INFO.stone.icon, x: 6, b: RES_INFO.coal.icon, y: 14, c: RES_INFO.iron.icon, z: 24 }) }));
+    if (b.t === 'storage') sect.append(h('div', null, tr('cap_info', { n: G.cap() })));
+    if (d.cap) sect.append(h('div', null, tr('bird_slots', { n: d.cap, t: G.birdCap() })));
     const acts = h('div', { cls: 'acts' });
     const up = G.upgradeCost(b);
     if (up) {
       const locked = up.req && !S.tech[up.req];
-      const btn = h('button', { cls: 'btn gold', html: `⬆ Улучшить до «${up.name}» — ${costHtml(up.cost)}${locked ? ` <br><small>🔒 ${TECH[up.req].name}</small>` : ''}` });
+      const btn = h('button', { cls: 'btn gold', html: tr('upgrade_to', { name: up.name, cost: costHtml(up.cost) }) + (locked ? ` <br><small>🔒 ${TECH[up.req].name}</small>` : '') });
       tap(btn, () => { if (G.upgrade(b)) renderModal(); else renderModal(); });
       acts.append(btn);
-    } else if (G.LEVELS[b.t]) acts.append(h('span', { cls: 'tag g' }, '★ Максимальный уровень'));
+    } else if (G.LEVELS[b.t]) acts.append(h('span', { cls: 'tag g' }, tr('max_level')));
     const rc = G.repairCost(b);
-    if (rc) { const btn = h('button', { cls: 'btn blue', html: `🔧 Починить — ${costHtml(rc)}` }); tap(btn, () => { G.repair(b); renderModal(); }); acts.append(btn); }
+    if (rc) { const btn = h('button', { cls: 'btn blue', html: tr('repair', { cost: costHtml(rc) }) }); tap(btn, () => { G.repair(b); renderModal(); }); acts.append(btn); }
     if (b.t !== 'core') {
-      const btn = h('button', { cls: 'btn red' }, '🗑 Снести'); let armed = false;
-      tap(btn, () => { if (!armed) { armed = true; btn.textContent = 'Точно снести? (вернётся 50%)'; return; } G.demolish(b); closeModal(); });
+      const btn = h('button', { cls: 'btn red' }, tr('demolish')); let armed = false;
+      tap(btn, () => { if (!armed) { armed = true; btn.textContent = tr('demolish_ok'); return; } G.demolish(b); closeModal(); });
       acts.append(btn);
     }
     sect.append(acts);
     if (b.t === 'cannon') sect.append(gunnerSection(b));
     if (b.t === 'workshop') { sect.append(h('hr')); renderWorkshop(sect); }
-    if (b.t === 'market' || b.t === 'core' || b.t === 'birdhouse' || b.t === 'aviary') { const bb = h('button', { cls: 'btn', style: 'margin-top:8px' }, '🐦 Птичий рынок и мои птицы'); tap(bb, () => openBirds('shop')); sect.append(bb); }
-    if (b.t === 'core') { const bb = h('button', { cls: 'btn gold', style: 'margin:8px 0 0 8px' }, '🍖 Съесть (+35 ❤️ за 3 еды)'); tap(bb, () => { G.eat(); renderModal(); }); sect.append(bb); }
+    if (b.t === 'market' || b.t === 'core' || b.t === 'birdhouse' || b.t === 'aviary') { const bb = h('button', { cls: 'btn', style: 'margin-top:8px' }, tr('market_btn')); tap(bb, () => openBirds('shop')); sect.append(bb); }
+    if (b.t === 'core') { const bb = h('button', { cls: 'btn gold', style: 'margin:8px 0 0 8px' }, tr('eat_btn')); tap(bb, () => { G.eat(); renderModal(); }); sect.append(bb); }
     body.append(sect);
   }
   function gunnerSection(c) {
-    const box = h('div', { cls: 'sect', style: 'margin-top:10px' }, h('h4', null, '🐦 Стрелок'));
+    const box = h('div', { cls: 'sect', style: 'margin-top:10px' }, h('h4', null, tr('gunner')));
     if (c.gunner) {
       const bs = BIRDS[c.gunner.sp];
-      const btn = h('button', { cls: 'btn red' }, 'Снять с пушки'); tap(btn, () => { G.unassignBird(c.gunner); renderModal(); });
+      const btn = h('button', { cls: 'btn red' }, tr('take_off')); tap(btn, () => { G.unassignBird(c.gunner); renderModal(); });
       box.append(h('div', { cls: 'bird-row' }, h('img', { cls: 'bird-pic', src: G.portrait(c.gunner.sp) }), h('div', { cls: 'info' }, h('b', null, bs.name), h('div', null, birdStats(bs))), btn));
-    } else box.append(h('div', { style: 'margin-bottom:6px' }, 'За пушкой никого нет. Посадите птицу:'));
+    } else box.append(h('div', { style: 'margin-bottom:6px' }, tr('no_gunner')));
     const free = G.birds().filter(b => !b.cannon);
-    if (!free.length) { const bb = h('button', { cls: 'btn' }, '🛒 Купить птицу'); tap(bb, () => openBirds('shop')); box.append(bb); }
+    if (!free.length) { const bb = h('button', { cls: 'btn' }, tr('buy_bird')); tap(bb, () => openBirds('shop')); box.append(bb); }
     free.forEach(bird => {
-      const bs = BIRDS[bird.sp]; const btn = h('button', { cls: 'btn blue' }, c.gunner ? 'Заменить' : 'Посадить');
+      const bs = BIRDS[bird.sp]; const btn = h('button', { cls: 'btn blue' }, c.gunner ? tr('replace') : tr('seat'));
       tap(btn, () => { G.assignBird(bird, c); renderModal(); });
       box.append(h('div', { cls: 'bird-row' }, h('img', { cls: 'bird-pic', src: G.portrait(bird.sp) }), h('div', { cls: 'info' }, h('b', null, bs.name), h('div', null, birdStats(bs))), btn));
     });
     return box;
   }
-  const birdStats = bs => `Урон ×${bs.dmg} · Скор. ×${bs.rate} · Дальн. ×${bs.range}`;
+  const birdStats = bs => tr('bird_stats', { d: bs.dmg, r: bs.rate, g: bs.range });
 
   // Мастерская: инструменты и технологии
   function renderWorkshop(body) {
     const S = G.S();
-    if (!G.hasWorkshop()) { body.append(h('div', { cls: 'perk' }, '⚒️ Постройте «Мастерскую» (Стройка → Производство), чтобы создавать инструменты и изучать технологии.')); }
-    const gear = h('div', { cls: 'sect' }, h('h4', null, '🔦 Снаряжение — свет в темноте'));
+    if (!G.hasWorkshop()) { body.append(h('div', { cls: 'perk' }, tr('ws_need'))); }
+    const gear = h('div', { cls: 'sect' }, h('h4', null, tr('gear_title')));
     const gg = h('div', { cls: 'grid' });
     const G2 = S.gear || { own: {}, eq: null };
     Object.keys(GEAR).forEach(id => {
       const d = GEAR[id], own = G2.own[id], on = G2.eq === id;
-      const btn = h('button', { cls: 'btn' + (own ? (on ? ' red' : ' blue') : ' gold') }, own ? (on ? 'Снять' : 'Надеть') : 'Купить');
+      const btn = h('button', { cls: 'btn' + (own ? (on ? ' red' : ' blue') : ' gold') }, own ? (on ? tr('take_off2') : tr('put_on')) : tr('buy'));
       tap(btn, () => { G.buyGear(id); renderModal(); });
       gg.append(h('div', { cls: 'item' }, h('div', { cls: 'ico' }, d.icon), h('div', { cls: 'nm' }, d.name + (on ? ' ✔' : '')), h('div', { cls: 'ds' }, d.desc), own ? null : h('div', { cls: 'cost', html: costHtml(d.cost) }), btn));
     });
     gear.append(gg); body.append(gear);
-    const tools = h('div', { cls: 'sect' }, h('h4', null, '🛠 Инструменты'));
+    const tools = h('div', { cls: 'sect' }, h('h4', null, tr('tools')));
     const g1 = h('div', { cls: 'grid' });
     [['axe', AXES, '🪓'], ['pick', PICKS, '⛏️']].forEach(([k, list, ic]) => {
       const cur = S.tools[k], next = list[cur + 1];
-      const curName = cur >= 0 ? list[cur].name : 'нет';
-      const item = h('div', { cls: 'item' }, h('div', { cls: 'ico' }, ic), h('div', { cls: 'nm' }, 'Сейчас: ' + curName), h('div', { cls: 'ds' }, cur >= 0 ? `Сила добычи: ${list[cur].power}` : 'Нужна для добычи камня, угля и железа'));
+      const curName = cur >= 0 ? list[cur].name : tr('none');
+      const item = h('div', { cls: 'item' }, h('div', { cls: 'ico' }, ic), h('div', { cls: 'nm' }, tr('now', { name: curName })), h('div', { cls: 'ds' }, cur >= 0 ? tr('power', { n: list[cur].power }) : tr('pick_need')));
       if (next) {
         const cost = next.cost; const locked = next.req && !S.tech[next.req];
         item.append(h('div', { cls: 'cost', html: `→ ${next.name}: ${costHtml(cost)}` }));
         if (locked) item.append(h('div', { cls: 'ds' }, `🔒 ${TECH[next.req].name}`));
-        const btn = h('button', { cls: 'btn' }, 'Создать'); btn.disabled = !G.hasWorkshop() || locked;
+        const btn = h('button', { cls: 'btn' }, tr('craft')); btn.disabled = !G.hasWorkshop() || locked;
         tap(btn, () => { G.craftTool(k); renderModal(); }); item.append(btn);
-      } else item.append(h('span', { cls: 'tag g' }, '★ Лучший инструмент'));
+      } else item.append(h('span', { cls: 'tag g' }, tr('best_tool')));
       g1.append(item);
     });
     tools.append(g1); body.append(tools);
-    const tech = h('div', { cls: 'sect' }, h('h4', null, '📜 Технологии'));
+    const tech = h('div', { cls: 'sect' }, h('h4', null, tr('techs')));
     const g2 = h('div', { cls: 'grid' });
     Object.keys(TECH).forEach(id => {
       const t = TECH[id]; const done = S.tech[id]; const locked = t.need && !S.tech[t.need];
       const item = h('div', { cls: 'item' + (locked ? ' lock' : '') }, h('div', { cls: 'nm' }, (done ? '✅ ' : '📜 ') + t.name), h('div', { cls: 'ds' }, t.desc));
       if (!done) {
         item.append(h('div', { cls: 'cost', html: costHtml(t.cost) }));
-        if (locked) item.append(h('div', { cls: 'ds' }, `🔒 Сначала: ${TECH[t.need].name}`));
-        const btn = h('button', { cls: 'btn gold' }, 'Изучить'); btn.disabled = !G.hasWorkshop() || locked;
+        if (locked) item.append(h('div', { cls: 'ds' }, tr('first_req', { name: TECH[t.need].name })));
+        const btn = h('button', { cls: 'btn gold' }, tr('research')); btn.disabled = !G.hasWorkshop() || locked;
         tap(btn, () => { G.research(id); renderModal(); }); item.append(btn);
       }
       g2.append(item);
@@ -3836,24 +4392,24 @@ const UI = window.UI = {};
 
   // Инвентарь
   function openInventory(tab) {
-    openModal('🎒 Инвентарь', [['res', 'Ресурсы'], ['work', 'Мастерская'], ['hero', 'Герой']], (body, t) => {
+    openModal(tr('m_inv'), [['res', tr('tab_res')], ['work', tr('tab_work')], ['hero', tr('tab_hero')]], (body, t) => {
       const S = G.S();
       if (t === 'res') {
         const grid = h('div', { cls: 'grid' });
         RES_KEYS.forEach(k => grid.append(h('div', { cls: 'item' }, h('div', { cls: 'ico', html: RES_INFO[k].icon }), h('div', { cls: 'nm' }, RES_INFO[k].name), h('div', { style: 'font-size:20px;font-weight:900' }, `${Math.floor(S.res[k])}${k === 'coins' ? '' : ' / ' + G.cap()}`))));
         body.append(grid);
-        const eat = h('button', { cls: 'btn gold', style: 'margin-top:10px' }, '🍖 Съесть (+35 ❤️ за 3 еды)'); tap(eat, () => { G.eat(); renderModal(); });
+        const eat = h('button', { cls: 'btn gold', style: 'margin-top:10px' }, tr('eat_btn')); tap(eat, () => { G.eat(); renderModal(); });
         body.append(eat);
-        body.append(h('div', { cls: 'perk', style: 'margin-top:10px' }, `Где добывать: 🪵 — деревья вокруг базы; 🪨 — серые камни и карьер на востоке (за мостом); ⚫ и 🔩 — в карьере и у пещеры на юго-западе; 🍖 — ягодные кусты, ферма и кабаны. Склад увеличивает вместимость.`));
+        body.append(h('div', { cls: 'perk', style: 'margin-top:10px' }, tr('where')));
       } else if (t === 'work') renderWorkshop(body);
       else {
         const hd = HEROES[S.hero], P = G.player();
         body.append(h('div', { cls: 'sect' }, h('h4', null, hd.name), h('div', null, hd.desc), h('div', { cls: 'perk' }, '⭐ ' + hd.perk),
-          h('div', { style: 'margin-top:8px' }, `❤️ ${Math.ceil(P.hp)}/${P.maxHp} · 🏃 скорость ${hd.speed} · ⚔️ урон ${hd.dmg}`),
-          h('div', { style: 'margin-top:8px' }, `Инструменты: ${AXES[S.tools.axe].name}, ${S.tools.pick >= 0 ? PICKS[S.tools.pick].name : 'кирки нет'}`),
-          h('div', { style: 'margin-top:8px' }, `Технологии: ${Object.keys(TECH).filter(k => S.tech[k]).map(k => TECH[k].name).join(', ') || 'нет'}`),
-          h('div', { style: 'margin-top:8px' }, `Мир: ${G.worldInfo().biome} · сид ${G.worldInfo().seed} (введите его при новой игре, чтобы получить такую же карту)`),
-          h('div', { style: 'margin-top:8px' }, `Статистика: волна ${S.wave}, день ${S.day}, побеждено зверей ${S.stats.kills}, построено ${S.stats.built}`)));
+          h('div', { style: 'margin-top:8px' }, tr('hero_line', { hp: Math.ceil(P.hp), max: P.maxHp, s: hd.speed, d: hd.dmg })),
+          h('div', { style: 'margin-top:8px' }, tr('tools_line', { a: AXES[S.tools.axe].name, b: S.tools.pick >= 0 ? PICKS[S.tools.pick].name : tr('no_pick') })),
+          h('div', { style: 'margin-top:8px' }, tr('tech_line', { a: Object.keys(TECH).filter(k => S.tech[k]).map(k => TECH[k].name).join(', ') || tr('none') })),
+          h('div', { style: 'margin-top:8px' }, tr('world_line', { b: G.worldInfo().biome, s: G.worldInfo().seed })),
+          h('div', { style: 'margin-top:8px' }, tr('stats_line', { w: S.wave, d: S.day, k: S.stats.kills, b: S.stats.built }))));
       }
     }, tab);
   }
@@ -3861,32 +4417,32 @@ const UI = window.UI = {};
 
   // Птицы
   function openBirds(tab) {
-    openModal('🐦 Птицы', [['mine', 'Мои птицы'], ['shop', 'Птичий рынок']], (body, t) => {
+    openModal(tr('m_birds'), [['mine', tr('tab_mine')], ['shop', tr('tab_shop')]], (body, t) => {
       const S = G.S();
       if (t === 'mine') {
         const birds = G.birds();
-        body.append(h('div', { style: 'margin-bottom:8px' }, `Птиц: ${birds.length} / ${G.birdCap()} мест. Свободных пушек: ${G.freeCannons().length}`));
-        if (!birds.length) body.append(h('div', { cls: 'perk' }, 'У вас нет птиц! Купите их на рынке.'));
+        body.append(h('div', { style: 'margin-bottom:8px' }, tr('birds_info', { n: birds.length, cap: G.birdCap(), f: G.freeCannons().length })));
+        if (!birds.length) body.append(h('div', { cls: 'perk' }, tr('no_birds')));
         birds.forEach(bird => {
           const bs = BIRDS[bird.sp];
-          const status = bird.cannon ? h('span', { cls: 'tag g' }, '💣 у пушки') : h('span', { cls: 'tag' }, bird.hidden ? '🏠 прячется' : '🌿 гуляет');
+          const status = bird.cannon ? h('span', { cls: 'tag g' }, tr('st_cannon')) : h('span', { cls: 'tag' }, bird.hidden ? tr('st_hide') : tr('st_walk'));
           const acts = h('div', { cls: 'acts', style: 'margin:0' });
-          if (bird.cannon) { const b = h('button', { cls: 'btn red' }, 'Снять'); tap(b, () => { G.unassignBird(bird); renderModal(); }); acts.append(b); }
-          else { const fc = G.freeCannons()[0]; const b = h('button', { cls: 'btn blue' }, 'За пушку'); b.disabled = !fc; tap(b, () => { G.assignBird(bird, G.freeCannons()[0]); renderModal(); }); acts.append(b); }
-          const rel = h('button', { cls: 'btn gold' }, `Отпустить (+${Math.floor(bs.price * 0.4)}🪙)`); tap(rel, () => { G.releaseBird(bird); renderModal(); }); acts.append(rel);
+          if (bird.cannon) { const b = h('button', { cls: 'btn red' }, tr('remove')); tap(b, () => { G.unassignBird(bird); renderModal(); }); acts.append(b); }
+          else { const fc = G.freeCannons()[0]; const b = h('button', { cls: 'btn blue' }, tr('to_cannon')); b.disabled = !fc; tap(b, () => { G.assignBird(bird, G.freeCannons()[0]); renderModal(); }); acts.append(b); }
+          const rel = h('button', { cls: 'btn gold' }, tr('release', { n: Math.floor(bs.price * 0.4) })); tap(rel, () => { G.releaseBird(bird); renderModal(); }); acts.append(rel);
           body.append(h('div', { cls: 'bird-row' }, h('img', { cls: 'bird-pic', src: G.portrait(bird.sp) }),
             h('div', { cls: 'info' }, h('b', null, bs.name), status, h('div', null, `❤️ ${Math.ceil(bird.hp)}/${bird.maxHp}`), h('div', { style: 'font-size:11px' }, birdStats(bs))), acts));
         });
       } else {
         const hasMarket = G.countB('market') > 0;
-        body.append(h('div', { style: 'margin-bottom:8px' }, `Купленные птицы садятся за свободные пушки на стенах. Мест: ${G.birds().length}/${G.birdCap()}.` + (hasMarket ? '' : ' Редкие птицы — после постройки «Птичьего рынка».')));
+        body.append(h('div', { style: 'margin-bottom:8px' }, tr('shop_info', { n: G.birds().length, cap: G.birdCap() }) + (hasMarket ? '' : tr('shop_rare'))));
         const grid = h('div', { cls: 'grid' });
         BIRD_ORDER.forEach(sp => {
           const bs = BIRDS[sp]; const cost = { coins: bs.price, food: bs.food }; const locked = bs.market && !hasMarket;
-          const btn = h('button', { cls: 'btn' }, 'Купить'); btn.disabled = locked;
+          const btn = h('button', { cls: 'btn' }, tr('buy')); btn.disabled = locked;
           tap(btn, () => { G.buyBird(sp); renderModal(); });
           grid.append(h('div', { cls: 'item' + (locked ? ' lock' : '') }, h('img', { cls: 'bird-pic', src: G.portrait(sp) }), h('div', { cls: 'nm' }, bs.name),
-            h('div', { cls: 'ds' }, bs.desc), h('div', { style: 'font-size:11px' }, birdStats(bs) + ` · ❤️${bs.hp}`), h('div', { cls: 'cost', html: costHtml(cost) }), locked ? h('div', { cls: 'ds' }, '🔒 Нужен Птичий рынок') : null, btn));
+            h('div', { cls: 'ds' }, bs.desc), h('div', { style: 'font-size:11px' }, birdStats(bs) + ` · ❤️${bs.hp}`), h('div', { cls: 'cost', html: costHtml(cost) }), locked ? h('div', { cls: 'ds' }, tr('need_market')) : null, btn));
         });
         body.append(grid);
       }
@@ -3903,8 +4459,8 @@ const UI = window.UI = {};
     if (k === 'birds') openBirds();
   }));
   press($('btn-use'), () => openBuildingPanel(G.interactTarget()));
-  press($('btn-run'), () => { const P = G.player(); if (P && P.tired) { toast('Нет сил бежать — восстановите выносливость', 'warn'); return; } G.input.run = !G.input.run; });
-  tap($('btn-wave'), () => { G.startWaveNow(); toast('Звери идут раньше! +25% награды', 'warn'); });
+  press($('btn-run'), () => { const P = G.player(); if (P && P.tired) { toast(tr('no_stamina'), 'warn'); return; } G.input.run = !G.input.run; });
+  tap($('btn-wave'), () => { G.startWaveNow(); toast(tr('wave_early'), 'warn'); });
   press($('bb-rot'), () => G.rotateBuild());
   press($('bb-place'), () => G.placeBuild());
   press($('bb-cancel'), () => G.cancelBuild());
@@ -4024,7 +4580,7 @@ const UI = window.UI = {};
   // автосохранение при сворачивании (важно для телефона)
   document.addEventListener('visibilitychange', () => { if (document.hidden && G.state === 'play') { G.save(true); if (!modal) openPause(); } });
   window.addEventListener('pagehide', () => { if (G.state === 'play') G.save(true); });
-  if (!isTouch) { $('btn-act').title = 'Пробел / ЛКМ'; }
+  if (!isTouch) { $('btn-act').title = 'Space / LMB'; }
 })();
 
 </script>

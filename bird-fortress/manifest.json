@@ -1,6 +1,6 @@
 {
-  "name": "Птичья Крепость",
-  "short_name": "Птичья Крепость",
+  "name": "Bird Wars",
+  "short_name": "Bird Wars",
   "start_url": "./index.html",
   "display": "fullscreen",
   "orientation": "landscape",
