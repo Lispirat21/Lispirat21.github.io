@@ -224,13 +224,15 @@ body.fp #crosshair { display:block; }
 #lp-list button .fl { font-size:28px; line-height:1; }
 #lp-list button.on { border-color:#4caf50; background:#eaf7e2; box-shadow:0 0 0 2px #4caf50 inset; }
 .langbtn { position:fixed; right:max(12px,env(safe-area-inset-right)); top:max(12px,env(safe-area-inset-top)); width:48px; height:48px; border-radius:50%; border:2px solid #fff8; background:#0008; font-size:24px; color:#fff; }
-/* ---------- загрузка: название, птицы по кругу, жёлтая полоска ---------- */
-#loading { background:radial-gradient(ellipse at 50% 45%,#4f9a3c 0%,#2d6a2a 55%,#173d18 100%); --rx:1; }
-@media (orientation:portrait) { #loading { --rx:1.1; } }
-#ld-birds { position:absolute; inset:0; pointer-events:none; }
-.ldb { position:absolute; width:clamp(54px,9vmin,96px); height:clamp(54px,9vmin,96px); margin:calc(clamp(54px,9vmin,96px) / -2); border-radius:50%; background:#e6f4d4; border:3px solid #ffd24a; box-shadow:0 4px 12px #0006; object-fit:cover; animation:ldbob 2.2s ease-in-out infinite; }
-@keyframes ldbob { 50% { transform:translateY(-8px) rotate(-4deg); } }
-.ld-title { position:absolute; left:0; right:0; top:41%; transform:translateY(-50%); text-align:center; font-size:clamp(46px,12vmin,110px); font-weight:900; color:#ffd24a; letter-spacing:2px; text-shadow:0 4px 0 #7a4512,0 8px 0 #4a2a0a,0 14px 30px rgba(0,0,0,.6); }
+/* ---------- загрузка: название и три птицы рядом с ним, жёлтая полоска ---------- */
+#loading { background:radial-gradient(ellipse at 50% 45%,#4f9a3c 0%,#2d6a2a 55%,#173d18 100%); }
+.ld-row { position:absolute; left:0; right:0; top:44%; transform:translateY(-50%); display:flex; align-items:flex-end; justify-content:center; padding:0 12px; }
+.ld-side { display:flex; align-items:flex-end; }
+.ldb { display:block; height:min(clamp(80px,19vmin,170px),17vw); width:auto; filter:drop-shadow(0 8px 10px rgba(0,0,0,.45)); animation:ldbreath 2.6s ease-in-out infinite; transform-origin:50% 100%; }
+.ldb.ldsmall { height:min(clamp(60px,14vmin,125px),12vw); margin-right:-6px; animation-delay:.4s; }
+.ldb.ldbig { height:min(clamp(100px,25vmin,220px),22vw); animation-delay:.9s; }
+@keyframes ldbreath { 50% { transform:scale(1.04,0.97); } }
+.ld-title { font-size:min(clamp(42px,11vmin,104px),10vw); font-weight:900; color:#ffd24a; letter-spacing:2px; white-space:nowrap; line-height:1.1; padding-bottom:clamp(6px,2vmin,16px); text-shadow:0 4px 0 #7a4512,0 8px 0 #4a2a0a,0 14px 30px rgba(0,0,0,.6); }
 .ld-bottom { position:absolute; left:0; right:0; bottom:max(24px,env(safe-area-inset-bottom)); display:flex; flex-direction:column; align-items:center; gap:6px; }
 #loading .lbar { position:relative; width:min(78vw,520px); height:26px; background:#0007; border:3px solid #fff8; border-radius:14px; }
 #loading .lbar i { background:linear-gradient(#ffe56a,#f2b81a); border-radius:10px; }
@@ -305,8 +307,11 @@ body.cutscene #touch { pointer-events:none; }
 <div id="touch"></div>
 
 <div id="loading" class="screen">
-  <div id="ld-birds"></div>
-  <div class="ld-title">Bird Wars</div>
+  <div class="ld-row">
+    <div id="ld-left" class="ld-side"></div>
+    <div class="ld-title">Bird Wars</div>
+    <div id="ld-right" class="ld-side"></div>
+  </div>
   <div class="ld-bottom">
     <div class="lbar"><i id="loadbar"></i><span id="loadpct">0%</span></div>
     <div id="loadtxt">Loading…</div>
@@ -333,7 +338,7 @@ body.cutscene #touch { pointer-events:none; }
   </div>
   <div class="ver" data-i18n="ver"></div>
   <button class="langbtn" id="btn-lang">🌍</button>
-  <div id="gbBadge" title="Golden Birds"></div>
+  <div id="gbBadge" title="Gold Coins"></div>
 </div>
 
 <div id="settings" class="screen hidden" style="background:rgba(0,0,0,.55)">
@@ -1226,6 +1231,20 @@ Object.assign(TR_UI, {
   defeat_gb:   ["Even in defeat you earned Golden Birds:", "Даже за поражение вы получили Золотых птиц:", "Incluso perdiendo ganaste aves doradas:", "Mesmo perdendo você ganhou pássaros dourados:", "Même vaincu, vous gagnez des oiseaux d'or :", "Auch bei Niederlage gibt es Goldvögel:", "即使失败也获得了金鸟：", "負けても黄金の鳥を獲得：", "हार में भी सुनहरे पक्षी मिले:", "حتى بالخسارة ربحت طيورًا ذهبية:"],
   win_gb:      ["Reward:", "Награда:", "Recompensa:", "Recompensa:", "Récompense :", "Belohnung:", "奖励：", "報酬：", "इनाम:", "المكافأة:"],
   run_note:    ["This run is complete — its save slot is now free.", "Прохождение завершено — его слот сохранения освобождён.", "Partida terminada: su ranura queda libre.", "Jogo concluído — o slot ficou livre.", "Partie terminée — l'emplacement est libéré.", "Durchgang beendet — der Speicherplatz ist frei.", "本局结束，存档位已释放。", "クリア済み — スロットが空きました。", "यह खेल पूरा — सेव स्लॉट ख़ाली हुआ।", "انتهت الجولة — تحررت خانة الحفظ."],
+});
+// Золотые птицы → Золотые монеты (с птицей на монете); вечная ночь на «Невозможной»
+Object.assign(TR_UI, {
+  gbirds:      ["Gold Coins", "Золотые монеты", "Monedas de oro", "Moedas de ouro", "Pièces d'or", "Goldmünzen", "金币", "金貨", "सोने के सिक्के", "عملات ذهبية"],
+  gb_info:     ["Earned by surviving 50 days or when your nest falls. Kept forever, across all runs.", "Даются за 50 дней выживания или при разрушении гнезда. Сохраняются навсегда, во всех прохождениях.", "Se ganan sobreviviendo 50 días o al caer el nido. Se conservan siempre.", "Ganhas ao sobreviver 50 dias ou quando o ninho cai. Ficam para sempre.", "Gagnées en survivant 50 jours ou à la chute du nid. Conservées pour toujours.", "Für 50 überlebte Tage oder wenn das Nest fällt. Bleiben für immer.", "存活50天或巢被毁时获得，永久保留。", "50日生存か巣の破壊で獲得。ずっと残る。", "50 दिन बचने या घोंसला गिरने पर मिलते हैं। हमेशा रहते हैं।", "تُكسب بالنجاة 50 يومًا أو عند سقوط العش. تبقى للأبد."],
+  hero_locked: ["🔒 Costs {n} gold coins", "🔒 Стоит {n} золотых монет", "🔒 Cuesta {n} monedas de oro", "🔒 Custa {n} moedas de ouro", "🔒 Coûte {n} pièces d'or", "🔒 Kostet {n} Goldmünzen", "🔒 需要 {n} 金币", "🔒 金貨{n}枚", "🔒 कीमत {n} सोने के सिक्के", "🔒 السعر {n} عملات ذهبية"],
+  hero_noGB:   ["Not enough gold coins — survive 50 days or keep playing to earn them", "Не хватает золотых монет — доживите до 50 дня или играйте ещё, чтобы их получить", "Faltan monedas de oro — sobrevive 50 días o sigue jugando", "Faltam moedas de ouro — sobreviva 50 dias ou continue jogando", "Pas assez de pièces d'or — survivez 50 jours ou continuez", "Zu wenige Goldmünzen — überlebe 50 Tage oder spiele weiter", "金币不足 — 存活50天或继续游玩来获得", "金貨が足りない — 50日生き延びよう", "सोने के सिक्के कम हैं — 50 दिन बचें या खेलते रहें", "عملات ذهبية غير كافية — انجُ 50 يومًا أو واصل اللعب"],
+  gb_earned:   ["+{n} gold coins (total {t})", "+{n} золотых монет (всего {t})", "+{n} monedas de oro (total {t})", "+{n} moedas de ouro (total {t})", "+{n} pièces d'or (total {t})", "+{n} Goldmünzen (gesamt {t})", "+{n} 金币（共 {t}）", "金貨 +{n}（計{t}）", "+{n} सोने के सिक्के (कुल {t})", "+{n} عملات ذهبية (المجموع {t})"],
+  defeat_gb:   ["Even in defeat you earned gold coins:", "Даже за поражение вы получили золотые монеты:", "Incluso perdiendo ganaste monedas de oro:", "Mesmo perdendo você ganhou moedas de ouro:", "Même vaincu, vous gagnez des pièces d'or :", "Auch bei Niederlage gibt es Goldmünzen:", "即使失败也获得了金币：", "負けても金貨を獲得：", "हार में भी सोने के सिक्के मिले:", "حتى بالخسارة ربحت عملات ذهبية:"],
+  eternal:     ["🌑 eternal night", "🌑 вечная ночь", "🌑 noche eterna", "🌑 noite eterna", "🌑 nuit éternelle", "🌑 ewige Nacht", "🌑 永夜", "🌑 永遠の夜", "🌑 अनंत रात", "🌑 ليل أبدي"],
+  dawn_comes:  ["☀️ At last — the dawn!", "☀️ Наконец-то рассвет!", "☀️ ¡Por fin amanece!", "☀️ Finalmente, o amanhecer!", "☀️ Enfin l'aube !", "☀️ Endlich der Morgen!", "☀️ 终于天亮了！", "☀️ ついに夜明けだ！", "☀️ आख़िरकार सुबह!", "☀️ أخيرًا الفجر!"],
+});
+Object.assign(TR_DATA, {
+  'dd.impossible': ["Eternal night until the end, huge packs, very little time. Masters only.", "Вечная ночь до самого конца, огромные стаи, очень мало времени. Только для мастеров.", "Noche eterna hasta el final, manadas enormes, poco tiempo. Solo expertos.", "Noite eterna até o fim, bandos enormes, pouco tempo. Só mestres.", "Nuit éternelle jusqu'à la fin, meutes énormes, peu de temps. Experts.", "Ewige Nacht bis zum Ende, riesige Rudel, kaum Zeit. Nur für Profis.", "永夜直到结局，巨大兽群，时间极少，仅限高手。", "最後まで永遠の夜、巨大な群れ、時間わずか。達人向け。", "अंत तक अनंत रात, विशाल झुंड, बहुत कम समय। सिर्फ़ उस्ताद।", "ليل أبدي حتى النهاية، قطعان هائلة ووقت قليل. للمحترفين فقط."],
 });
 
 </script>
@@ -4015,10 +4034,14 @@ const G = window.G = {};
       if (G.state === 'play') UI.hud(dt);
     }
   };
+  // На «Невозможной» — вечная ночь (дни всё равно считаются), светает только в финале
+  const eternalNight = () => S && S.diff === 'impossible';
+  G.eternalNight = eternalNight;
+  const skyTime = () => eternalNight() ? 0.75 : S.dayTime;
   function update(dt) {
     S.stats.time = (S.stats.time || 0) + dt;
     S.dayTime += dt / 300; if (S.dayTime >= 1) { S.dayTime -= 1; S.day++; UI.toast(tr('new_day', { n: S.day }), 'info'); if (S.day >= GOAL_DAYS && !S.won) { startCutscene(); return; } }
-    const dl = World.updateSky(S.dayTime, V(P.pos.x, 0, P.pos.z), dt, time);
+    const dl = World.updateSky(skyTime(), V(P.pos.x, 0, P.pos.z), dt, time);
     Sound.setNight(dl < 0.2);
     updatePlayer(dt);
     updateBuild();
@@ -4099,17 +4122,19 @@ const G = window.G = {};
     // площадка посадки — рядом с героем, на ровной земле базы
     const land = V(P.pos.x + 4, 0, P.pos.z + 1); land.y = World.groundAt(land.x, land.z);
     // солнце садится с этой стороны (0.47 дня), туда вертолёт и улетит
-    const a = 0.492 * Math.PI * 2, sunDir = V(Math.cos(a) * 0.8, 0, 0.45).normalize();
+    const night = eternalNight(), skyTo = night ? 1.06 : 0.492;
+    const a = (night ? 0.06 : 0.492) * Math.PI * 2, sunDir = V(Math.cos(a) * 0.8, 0, 0.45).normalize();
     const start = land.clone().addScaledVector(sunDir, -110); start.y = land.y + 40;
     heli.position.copy(start);
-    cut = { t: 0, heli, land, start, sunDir, day0: S.dayTime, rotorT: 0, heroGone: false, camPos: camera.position.clone() };
+    if (night) setTimeout(() => UI.toast(tr('dawn_comes'), 'good', 4000), 6000);
+    cut = { t: 0, heli, land, start, sunDir, skyTo, day0: skyTime(), rotorT: 0, heroGone: false, camPos: camera.position.clone() };
   }
   function updateCutscene(dt) {
     const c = cut; if (!c) return;
     c.t += dt; time += dt; const t = c.t, h = c.heli, ease = x => x * x * (3 - 2 * x);
     // небо плавно переходит в закат
-    S.dayTime = c.day0 + (0.492 - c.day0) * Math.min(1, t / 9);
-    World.updateSky(S.dayTime, V(c.land.x, 0, c.land.z), dt, time);
+    const sky = (c.day0 + (c.skyTo - c.day0) * Math.min(1, t / 10)) % 1;
+    World.updateSky(sky, V(c.land.x, 0, c.land.z), dt, time);
     updateParticles(dt); updateEnemies(dt); updateBirds(dt); updateLights(dt);
     // винты
     h.userData.rotor.rotation.y += dt * 28; h.userData.tailRotor.rotation.x += dt * 34;
@@ -4180,6 +4205,35 @@ const G = window.G = {};
     renderer.setRenderTarget(null); renderer.shadowMap.enabled = prevShadow; rt.dispose();
   };
   G.portrait = sp => portraits[sp] || '';
+  // Птицы для экрана загрузки: смотрят прямо на игрока, прозрачный фон, без кружков
+  G.makeLoadBirds = function (list) {
+    const size = 256, rt = new THREE.WebGLRenderTarget(size, size);
+    const sc = new THREE.Scene();
+    sc.add(new THREE.HemisphereLight(0xffffff, 0x6a8a4a, 1.05));
+    const dl = new THREE.DirectionalLight(0xffffff, 0.9); dl.position.set(1.5, 3, 4); sc.add(dl);
+    const cm = new THREE.PerspectiveCamera(28, 1, 0.1, 50);
+    const px = new Uint8Array(size * size * 4);
+    const cv = document.createElement('canvas'); cv.width = cv.height = size; const cx = cv.getContext('2d');
+    const prevShadow = renderer.shadowMap.enabled; renderer.shadowMap.enabled = false;
+    const prevClear = renderer.getClearColor(new THREE.Color()).getHex(), prevAlpha = renderer.getClearAlpha();
+    renderer.setClearColor(0x000000, 0);
+    const out = {};
+    list.forEach(sp => {
+      const b = Models.makeBird(sp); b.scale.setScalar(1); b.rotation.y = 0; sc.add(b);
+      Models.animBird(b, 'idle', 0);
+      const box = new THREE.Box3().setFromObject(b), c = box.getCenter(new THREE.Vector3()), sz = box.getSize(new THREE.Vector3());
+      const d = Math.max(sz.x, sz.y) * 2.25;
+      cm.position.set(c.x, c.y + d * 0.12, c.z + d); cm.lookAt(c);
+      renderer.setRenderTarget(rt); renderer.clear(); renderer.render(sc, cm);
+      renderer.readRenderTargetPixels(rt, 0, 0, size, size, px);
+      const img = cx.createImageData(size, size);
+      for (let y = 0; y < size; y++) img.data.set(px.subarray((size - 1 - y) * size * 4, (size - y) * size * 4), y * size * 4);
+      cx.clearRect(0, 0, size, size); cx.putImageData(img, 0, 0); out[sp] = cv.toDataURL('image/png');
+      sc.remove(b);
+    });
+    renderer.setRenderTarget(null); renderer.setClearColor(prevClear, prevAlpha); renderer.shadowMap.enabled = prevShadow; rt.dispose();
+    return out;
+  };
 
   // ---------------- Сохранение: 3 слота ----------------
   const SLOT_KEY = n => 'birdwars_slot_' + n;
@@ -4272,9 +4326,12 @@ const UI = window.UI = {};
 
   // ---------------- Загрузка ----------------
   const setLoad = (p, t) => { p = Math.round(p); $('loadbar').style.width = p + '%'; $('loadpct').textContent = p + '%'; $('loadtxt').textContent = t; };
+  // Экран загрузки: три птицы вплотную к названию, смотрят на игрока
   function placeLoadBirds() {
-    const box = $('ld-birds'); box.innerHTML = '';
-    BIRD_ORDER.forEach((sp, i) => { const a = i / BIRD_ORDER.length * Math.PI * 2 - Math.PI / 2; const im = h('img', { src: G.portrait(sp), cls: 'ldb', style: `left:calc(50% + ${Math.cos(a) * 40}vw * var(--rx));top:calc(41% + ${Math.sin(a) * 27}vh);animation-delay:${(i * 0.17).toFixed(2)}s` }); box.append(im); });
+    const imgs = G.makeLoadBirds(['sparrow', 'guinea', 'turkey']);
+    const mk = (sp, cls) => h('img', { src: imgs[sp], cls: 'ldb ' + cls, alt: '' });
+    $('ld-left').append(mk('sparrow', 'ldsmall'), mk('guinea', ''));
+    $('ld-right').append(mk('turkey', 'ldbig'));
   }
   const nextFrame = () => new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
   async function boot() {
@@ -4548,7 +4605,7 @@ const UI = window.UI = {};
       $('phptxt').textContent = P.dead ? tr('wounded') : `${Math.ceil(P.hp)}/${P.maxHp}`;
       const dl = World.daylight;
       const dc = G.dayClock(), mmss = n => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`;
-      $('daytxt').innerHTML = `${dc.night ? '🌙' : '☀️'} ${tr('goal_day', { n: S.day })} · ${G.diff().icon}<br><small>${tr(dc.night ? 'morning_in' : 'night_in', { t: mmss(dc.left) })}</small>`;
+      $('daytxt').innerHTML = `${dc.night || G.eternalNight() ? '🌙' : '☀️'} ${tr('goal_day', { n: S.day })} · ${G.diff().icon}<br><small>${G.eternalNight() ? tr('eternal') : tr(dc.night ? 'morning_in' : 'night_in', { t: mmss(dc.left) })}</small>`;
       const st = P.st / P.maxSt; $('pst').style.width = (st * 100) + '%'; $('pst').className = P.tired ? 'tired' : '';
       $('btn-run').classList.toggle('on', !!G.input.run);
       const boss = G.boss(); $('bossbar').classList.toggle('hidden', !boss);

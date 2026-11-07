@@ -1228,10 +1228,14 @@ const G = window.G = {};
       if (G.state === 'play') UI.hud(dt);
     }
   };
+  // На «Невозможной» — вечная ночь (дни всё равно считаются), светает только в финале
+  const eternalNight = () => S && S.diff === 'impossible';
+  G.eternalNight = eternalNight;
+  const skyTime = () => eternalNight() ? 0.75 : S.dayTime;
   function update(dt) {
     S.stats.time = (S.stats.time || 0) + dt;
     S.dayTime += dt / 300; if (S.dayTime >= 1) { S.dayTime -= 1; S.day++; UI.toast(tr('new_day', { n: S.day }), 'info'); if (S.day >= GOAL_DAYS && !S.won) { startCutscene(); return; } }
-    const dl = World.updateSky(S.dayTime, V(P.pos.x, 0, P.pos.z), dt, time);
+    const dl = World.updateSky(skyTime(), V(P.pos.x, 0, P.pos.z), dt, time);
     Sound.setNight(dl < 0.2);
     updatePlayer(dt);
     updateBuild();
@@ -1312,17 +1316,19 @@ const G = window.G = {};
     // площадка посадки — рядом с героем, на ровной земле базы
     const land = V(P.pos.x + 4, 0, P.pos.z + 1); land.y = World.groundAt(land.x, land.z);
     // солнце садится с этой стороны (0.47 дня), туда вертолёт и улетит
-    const a = 0.492 * Math.PI * 2, sunDir = V(Math.cos(a) * 0.8, 0, 0.45).normalize();
+    const night = eternalNight(), skyTo = night ? 1.06 : 0.492;
+    const a = (night ? 0.06 : 0.492) * Math.PI * 2, sunDir = V(Math.cos(a) * 0.8, 0, 0.45).normalize();
     const start = land.clone().addScaledVector(sunDir, -110); start.y = land.y + 40;
     heli.position.copy(start);
-    cut = { t: 0, heli, land, start, sunDir, day0: S.dayTime, rotorT: 0, heroGone: false, camPos: camera.position.clone() };
+    if (night) setTimeout(() => UI.toast(tr('dawn_comes'), 'good', 4000), 6000);
+    cut = { t: 0, heli, land, start, sunDir, skyTo, day0: skyTime(), rotorT: 0, heroGone: false, camPos: camera.position.clone() };
   }
   function updateCutscene(dt) {
     const c = cut; if (!c) return;
     c.t += dt; time += dt; const t = c.t, h = c.heli, ease = x => x * x * (3 - 2 * x);
     // небо плавно переходит в закат
-    S.dayTime = c.day0 + (0.492 - c.day0) * Math.min(1, t / 9);
-    World.updateSky(S.dayTime, V(c.land.x, 0, c.land.z), dt, time);
+    const sky = (c.day0 + (c.skyTo - c.day0) * Math.min(1, t / 10)) % 1;
+    World.updateSky(sky, V(c.land.x, 0, c.land.z), dt, time);
     updateParticles(dt); updateEnemies(dt); updateBirds(dt); updateLights(dt);
     // винты
     h.userData.rotor.rotation.y += dt * 28; h.userData.tailRotor.rotation.x += dt * 34;
@@ -1393,6 +1399,35 @@ const G = window.G = {};
     renderer.setRenderTarget(null); renderer.shadowMap.enabled = prevShadow; rt.dispose();
   };
   G.portrait = sp => portraits[sp] || '';
+  // Птицы для экрана загрузки: смотрят прямо на игрока, прозрачный фон, без кружков
+  G.makeLoadBirds = function (list) {
+    const size = 256, rt = new THREE.WebGLRenderTarget(size, size);
+    const sc = new THREE.Scene();
+    sc.add(new THREE.HemisphereLight(0xffffff, 0x6a8a4a, 1.05));
+    const dl = new THREE.DirectionalLight(0xffffff, 0.9); dl.position.set(1.5, 3, 4); sc.add(dl);
+    const cm = new THREE.PerspectiveCamera(28, 1, 0.1, 50);
+    const px = new Uint8Array(size * size * 4);
+    const cv = document.createElement('canvas'); cv.width = cv.height = size; const cx = cv.getContext('2d');
+    const prevShadow = renderer.shadowMap.enabled; renderer.shadowMap.enabled = false;
+    const prevClear = renderer.getClearColor(new THREE.Color()).getHex(), prevAlpha = renderer.getClearAlpha();
+    renderer.setClearColor(0x000000, 0);
+    const out = {};
+    list.forEach(sp => {
+      const b = Models.makeBird(sp); b.scale.setScalar(1); b.rotation.y = 0; sc.add(b);
+      Models.animBird(b, 'idle', 0);
+      const box = new THREE.Box3().setFromObject(b), c = box.getCenter(new THREE.Vector3()), sz = box.getSize(new THREE.Vector3());
+      const d = Math.max(sz.x, sz.y) * 2.25;
+      cm.position.set(c.x, c.y + d * 0.12, c.z + d); cm.lookAt(c);
+      renderer.setRenderTarget(rt); renderer.clear(); renderer.render(sc, cm);
+      renderer.readRenderTargetPixels(rt, 0, 0, size, size, px);
+      const img = cx.createImageData(size, size);
+      for (let y = 0; y < size; y++) img.data.set(px.subarray((size - 1 - y) * size * 4, (size - y) * size * 4), y * size * 4);
+      cx.clearRect(0, 0, size, size); cx.putImageData(img, 0, 0); out[sp] = cv.toDataURL('image/png');
+      sc.remove(b);
+    });
+    renderer.setRenderTarget(null); renderer.setClearColor(prevClear, prevAlpha); renderer.shadowMap.enabled = prevShadow; rt.dispose();
+    return out;
+  };
 
   // ---------------- Сохранение: 3 слота ----------------
   const SLOT_KEY = n => 'birdwars_slot_' + n;

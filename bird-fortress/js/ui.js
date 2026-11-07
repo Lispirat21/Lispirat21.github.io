@@ -35,9 +35,12 @@ const UI = window.UI = {};
 
   // ---------------- Загрузка ----------------
   const setLoad = (p, t) => { p = Math.round(p); $('loadbar').style.width = p + '%'; $('loadpct').textContent = p + '%'; $('loadtxt').textContent = t; };
+  // Экран загрузки: три птицы вплотную к названию, смотрят на игрока
   function placeLoadBirds() {
-    const box = $('ld-birds'); box.innerHTML = '';
-    BIRD_ORDER.forEach((sp, i) => { const a = i / BIRD_ORDER.length * Math.PI * 2 - Math.PI / 2; const im = h('img', { src: G.portrait(sp), cls: 'ldb', style: `left:calc(50% + ${Math.cos(a) * 40}vw * var(--rx));top:calc(41% + ${Math.sin(a) * 27}vh);animation-delay:${(i * 0.17).toFixed(2)}s` }); box.append(im); });
+    const imgs = G.makeLoadBirds(['sparrow', 'guinea', 'turkey']);
+    const mk = (sp, cls) => h('img', { src: imgs[sp], cls: 'ldb ' + cls, alt: '' });
+    $('ld-left').append(mk('sparrow', 'ldsmall'), mk('guinea', ''));
+    $('ld-right').append(mk('turkey', 'ldbig'));
   }
   const nextFrame = () => new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
   async function boot() {
@@ -311,7 +314,7 @@ const UI = window.UI = {};
       $('phptxt').textContent = P.dead ? tr('wounded') : `${Math.ceil(P.hp)}/${P.maxHp}`;
       const dl = World.daylight;
       const dc = G.dayClock(), mmss = n => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`;
-      $('daytxt').innerHTML = `${dc.night ? '🌙' : '☀️'} ${tr('goal_day', { n: S.day })} · ${G.diff().icon}<br><small>${tr(dc.night ? 'morning_in' : 'night_in', { t: mmss(dc.left) })}</small>`;
+      $('daytxt').innerHTML = `${dc.night || G.eternalNight() ? '🌙' : '☀️'} ${tr('goal_day', { n: S.day })} · ${G.diff().icon}<br><small>${G.eternalNight() ? tr('eternal') : tr(dc.night ? 'morning_in' : 'night_in', { t: mmss(dc.left) })}</small>`;
       const st = P.st / P.maxSt; $('pst').style.width = (st * 100) + '%'; $('pst').className = P.tired ? 'tired' : '';
       $('btn-run').classList.toggle('on', !!G.input.run);
       const boss = G.boss(); $('bossbar').classList.toggle('hidden', !boss);

@@ -225,13 +225,15 @@ body.fp #crosshair { display:block; }
 #lp-list button .fl { font-size:28px; line-height:1; }
 #lp-list button.on { border-color:#4caf50; background:#eaf7e2; box-shadow:0 0 0 2px #4caf50 inset; }
 .langbtn { position:fixed; right:max(12px,env(safe-area-inset-right)); top:max(12px,env(safe-area-inset-top)); width:48px; height:48px; border-radius:50%; border:2px solid #fff8; background:#0008; font-size:24px; color:#fff; }
-/* ---------- загрузка: название, птицы по кругу, жёлтая полоска ---------- */
-#loading { background:radial-gradient(ellipse at 50% 45%,#4f9a3c 0%,#2d6a2a 55%,#173d18 100%); --rx:1; }
-@media (orientation:portrait) { #loading { --rx:1.1; } }
-#ld-birds { position:absolute; inset:0; pointer-events:none; }
-.ldb { position:absolute; width:clamp(54px,9vmin,96px); height:clamp(54px,9vmin,96px); margin:calc(clamp(54px,9vmin,96px) / -2); border-radius:50%; background:#e6f4d4; border:3px solid #ffd24a; box-shadow:0 4px 12px #0006; object-fit:cover; animation:ldbob 2.2s ease-in-out infinite; }
-@keyframes ldbob { 50% { transform:translateY(-8px) rotate(-4deg); } }
-.ld-title { position:absolute; left:0; right:0; top:41%; transform:translateY(-50%); text-align:center; font-size:clamp(46px,12vmin,110px); font-weight:900; color:#ffd24a; letter-spacing:2px; text-shadow:0 4px 0 #7a4512,0 8px 0 #4a2a0a,0 14px 30px rgba(0,0,0,.6); }
+/* ---------- загрузка: название и три птицы рядом с ним, жёлтая полоска ---------- */
+#loading { background:radial-gradient(ellipse at 50% 45%,#4f9a3c 0%,#2d6a2a 55%,#173d18 100%); }
+.ld-row { position:absolute; left:0; right:0; top:44%; transform:translateY(-50%); display:flex; align-items:flex-end; justify-content:center; padding:0 12px; }
+.ld-side { display:flex; align-items:flex-end; }
+.ldb { display:block; height:min(clamp(80px,19vmin,170px),17vw); width:auto; filter:drop-shadow(0 8px 10px rgba(0,0,0,.45)); animation:ldbreath 2.6s ease-in-out infinite; transform-origin:50% 100%; }
+.ldb.ldsmall { height:min(clamp(60px,14vmin,125px),12vw); margin-right:-6px; animation-delay:.4s; }
+.ldb.ldbig { height:min(clamp(100px,25vmin,220px),22vw); animation-delay:.9s; }
+@keyframes ldbreath { 50% { transform:scale(1.04,0.97); } }
+.ld-title { font-size:min(clamp(42px,11vmin,104px),10vw); font-weight:900; color:#ffd24a; letter-spacing:2px; white-space:nowrap; line-height:1.1; padding-bottom:clamp(6px,2vmin,16px); text-shadow:0 4px 0 #7a4512,0 8px 0 #4a2a0a,0 14px 30px rgba(0,0,0,.6); }
 .ld-bottom { position:absolute; left:0; right:0; bottom:max(24px,env(safe-area-inset-bottom)); display:flex; flex-direction:column; align-items:center; gap:6px; }
 #loading .lbar { position:relative; width:min(78vw,520px); height:26px; background:#0007; border:3px solid #fff8; border-radius:14px; }
 #loading .lbar i { background:linear-gradient(#ffe56a,#f2b81a); border-radius:10px; }
@@ -306,8 +308,11 @@ body.cutscene #touch { pointer-events:none; }
 <div id="touch"></div>
 
 <div id="loading" class="screen">
-  <div id="ld-birds"></div>
-  <div class="ld-title">Bird Wars</div>
+  <div class="ld-row">
+    <div id="ld-left" class="ld-side"></div>
+    <div class="ld-title">Bird Wars</div>
+    <div id="ld-right" class="ld-side"></div>
+  </div>
   <div class="ld-bottom">
     <div class="lbar"><i id="loadbar"></i><span id="loadpct">0%</span></div>
     <div id="loadtxt">Loading…</div>
@@ -334,7 +339,7 @@ body.cutscene #touch { pointer-events:none; }
   </div>
   <div class="ver" data-i18n="ver"></div>
   <button class="langbtn" id="btn-lang">🌍</button>
-  <div id="gbBadge" title="Golden Birds"></div>
+  <div id="gbBadge" title="Gold Coins"></div>
 </div>
 
 <div id="settings" class="screen hidden" style="background:rgba(0,0,0,.55)">
