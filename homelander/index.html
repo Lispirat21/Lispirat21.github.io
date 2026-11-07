@@ -329,9 +329,10 @@
   const sounds = {};
   let running = false;
 
+  let unlocking = false;
   function forceLoud(a) {
     a.volume = 1; a.muted = false;
-    a.addEventListener('volumechange', () => { if (a.volume !== 1) a.volume = 1; if (a.muted) a.muted = false; });
+    a.addEventListener('volumechange', () => { if (unlocking) return; if (a.volume !== 1) a.volume = 1; if (a.muted) a.muted = false; });
     a.addEventListener('pause', () => { if (running && a.dataset.keep === '1' && !a.ended) a.play().catch(() => {}); });
   }
   SOUND_NAMES.forEach((n) => {
@@ -353,25 +354,19 @@
   function stopVoices() { VOICE_SNDS.forEach(stop); }
   function voiceBusy() { return VOICE_SNDS.some((n) => !sounds[n].paused) || !!(window.speechSynthesis && speechSynthesis.speaking); }
 
-  // ---------- loudness: gain boost + limiter so it is as loud as the phone allows ----------
+  // ---------- Web Audio is used only for the siren; voice/music files play directly (clean, works on iPhone) ----------
   let actx = null, boost = null;
-  const BOOST = 2.4;
   function initAudioGraph() {
     if (actx) return;
     try {
       const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
       actx = new AC();
-      boost = actx.createGain(); boost.gain.value = BOOST;
-      const lim = actx.createDynamicsCompressor();
-      lim.threshold.value = -5; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = 0.001; lim.release.value = 0.12;
-      boost.connect(lim); lim.connect(actx.destination);
-      for (const a of Object.values(sounds)) { try { actx.createMediaElementSource(a).connect(boost); } catch (e) {} }
+      boost = actx.createGain(); boost.gain.value = 1;
+      boost.connect(actx.destination);
     } catch (e) { actx = null; }
   }
   function wakeAudio() {
-    if (!actx) return;
-    if (actx.state !== 'running') actx.resume().catch(() => {});
-    if (boost && boost.gain.value !== BOOST) boost.gain.value = BOOST;
+    if (actx && actx.state !== 'running') actx.resume().catch(() => {});
   }
 
   // ---------- siren (synthesised, goes through the same booster) ----------
@@ -379,7 +374,7 @@
     initAudioGraph(); wakeAudio();
     if (!actx) return () => {};
     const t = actx.currentTime;
-    const out = actx.createGain(); out.gain.setValueAtTime(0.0001, t); out.gain.exponentialRampToValueAtTime(0.55, t + 0.15);
+    const out = actx.createGain(); out.gain.setValueAtTime(0.0001, t); out.gain.exponentialRampToValueAtTime(0.42, t + 0.15);
     const lp = actx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 3200;
     lp.connect(out); out.connect(boost);
     const lfo = actx.createOscillator(); lfo.type = 'triangle'; lfo.frequency.value = 0.6;
@@ -398,9 +393,26 @@
     };
   }
 
+  // silently "touch" every sound inside a tap so the phone lets us play them later
+  let unlocked = false;
+  function unlockAll() {
+    if (unlocked) return; unlocked = true;
+    unlocking = true;
+    const list = Object.values(sounds).map((a) => {
+      a.muted = true;
+      const p = a.play();
+      return (p && p.then ? p : Promise.resolve()).then(() => { a.pause(); a.currentTime = 0; }).catch(() => {});
+    });
+    Promise.all(list).then(() => {
+      Object.values(sounds).forEach((a) => { a.muted = false; a.volume = 1; });
+      unlocking = false;
+    });
+    setTimeout(() => { if (unlocking) { Object.values(sounds).forEach((a) => { a.muted = false; }); unlocking = false; } }, 1500);
+  }
+
   // keep everything at 1.0 even if something on the page tries to change it
   setInterval(() => {
-    if (!running) return;
+    if (!running || unlocking) return;
     for (const a of Object.values(sounds)) { if (a.volume !== 1) a.volume = 1; if (a.muted) a.muted = false; }
     wakeAudio();
   }, 250);
@@ -424,26 +436,55 @@
 
   // ---------- speech for the rage line ----------
   let ruVoice = null;
+  let voicesKnown = false;
   function pickVoice() {
     if (!window.speechSynthesis) return;
-    const vs = speechSynthesis.getVoices().filter((v) => /^ru/i.test(v.lang));
-    ruVoice = vs.find((v) => /male|муж|dmitr|yuri|pavel|maxim/i.test(v.name) && !/female/i.test(v.name)) || vs[0] || null;
+    const all = speechSynthesis.getVoices();
+    if (all.length) voicesKnown = true;
+    const vs = all.filter((v) => /^ru/i.test(v.lang.replace('_', '-')));
+    ruVoice = vs.find((v) => /dmitr|yuri|pavel|maxim|муж|(^|[^e])male/i.test(v.name)) ||
+              vs.find((v) => v.localService) || vs[0] || null;
   }
   if (window.speechSynthesis) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
 
-  function speak(text, onEnd) {
+  // Recorded fallback when the phone has no Russian voice (otherwise an English voice mangles the text).
+  let fbIdx = 0;
+  function fallbackVoice(finish) {
+    const n = VOICE_SNDS[fbIdx++ % VOICE_SNDS.length];
+    stopVoices(); play(n);
+    const a = sounds[n];
+    a.addEventListener('ended', finish, { once: true });
+    setTimeout(finish, 9000);
+  }
+  let speakSeq = 0, ttsBroken = false;
+  function speak(text, onEnd, useFallback = true) {
     let done = false;
     const finish = () => { if (!done) { done = true; onEnd && onEnd(); } };
-    if (!window.speechSynthesis) { play('voice_best'); setTimeout(finish, 3800); return; }
-    try {
-      speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = 'ru-RU'; if (ruVoice) u.voice = ruVoice;
-      u.volume = 1; u.rate = 1.0; u.pitch = 0.6;
-      u.onend = finish; u.onerror = () => { play('voice_best'); setTimeout(finish, 3500); };
-      speechSynthesis.speak(u);
-      setTimeout(finish, 7000); // safety if the engine never fires onend
-    } catch (e) { play('voice_best'); setTimeout(finish, 3800); }
+    const fb = () => (useFallback ? fallbackVoice(finish) : finish());
+    const ss = window.speechSynthesis;
+    if (!ss || typeof SpeechSynthesisUtterance === 'undefined' || ttsBroken) return fb();
+    if (!ruVoice) pickVoice();
+    if (voicesKnown && !ruVoice) return fb();
+    const seq = ++speakSeq;
+    try { if (ss.speaking || ss.pending) ss.cancel(); } catch (e) {}
+    // Chrome drops an utterance queued right after cancel(), so give it a moment
+    setTimeout(() => {
+      if (seq !== speakSeq) return finish();
+      try {
+        stopVoices();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'ru-RU'; if (ruVoice) u.voice = ruVoice;
+        u.volume = 1; u.rate = 1.0; u.pitch = 0.85;
+        u.onend = finish;
+        u.onerror = (e) => {
+          if (e && (e.error === 'interrupted' || e.error === 'canceled')) return finish();
+          ttsBroken = true; fb();
+        };
+        try { ss.resume(); } catch (e) {}
+        ss.speak(u);
+        setTimeout(finish, 1500 + text.length * 90); // safety if the engine never fires onend
+      } catch (e) { ttsBroken = true; fb(); }
+    }, 80);
   }
 
   // ---------- helpers ----------
@@ -504,7 +545,7 @@
     initAudioGraph(); wakeAudio();
     // unlock speech + media inside this tap
     try { if (window.speechSynthesis) { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } } catch (e) {}
-    Object.values(sounds).forEach((a) => { const p = a.play(); p && p.then(() => { a.pause(); a.currentTime = 0; }).catch(() => {}); });
+    unlockAll();
     goFullscreen();
     boot.classList.remove('scan'); boot.classList.add('alarm');
     $('bootIcon').textContent = '⚠️';
@@ -512,7 +553,7 @@
     $('bootText').textContent = 'На устройстве найдено опасное приложение';
     stopSiren = siren();
     vibrate([500, 200, 500, 200, 500, 200, 500]);
-    setTimeout(() => speak('Внимание! Обнаружена угроза! Хоумлендер!'), 600);
+    setTimeout(() => speak('Внимание! Обнаружена угроза! Хоумлендер!', null, false), 600);
     setTimeout(() => $('start').classList.add('ready'), 1400);
   }
   boot.addEventListener('click', (e) => { if (!alarmed) { e.stopPropagation(); alarm(); } });
@@ -532,7 +573,7 @@
     // unlock speech on iOS with a silent utterance inside the tap
     try { if (window.speechSynthesis) { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } } catch (e) {}
     // unlock all audio elements inside the user gesture
-    Object.values(sounds).forEach((a) => { const p = a.play(); p && p.then(() => { a.pause(); a.currentTime = 0; }).catch(() => {}); });
+    unlockAll();
 
     $('boot').classList.add('hidden');
     setTimeout(() => {
