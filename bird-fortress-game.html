@@ -4335,6 +4335,7 @@ const UI = window.UI = {};
   }
   const nextFrame = () => new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
   async function boot() {
+    const bootStart = performance.now();
     setLang(G.settings.lang || 'en');
     setLoad(4, tr('loading')); await nextFrame();
     try { G.initRenderer($('c')); } catch (e) { setLoad(100, tr('webgl_err') + e.message); console.error(e); return; }
@@ -4344,7 +4345,9 @@ const UI = window.UI = {};
     try { G.initWorld(); } catch (e) { setLoad(100, tr('webgl_err') + e.message); console.error(e); return; }
     setLoad(85, tr('load_trees')); await nextFrame();
     G.applyQuality();
-    setLoad(100, tr('load_done')); await nextFrame(); await new Promise(r => setTimeout(r, 350));
+    // минимальная длительность экрана загрузки (~4 с), полоска плавно доезжает до 100%
+    const MIN_MS = 4000, from = 85, left = Math.max(600, MIN_MS - (performance.now() - bootStart));
+    await new Promise(res => { const t0 = performance.now(); (function step() { const k = Math.min(1, (performance.now() - t0) / left); setLoad(from + (100 - from) * k, k < 1 ? tr('load_birds') : tr('load_done')); if (k < 1) requestAnimationFrame(step); else setTimeout(res, 400); })(); });
     G.state = 'menu';
     show('menu'); refreshGB();
     if (!G.settings.lang) openLangPicker(true);
