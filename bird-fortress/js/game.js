@@ -95,8 +95,8 @@ const G = window.G = {};
   function newState(hero, diff) {
     const D = DIFFICULTY[diff] || DIFFICULTY.normal, st = D.start;
     return {
-      v: 1, hero, diff: diff || 'normal', res: { wood: Math.round(30 * st), stone: 0, iron: 0, coal: 0, food: Math.round(10 * st), coins: Math.round(60 * st) },
-      tools: { axe: 0, pick: -1 }, tech: { stone: false, metal: false, mech: false },
+      v: 1, hero, diff: diff || 'normal', res: { wood: Math.round(30 * st), stone: 0, iron: 0, coal: 0, ruby: 0, food: Math.round(10 * st), coins: Math.round(60 * st) },
+      tools: { axe: 0, pick: -1, sword: -1 }, tech: { stone: false, metal: false, mech: false },
       wave: 1, waveTimer: Math.round(D.prep * 1.25), waveActive: false, dayTime: 0.02, day: 1, quest: 0,
       player: { x: 0, z: 6, hp: HEROES[hero].hp }, stats: { wood: 0, stone: 0, iron: 0, coal: 0, food: 0, coins: 0, kills: 0, bosses: 0, built: 0, boughtBirds: 0, time: 0 },
     };
@@ -162,21 +162,34 @@ const G = window.G = {};
     P.pos.y = World.groundAt(P.pos.x, P.pos.z);
     setTool('axe');
     if (!S.gear) S.gear = { own: {}, eq: null };
+    if (S.hero === 'knight' && !S.gear.own.a_iron) { S.gear.own.a_iron = true; S.gear.armor = 'iron'; }
     Models.setGear(mesh, S.gear.eq); Models.setArmor(mesh, S.gear.armor);
+  }
+  // Меч: уровень из мастерской; у рыцаря железный меч есть с самого начала
+  G.swordTier = () => Math.max(S.tools.sword == null ? -1 : S.tools.sword, S.hero === 'knight' ? 2 : -1);
+  // kind: axe | pick | weapon (меч, иначе оружие героя) | hw (только оружие героя, напр. лук)
+  function toolModel(kind) {
+    if (kind === 'axe') return ['axe', S.tools.axe];
+    if (kind === 'pick') return ['pick', S.tools.pick];
+    const w = HEROES[S.hero].weapon;
+    if (kind === 'weapon') { const st = G.swordTier(); if (st >= 0) return ['sword', st]; }
+    return w && w !== 'sword' ? [w, 0] : ['axe', S.tools.axe];
   }
   function setTool(kind) {
     if (kind === 'pick' && S.tools.pick < 0) kind = 'axe';
-    const weapon = HEROES[S.hero].weapon;
-    if (kind === 'weapon' && !weapon) kind = 'axe';
-    const tier = kind === 'axe' ? S.tools.axe : kind === 'pick' ? S.tools.pick : 0;
-    if (P.tool === kind && P.toolTier === tier) return;
+    const [model, tier] = toolModel(kind);
+    if (P.tool === kind && P.toolModel === model && P.toolTier === tier) return;
     const hand = P.mesh.userData.parts.hand;
     while (hand.children.length) hand.remove(hand.children[0]);
-    hand.add(Models.makeTool(kind === 'weapon' ? weapon : kind, tier));
-    P.tool = kind; P.toolTier = tier;
+    hand.add(Models.makeTool(model, tier));
+    P.tool = kind; P.toolTier = tier; P.toolModel = model;
   }
-  G.selectTool = k => { if (k === 'pick' && S.tools.pick < 0) { UI.toast(tr('no_pick_yet'), 'warn'); return; } setTool(k); };
-  G.playerTool = () => P ? P.tool : 'axe';
+  G.selectTool = k => {
+    if (k === 'pick' && S.tools.pick < 0) { UI.toast(tr('no_pick_yet'), 'warn'); return; }
+    if (k === 'weapon' && G.swordTier() < 0) { UI.toast(tr('no_sword'), 'warn'); return; }
+    setTool(k);
+  };
+  G.playerTool = () => P ? (P.tool === 'hw' ? 'weapon' : P.tool) : 'axe';
 
   // ---------------- Постройки ----------------
   const PASS_PLAYER = { gate: 1, stonegate: 1, spikes: 1, farm: 1 };
@@ -736,7 +749,7 @@ const G = window.G = {};
   function nodeOK(n) {
     const info = NODE_INFO[n.kind];
     if (info.tool === 'pick' && S.tools.pick < info.minPick) {
-      if (time - P.hintT > 3) { P.hintT = time; UI.toast(S.tools.pick < 0 ? tr('need_pick') : tr('need_pick2'), 'warn'); }
+      if (time - P.hintT > 3) { P.hintT = time; UI.toast(S.tools.pick < 0 ? tr('need_pick') : tr(info.minPick >= 2 ? 'need_pick3' : 'need_pick2'), 'warn'); }
       return false;
     }
     return true;
@@ -766,7 +779,8 @@ const G = window.G = {};
     const hero = HEROES[S.hero];
     if (t.e) {
       if (t.e.dying) return;
-      hurtEnemy(t.e, hero.dmg * (0.9 + S.tools.axe * 0.35));
+      const st = G.swordTier();
+      hurtEnemy(t.e, hero.dmg * (st >= 0 ? SWORDS[st].mul : 0.9 + S.tools.axe * 0.35));
       Sound.play('hit'); spawnParticles(t.e.pos.clone().add(V(0, 0.7, 0)), 0xffffff, 4, 2.5, 0.14, 0.4);
       return;
     }
@@ -795,7 +809,7 @@ const G = window.G = {};
     const whole = Math.floor(n.acc); if (whole > 0) { n.acc -= whole; addRes(info.res, whole, pos); }
     n.shake = 0.3;
     Sound.play(n.kind === 'tree' ? 'chop' : 'mine');
-    spawnParticles(V(n.x, n.y + (n.kind === 'tree' ? 1.0 : 0.7), n.z), n.kind === 'tree' ? 0xc89a5e : (n.kind === 'coal' ? 0x222222 : n.kind === 'iron' ? 0xc87a40 : 0x9a9a96), 5, 3, 0.14, 0.6);
+    spawnParticles(V(n.x, n.y + (n.kind === 'tree' ? 1.0 : 0.7), n.z), n.kind === 'tree' ? 0xc89a5e : (n.kind === 'coal' ? 0x222222 : n.kind === 'iron' ? 0xc87a40 : n.kind === 'ruby' ? 0xe0204a : 0x9a9a96), 5, 3, 0.14, 0.6);
     if (n.hp <= 0.001) {
       if (n.acc > 0.3) addRes(info.res, 1, pos);
       if (n.kind === 'tree') fellTree(n);
@@ -881,7 +895,7 @@ const G = window.G = {};
       if (P.bowCd <= 0 && P.swing <= 0) {
         const e = nearestEnemy(P.pos.x, P.pos.z, hero.bowRange);
         if (e) {
-          P.bowCd = 1 / hero.atkRate; setTool('weapon');
+          P.bowCd = 1 / hero.atkRate; setTool('hw');
           P.yaw = Math.atan2(e.pos.x - P.pos.x, e.pos.z - P.pos.z);
           fire(V(P.pos.x, P.pos.y + 1.5, P.pos.z), e, { kind: 'arrow', dmg: hero.dmg, splash: 0 });
           Sound.play('arrow');
@@ -992,11 +1006,12 @@ const G = window.G = {};
   G.hasWorkshop = () => G.countB('workshop') > 0;
   G.craftTool = function (kind) {
     if (!G.hasWorkshop()) { UI.toast(tr('build_ws_first'), 'warn'); return false; }
-    const list = kind === 'axe' ? AXES : PICKS; const cur = S.tools[kind]; const next = list[cur + 1];
+    const list = { axe: AXES, pick: PICKS, sword: SWORDS }[kind]; if (!list) return false;
+    const cur = kind === 'sword' ? G.swordTier() : S.tools[kind]; const next = list[cur + 1];
     if (!next) return false;
     if (next.req && !S.tech[next.req]) { UI.toast(tr('need_tech_t', { name: TECH[next.req].name }), 'warn'); Sound.play('error'); return false; }
     if (!tryPay(next.cost)) return false;
-    S.tools[kind]++; P.toolTier = -9; setTool(kind);
+    S.tools[kind] = cur + 1; P.toolTier = -9; setTool(kind === 'sword' ? 'weapon' : kind);
     Sound.play('upgrade'); UI.toast(tr('crafted', { name: next.name }), 'good');
     return true;
   };
@@ -1190,7 +1205,7 @@ const G = window.G = {};
     if (!vm) { vm = new THREE.Group(); camera.add(vm); scene.add(camera); }
     vm.visible = fp && !P.dead;
     if (!fp) return;
-    const key = S.hero + P.tool + P.toolTier;
+    const key = S.hero + P.toolModel + P.toolTier;
     if (key !== vmKey) {
       vmKey = key; while (vm.children.length) vm.remove(vm.children[0]);
       const look = { defender: [0x3d7a3a, 0xf1c7a0], builder: [0xe8b890, 0xe8b890], hunter: [0x8a5a32, 0xf3cfa8], knight: [0x9aa0aa, 0xf0c4a0], ranger: [0x2f5a3a, 0xe8c09a], engineer: [0x3a5a8a, 0xd8a888], druid: [0x5a3a8a, 0xf0d0b0] }[S.hero] || [0x3d7a3a, 0xf1c7a0];
@@ -1202,7 +1217,7 @@ const G = window.G = {};
       Models.box(0.14, 0.26, 0.16, S.hero === 'builder' ? look[1] : look[0], 0, -0.44, 0, arm, false);
       Models.sph(0.15, 0.15, 0.15, look[1], 0, -0.6, 0, arm, true, false);
       const hand = Models.group(arm, 0, -0.62, 0.02); hand.rotation.set(-0.75, 0, -0.35);
-      hand.add(Models.makeTool(P.tool, P.toolTier));
+      hand.add(Models.makeTool(P.toolModel || 'axe', P.toolTier));
       arm.traverse(o => { if (o.isMesh) { o.castShadow = false; o.receiveShadow = false; } });
     }
     const rig = vm.userData.rig, arm = vm.userData.arm, sw = P.swing;
@@ -1438,7 +1453,7 @@ const G = window.G = {};
   G.showHero = function (type) {
     if (selHero) selScene.remove(selHero);
     selHero = Models.makeHero(type); selScene.add(selHero);
-    const hand = selHero.userData.parts.hand; hand.add(Models.makeTool(HEROES[type].weapon || (type === 'builder' ? 'hammer' : 'axe'), type === 'hunter' ? 1 : 0));
+    const hand = selHero.userData.parts.hand; hand.add(Models.makeTool(HEROES[type].weapon || (type === 'builder' ? 'hammer' : 'axe'), type === 'hunter' ? 1 : type === 'knight' ? 2 : 0));
   };
 
 
@@ -1517,7 +1532,7 @@ const G = window.G = {};
 
   function makePuppet(pid, hero) {
     const mesh = Models.makeHero(hero); mesh.traverse(o => { if (o.isMesh) o.castShadow = true; });
-    mesh.userData.parts.hand.add(Models.makeTool(HEROES[hero].weapon || 'axe', 0));
+    mesh.userData.parts.hand.add(Models.makeTool(HEROES[hero].weapon || 'axe', hero === 'knight' ? 2 : 0));
     scene.add(mesh);
     const pp = { pid, hero, mesh, pos: V(2 * pid, 0, 6), tgt: V(2 * pid, 0, 6), yaw: 0, anim: 0, swing: 0, dead: false, animT: Math.random() * 5, hp: HEROES[hero].hp };
     puppets.set(pid, pp); return pp;
@@ -1754,7 +1769,8 @@ const G = window.G = {};
     delete S.buildings; delete S.birds; delete S.nodes;
     if (!S.diff) S.diff = 'normal';
     S.stats = Object.assign({ wood: 0, stone: 0, iron: 0, coal: 0, food: 0, coins: 0, kills: 0, bosses: 0, built: 0, boughtBirds: 0, time: 0 }, S.stats);
-    S.res = Object.assign({ wood: 0, stone: 0, iron: 0, coal: 0, food: 0, coins: 0 }, S.res);
+    S.res = Object.assign({ wood: 0, stone: 0, iron: 0, coal: 0, ruby: 0, food: 0, coins: 0 }, S.res);
+    S.tools = Object.assign({ axe: 0, pick: -1, sword: -1 }, S.tools);
     S.waveActive = false;
     blds.filter(b => !b.w).forEach(b => addBuilding(b.t, b.x, b.z, b.r, b.l, b.hp, null, b.id));
     blds.filter(b => b.w).forEach(b => { if (byId[b.w]) addBuilding(b.t, b.x, b.z, b.r, b.l, b.hp, b.w, b.id); });

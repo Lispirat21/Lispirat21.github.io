@@ -290,6 +290,7 @@ function applyDataLang() {
   for (const k in TECH) { TECH[k].name = tr('t.' + k); TECH[k].desc = tr('td.' + k); }
   AXES.forEach((a, i) => a.name = tr('ax' + i));
   PICKS.forEach((a, i) => a.name = tr('pk' + i));
+  if (typeof SWORDS !== 'undefined') SWORDS.forEach((a, i) => a.name = tr('sw' + i));
   for (const k in NODE_INFO) NODE_INFO[k].name = tr('n.' + k);
   for (const k in GEAR) { GEAR[k].name = tr('g.' + k); GEAR[k].desc = tr('gd.' + k); }
   if (typeof ARMOR !== 'undefined') for (const k in ARMOR) { ARMOR[k].name = tr('a.' + k); ARMOR[k].desc = tr('ad.' + k); }

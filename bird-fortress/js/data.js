@@ -8,6 +8,7 @@ const RES_INFO = {
   coal:  { name: 'Уголь',   icon: "<svg class=\"rico\" viewBox=\"0 0 24 24\"><path d=\"M3 15 6 7l6-3 7 3 2 8-5 5H8z\" fill=\"#2b2d33\" stroke=\"#b8bec8\" stroke-width=\"1.4\" stroke-linejoin=\"round\"/><path d=\"M6 7l6-3 7 3-6 3z\" fill=\"#5a5e68\"/><path d=\"M12 10l7-3 2 8-7 1z\" fill=\"#3c3f47\"/><path d=\"M3 15l3-8 6 3 2 6-6 4z\" fill=\"#1c1d21\"/><path d=\"M9 6.5l2.5-1M15 6l2 .8M5.5 11l1-2\" stroke=\"#c8ccd6\" stroke-width=\"1.1\" stroke-linecap=\"round\"/></svg>" },
   food:  { name: 'Еда',     icon: '🍖' },
   coins: { name: 'Монеты',  icon: '🪙' },
+  ruby:  { name: 'Рубины',  icon: "<svg class=\"rico\" viewBox=\"0 0 24 24\"><path d=\"M7 3h10l5 6-10 12L2 9z\" fill=\"#e0204a\" stroke=\"#7a0018\" stroke-width=\"1.3\" stroke-linejoin=\"round\"/><path d=\"M2 9h20M7 3l5 6 5-6M12 9v12\" stroke=\"#ff8aa0\" stroke-width=\"1\" fill=\"none\"/><path d=\"M7 3l-5 6h5z\" fill=\"#ff6a88\"/></svg>" },
 };
 
 // Птицы. dmg/rate/range — множители для пушки, за которой сидит птица.
@@ -119,11 +120,20 @@ const AXES = [
   { name: 'Деревянный топор', power: 1 },
   { name: 'Каменный топор',   power: 2,   cost: { wood: 15, stone: 10 } },
   { name: 'Железный топор',   power: 3.5, cost: { wood: 15, iron: 10, coal: 5 }, req: 'metal' },
+  { name: 'Рубиновый топор',  power: 6,   cost: { ruby: 6, iron: 6, coal: 6 }, req: 'metal' },
 ];
 const PICKS = [
   { name: 'Кирка',            power: 1,   cost: { wood: 20 } },
   { name: 'Улучшенная кирка', power: 1.8, cost: { wood: 10, stone: 20 } },
   { name: 'Железная кирка',   power: 3,   cost: { iron: 12, coal: 8 }, req: 'metal' },
+  { name: 'Рубиновая кирка',  power: 5,   cost: { ruby: 6, iron: 6, coal: 6 }, req: 'metal' },
+];
+// Мечи: mul — множитель урона героя по врагам
+const SWORDS = [
+  { name: 'Деревянный меч', mul: 1.2, cost: { wood: 15 } },
+  { name: 'Каменный меч',   mul: 1.6, cost: { wood: 10, stone: 15 } },
+  { name: 'Железный меч',   mul: 2.2, cost: { wood: 5, iron: 12, coal: 6 }, req: 'metal' },
+  { name: 'Рубиновый меч',  mul: 3.4, cost: { ruby: 8, iron: 6, coal: 6 }, req: 'metal' },
 ];
 
 const NODE_INFO = {
@@ -131,6 +141,7 @@ const NODE_INFO = {
   stone: { hp: 10, res: 'stone', ratio: 1,   tool: 'pick', minPick: 0,  regrow: 180, name: 'Камень' },
   coal:  { hp: 9,  res: 'coal',  ratio: 1,   tool: 'pick', minPick: 0,  regrow: 220, name: 'Уголь' },
   iron:  { hp: 12, res: 'iron',  ratio: 0.6, tool: 'pick', minPick: 1,  regrow: 260, name: 'Железная руда' },
+  ruby:  { hp: 18, res: 'ruby',  ratio: 0.3, tool: 'pick', minPick: 2,  regrow: 420, name: 'Рубиновая руда' },
   berry: { hp: 1,  res: 'food',  ratio: 4,   tool: 'hand', minPick: -1, regrow: 70,  name: 'Ягодный куст' },
 };
 

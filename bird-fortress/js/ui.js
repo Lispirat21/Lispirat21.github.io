@@ -363,7 +363,7 @@ const UI = window.UI = {};
   tap($('over-menu'), () => { if (Net.active) G.mpLeave(); refreshGB(); document.body.classList.remove('cutscene'); $('over').classList.add('hidden'); G.state = 'menu'; show('menu'); backToMain(); clearFloats(); });
 
   // ---------------- HUD ----------------
-  const RES_KEYS = ['wood', 'stone', 'iron', 'coal', 'food', 'coins'];
+  const RES_KEYS = ['wood', 'stone', 'iron', 'coal', 'ruby', 'food', 'coins'];
   const chips = {};
   function buildResChips() {
     const r = $('res'); r.innerHTML = '';
@@ -400,8 +400,8 @@ const UI = window.UI = {};
       $('birdcount').textContent = tr('bird_count', { n: birds.length, cap: G.birdCap(), c: birds.filter(b => b.cannon).length });
       // кнопка действия и инструмент
       const tool = G.playerTool();
-      document.querySelectorAll('.slot').forEach(s => { s.classList.toggle('on', s.dataset.slot === tool); if (s.dataset.slot === 'pick') s.classList.toggle('locked', S.tools.pick < 0); });
-      $('btn-act').textContent = tool === 'pick' ? '⛏️' : '🪓';
+      document.querySelectorAll('.slot').forEach(s => { s.classList.toggle('on', s.dataset.slot === tool); if (s.dataset.slot === 'pick') s.classList.toggle('locked', S.tools.pick < 0); if (s.dataset.slot === 'weapon') s.classList.toggle('locked', G.swordTier() < 0); });
+      $('btn-act').textContent = tool === 'pick' ? '⛏️' : tool === 'weapon' ? '⚔️' : '🪓';
       // подсказка взаимодействия
       const b = G.building();
       $('buildbar').classList.toggle('hidden', !b);
@@ -613,10 +613,11 @@ const UI = window.UI = {};
     arm.append(ag); body.append(arm);
     const tools = h('div', { cls: 'sect' }, h('h4', null, tr('tools')));
     const g1 = h('div', { cls: 'grid' });
-    [['axe', AXES, '🪓'], ['pick', PICKS, '⛏️']].forEach(([k, list, ic]) => {
-      const cur = S.tools[k], next = list[cur + 1];
+    [['axe', AXES, '🪓'], ['pick', PICKS, '⛏️'], ['sword', SWORDS, '⚔️']].forEach(([k, list, ic]) => {
+      const sw = k === 'sword', cur = sw ? G.swordTier() : S.tools[k], next = list[cur + 1];
       const curName = cur >= 0 ? list[cur].name : tr('none');
-      const item = h('div', { cls: 'item' }, h('div', { cls: 'ico' }, ic), h('div', { cls: 'nm' }, tr('now', { name: curName })), h('div', { cls: 'ds' }, cur >= 0 ? tr('power', { n: list[cur].power }) : tr('pick_need')));
+      const ds = sw ? (cur >= 0 ? tr('sword_dmg', { n: list[cur].mul }) : tr('sword_need')) : (cur >= 0 ? tr('power', { n: list[cur].power }) : tr('pick_need'));
+      const item = h('div', { cls: 'item' }, h('div', { cls: 'ico' }, ic), h('div', { cls: 'nm' }, tr('now', { name: curName })), h('div', { cls: 'ds' }, ds));
       if (next) {
         const cost = next.cost; const locked = next.req && !S.tech[next.req];
         item.append(h('div', { cls: 'cost', html: `→ ${next.name}: ${costHtml(cost)}` }));
@@ -706,7 +707,7 @@ const UI = window.UI = {};
   // ---------------- Кнопки HUD ----------------
   document.querySelectorAll('.slot').forEach(s => press(s, () => {
     const k = s.dataset.slot;
-    if (k === 'axe' || k === 'pick') G.selectTool(k);
+    if (k === 'axe' || k === 'pick' || k === 'weapon') G.selectTool(k);
     if (k === 'build') openBuildMenu();
     if (k === 'inv') openInventory();
     if (k === 'birds') openBirds();
@@ -821,7 +822,7 @@ const UI = window.UI = {};
     if (k === 'v' || k === 'м') $('btn-view').click();
     if (k === 'n') G.startWaveNow();
     if (k === 'enter' && G.building()) G.placeBuild();
-    if (k === '1') G.selectTool('axe'); if (k === '2') G.selectTool('pick');
+    if (k === '1') G.selectTool('axe'); if (k === '2') G.selectTool('pick'); if (k === '3') G.selectTool('weapon');
     updKeys();
   });
   window.addEventListener('keyup', e => {

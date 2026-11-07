@@ -204,10 +204,13 @@ const World = (() => {
     const cl = Math.hypot(CAVE.x, CAVE.z), cix = -CAVE.x / cl, ciz = -CAVE.z / cl;
     scatter('iron', 5, () => { const a = rnd() * 6.28, R = 2 + rnd() * 8; const x = CAVE.x + cix * 14 + Math.cos(a) * R, z = CAVE.z + ciz * 14 + Math.sin(a) * R; return heightAt(x, z) > WATER_Y + 0.4 ? [x, z, 0.9] : null; });
     scatter('berry', 30, () => { const a = rnd() * 6.28, R = 30 + rnd() * 90, x = Math.cos(a) * R, z = Math.sin(a) * R; return valid(x, z, 29) ? [x, z, 0.9 + rnd() * 0.3] : null; });
+    // редкие рубины: немного в шахте и у пещеры (добавлены в конец, чтобы не сбить старые сохранения)
+    scatter('ruby', 3, inPit);
+    scatter('ruby', 3, () => { const a = rnd() * 6.28, R = 2 + rnd() * 8; const x = CAVE.x + cix * 14 + Math.cos(a) * R, z = CAVE.z + ciz * 14 + Math.sin(a) * R; return heightAt(x, z) > WATER_Y + 0.4 ? [x, z, 0.85] : null; });
 
     const tg2 = Models.treeGeos(BI.trees), rg = Models.rockGeos();
     const vMat = own(new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.9 }));
-    const geos = { pine: tg2.pine, oak: tg2.oak, birch: tg2.birch, stone: rg.stone, coal: rg.coal, iron: rg.iron, berry: rg.berry };
+    const geos = { pine: tg2.pine, oak: tg2.oak, birch: tg2.birch, stone: rg.stone, coal: rg.coal, iron: rg.iron, ruby: rg.ruby, berry: rg.berry };
     for (const sub in geos) {
       own(geos[sub]);
       const list = nodes.filter(n => n.sub === sub);

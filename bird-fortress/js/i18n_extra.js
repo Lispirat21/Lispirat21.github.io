@@ -122,3 +122,20 @@ Object.assign(TR_DATA, {
 Object.assign(TR_UI, {
   armor_title: ["🛡 Armor — less damage", "🛡 Броня — меньше урона", "🛡 Armadura — menos daño", "🛡 Armadura — menos dano", "🛡 Armure — moins de dégâts", "🛡 Rüstung — weniger Schaden", "🛡 护甲 — 减少伤害", "🛡 鎧 — ダメージ軽減", "🛡 कवच — कम नुकसान", "🛡 الدروع — ضرر أقل"],
 });
+Object.assign(TR_DATA, {
+  'r.ruby': ["Rubies", "Рубины", "Rubíes", "Rubis", "Rubis", "Rubine", "红宝石", "ルビー", "माणिक", "ياقوت"],
+  'n.ruby': ["ruby ore", "рубиновая руда", "mena de rubí", "minério de rubi", "minerai de rubis", "Rubinerz", "红宝石矿", "ルビー鉱石", "माणिक अयस्क", "خام الياقوت"],
+  'ax3': ["Ruby Axe", "Рубиновый топор", "Hacha de rubí", "Machado de rubi", "Hache en rubis", "Rubinaxt", "红宝石斧", "ルビーの斧", "माणिक कुल्हाड़ी", "فأس الياقوت"],
+  'pk3': ["Ruby Pickaxe", "Рубиновая кирка", "Pico de rubí", "Picareta de rubi", "Pioche en rubis", "Rubinspitzhacke", "红宝石镐", "ルビーのツルハシ", "माणिक कुदाल", "معول الياقوت"],
+  'sw0': ["Wooden Sword", "Деревянный меч", "Espada de madera", "Espada de madeira", "Épée en bois", "Holzschwert", "木剑", "木の剣", "लकड़ी की तलवार", "سيف خشبي"],
+  'sw1': ["Stone Sword", "Каменный меч", "Espada de piedra", "Espada de pedra", "Épée en pierre", "Steinschwert", "石剑", "石の剣", "पत्थर की तलवार", "سيف حجري"],
+  'sw2': ["Iron Sword", "Железный меч", "Espada de hierro", "Espada de ferro", "Épée en fer", "Eisenschwert", "铁剑", "鉄の剣", "लोहे की तलवार", "سيف حديدي"],
+  'sw3': ["Ruby Sword", "Рубиновый меч", "Espada de rubí", "Espada de rubi", "Épée en rubis", "Rubinschwert", "红宝石剑", "ルビーの剣", "माणिक तलवार", "سيف الياقوت"],
+});
+Object.assign(TR_UI, {
+  tb_weapon: ["Weapon", "Оружие", "Arma", "Arma", "Arme", "Waffe", "武器", "武器", "हथियार", "سلاح"],
+  no_sword: ["No sword yet! Craft one in the workshop.", "Меча пока нет! Сделайте его в мастерской.", "¡Aún no tienes espada! Créala en el taller.", "Ainda sem espada! Faça uma na oficina.", "Pas encore d'épée ! Fabriquez-en une à l'atelier.", "Noch kein Schwert! Stelle eins in der Werkstatt her.", "还没有剑！去工坊制作。", "まだ剣がない！工房で作ろう。", "अभी तलवार नहीं! कार्यशाला में बनाएँ।", "لا سيف بعد! اصنعه في الورشة."],
+  sword_dmg: ["Damage ×{n}", "Урон ×{n}", "Daño ×{n}", "Dano ×{n}", "Dégâts ×{n}", "Schaden ×{n}", "伤害 ×{n}", "ダメージ ×{n}", "नुकसान ×{n}", "الضرر ×{n}"],
+  sword_need: ["Hits enemies much harder than an axe", "Бьёт врагов гораздо сильнее топора", "Golpea mucho más fuerte que un hacha", "Bate muito mais forte que um machado", "Frappe bien plus fort qu'une hache", "Trifft viel härter als eine Axt", "比斧头伤害高得多", "斧よりずっと強く敵を斬る", "कुल्हाड़ी से कहीं ज़्यादा नुकसान", "يضرب الأعداء أقوى بكثير من الفأس"],
+  need_pick3: ["Rubies need an iron pickaxe", "Для рубинов нужна железная кирка", "Los rubíes requieren pico de hierro", "Rubis exigem picareta de ferro", "Les rubis exigent une pioche en fer", "Rubine brauchen eine Eisenspitzhacke", "红宝石需要铁镐", "ルビーには鉄のツルハシが必要", "माणिक के लिए लोहे की कुदाल चाहिए", "الياقوت يحتاج معولًا حديديًا"],
+});

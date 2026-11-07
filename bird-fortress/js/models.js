@@ -410,12 +410,12 @@ const Models = (() => {
   }
   function makeTool(kind, tier) {
     const g = new THREE.Group();
-    const headC = [0x8a6a44, 0x8a8a8a, 0xd8dce4][Math.max(0, tier)] || 0x8a6a44;
-    const metal = tier >= 2 ? { metalness: 0.6, roughness: 0.35 } : undefined;
+    const headC = [0x8a6a44, 0x8a8a8a, 0xd8dce4, 0xe0204a][Math.max(0, tier)] || 0x8a6a44;
+    const metal = tier >= 3 ? { emissive: 0xa00020, emissiveIntensity: 0.7, roughness: 0.25 } : tier >= 2 ? { metalness: 0.6, roughness: 0.35 } : undefined;
     cyl(0.035, 0.035, 0.75, 0x6a4424, 0, 0.25, 0, g, 6);
     if (kind === 'axe') {
       box(0.06, 0.2, 0.24, mat(headC, metal), 0, 0.52, 0.1, g);
-      box(0.04, 0.24, 0.05, mat(tier >= 1 ? 0xcfd2d8 : 0x6a4a2a, metal), 0, 0.52, 0.23, g, false);
+      box(0.04, 0.24, 0.05, mat(tier >= 3 ? 0xff5070 : tier >= 1 ? 0xcfd2d8 : 0x6a4a2a, metal), 0, 0.52, 0.23, g, false);
     } else if (kind === 'pick') {
       const a = box(0.06, 0.06, 0.32, mat(headC, metal), 0, 0.58, 0.14, g); a.rotation.x = 0.35;
       const b = box(0.06, 0.06, 0.32, mat(headC, metal), 0, 0.58, -0.14, g); b.rotation.x = -0.35;
@@ -423,9 +423,11 @@ const Models = (() => {
       box(0.14, 0.14, 0.26, 0x5a5a5a, 0, 0.56, 0, g);
     } else if (kind === 'sword') {
       g.children[0].visible = false;
-      const steel = mat(0xdde2ea, { metalness: 0.8, roughness: 0.25 });
+      // 0 — дерево, 1 — камень, 2 — сталь, 3 — рубин
+      const st = Math.max(0, Math.min(3, tier));
+      const steel = [mat(0xa87444, { roughness: 0.9 }), mat(0x9a9a96, { roughness: 0.85 }), mat(0xdde2ea, { metalness: 0.8, roughness: 0.25 }), mat(0xe8204a, { emissive: 0xb00024, emissiveIntensity: 0.8, roughness: 0.2 })][st];
       cyl(0.035, 0.035, 0.22, 0x5a3a1a, 0, 0.0, 0, g, 6);
-      box(0.3, 0.05, 0.08, 0xd8b040, 0, 0.12, 0, g);
+      box(0.3, 0.05, 0.08, st >= 2 ? 0xd8b040 : 0x6a4424, 0, 0.12, 0, g);
       box(0.08, 0.85, 0.025, steel, 0, 0.56, 0, g);
       cone(0.04, 0.12, steel, 0, 1.04, 0, g, 4, false);
     } else if (kind === 'bow') {
@@ -964,9 +966,10 @@ const Models = (() => {
     const stone = merge([[new THREE.DodecahedronGeometry(1, 0), 0x9a9a96, mtx(0, 0.5, 0, 1.2, 0.85, 1)], [new THREE.DodecahedronGeometry(0.6, 0), 0x8a8a86, mtx(0.8, 0.3, 0.3)]]);
     const coal = merge([[new THREE.DodecahedronGeometry(1, 0), 0x6a6a66, mtx(0, 0.5, 0, 1.1, 0.8, 1)], [new THREE.OctahedronGeometry(0.35, 0), 0x151515, mtx(0.5, 0.8, 0.5)], [new THREE.OctahedronGeometry(0.3, 0), 0x101010, mtx(-0.6, 0.6, 0.2)], [new THREE.OctahedronGeometry(0.28, 0), 0x1a1a1a, mtx(0.1, 1.0, -0.5)]]);
     const iron = merge([[new THREE.DodecahedronGeometry(1, 0), 0x7a706a, mtx(0, 0.5, 0, 1.1, 0.85, 1)], [new THREE.OctahedronGeometry(0.32, 0), 0xc87a40, mtx(0.55, 0.8, 0.4)], [new THREE.OctahedronGeometry(0.28, 0), 0xd88a50, mtx(-0.6, 0.6, 0.3)], [new THREE.OctahedronGeometry(0.25, 0), 0xb06a34, mtx(0, 1.05, -0.45)]]);
+    const ruby = merge([[new THREE.DodecahedronGeometry(1, 0), 0x5a5054, mtx(0, 0.5, 0, 1.1, 0.85, 1)], [new THREE.OctahedronGeometry(0.4, 0), 0xe0204a, mtx(0.45, 1.2, 0.35, 1, 1.7, 1)], [new THREE.OctahedronGeometry(0.32, 0), 0xff3a5e, mtx(-0.55, 1.0, 0.3, 1, 1.6, 1)], [new THREE.OctahedronGeometry(0.3, 0), 0xc01036, mtx(0.05, 1.35, -0.35, 1, 1.8, 1)]]);
     const berry = merge([[new THREE.IcosahedronGeometry(0.8, 0), 0x3a7a30, mtx(0, 0.6, 0, 1.2, 0.9, 1.2)], [new THREE.IcosahedronGeometry(0.55, 0), 0x46883a, mtx(0.5, 0.5, 0.3)],
       ...[[0.5, 0.9, 0.5], [-0.6, 0.7, 0.4], [0.2, 1.1, -0.4], [-0.3, 0.9, 0.7], [0.7, 0.6, -0.3], [0, 0.4, 0.95]].map(p => [new THREE.IcosahedronGeometry(0.11, 0), 0xd02040, mtx(p[0], p[1], p[2])])]);
-    return { stone, coal, iron, berry };
+    return { stone, coal, iron, ruby, berry };
   }
 
   return { setDetail, get detail() { return HI; }, makeHelicopter, setGear, setArmor, mat, texMat, T, box, sph, cyl, cone, torus, group, makeBird, animBird, makeHero, makeTool, animHero, makeEnemy, animEnemy, makeBuilding, makeCannon, merge, mtx, treeGeos, rockGeos, WALL_H: l => WALL_LEVELS[l - 1].h };
