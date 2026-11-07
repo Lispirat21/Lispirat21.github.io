@@ -1102,14 +1102,32 @@ const G = window.G = {};
       const arm = new THREE.Group(); vm.add(arm); vm.userData.arm = arm;
       Models.box(0.09, 0.09, 0.34, look[0], 0, -0.02, 0.16, arm, false);
       Models.sph(0.1, 0.1, 0.1, look[1], 0, 0, -0.02, arm, true, false);
-      const t = Models.makeTool(P.tool, P.toolTier); t.rotation.set(-0.5, 0, 0.75); t.position.set(0, -0.06, -0.02); t.scale.setScalar(0.6); arm.add(t);
+      const t = Models.makeTool(P.tool, P.toolTier); t.rotation.set(-0.5, 0, 0.75); t.position.set(0, -0.06, -0.02); t.scale.setScalar(0.6); arm.add(t); vm.userData.tool = t;
       arm.traverse(o => { if (o.isMesh) { o.castShadow = false; o.receiveShadow = false; } });
     }
     const arm = vm.userData.arm, sw = P.swing;
     const bob = P.moving ? Math.sin(P.animT * 10) * 0.025 : Math.sin(P.animT * 2) * 0.006;
-    arm.position.set(0.32 + bob * 0.5, -0.34 + Math.abs(bob), -0.55);
-    if (sw > 0) { const k = sw < 0.4 ? sw / 0.4 : 1 - (sw - 0.4) / 0.6; arm.rotation.set(sw < 0.4 ? 0.9 * k : -1.3 * Math.sin(Math.min(1, (sw - 0.4) / 0.3) * Math.PI / 2) * (1 - (sw - 0.4) / 0.6) + 0.3 * k, -0.25, 0.1); }
-    else arm.rotation.set(0.1, -0.3, 0.15);
+    // Ключевые кадры удара от 1-го лица: [x, y, z рукой] + [наклон руки] + [взмах инструмента от кисти]
+    // покой → замах за плечо → резкий удар вниз-вперёд → короткая задержка → возврат
+    const REST = [0.32, -0.34, -0.55, 0.1, -0.3, 0.15, 0];
+    const WIND = [0.36, -0.2, -0.6, 0.35, -0.2, 0.3, -0.9];
+    const HIT  = [0.2, -0.36, -0.68, -0.12, -0.45, 0.1, 0.85];
+    let f = REST, g2 = REST, k = 0;
+    if (sw > 0) {
+      const ease = x => x * x * (3 - 2 * x);
+      if (sw < 0.42) { f = REST; g2 = WIND; k = ease(sw / 0.42); }
+      else if (sw < 0.58) { f = WIND; g2 = HIT; k = Math.pow((sw - 0.42) / 0.16, 2); }
+      else if (sw < 0.68) { f = HIT; g2 = HIT; k = 0; }
+      else { f = HIT; g2 = REST; k = ease((sw - 0.68) / 0.32); }
+    }
+    const L = i => f[i] + (g2[i] - f[i]) * k;
+    const still = sw > 0 ? 0.3 : 1;
+    arm.position.set(L(0) + bob * 0.5 * still, L(1) + Math.abs(bob) * still, L(2));
+    arm.rotation.set(L(3), L(4), L(5));
+    if (vm.userData.tool) vm.userData.tool.rotation.set(-0.5 + L(6), 0, 0.75 - L(6) * 0.25);
+    // лёгкая отдача камеры в момент удара
+    const kick = sw > 0.55 && sw < 0.75 ? Math.sin((sw - 0.55) / 0.2 * Math.PI) * 0.025 : 0;
+    vm.userData.kick = kick;
   }
   G.camZoom = d => { cam.dist = clamp(cam.dist + d, 6, 24); };
   function updateCamera(dt) {
@@ -1120,7 +1138,7 @@ const G = window.G = {};
       P.mesh.visible = !!P.dead;
       const bob = P.moving && !P.dead ? Math.abs(Math.sin(P.animT * 10)) * 0.06 : 0;
       camera.position.set(P.pos.x, P.mesh.position.y + (P.dead ? 0.5 : 1.62) + bob, P.pos.z);
-      camera.rotation.set(cam.fp, cam.yaw, 0, 'YXZ');
+      camera.rotation.set(cam.fp - (vm && vm.userData.kick || 0), cam.yaw, 0, 'YXZ');
       if (camera.near !== 0.08) { camera.near = 0.08; camera.updateProjectionMatrix(); }
       return;
     }
