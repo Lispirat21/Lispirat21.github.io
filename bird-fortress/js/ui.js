@@ -343,14 +343,15 @@ const UI = window.UI = {};
         const d = BUILD[t], cost = G.scaleCost(d.cost);
         let lock = '';
         if (d.req && !S.tech[d.req]) lock = `🔒 Нужна технология «${TECH[d.req].name}»`;
-        else if (d.unique && G.countB(t) > 0) lock = '✔ Уже построено';
+        else if (G.countB(t) >= (d.max || 99)) lock = d.max === 1 ? '✔ Уже построено' : `Достигнут лимит ${d.max} шт.`;
         const btn = h('button', { cls: 'btn' + (G.canAfford(cost) ? '' : ' gold') }, G.canAfford(cost) ? 'Строить' : 'Выбрать');
         if (lock) btn.disabled = true;
         tap(btn, () => { if (G.enterBuild(t)) { closeModal(); toast(isTouch ? 'Наведите камерой и нажмите «Поставить»' : 'Выберите место: ЛКМ / Enter — поставить, R — повернуть', 'info'); } });
         let extra = '';
         if (t === 'wall') extra = 'Уровни: ' + WALL_LEVELS.map((l, i) => i + 1).join('→');
         grid.append(h('div', { cls: 'item' + (lock ? ' lock' : '') }, h('div', { cls: 'ico' }, d.icon), h('div', { cls: 'nm' }, d.name), h('div', { cls: 'ds' }, d.desc + (extra ? ' ' + extra : '')),
-          h('div', { cls: 'cost', html: costHtml(cost) }), lock ? h('div', { cls: 'ds' }, lock) : null, btn));
+          h('div', { cls: 'cost', html: costHtml(cost) }), lock ? h('div', { cls: 'ds' }, lock) : null,
+          h('div', { cls: 'limit' + (G.countB(t) >= (d.max || 99) ? ' full' : '') }, `Построено: ${G.countB(t)}/${d.max || '∞'}`), btn));
       });
       body.append(grid);
     });

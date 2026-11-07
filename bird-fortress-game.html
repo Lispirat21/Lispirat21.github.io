@@ -148,6 +148,9 @@ select { font-size:14px; padding:6px; border-radius:8px; }
 .item { background:#fff; border:2px solid #e0c890; border-radius:12px; padding:8px; display:flex; flex-direction:column; gap:4px; color:#3a2a14; text-align:left; font-size:13px; }
 .item .nm { font-weight:900; font-size:14px; } .item .ico { font-size:28px; } .item .ds { font-size:11px; opacity:.8; flex:1; }
 .item.lock { opacity:.55; }
+.item .limit { text-align:center; font-size:12px; font-weight:800; color:#5a7a2a; background:#eef6e0; border-radius:8px; padding:2px 0; }
+.item .limit.full { color:#b03a1a; background:#fbe4dc; }
+.item.lock .limit { opacity:1; }
 .cost { font-weight:800; font-size:13px; } .cost .no { color:#d0301a; }
 .btn { border:none; border-radius:10px; padding:9px 12px; font-weight:800; font-size:14px; color:#fff; background:linear-gradient(#6cc04a,#3a8a2a); box-shadow:0 3px 0 #24561a; }
 .btn.blue { background:linear-gradient(#4aa8e0,#2a6ab0); box-shadow:0 3px 0 #1a3a6a; } .btn.red { background:linear-gradient(#e86a4a,#b03a2a); box-shadow:0 3px 0 #6a1a10; }
@@ -485,26 +488,26 @@ const CANNON_LEVELS = [
 // Постройки. size = [ширина по X, глубина по Z] при повороте 0
 const BOSS_ORDER = ['monster', 'alpha', 'bearking', 'treant'];
 const BUILD = {
-  fence:      { name: 'Забор',              cat: 'walls',   cost: { wood: 4 },              hp: 90,   size: [4, 0.5], icon: '🚧', desc: 'Дешёвое ограждение.' },
-  wall:       { name: 'Стена',              cat: 'walls',   cost: { wood: 10 },             hp: 220,  size: [4, 1],   icon: '🧱', desc: 'Улучшается до 5 уровня. На стену можно поставить пушку.' },
-  tower:      { name: 'Деревянная вышка',   cat: 'towers',  cost: { wood: 25 },             hp: 300,  size: [2.6, 2.6], icon: '🗼', desc: 'Сама стреляет стрелами по врагам.', dmg: 8, rate: 1.1, range: 18 },
-  stonetower: { name: 'Каменная башня',     cat: 'towers',  cost: { stone: 30, wood: 10 },  hp: 900,  size: [3, 3],   icon: '🏰', desc: 'Прочная башня с дальним обстрелом.', dmg: 15, rate: 1.2, range: 23, req: 'stone' },
-  gate:       { name: 'Ворота',             cat: 'gates',   cost: { wood: 15 },             hp: 320,  size: [4, 1],   icon: '🚪', desc: 'Вы проходите, враги — нет. Улучшаются до 5 уровня.' },
-  stonegate:  { name: 'Каменные ворота',    cat: 'gates',   cost: { stone: 25, wood: 8 },   hp: 950,  size: [4, 1.4], icon: '⛩️', desc: 'Очень прочные ворота.', req: 'stone' },
-  birdhouse:  { name: 'Скворечник',         cat: 'houses',  cost: { wood: 12 },             hp: 120,  size: [1.6, 1.6], icon: '🏠', desc: '+3 места для птиц. Птицы прячутся тут.', cap: 3 },
-  aviary:     { name: 'Птичник',            cat: 'houses',  cost: { wood: 30, stone: 10 },  hp: 350,  size: [3.4, 3.4], icon: '🏡', desc: '+6 мест для птиц.', cap: 6 },
-  lantern:    { name: 'Фонарь',             cat: 'light',   cost: { wood: 6 },              hp: 80,   size: [0.8, 0.8], icon: '🏮', desc: 'Освещает базу ночью. Птицы любят на нём сидеть.' },
-  torch:      { name: 'Большой фонарь',     cat: 'light',   cost: { wood: 10, coal: 2 },    hp: 150,  size: [1.2, 1.2], icon: '🔥', desc: 'Яркий угольный фонарь: светит дальше и сильнее.' },
-  market:     { name: 'Птичий рынок',       cat: 'houses',  cost: { wood: 35, coins: 20 },  hp: 300,  size: [3.6, 2.6], icon: '🎪', desc: 'Открывает редких птиц для покупки.', unique: true },
-  cannon:     { name: 'Пушка',              cat: 'defense', cost: { wood: 20, coins: 20 },  hp: 260,  size: [2.4, 2.4], icon: '💣', desc: 'Ставится на стену или на вышку. За пушку садится птица.' },
-  spikes:     { name: 'Шипы',               cat: 'defense', cost: { wood: 8 },              hp: 120,  size: [2, 2],   icon: '📍', desc: 'Ранят зверей, которые по ним проходят.' },
-  ballista:   { name: 'Авто-турель',      cat: 'defense', cost: { wood: 20, iron: 12, coal: 5 }, hp: 400, size: [2.4, 2.4], icon: '🏹', desc: 'Автоматический механизм: арбалет → пулемёт → ракетница. Улучшается до 3 уровня.', dmg: 45, rate: 0.7, range: 26, req: 'mech' },
-  storage:    { name: 'Склад',              cat: 'prod',    cost: { wood: 30 },             hp: 300,  size: [3.4, 2.6], icon: '📦', desc: '+150 к вместимости ресурсов.' },
-  workshop:   { name: 'Мастерская',         cat: 'prod',    cost: { wood: 40 },             hp: 350,  size: [3.6, 3],   icon: '⚒️', desc: 'Инструменты и технологии.', unique: true },
-  farm:       { name: 'Ферма',              cat: 'prod',    cost: { wood: 25 },             hp: 200,  size: [4, 4],   icon: '🌾', desc: 'Производит еду.' },
-  mineshaft:  { name: 'Своя шахта',         cat: 'prod',    cost: { wood: 50, stone: 30 },  hp: 500,  size: [3.4, 3.4], icon: '🕳️', desc: 'Ставится где угодно. Сама добывает камень, уголь и железо. Улучшается до 3 уровня.', req: 'stone' },
-  minelift:   { name: 'Шахтный подъёмник',  cat: 'prod',    cost: { wood: 40, stone: 20 },  hp: 400,  size: [3, 3],   icon: '⛏️', desc: 'Ставится в карьере. Сам добывает камень, уголь и железо.', req: 'stone' },
-  core:       { name: 'Великое гнездо',     cat: 'none',    cost: {},                       hp: 1200, size: [5, 5],   icon: '🪺', desc: 'Сердце базы. Если его разрушат — игра окончена.' },
+  fence:      { max: 40, name: 'Забор',              cat: 'walls',   cost: { wood: 4 },              hp: 90,   size: [4, 0.5], icon: '🚧', desc: 'Дешёвое ограждение.' },
+  wall:       { max: 60, name: 'Стена',              cat: 'walls',   cost: { wood: 10 },             hp: 220,  size: [4, 1],   icon: '🧱', desc: 'Улучшается до 5 уровня. На стену можно поставить пушку.' },
+  tower:      { max: 6, name: 'Деревянная вышка',   cat: 'towers',  cost: { wood: 25 },             hp: 300,  size: [2.6, 2.6], icon: '🗼', desc: 'Сама стреляет стрелами по врагам.', dmg: 8, rate: 1.1, range: 18 },
+  stonetower: { max: 4, name: 'Каменная башня',     cat: 'towers',  cost: { stone: 30, wood: 10 },  hp: 900,  size: [3, 3],   icon: '🏰', desc: 'Прочная башня с дальним обстрелом.', dmg: 15, rate: 1.2, range: 23, req: 'stone' },
+  gate:       { max: 6, name: 'Ворота',             cat: 'gates',   cost: { wood: 15 },             hp: 320,  size: [4, 1],   icon: '🚪', desc: 'Вы проходите, враги — нет. Улучшаются до 5 уровня.' },
+  stonegate:  { max: 4, name: 'Каменные ворота',    cat: 'gates',   cost: { stone: 25, wood: 8 },   hp: 950,  size: [4, 1.4], icon: '⛩️', desc: 'Очень прочные ворота.', req: 'stone' },
+  birdhouse:  { max: 8, name: 'Скворечник',         cat: 'houses',  cost: { wood: 12 },             hp: 120,  size: [1.6, 1.6], icon: '🏠', desc: '+3 места для птиц. Птицы прячутся тут.', cap: 3 },
+  aviary:     { max: 4, name: 'Птичник',            cat: 'houses',  cost: { wood: 30, stone: 10 },  hp: 350,  size: [3.4, 3.4], icon: '🏡', desc: '+6 мест для птиц.', cap: 6 },
+  lantern:    { max: 20, name: 'Фонарь',             cat: 'light',   cost: { wood: 6 },              hp: 80,   size: [0.8, 0.8], icon: '🏮', desc: 'Освещает базу ночью. Птицы любят на нём сидеть.' },
+  torch:      { max: 10, name: 'Большой фонарь',     cat: 'light',   cost: { wood: 10, coal: 2 },    hp: 150,  size: [1.2, 1.2], icon: '🔥', desc: 'Яркий угольный фонарь: светит дальше и сильнее.' },
+  market:     { max: 1, name: 'Птичий рынок',       cat: 'houses',  cost: { wood: 35, coins: 20 },  hp: 300,  size: [3.6, 2.6], icon: '🎪', desc: 'Открывает редких птиц для покупки.', unique: true },
+  cannon:     { max: 12, name: 'Пушка',              cat: 'defense', cost: { wood: 20, coins: 20 },  hp: 260,  size: [2.4, 2.4], icon: '💣', desc: 'Ставится на стену или на вышку. За пушку садится птица.' },
+  spikes:     { max: 20, name: 'Шипы',               cat: 'defense', cost: { wood: 8 },              hp: 120,  size: [2, 2],   icon: '📍', desc: 'Ранят зверей, которые по ним проходят.' },
+  ballista:   { max: 4, name: 'Авто-турель',      cat: 'defense', cost: { wood: 20, iron: 12, coal: 5 }, hp: 400, size: [2.4, 2.4], icon: '🏹', desc: 'Автоматический механизм: арбалет → пулемёт → ракетница. Улучшается до 3 уровня.', dmg: 45, rate: 0.7, range: 26, req: 'mech' },
+  storage:    { max: 4, name: 'Склад',              cat: 'prod',    cost: { wood: 30 },             hp: 300,  size: [3.4, 2.6], icon: '📦', desc: '+150 к вместимости ресурсов.' },
+  workshop:   { max: 1, name: 'Мастерская',         cat: 'prod',    cost: { wood: 40 },             hp: 350,  size: [3.6, 3],   icon: '⚒️', desc: 'Инструменты и технологии.', unique: true },
+  farm:       { max: 4, name: 'Ферма',              cat: 'prod',    cost: { wood: 25 },             hp: 200,  size: [4, 4],   icon: '🌾', desc: 'Производит еду.' },
+  mineshaft:  { max: 3, name: 'Своя шахта',         cat: 'prod',    cost: { wood: 50, stone: 30 },  hp: 500,  size: [3.4, 3.4], icon: '🕳️', desc: 'Ставится где угодно. Сама добывает камень, уголь и железо. Улучшается до 3 уровня.', req: 'stone' },
+  minelift:   { max: 2, name: 'Шахтный подъёмник',  cat: 'prod',    cost: { wood: 40, stone: 20 },  hp: 400,  size: [3, 3],   icon: '⛏️', desc: 'Ставится в карьере. Сам добывает камень, уголь и железо.', req: 'stone' },
+  core:       { max: 1, name: 'Великое гнездо',     cat: 'none',    cost: {},                       hp: 1200, size: [5, 5],   icon: '🪺', desc: 'Сердце базы. Если его разрушат — игра окончена.' },
 };
 const BUILD_CATS = [
   ['walls', 'Стены'], ['towers', 'Башни'], ['gates', 'Ворота'], ['houses', 'Домики'], ['light', 'Освещение'], ['defense', 'Оборона'], ['prod', 'Производство'],
@@ -2873,7 +2876,7 @@ const G = window.G = {};
     if (input.action || G.settings.autoAct) playerAct();
     if (P.swing > 0) {
       P.swing += dt / (1 / hero.atkRate * 0.85);
-      if (!P.hitDone && P.swing > 0.55) { P.hitDone = true; applyHit(P.swingTarget); }
+      if (!P.hitDone && P.swing > 0.5) { P.hitDone = true; applyHit(P.swingTarget); }
       if (P.swing >= 1) { P.swing = 0; P.atkCd = 0.08; }
     }
     // позиция и анимация
@@ -2986,7 +2989,7 @@ const G = window.G = {};
   G.enterBuild = function (t) {
     const d = BUILD[t];
     if (d.req && !S.tech[d.req]) { UI.toast(`Нужна технология «${TECH[d.req].name}» (мастерская)`, 'warn'); Sound.play('error'); return false; }
-    if (d.unique && G.countB(t) > 0) { UI.toast('Такая постройка уже есть', 'warn'); return false; }
+    if (G.countB(t) >= (d.max || 99)) { UI.toast(`Лимит: ${d.name} — максимум ${d.max} шт.`, 'warn'); Sound.play('error'); return false; }
     if (build) G.cancelBuild();
     build = { t, rot: 0, ghost: makeGhost(t, false), ghostWall: t === 'cannon' ? makeGhost(t, true) : null, x: 0, z: 0, valid: false, reason: '', onWall: null };
     return true;
@@ -3048,6 +3051,7 @@ const G = window.G = {};
     if (!build) return;
     if (!build.valid) { UI.toast(build.reason || 'Здесь нельзя строить', 'warn'); Sound.play('error'); return; }
     const t = build.t, cost = G.scaleCost(BUILD[t].cost);
+    if (G.countB(t) >= (BUILD[t].max || 99)) { UI.toast(`Лимит: ${BUILD[t].name} — максимум ${BUILD[t].max} шт.`, 'warn'); Sound.play('error'); G.cancelBuild(); return; }
     if (!tryPay(cost)) return;
     let b;
     if (build.onWall) b = addBuilding('cannon', build.x, build.z, build.onWall.rot, 1, null, build.onWall.id);
@@ -3056,7 +3060,7 @@ const G = window.G = {};
     Sound.play('build');
     spawnParticles(V(b.x, b.mesh.position.y + 0.3, b.z), 0xc8b090, 14, 3, 0.35, 0.9);
     if (t === 'cannon') { const bird = BD.find(x => !x.cannon); if (bird) G.assignBird(bird, b); else UI.toast('Купите птицу, чтобы она села за пушку (🐦)', 'info', 3500); }
-    if (BUILD[t].unique) G.cancelBuild();
+    if (G.countB(t) >= (BUILD[t].max || 99)) { G.cancelBuild(); if (BUILD[t].max > 1) UI.toast(`Построено максимум: ${BUILD[t].name} ${BUILD[t].max}/${BUILD[t].max}`, 'info'); }
   };
 
   // ---------------- Производство ----------------
@@ -3146,26 +3150,18 @@ const G = window.G = {};
     }
     const arm = vm.userData.arm, sw = P.swing;
     const bob = P.moving ? Math.sin(P.animT * 10) * 0.025 : Math.sin(P.animT * 2) * 0.006;
-    // Ключевые кадры удара от 1-го лица: [x, y, z рукой] + [наклон руки] + [взмах инструмента от кисти]
-    // покой → замах за плечо → резкий удар вниз-вперёд → короткая задержка → возврат
-    const REST = [0.32, -0.34, -0.55, 0.1, -0.3, 0.15, 0];
-    const WIND = [0.36, -0.2, -0.6, 0.35, -0.2, 0.3, -0.9];
-    const HIT  = [0.2, -0.36, -0.68, -0.12, -0.45, 0.1, 0.85];
-    let f = REST, g2 = REST, k = 0;
-    if (sw > 0) {
-      const ease = x => x * x * (3 - 2 * x);
-      if (sw < 0.42) { f = REST; g2 = WIND; k = ease(sw / 0.42); }
-      else if (sw < 0.58) { f = WIND; g2 = HIT; k = Math.pow((sw - 0.42) / 0.16, 2); }
-      else if (sw < 0.68) { f = HIT; g2 = HIT; k = 0; }
-      else { f = HIT; g2 = REST; k = ease((sw - 0.68) / 0.32); }
-    }
-    const L = i => f[i] + (g2[i] - f[i]) * k;
+    // Удар от 1-го лица в стиле Майнкрафта: рука с инструментом резко уходит вперёд-вниз к центру экрана
+    // (от игрока) и возвращается по дуге. Пик удара — в середине взмаха, когда засчитывается попадание.
+    const u = sw > 0 ? Math.min(1, sw) : 0;
+    const a = Math.sin(u * Math.PI);            // вперёд и обратно
+    const b = Math.sin(Math.sqrt(u) * Math.PI); // быстрый выброс руки в начале
+    const arc = Math.sin(u * Math.PI * 2);      // дуга: сначала чуть вверх, потом вниз
     const still = sw > 0 ? 0.3 : 1;
-    arm.position.set(L(0) + bob * 0.5 * still, L(1) + Math.abs(bob) * still, L(2));
-    arm.rotation.set(L(3), L(4), L(5));
-    if (vm.userData.tool) vm.userData.tool.rotation.set(-0.5 + L(6), 0, 0.75 - L(6) * 0.25);
+    arm.position.set(0.32 - 0.2 * b + bob * 0.5 * still, -0.34 + 0.07 * arc - 0.05 * a + Math.abs(bob) * still, -0.55 - 0.22 * a);
+    arm.rotation.set(0.1 - 0.35 * b, -0.3 - 0.45 * a, 0.15 - 0.35 * b);
+    if (vm.userData.tool) vm.userData.tool.rotation.set(-0.5 + 1.15 * a, 0, 0.75 - 0.3 * a);
     // лёгкая отдача камеры в момент удара
-    const kick = sw > 0.55 && sw < 0.75 ? Math.sin((sw - 0.55) / 0.2 * Math.PI) * 0.025 : 0;
+    const kick = sw > 0.5 && sw < 0.7 ? Math.sin((sw - 0.5) / 0.2 * Math.PI) * 0.02 : 0;
     vm.userData.kick = kick;
   }
   G.camZoom = d => { cam.dist = clamp(cam.dist + d, 6, 24); };
@@ -3708,14 +3704,15 @@ const UI = window.UI = {};
         const d = BUILD[t], cost = G.scaleCost(d.cost);
         let lock = '';
         if (d.req && !S.tech[d.req]) lock = `🔒 Нужна технология «${TECH[d.req].name}»`;
-        else if (d.unique && G.countB(t) > 0) lock = '✔ Уже построено';
+        else if (G.countB(t) >= (d.max || 99)) lock = d.max === 1 ? '✔ Уже построено' : `Достигнут лимит ${d.max} шт.`;
         const btn = h('button', { cls: 'btn' + (G.canAfford(cost) ? '' : ' gold') }, G.canAfford(cost) ? 'Строить' : 'Выбрать');
         if (lock) btn.disabled = true;
         tap(btn, () => { if (G.enterBuild(t)) { closeModal(); toast(isTouch ? 'Наведите камерой и нажмите «Поставить»' : 'Выберите место: ЛКМ / Enter — поставить, R — повернуть', 'info'); } });
         let extra = '';
         if (t === 'wall') extra = 'Уровни: ' + WALL_LEVELS.map((l, i) => i + 1).join('→');
         grid.append(h('div', { cls: 'item' + (lock ? ' lock' : '') }, h('div', { cls: 'ico' }, d.icon), h('div', { cls: 'nm' }, d.name), h('div', { cls: 'ds' }, d.desc + (extra ? ' ' + extra : '')),
-          h('div', { cls: 'cost', html: costHtml(cost) }), lock ? h('div', { cls: 'ds' }, lock) : null, btn));
+          h('div', { cls: 'cost', html: costHtml(cost) }), lock ? h('div', { cls: 'ds' }, lock) : null,
+          h('div', { cls: 'limit' + (G.countB(t) >= (d.max || 99) ? ' full' : '') }, `Построено: ${G.countB(t)}/${d.max || '∞'}`), btn));
       });
       body.append(grid);
     });

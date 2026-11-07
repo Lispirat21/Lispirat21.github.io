@@ -834,7 +834,7 @@ const G = window.G = {};
     if (input.action || G.settings.autoAct) playerAct();
     if (P.swing > 0) {
       P.swing += dt / (1 / hero.atkRate * 0.85);
-      if (!P.hitDone && P.swing > 0.55) { P.hitDone = true; applyHit(P.swingTarget); }
+      if (!P.hitDone && P.swing > 0.5) { P.hitDone = true; applyHit(P.swingTarget); }
       if (P.swing >= 1) { P.swing = 0; P.atkCd = 0.08; }
     }
     // позиция и анимация
@@ -947,7 +947,7 @@ const G = window.G = {};
   G.enterBuild = function (t) {
     const d = BUILD[t];
     if (d.req && !S.tech[d.req]) { UI.toast(`Нужна технология «${TECH[d.req].name}» (мастерская)`, 'warn'); Sound.play('error'); return false; }
-    if (d.unique && G.countB(t) > 0) { UI.toast('Такая постройка уже есть', 'warn'); return false; }
+    if (G.countB(t) >= (d.max || 99)) { UI.toast(`Лимит: ${d.name} — максимум ${d.max} шт.`, 'warn'); Sound.play('error'); return false; }
     if (build) G.cancelBuild();
     build = { t, rot: 0, ghost: makeGhost(t, false), ghostWall: t === 'cannon' ? makeGhost(t, true) : null, x: 0, z: 0, valid: false, reason: '', onWall: null };
     return true;
@@ -1009,6 +1009,7 @@ const G = window.G = {};
     if (!build) return;
     if (!build.valid) { UI.toast(build.reason || 'Здесь нельзя строить', 'warn'); Sound.play('error'); return; }
     const t = build.t, cost = G.scaleCost(BUILD[t].cost);
+    if (G.countB(t) >= (BUILD[t].max || 99)) { UI.toast(`Лимит: ${BUILD[t].name} — максимум ${BUILD[t].max} шт.`, 'warn'); Sound.play('error'); G.cancelBuild(); return; }
     if (!tryPay(cost)) return;
     let b;
     if (build.onWall) b = addBuilding('cannon', build.x, build.z, build.onWall.rot, 1, null, build.onWall.id);
@@ -1017,7 +1018,7 @@ const G = window.G = {};
     Sound.play('build');
     spawnParticles(V(b.x, b.mesh.position.y + 0.3, b.z), 0xc8b090, 14, 3, 0.35, 0.9);
     if (t === 'cannon') { const bird = BD.find(x => !x.cannon); if (bird) G.assignBird(bird, b); else UI.toast('Купите птицу, чтобы она села за пушку (🐦)', 'info', 3500); }
-    if (BUILD[t].unique) G.cancelBuild();
+    if (G.countB(t) >= (BUILD[t].max || 99)) { G.cancelBuild(); if (BUILD[t].max > 1) UI.toast(`Построено максимум: ${BUILD[t].name} ${BUILD[t].max}/${BUILD[t].max}`, 'info'); }
   };
 
   // ---------------- Производство ----------------
@@ -1107,26 +1108,18 @@ const G = window.G = {};
     }
     const arm = vm.userData.arm, sw = P.swing;
     const bob = P.moving ? Math.sin(P.animT * 10) * 0.025 : Math.sin(P.animT * 2) * 0.006;
-    // Ключевые кадры удара от 1-го лица: [x, y, z рукой] + [наклон руки] + [взмах инструмента от кисти]
-    // покой → замах за плечо → резкий удар вниз-вперёд → короткая задержка → возврат
-    const REST = [0.32, -0.34, -0.55, 0.1, -0.3, 0.15, 0];
-    const WIND = [0.36, -0.2, -0.6, 0.35, -0.2, 0.3, -0.9];
-    const HIT  = [0.2, -0.36, -0.68, -0.12, -0.45, 0.1, 0.85];
-    let f = REST, g2 = REST, k = 0;
-    if (sw > 0) {
-      const ease = x => x * x * (3 - 2 * x);
-      if (sw < 0.42) { f = REST; g2 = WIND; k = ease(sw / 0.42); }
-      else if (sw < 0.58) { f = WIND; g2 = HIT; k = Math.pow((sw - 0.42) / 0.16, 2); }
-      else if (sw < 0.68) { f = HIT; g2 = HIT; k = 0; }
-      else { f = HIT; g2 = REST; k = ease((sw - 0.68) / 0.32); }
-    }
-    const L = i => f[i] + (g2[i] - f[i]) * k;
+    // Удар от 1-го лица в стиле Майнкрафта: рука с инструментом резко уходит вперёд-вниз к центру экрана
+    // (от игрока) и возвращается по дуге. Пик удара — в середине взмаха, когда засчитывается попадание.
+    const u = sw > 0 ? Math.min(1, sw) : 0;
+    const a = Math.sin(u * Math.PI);            // вперёд и обратно
+    const b = Math.sin(Math.sqrt(u) * Math.PI); // быстрый выброс руки в начале
+    const arc = Math.sin(u * Math.PI * 2);      // дуга: сначала чуть вверх, потом вниз
     const still = sw > 0 ? 0.3 : 1;
-    arm.position.set(L(0) + bob * 0.5 * still, L(1) + Math.abs(bob) * still, L(2));
-    arm.rotation.set(L(3), L(4), L(5));
-    if (vm.userData.tool) vm.userData.tool.rotation.set(-0.5 + L(6), 0, 0.75 - L(6) * 0.25);
+    arm.position.set(0.32 - 0.2 * b + bob * 0.5 * still, -0.34 + 0.07 * arc - 0.05 * a + Math.abs(bob) * still, -0.55 - 0.22 * a);
+    arm.rotation.set(0.1 - 0.35 * b, -0.3 - 0.45 * a, 0.15 - 0.35 * b);
+    if (vm.userData.tool) vm.userData.tool.rotation.set(-0.5 + 1.15 * a, 0, 0.75 - 0.3 * a);
     // лёгкая отдача камеры в момент удара
-    const kick = sw > 0.55 && sw < 0.75 ? Math.sin((sw - 0.55) / 0.2 * Math.PI) * 0.025 : 0;
+    const kick = sw > 0.5 && sw < 0.7 ? Math.sin((sw - 0.5) / 0.2 * Math.PI) * 0.02 : 0;
     vm.userData.kick = kick;
   }
   G.camZoom = d => { cam.dist = clamp(cam.dist + d, 6, 24); };
