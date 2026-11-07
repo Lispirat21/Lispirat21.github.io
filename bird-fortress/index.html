@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1d3a24">
-<title>Птичья Крепость</title>
+<title>Bird Wars</title>
 <link rel="manifest" href="manifest.json">
 <style>
 :root { --gold:#ffd24a; --green:#4caf50; --dark:rgba(18,28,20,.86); --panel:#f6ecd4; --wood:#8a5a2a; --red:#e04a3a; }
@@ -110,7 +110,9 @@ select { font-size:14px; padding:6px; border-radius:8px; }
 .stick.active { opacity:1; }
 .stick .knob { position:absolute; left:50%; top:50%; width:58px; height:58px; margin:-29px; border-radius:50%; background:radial-gradient(circle at 35% 35%,#fff,#bbb); box-shadow:0 3px 8px #0008; }
 .stick .lbl { position:absolute; top:-20px; width:100%; text-align:center; font-size:11px; font-weight:700; opacity:.85; text-shadow:0 1px 2px #000; }
-#actions { position:absolute; right:max(14px,env(safe-area-inset-right)); bottom:calc(max(10px,env(safe-area-inset-bottom)) + 76px); display:flex; flex-direction:column; align-items:flex-end; gap:10px; }
+#actions { position:absolute; right:max(14px,env(safe-area-inset-right)); bottom:calc(max(10px,env(safe-area-inset-bottom)) + 76px); display:grid; grid-template-areas:'. use' 'run act'; align-items:end; justify-items:center; gap:8px 10px; }
+#btn-use { grid-area:use; } #btn-act { grid-area:act; } #btn-run { grid-area:run; width:72px; height:72px; font-size:32px; }
+@media (max-height:430px) { #btn-run { width:64px; height:64px; font-size:28px; } }
 .round { width:64px; height:64px; border-radius:50%; border:3px solid #fff8; font-size:28px; color:#fff; background:radial-gradient(circle at 40% 35%,#6a8a6a,#253525); box-shadow:0 4px 10px #0008; }
 .round.bigr { width:84px; height:84px; font-size:38px; background:radial-gradient(circle at 40% 35%,#ff9a5a,#b04a1a); }
 .round:active { transform:scale(.92); }
@@ -147,6 +149,9 @@ select { font-size:14px; padding:6px; border-radius:8px; }
 .item { background:#fff; border:2px solid #e0c890; border-radius:12px; padding:8px; display:flex; flex-direction:column; gap:4px; color:#3a2a14; text-align:left; font-size:13px; }
 .item .nm { font-weight:900; font-size:14px; } .item .ico { font-size:28px; } .item .ds { font-size:11px; opacity:.8; flex:1; }
 .item.lock { opacity:.55; }
+.item .limit { text-align:center; font-size:12px; font-weight:800; color:#5a7a2a; background:#eef6e0; border-radius:8px; padding:2px 0; }
+.item .limit.full { color:#b03a1a; background:#fbe4dc; }
+.item.lock .limit { opacity:1; }
 .cost { font-weight:800; font-size:13px; } .cost .no { color:#d0301a; }
 .btn { border:none; border-radius:10px; padding:9px 12px; font-weight:800; font-size:14px; color:#fff; background:linear-gradient(#6cc04a,#3a8a2a); box-shadow:0 3px 0 #24561a; }
 .btn.blue { background:linear-gradient(#4aa8e0,#2a6ab0); box-shadow:0 3px 0 #1a3a6a; } .btn.red { background:linear-gradient(#e86a4a,#b03a2a); box-shadow:0 3px 0 #6a1a10; }
@@ -190,6 +195,113 @@ select { font-size:14px; padding:6px; border-radius:8px; }
   #leftinfo { top:130px; }
   .slot { width:52px; }
 }
+
+#crosshair { position:absolute; left:50%; top:50%; width:8px; height:8px; margin:-4px; border-radius:50%; background:#fff; box-shadow:0 0 0 2px #0008; display:none; }
+body.fp #crosshair { display:block; }
+.seedrow { display:flex; align-items:center; gap:6px; margin-top:8px; flex-wrap:wrap; }
+.seedrow input { width:120px; font-size:16px; padding:5px 8px; border-radius:8px; border:2px solid #c8a060; background:#fff; color:#3a2a14; font-family:inherit; user-select:text; -webkit-user-select:text; }
+.seedrow .biome { font-size:12px; font-weight:800; color:#2a6a2a; }
+#over .results { width:min(94vw,640px); max-height:92vh; overflow-y:auto; padding:14px 16px; text-align:center; touch-action:pan-y; }
+#over .results h1 { color:#c0301a; font-size:clamp(26px,6vw,40px); margin:0 0 4px; text-shadow:none; }
+.rsub { font-size:13px; opacity:.85; margin-bottom:10px; }
+.rgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:5px; text-align:left; }
+#over-menu { position:sticky; bottom:0; width:min(80vw,320px); }
+@media (max-height:430px) { #over .results { padding:8px 12px; } #over .results h1 { font-size:24px; } .rs { padding:3px 6px; font-size:12px; } .rs .ri { font-size:16px; } .rs b { font-size:14px; } .rnote { margin:6px 0; } .rsub { margin-bottom:6px; } }
+.rs { display:flex; align-items:center; gap:8px; background:#fff; border:2px solid #e0c890; border-radius:10px; padding:6px 8px; font-size:13px; }
+.rs .ri { font-size:20px; width:24px; text-align:center; } .rs .rl { flex:1; } .rs b { font-size:16px; color:#6a3a10; font-variant-numeric:tabular-nums; }
+.rnote { margin:10px 0; font-size:12px; color:#a04020; }
+.stb { display:flex; align-items:center; gap:4px; font-size:11px; margin-top:-2px; }
+.stbar { flex:1; height:6px; background:#0008; border-radius:3px; overflow:hidden; border:1px solid #fff6; }
+.stbar i { display:block; height:100%; width:100%; background:linear-gradient(90deg,#ffd24a,#ffe98a); }
+.stbar i.tired { background:#e0703a; }
+#btn-run.on { background:radial-gradient(circle at 40% 35%,#ffe066,#d89a10); border-color:#fff; }
+#daytxt small { font-size:10px; font-weight:700; opacity:.9; }
+#bossbar { margin:4px auto 0; width:90%; background:#3a0a0acc; border:2px solid #ff6a4a; border-radius:10px; padding:2px 8px 4px; font-size:12px; font-weight:900; }
+#bossbar .bb { height:8px; background:#0008; border-radius:4px; overflow:hidden; margin-top:2px; } #bossbar .bb i { display:block; height:100%; background:linear-gradient(90deg,#ff3a2a,#ff9a4a); }
+#langpick { background:radial-gradient(circle at 50% 40%,#2e5a34ee,#0e1a10f5); z-index:55; }
+#langpick .lp { width:min(94vw,560px); max-height:92vh; overflow-y:auto; padding:14px 16px; touch-action:pan-y; }
+#lp-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; }
+#lp-list button { display:flex; align-items:center; gap:10px; border:2px solid #e0c890; background:#fff; border-radius:12px; padding:10px 12px; font-size:17px; font-weight:800; color:#3a2a14; text-align:left; }
+#lp-list button .fl { font-size:28px; line-height:1; }
+#lp-list button.on { border-color:#4caf50; background:#eaf7e2; box-shadow:0 0 0 2px #4caf50 inset; }
+.langbtn { position:fixed; right:max(12px,env(safe-area-inset-right)); top:max(12px,env(safe-area-inset-top)); width:48px; height:48px; border-radius:50%; border:2px solid #fff8; background:#0008; font-size:24px; color:#fff; }
+/* ---------- загрузка: название и три птицы рядом с ним, жёлтая полоска ---------- */
+#loading { background:radial-gradient(ellipse at 50% 45%,#4f9a3c 0%,#2d6a2a 55%,#173d18 100%); }
+.ld-row { position:absolute; left:0; right:0; top:44%; transform:translateY(-50%); display:flex; align-items:flex-end; justify-content:center; padding:0 12px; }
+.ld-side { display:flex; align-items:flex-end; }
+.ldb { display:block; height:min(clamp(80px,19vmin,170px),17vw); width:auto; filter:drop-shadow(0 8px 10px rgba(0,0,0,.45)); animation:ldbreath 2.6s ease-in-out infinite; transform-origin:50% 100%; }
+.ldb.ldsmall { height:min(clamp(60px,14vmin,125px),12vw); margin-right:-6px; animation-delay:.4s; }
+.ldb.ldbig { height:min(clamp(100px,25vmin,220px),22vw); animation-delay:.9s; }
+@keyframes ldbreath { 50% { transform:scale(1.04,0.97); } }
+.ld-title { font-size:min(clamp(42px,11vmin,104px),10vw); font-weight:900; color:#ffd24a; letter-spacing:2px; white-space:nowrap; line-height:1.1; padding-bottom:clamp(6px,2vmin,16px); text-shadow:0 4px 0 #7a4512,0 8px 0 #4a2a0a,0 14px 30px rgba(0,0,0,.6); }
+.ld-bottom { position:absolute; left:0; right:0; bottom:max(24px,env(safe-area-inset-bottom)); display:flex; flex-direction:column; align-items:center; gap:6px; }
+#loading .lbar { position:relative; width:min(78vw,520px); height:26px; background:#0007; border:3px solid #fff8; border-radius:14px; }
+#loading .lbar i { background:linear-gradient(#ffe56a,#f2b81a); border-radius:10px; }
+#loadpct { position:absolute; inset:0; text-align:center; font-weight:900; font-size:15px; line-height:20px; color:#3a2a08; text-shadow:0 1px 0 #fff8; }
+/* ---------- слоты сохранений ---------- */
+#slotsTitle { font-size:18px; font-weight:900; text-shadow:0 2px 4px #000; }
+#slotList { display:flex; flex-direction:column; gap:8px; }
+.slotrow { display:flex; gap:6px; }
+.slotbtn { flex:1; display:flex; flex-direction:column; align-items:flex-start; gap:2px; text-align:left; border:none; border-radius:12px; padding:9px 12px; background:linear-gradient(#4aa8e0,#2a6ab0); color:#fff; box-shadow:0 4px 0 #1a3a6a; font-size:16px; }
+.slotbtn small { font-size:12px; opacity:.95; } .slotbtn .sl2 { font-size:11px; opacity:.8; }
+.slotbtn.empty { background:linear-gradient(#6cc04a,#3a8a2a); box-shadow:0 4px 0 #24561a; }
+.slotbtn.warn { background:linear-gradient(#e8a03a,#b0661a); }
+.slotbtn:disabled { filter:grayscale(1) brightness(.7); }
+.slotdel { border:none; border-radius:12px; padding:0 10px; background:linear-gradient(#e86a4a,#b03a2a); color:#fff; font-weight:800; font-size:12px; box-shadow:0 4px 0 #6a1a10; }
+@media (max-height:500px) { #menu.slots-open .title, #menu.slots-open .sub { display:none; } .slotbtn { padding:6px 10px; font-size:14px; } #slotList { gap:6px; } }
+/* ---------- Золотые птицы ---------- */
+.gbi { width:1.25em; height:1.25em; vertical-align:-0.3em; display:inline-block; }
+#gbBadge { position:fixed; right:calc(max(12px,env(safe-area-inset-right)) + 58px); top:max(16px,env(safe-area-inset-top)); background:#0008; border:2px solid #ffd24a88; border-radius:20px; padding:6px 12px; font-size:18px; color:#ffd24a; }
+.gbline { font-size:13px; margin-bottom:4px; color:#6a3a10; }
+.lockline { background:#fff3c8; border:2px dashed #d8a020; border-radius:8px; padding:4px 8px; font-weight:800; font-size:13px; margin:4px 0; color:#8a5a08; }
+#sel-go.gold { background:linear-gradient(#ffd24a,#d89a10); color:#4a2a08; box-shadow:0 5px 0 #8a5a08; text-shadow:none; }
+.gbreward { margin:6px 0; font-size:16px; } .gbreward small { font-size:12px; opacity:.8; }
+.wintxt { margin:4px 0 8px; font-size:15px; font-weight:700; color:#2a6a2a; }
+#over.win .results h1 { color:#c89a10; }
+#biomeSel { font-size:14px; padding:4px 6px; border-radius:8px; border:2px solid #c8a060; }
+/* ---------- кат-сцена: остаётся только пауза ---------- */
+body.cutscene #hud > *:not(#topright), body.cutscene #topright > *:not(#btn-pause), body.cutscene #bars, body.cutscene #floats { display:none !important; }
+body.cutscene #touch { pointer-events:none; }
+/* ---------- масштаб интерфейса (только GUI, мир не меняется) ---------- */
+:root { --ui: 1; }
+.rico { width:1.05em; height:1.05em; display:inline-block; vertical-align:-0.18em; }
+.seg.diff { margin-top:4px; } .seg.diff button { padding:6px 7px; font-size:12px; }
+.seg.diff button.on.d-hard { background:#e0782a; } .seg.diff button.on.d-impossible { background:#b02a2a; } .seg.diff button.on.d-easy { background:#3aa0d0; }
+#res { transform:scale(var(--ui)); transform-origin:top left; }
+#basebox { transform:scale(var(--ui)); transform-origin:top center; }
+#topright { transform:scale(var(--ui)); transform-origin:top right; }
+#leftinfo { transform:scale(var(--ui)); transform-origin:top left; top:calc(max(6px,env(safe-area-inset-top)) + 64px * var(--ui)); }
+#btn-wave { transform:scale(var(--ui)); transform-origin:top right; top:calc(max(6px,env(safe-area-inset-top)) + 54px * var(--ui)); }
+#toolbar { transform:translateX(-50%) scale(var(--ui)); transform-origin:bottom center; }
+#prompt { transform:translateX(-50%) scale(var(--ui)); transform-origin:bottom center; bottom:calc(max(10px,env(safe-area-inset-bottom)) + 84px * var(--ui)); }
+#buildbar { transform:translateX(-50%) scale(var(--ui)); transform-origin:bottom center; bottom:calc(max(8px,env(safe-area-inset-bottom)) + 76px * var(--ui)); }
+#actions { transform:scale(var(--ui)); transform-origin:bottom right; bottom:calc(max(10px,env(safe-area-inset-bottom)) + 76px * var(--ui)); }
+.stick { transform:scale(var(--ui)); }
+#compass { font-size:calc(34px * var(--ui)); }
+.ft { font-size:calc(18px * var(--ui)); }
+#toasts { transform:translateX(-50%) scale(var(--ui)); transform-origin:top center; }
+#modal .card { width:calc(min(96vw,760px) / var(--ui)); max-height:calc(94vh / var(--ui)); transform:scale(var(--ui)); }
+#settings .card { width:calc(min(94vw,560px) / var(--ui)); max-height:calc(92vh / var(--ui)); transform:scale(var(--ui)); }
+#menu > * { transform:scale(var(--ui)); transform-origin:left center; }
+#pause > *, #over > *, #bye > * { transform:scale(var(--ui)); }
+#heroCard { top:calc(max(8px,env(safe-area-inset-top)) + 46px); transform:scale(var(--ui)); transform-origin:top left; }
+#selNav { pointer-events:none; } #selNav > * { pointer-events:auto; }
+#heroCard .stats { display:grid; grid-template-columns:1fr 1fr; column-gap:10px; }
+#heroCard .stat b { width:66px; }
+@media (max-height:430px) { #heroCard { padding:8px 10px; width:min(50vw,390px); } #heroCard > p, #heroCard .ddesc, #heroCard .perk, #heroCard .gbline { display:none; } #biomeSel { max-width:150px; font-size:12px; } #heroCard h3 { margin:0; } .seedrow { margin-top:5px; } .seedrow input { width:100px; padding:3px 6px; } .seg.diff { flex-wrap:nowrap; gap:3px; } .seg.diff button { padding:5px 4px; font-size:11px; white-space:nowrap; } #heroCard h3 { font-size:17px; } #heroCard p { font-size:12px; margin:2px 0; } #heroCard .stat { margin:1px 0; font-size:12px; } #heroCard .perk { font-size:12px; padding:4px 6px; margin-top:4px; } #dragHint { display:none; } }
+#selNav { transform:scale(var(--ui)); transform-origin:bottom center; }
+#selTitle { transform:scale(var(--ui)); transform-origin:top center; }
+@media (max-height:430px) {
+  #leftinfo { top:calc(max(6px,env(safe-area-inset-top)) + 54px * var(--ui)); }
+  #actions { bottom:calc(max(8px,env(safe-area-inset-bottom)) + 66px * var(--ui)); }
+  #prompt { bottom:calc(max(8px,env(safe-area-inset-bottom)) + 70px * var(--ui)); }
+  #buildbar { bottom:calc(max(8px,env(safe-area-inset-bottom)) + 66px * var(--ui)); }
+}
+@media (orientation:portrait) {
+  #heroCard { top:auto; transform:translateX(-50%) scale(var(--ui)); transform-origin:bottom center; }
+  #toasts { transform:scale(var(--ui)); transform-origin:bottom center; left:4vw; }
+  #leftinfo { top:calc(130px * var(--ui)); }
+}
 </style>
 </head>
 <body>
@@ -197,54 +309,70 @@ select { font-size:14px; padding:6px; border-radius:8px; }
 <div id="touch"></div>
 
 <div id="loading" class="screen">
-  <div class="logo">🪺 Птичья Крепость</div>
-  <div class="lbar"><i id="loadbar"></i></div>
-  <div id="loadtxt">Загрузка…</div>
+  <div class="ld-row">
+    <div id="ld-left" class="ld-side"></div>
+    <div class="ld-title">Bird Wars</div>
+    <div id="ld-right" class="ld-side"></div>
+  </div>
+  <div class="ld-bottom">
+    <div class="lbar"><i id="loadbar"></i><span id="loadpct">0%</span></div>
+    <div id="loadtxt">Loading…</div>
+  </div>
 </div>
 
 <div id="menu" class="screen hidden">
-  <h1 class="title">Птичья<br>Крепость</h1>
-  <div class="sub">Построй крепость и защити птиц от зверей!</div>
+  <h1 class="title" data-i18n-html="title_html">Bird<br>Wars</h1>
+  <div class="sub" data-i18n="subtitle"></div>
   <div class="menu-col" id="m-main">
-    <button class="big" data-act="play">▶ ИГРАТЬ</button>
-    <button class="big blue" data-act="settings">⚙ НАСТРОЙКИ</button>
-    <button class="big red" data-act="exit">✖ ВЫЙТИ ИЗ ИГРЫ</button>
+    <button class="big" data-act="play" data-i18n="play"></button>
+    <button class="big blue" data-act="settings" data-i18n="settings_b"></button>
+    <button class="big red" data-act="exit" data-i18n="exit"></button>
   </div>
   <div class="menu-col hidden" id="m-play">
-    <button class="big" data-act="new">🌱 НОВАЯ ИГРА</button>
-    <button class="big blue" data-act="continue" id="btn-continue">💾 ПРОДОЛЖИТЬ<small id="saveinfo"></small></button>
-    <button class="big gray" data-act="back">◀ НАЗАД</button>
+    <button class="big" data-act="new" data-i18n="newgame"></button>
+    <button class="big blue" data-act="continue" id="btn-continue"><span data-i18n="continue"></span><small id="saveinfo"></small></button>
+    <button class="big gray" data-act="back" data-i18n="back"></button>
   </div>
-  <div class="ver">v1.0 · управление: стики на телефоне или WASD + мышь</div>
+  <div class="menu-col hidden" id="m-slots">
+    <div id="slotsTitle"></div>
+    <div id="slotList"></div>
+    <button class="big gray" data-act="slots-back" data-i18n="back"></button>
+  </div>
+  <div class="ver" data-i18n="ver"></div>
+  <button class="langbtn" id="btn-lang">🌍</button>
+  <div id="gbBadge" title="Gold Coins"></div>
 </div>
 
 <div id="settings" class="screen hidden" style="background:rgba(0,0,0,.55)">
   <div class="card">
-    <h2>⚙ Настройки</h2>
-    <div class="row"><label>Графика</label><div class="seg" id="s-quality">
-      <button data-v="low">Низкая</button><button data-v="medium">Средняя</button><button data-v="high">Высокая</button><button data-v="ultra">Ультра</button></div></div>
-    <div class="row"><label>Разрешение</label><select id="s-res">
-      <option value="auto">Авто (экран)</option><option value="480">854×480</option><option value="540">960×540</option><option value="720">1280×720</option><option value="900">1600×900</option><option value="1080">1920×1080</option><option value="1440">2560×1440</option></select></div>
-    <div class="row"><label>Музыка</label><button class="tog" id="s-musicOn"></button></div>
-    <div class="row"><label>Громкость музыки</label><input type="range" id="s-musicVol" min="0" max="100"></div>
-    <div class="row"><label>Звуки</label><button class="tog" id="s-sfxOn"></button></div>
-    <div class="row"><label>Громкость звуков</label><input type="range" id="s-sfxVol" min="0" max="100"></div>
-    <div class="row"><label>Авто-добыча и атака</label><button class="tog" id="s-autoAct"></button></div>
-    <div class="row"><label>Дальность камеры</label><input type="range" id="s-camDist" min="60" max="160"></div>
-    <div class="row"><label>Чувствительность камеры</label><input type="range" id="s-sens" min="30" max="200"></div>
-    <div class="row"><label>Полный экран</label><button class="btn blue" id="s-full">⛶ Вкл/выкл</button></div>
-    <div style="text-align:center;margin-top:12px"><button class="big gray" id="s-back" style="width:220px">◀ НАЗАД</button></div>
+    <h2 data-i18n="s_title"></h2>
+    <div class="row"><label data-i18n="s_lang"></label><select id="s-lang"></select></div>
+    <div class="row"><label data-i18n="s_graphics"></label><div class="seg" id="s-quality">
+      <button data-v="low" data-i18n="q_low"></button><button data-v="medium" data-i18n="q_medium"></button><button data-v="high" data-i18n="q_high"></button><button data-v="ultra" data-i18n="q_ultra"></button></div></div>
+    <div class="row"><label data-i18n="s_res"></label><select id="s-res">
+      <option value="auto" data-i18n="res_auto"></option><option value="480">854×480</option><option value="540">960×540</option><option value="720">1280×720</option><option value="900">1600×900</option><option value="1080">1920×1080</option><option value="1440">2560×1440</option></select></div>
+    <div class="row"><label data-i18n="s_view"></label><div class="seg" id="s-view"><button data-v="third" data-i18n="view_third"></button><button data-v="first" data-i18n="view_first"></button></div></div>
+    <div class="row"><label><span data-i18n="s_ui"></span> <span id="s-uiScaleV"></span></label><input type="range" id="s-uiScale" min="60" max="150" step="5"></div>
+    <div class="row"><label data-i18n="s_music"></label><button class="tog" id="s-musicOn"></button></div>
+    <div class="row"><label data-i18n="s_musicVol"></label><input type="range" id="s-musicVol" min="0" max="100"></div>
+    <div class="row"><label data-i18n="s_sfx"></label><button class="tog" id="s-sfxOn"></button></div>
+    <div class="row"><label data-i18n="s_sfxVol"></label><input type="range" id="s-sfxVol" min="0" max="100"></div>
+    <div class="row"><label data-i18n="s_auto"></label><button class="tog" id="s-autoAct"></button></div>
+    <div class="row"><label data-i18n="s_camDist"></label><input type="range" id="s-camDist" min="60" max="160"></div>
+    <div class="row"><label data-i18n="s_sens"></label><input type="range" id="s-sens" min="30" max="200"></div>
+    <div class="row"><label data-i18n="s_full"></label><button class="btn blue" id="s-full" data-i18n="s_fullBtn"></button></div>
+    <div style="text-align:center;margin-top:12px"><button class="big gray" id="s-back" style="width:220px" data-i18n="back"></button></div>
   </div>
 </div>
 
 <div id="select" class="screen hidden">
-  <div id="selTitle">Выберите героя</div>
+  <div id="selTitle" data-i18n="sel_title"></div>
   <div id="heroCard" class="card"></div>
-  <div id="dragHint">👆 Проведите пальцем по экрану, чтобы вращать героя</div>
+  <div id="dragHint" data-i18n="drag_hint"></div>
   <div id="selNav">
     <button class="big gray" id="sel-back" style="padding:12px 16px">◀</button>
     <button class="arrow" id="sel-prev">‹</button>
-    <button class="big" id="sel-go">НАЧАТЬ ИГРУ</button>
+    <button class="big" id="sel-go" data-i18n="start"></button>
     <button class="arrow" id="sel-next">›</button>
   </div>
 </div>
@@ -253,38 +381,42 @@ select { font-size:14px; padding:6px; border-radius:8px; }
   <div id="topbar">
     <div id="res"></div>
     <div id="basebox">
-      <div class="lbl">🪺 ВЕЛИКОЕ ГНЕЗДО — здоровье базы</div>
+      <div class="lbl" data-i18n="base_lbl"></div>
       <div class="hpbar"><i id="basehp"></i><span id="basehptxt"></span></div>
       <div id="waveinfo"></div>
+      <div id="bossbar" class="hidden"><span id="bossname"></span><div class="bb"><i id="bosshp"></i></div></div>
     </div>
-    <div id="topright"><span id="daytxt"></span><button class="sq" id="btn-pause">⏸</button></div>
+    <div id="topright"><span id="daytxt"></span><button class="sq" id="btn-view" title="1st / 3rd person (V)">👁</button><button class="sq" id="btn-pause">⏸</button></div>
   </div>
   <div id="leftinfo">
     <div class="phb">❤️<div class="hpbar"><i id="php"></i><span id="phptxt"></span></div></div>
+    <div class="stb"><span>⚡</span><div class="stbar"><i id="pst"></i></div></div>
     <div id="quest"></div>
     <div id="birdcount"></div>
   </div>
   <div id="compass" class="hidden">➤</div>
-  <button id="btn-wave">⏩ Волна сейчас</button>
+  <div id="crosshair"></div>
+  <button id="btn-wave" data-i18n="wave_now"></button>
   <div id="prompt"></div>
-  <div id="stickL" class="stick"><div class="lbl">ДВИЖЕНИЕ</div><div class="knob"></div></div>
-  <div id="stickR" class="stick"><div class="lbl">КАМЕРА</div><div class="knob"></div></div>
+  <div id="stickL" class="stick"><div class="lbl" data-i18n="move"></div><div class="knob"></div></div>
+  <div id="stickR" class="stick"><div class="lbl" data-i18n="camera"></div><div class="knob"></div></div>
   <div id="actions">
+    <button class="round" id="btn-run" title="Shift">🏃</button>
     <button class="round" id="btn-use" title="E">✋</button>
-    <button class="round bigr" id="btn-act" title="Пробел">🪓</button>
+    <button class="round bigr" id="btn-act" title="Space">🪓</button>
   </div>
   <div id="buildbar" class="hidden">
     <div id="bb-info"></div>
     <button id="bb-rot">↻</button>
-    <button id="bb-place">✔ Поставить</button>
+    <button id="bb-place" data-i18n="place"></button>
     <button id="bb-cancel">✖</button>
   </div>
   <div id="toolbar">
-    <button class="slot" data-slot="axe">🪓<small>Топор</small></button>
-    <button class="slot" data-slot="pick">⛏️<small>Кирка</small></button>
-    <button class="slot" data-slot="build">🔨<small>Стройка</small></button>
-    <button class="slot" data-slot="inv">🎒<small>Инвентарь</small></button>
-    <button class="slot" data-slot="birds">🐦<small>Птицы</small></button>
+    <button class="slot" data-slot="axe">🪓<small data-i18n="tb_axe"></small></button>
+    <button class="slot" data-slot="pick">⛏️<small data-i18n="tb_pick"></small></button>
+    <button class="slot" data-slot="build">🔨<small data-i18n="tb_build"></small></button>
+    <button class="slot" data-slot="inv">🎒<small data-i18n="tb_inv"></small></button>
+    <button class="slot" data-slot="birds">🐦<small data-i18n="tb_birds"></small></button>
   </div>
 </div>
 <div id="bars"></div>
@@ -300,39 +432,47 @@ select { font-size:14px; padding:6px; border-radius:8px; }
 </div></div>
 
 <div id="pause" class="screen hidden">
-  <h1 class="title" style="font-size:48px;margin-bottom:16px">Пауза</h1>
+  <h1 class="title" style="font-size:48px;margin-bottom:16px" data-i18n="pause"></h1>
   <div class="menu-col">
-    <button class="big" data-p="resume">▶ ПРОДОЛЖИТЬ</button>
-    <button class="big blue" data-p="save">💾 СОХРАНИТЬ</button>
-    <button class="big blue" data-p="settings">⚙ НАСТРОЙКИ</button>
-    <button class="big red" data-p="menu">🏠 ГЛАВНОЕ МЕНЮ</button>
+    <button class="big" data-p="resume" data-i18n="resume"></button>
+    <button class="big blue" data-p="save" data-i18n="save_b"></button>
+    <button class="big blue" data-p="settings" data-i18n="settings_b"></button>
+    <button class="big red" data-p="menu" data-i18n="mainmenu"></button>
   </div>
 </div>
 
 <div id="over" class="screen hidden">
-  <h1>База разрушена!</h1>
-  <div id="overtxt" style="margin-bottom:16px;font-size:18px;text-align:center"></div>
-  <div class="menu-col">
-    <button class="big blue" id="over-load">💾 ЗАГРУЗИТЬ СОХРАНЕНИЕ</button>
-    <button class="big" id="over-new">🌱 НОВАЯ ИГРА</button>
-    <button class="big gray" id="over-menu">🏠 ГЛАВНОЕ МЕНЮ</button>
+  <div class="card results">
+    <h1 data-i18n="over_title"></h1>
+    <div id="overtxt"></div>
+    <button class="big" id="over-menu" data-i18n="mainmenu"></button>
   </div>
 </div>
 
 <div id="bye" class="screen hidden">
-  <h1 class="title">Спасибо за игру!</h1>
-  <p>Прогресс сохранён. Можно закрыть вкладку.</p>
-  <button class="big" id="bye-back" style="width:260px">◀ В МЕНЮ</button>
+  <h1 class="title" data-i18n="bye_title"></h1>
+  <p data-i18n="bye_txt"></p>
+  <button class="big" id="bye-back" style="width:260px" data-i18n="bye_back"></button>
+</div>
+
+<div id="langpick" class="screen hidden">
+  <div class="card lp">
+    <h2 id="lp-title">🌍 Choose your language</h2>
+    <div id="lp-list"></div>
+  </div>
 </div>
 
 <div id="rotate">
   <div class="ph">📱</div>
-  <div>Поверните телефон <b>горизонтально</b> — так удобнее играть</div>
-  <button class="big" id="rot-ok" style="width:240px">Играть так</button>
+  <div data-i18n-html="rotate_txt"></div>
+  <button class="big" id="rot-ok" style="width:240px" data-i18n="rotate_ok"></button>
 </div>
 
 <script src="js/three.min.js"></script>
 <script src="js/data.js"></script>
+<script src="js/i18n_data.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/i18n_extra.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/models.js"></script>
 <script src="js/world.js"></script>
