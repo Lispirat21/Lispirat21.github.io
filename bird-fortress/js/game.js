@@ -279,7 +279,7 @@ const G = window.G = {};
     if (n <= 0) return;
     const cap = k === 'coins' ? Infinity : G.cap();
     const before = S.res[k];
-    S.res[k] = Math.min(cap, S.res[k] + n);
+    S.res[k] = Math.max(before, Math.min(cap, before + n)); // не срезаем запас сверх лимита (промокод)
     const got = S.res[k] - before;
     if (got <= 0) { if (at) UI.floatText(at, tr('storage_full'), '#ff8a6a'); return; }
     if (S.stats[k] !== undefined) S.stats[k] += got;
@@ -941,6 +941,13 @@ const G = window.G = {};
     S.gear.armor = S.gear.armor === id ? null : id;
     Models.setArmor(P.mesh, S.gear.armor);
     return true;
+  };
+  // Тестовый промокод: по 1000 каждого ресурса (сверх лимита склада)
+  G.promo = function (code) {
+    if ((code || '').trim().toUpperCase() !== 'BIRD1000') { UI.toast('Неверный промокод', 'warn'); Sound.play('error'); return false; }
+    if (Net.isClient) { UI.toast('Промокод вводит хост', 'warn'); return false; }
+    for (const k in RES_INFO) S.res[k] = (S.res[k] || 0) + 1000;
+    Sound.play('upgrade'); UI.toast('🎁 +1000 всех ресурсов!', 'good'); return true;
   };
   G.eat = function () {
     if (S.res.food < 3) { UI.toast(tr('need_food'), 'warn'); Sound.play('error'); return; }
