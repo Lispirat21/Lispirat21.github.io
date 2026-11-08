@@ -206,7 +206,10 @@ body.fp #crosshair { display:block; }
 #over .results h1 { color:#c0301a; font-size:clamp(26px,6vw,40px); margin:0 0 4px; text-shadow:none; }
 .rsub { font-size:13px; opacity:.85; margin-bottom:10px; }
 .rgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:5px; text-align:left; }
-#over-menu { position:sticky; bottom:0; width:min(80vw,320px); }
+#over-menu { position:static; flex-shrink:0; width:min(80vw,320px); margin:8px auto 0; }
+/* окно итогов: текст и статистика прокручиваются, кнопка всегда отдельно снизу и ничего не перекрывает */
+#over .results { display:flex; flex-direction:column; overflow:hidden !important; max-height:calc(92vh / var(--ui)); }
+#overtxt { flex:1 1 auto; min-height:0; overflow-y:auto; touch-action:pan-y; -webkit-overflow-scrolling:touch; }
 @media (max-height:430px) { #over .results { padding:8px 12px; } #over .results h1 { font-size:24px; } .rs { padding:3px 6px; font-size:12px; } .rs .ri { font-size:16px; } .rs b { font-size:14px; } .rnote { margin:6px 0; } .rsub { margin-bottom:6px; } }
 .rs { display:flex; align-items:center; gap:8px; background:#fff; border:2px solid #e0c890; border-radius:10px; padding:6px 8px; font-size:13px; }
 .rs .ri { font-size:20px; width:24px; text-align:center; } .rs .rl { flex:1; } .rs b { font-size:16px; color:#6a3a10; font-variant-numeric:tabular-nums; }
@@ -545,16 +548,16 @@ body.cutscene #touch { pointer-events:none; }
   <button class="big" id="rot-ok" style="width:240px" data-i18n="rotate_ok"></button>
 </div>
 
-<script src="js/three.min.js?v=202611080758"></script>
-<script src="js/data.js?v=202611080758"></script>
-<script src="js/i18n_data.js?v=202611080758"></script>
-<script src="js/i18n.js?v=202611080758"></script>
-<script src="js/i18n_extra.js?v=202611080758"></script>
-<script src="js/audio.js?v=202611080758"></script>
-<script src="js/models.js?v=202611080758"></script>
-<script src="js/world.js?v=202611080758"></script>
-<script src="js/net.js?v=202611080758"></script>
-<script src="js/game.js?v=202611080758"></script>
-<script src="js/ui.js?v=202611080758"></script>
+<script src="js/three.min.js?v=202611080810"></script>
+<script src="js/data.js?v=202611080810"></script>
+<script src="js/i18n_data.js?v=202611080810"></script>
+<script src="js/i18n.js?v=202611080810"></script>
+<script src="js/i18n_extra.js?v=202611080810"></script>
+<script src="js/audio.js?v=202611080810"></script>
+<script src="js/models.js?v=202611080810"></script>
+<script src="js/world.js?v=202611080810"></script>
+<script src="js/net.js?v=202611080810"></script>
+<script src="js/game.js?v=202611080810"></script>
+<script src="js/ui.js?v=202611080810"></script>
 </body>
 </html>
