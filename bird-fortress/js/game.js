@@ -493,6 +493,9 @@ const G = window.G = {};
       UI.toast(tr('wave_done', { n: S.wave, c: bonus }), 'good', 3500);
       Sound.play('win'); Sound.setMode('calm');
       S.wave++; S.earlyBonus = false;
+      // каждая пройденная волна — ещё +1 день: быстрые волны быстрее ведут к 50-му дню
+      S.day++; UI.toast('📅 +1 день за волну! День ' + S.day, 'info', 3000);
+      if (S.day >= GOAL_DAYS && !S.won) { startCutscene(); return; }
       S.waveTimer = Math.round(DF().prep * Math.max(0.75, 1 - (S.wave - 1) * 0.01));
       G.save();
     }
@@ -1535,7 +1538,14 @@ const G = window.G = {};
   let lobby = [];                      // [{ pid, id, hero }]
   let tickN = 0, snapT = 0, meT = 0, fullFor = new Set(), lastBl = '', lastDead = '', pidSeq = 1;
   G.mpN = () => Net.isClient ? mpCount : (Net.isHost ? 1 + Net.conns.size : 1);
-  G.maxOf = t => { const m = BUILD[t].max || 99; return m === 1 ? 1 : m * G.mpN(); };
+  G.maxOf = t => { const m = BUILD[t].max || 99; return m === 1 ? 1 : m * G.mpN() * (S && S.limX ? 2 : 1); };
+  // Расширение базы: очень дорого, удваивает лимиты всех построек (кроме уникальных)
+  G.LIMX_COST = { wood: 600, stone: 600, iron: 400, coal: 300, ruby: 50, coins: 3000 };
+  G.buyLimits = function () {
+    if (S.limX) return false;
+    if (!tryPay(G.LIMX_COST)) return false;
+    S.limX = 1; Sound.play('upgrade'); UI.toast('🏗️ Лимиты построек удвоены!', 'good'); return true;
+  };
   G.lobby = () => lobby;
   function mpTargets() { const list = P ? [P] : []; puppets.forEach(p => list.push(p)); return list; }
 
@@ -1563,7 +1573,7 @@ const G = window.G = {};
   const birdCode = b => b.hidden ? 3 : b.state === 'fly' ? 1 : b.state === 'gunner' ? 2 : b.state === 'walk' ? 0 : 4;
   function snapshot(full) {
     const r1 = v => Math.round(v * 10) / 10;
-    const s = { ev: 'snap', n: G.mpN(), res: S.res, tools: S.tools, tech: S.tech, wave: S.wave, wt: Math.round(S.waveTimer), wa: S.waveActive, dt: +S.dayTime.toFixed(4), day: S.day, q: S.quest, left: G.enemiesLeft(), diff: S.diff };
+    const s = { ev: 'snap', n: G.mpN(), res: S.res, tools: S.tools, tech: S.tech, lx: S.limX || 0, wave: S.wave, wt: Math.round(S.waveTimer), wa: S.waveActive, dt: +S.dayTime.toFixed(4), day: S.day, q: S.quest, left: G.enemiesLeft(), diff: S.diff };
     const bl = B.map(b => [b.id, b.t, b.x, b.z, b.rot, b.lvl, b.onWall || 0]); const blKey = bl.map(a => a[0] + ':' + a[5]).join(',');
     if (full || blKey !== lastBl) s.bl = bl;
     s.bh = B.map(b => [b.id, Math.round(b.hp), +b.yaw.toFixed(2)]);
@@ -1586,7 +1596,7 @@ const G = window.G = {};
     fullFor.clear(); lastBl = blKey; lastDead = dKey;
   }
   // ---------- хост: команды гостей ----------
-  const REMOTE = ['upgrade', 'repair', 'demolish', 'buyBird', 'assignBird', 'unassignBird', 'releaseBird', 'craftTool', 'research', 'startWaveNow'];
+  const REMOTE = ['upgrade', 'repair', 'demolish', 'buyBird', 'assignBird', 'unassignBird', 'releaseBird', 'craftTool', 'research', 'startWaveNow', 'buyLimits'];
   const enc = a => a && typeof a === 'object' ? (a.sp && a.mesh ? { bd: a.id } : (a.t && a.mesh ? { b: a.id } : a)) : a;
   const dec = a => a && typeof a === 'object' ? (a.bd !== undefined ? BD.find(b => b.id === a.bd) : a.b !== undefined ? byId[a.b] : a) : a;
   const hostFns = {};
@@ -1676,7 +1686,7 @@ const G = window.G = {};
     });
   }
   function applySnap(s) {
-    Object.assign(S.res, s.res); S.tools = s.tools; S.tech = s.tech; S.wave = s.wave; S.waveTimer = s.wt; S.day = s.day; S.quest = s.q; S._left = s.left; mpCount = s.n;
+    Object.assign(S.res, s.res); S.tools = s.tools; S.tech = s.tech; S.limX = s.lx; S.wave = s.wave; S.waveTimer = s.wt; S.day = s.day; S.quest = s.q; S._left = s.left; mpCount = s.n;
     if (s.wa !== S.waveActive) Sound.setMode(s.wa ? 'battle' : 'calm');
     S.waveActive = s.wa; S.dayTime = s.dt;
     if (s.bl) applyBuildingList(s.bl);

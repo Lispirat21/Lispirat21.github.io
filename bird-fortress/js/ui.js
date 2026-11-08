@@ -505,7 +505,7 @@ const UI = window.UI = {};
         const d = BUILD[t], cost = G.scaleCost(d.cost);
         let lock = '';
         if (d.req && !S.tech[d.req]) lock = tr('need_tech', { name: TECH[d.req].name });
-        else if (G.countB(t) >= (d.max || 99)) lock = d.max === 1 ? tr('built_one') : tr('limit_hit', { n: d.max });
+        else if (G.countB(t) >= G.maxOf(t)) lock = d.max === 1 ? tr('built_one') : tr('limit_hit', { n: G.maxOf(t) });
         const btn = h('button', { cls: 'btn' + (G.canAfford(cost) ? '' : ' gold') }, G.canAfford(cost) ? tr('b_build') : tr('b_choose'));
         if (lock) btn.disabled = true;
         tap(btn, () => { if (G.enterBuild(t)) { closeModal(); toast(isTouch ? tr('hint_place_touch') : tr('hint_place_pc'), 'info'); } });
@@ -513,8 +513,16 @@ const UI = window.UI = {};
         if (t === 'wall') extra = tr('levels_n', { s: WALL_LEVELS.map((l, i) => i + 1).join('→') });
         grid.append(h('div', { cls: 'item' + (lock ? ' lock' : '') }, h('div', { cls: 'ico' }, d.icon), h('div', { cls: 'nm' }, d.name), h('div', { cls: 'ds' }, d.desc + (extra ? ' ' + extra : '')),
           h('div', { cls: 'cost', html: costHtml(cost) }), lock ? h('div', { cls: 'ds' }, lock) : null,
-          h('div', { cls: 'limit' + (G.countB(t) >= (d.max || 99) ? ' full' : '') }, tr('built_cnt', { n: G.countB(t), m: d.max || '∞' })), btn));
+          h('div', { cls: 'limit' + (G.countB(t) >= G.maxOf(t) ? ' full' : '') }, tr('built_cnt', { n: G.countB(t), m: d.max ? G.maxOf(t) : '∞' })), btn));
       });
+      if (cat === 'prod') { // расширение лимитов
+        const own = S.limX, btn = h('button', { cls: 'btn' + (own ? '' : ' gold') }, own ? '✔ Куплено' : 'Купить');
+        if (own) btn.disabled = true;
+        tap(btn, () => { G.buyLimits(); renderModal(); });
+        grid.append(h('div', { cls: 'item' }, h('div', { cls: 'ico' }, '🏗️'), h('div', { cls: 'nm' }, 'Расширение базы'),
+          h('div', { cls: 'ds' }, 'Удваивает лимиты всех построек: стен, пушек, шахт, складов и т.д. (кроме единственных).'),
+          own ? null : h('div', { cls: 'cost', html: costHtml(G.LIMX_COST) }), btn));
+      }
       body.append(grid);
     });
   }
