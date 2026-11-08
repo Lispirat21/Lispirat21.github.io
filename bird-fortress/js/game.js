@@ -951,7 +951,14 @@ const G = window.G = {};
   };
   // Тестовый промокод: по 1000 каждого ресурса (сверх лимита склада)
   G.promo = function (code) {
-    if ((code || '').trim().toUpperCase() !== 'BIRD1000') { UI.toast('Неверный промокод', 'warn'); Sound.play('error'); return false; }
+    const cc = (code || '').trim().toUpperCase();
+    if (cc === 'DAY49') { // тест концовки: +49 дней
+      if (Net.isClient) { UI.toast('Промокод вводит хост', 'warn'); return false; }
+      S.day += 49; UI.toast('📅 +49 дней! День ' + S.day, 'good'); Sound.play('upgrade');
+      if (S.day >= GOAL_DAYS && !S.won) { UI.closeModal && UI.closeModal(); startCutscene(); }
+      return true;
+    }
+    if (cc !== 'BIRD1000') { UI.toast('Неверный промокод', 'warn'); Sound.play('error'); return false; }
     if (Net.isClient) { UI.toast('Промокод вводит хост', 'warn'); return false; }
     for (const k in RES_INFO) S.res[k] = (S.res[k] || 0) + 1000;
     Sound.play('upgrade'); UI.toast('🎁 +1000 всех ресурсов!', 'good'); return true;

@@ -350,6 +350,36 @@ const Models = (() => {
     box(1.4, 1.4, 0.06, white, 0, 2.3, -0.05 + 1.0, g, false).position.set(1.52, 2.3, -0.4);
     const crossH = box(0.06, 0.25, 0.8, red, 1.56, 2.3, -0.4, g, false); void crossH; box(0.06, 0.8, 0.25, red, 1.56, 2.3, -0.4, g, false);
     const lamp = sph(0.2, 0.2, 0.2, mat(0xff3030, { emissive: 0xff2020, emissiveIntensity: 2 }), 0, 4.05, -6.8, g, true, false); void lamp;
+    // --- детали ---
+    const dark = mat(0x2a2a2e, { roughness: 0.6 }), steel = mat(0xb8bec8, { metalness: 0.6, roughness: 0.35 }), glass = mat(0x8ad0ff, { metalness: 0.4, roughness: 0.1, transparent: true, opacity: 0.8 });
+    box(0.5, 0.25, 0.25, dark, 0, 1.6, 1.6, g);                                   // рама кабины
+    for (let i = -1; i <= 1; i += 2) cyl(0.04, 0.04, 2.0, dark, i * 0.75, 2.5, 1.9, g, 4, false).rotation.x = 0.5;
+    [-1, 1].forEach(sx => {
+      box(0.06, 1.0, 1.3, glass, sx * 1.47, 2.6, 0.2, g, false);                  // боковые окна
+      box(0.06, 1.15, 1.45, dark, sx * 1.46, 2.6, 0.2, g, false).scale.set(0.04, 1.15, 1.45);
+      box(0.06, 1.4, 1.2, white, sx * 1.5, 2.2, -1.3, g, false);                  // сдвижная дверь
+      box(0.08, 0.06, 0.3, dark, sx * 1.55, 2.2, -0.9, g, false);                 // ручка
+      cyl(0.05, 0.05, 1.2, steel, sx * 1.55, 2.9, -1.3, g, 4, false).rotation.x = Math.PI / 2; // направляющая двери
+      box(0.6, 0.06, 0.35, dark, sx * 1.35, 0.95, 0.9, g);                        // ступенька
+      const ex = cyl(0.16, 0.2, 0.6, 0x4a4a50, sx * 0.55, 3.35, -1.4, g, 8); ex.rotation.x = Math.PI / 2 + 0.3; // выхлоп
+      cyl(0.12, 0.12, 0.05, 0x111111, sx * 0.55, 3.25, -1.72, g, 8).rotation.x = Math.PI / 2 + 0.3;
+      box(1.1, 0.08, 0.45, red, sx * 0.6, 2.75, -6.3, g);                          // хвостовой стабилизатор
+      box(0.08, 0.5, 0.45, white, sx * 1.15, 2.85, -6.3, g, false);
+    });
+    box(1.6, 0.7, 2.6, red, 0, 3.4, -0.6, g);                                       // кожух двигателя
+    box(1.2, 0.08, 1.2, 0x3a3a40, 0, 3.78, -1.3, g, false);                         // решётка
+    for (let i = 0; i < 4; i++) box(1.0, 0.04, 0.06, 0x111111, 0, 3.83, -1.7 + i * 0.25, g, false);
+    box(0.17, 0.6, 1.02, red, 0, 3.0, -7.2, g, false);                              // полоса на киле
+    const ant = cyl(0.02, 0.02, 0.8, dark, 0, 4.0, -2.4, g, 4, false); ant.rotation.x = -0.4; // антенна
+    const sl = cyl(0.18, 0.22, 0.25, dark, 0.6, 0.95, 2.1, g, 10); sl.rotation.x = Math.PI / 2; // прожектор под носом
+    cyl(0.16, 0.16, 0.03, mat(0xffffff, { emissive: 0xfff4c0, emissiveIntensity: 2 }), 0.6, 0.95, 2.24, g, 10, false).rotation.x = Math.PI / 2;
+    sph(0.12, 0.12, 0.12, mat(0x30ff40, { emissive: 0x20ff30, emissiveIntensity: 2 }), 1.5, 2.0, 1.0, g, true, false); // навигационные огни
+    sph(0.12, 0.12, 0.12, mat(0xff3030, { emissive: 0xff2020, emissiveIntensity: 2 }), -1.5, 2.0, 1.0, g, true, false);
+    cyl(0.12, 0.12, 0.3, steel, 0, 3.75, 0.2, g, 8);                                // вал ротора
+    sph(0.35, 0.2, 0.35, dark, 0, 4.05, 0.2, g, true);                               // втулка
+    for (let i = 0; i < 4; i++) { const tip = box(0.36, 0.07, 0.4, 0xf2c41a, 0, 0, 6.2, rotor, false); const pv = group(rotor); pv.rotation.y = i * Math.PI / 2; pv.add(tip); } // жёлтые кончики лопастей
+    [-1, 1].forEach(sx => [-1.1, 1.3].forEach(z => { const st = box(0.08, 0.08, 0.8, dark, sx * 1.2, 0.35, z, g, false); st.rotation.x = 0; box(0.14, 0.14, 0.14, steel, sx * 1.2, 0.35, z + 0.4, g, false); })); // крепления полозьев
+    [-1, 1].forEach(sx => { const tipU = box(0.12, 0.12, 0.5, 0x2a2a2e, sx * 1.2, 0.5, 2.45, g, false); tipU.rotation.x = -0.6; }); // загнутые носки полозьев
     g.userData.rotor = rotor; g.userData.tailRotor = tailRotor;
     g.traverse(o => { if (o.isMesh) o.castShadow = true; });
     return g;
