@@ -657,9 +657,12 @@ const UI = window.UI = {};
         const eat = h('button', { cls: 'btn gold', style: 'margin-top:10px' }, tr('eat_btn')); tap(eat, () => { G.eat(); renderModal(); });
         body.append(eat);
         body.append(h('div', { cls: 'perk', style: 'margin-top:10px' }, tr('where')));
-        const pr = h('button', { cls: 'btn blue', style: 'margin-top:10px' }, '🎁 Промокод');
-        tap(pr, () => { const c = prompt('Промокод:'); if (c != null) { G.promo(c); renderModal(); } });
-        body.append(pr);
+        // поле промокода прямо в окне (prompt() блокируется во встроенных страницах)
+        const inp = h('input', { type: 'text', placeholder: '🎁 Промокод', autocomplete: 'off', style: 'flex:1;min-width:0;padding:10px;border-radius:10px;border:2px solid #c8a070;font-size:16px;font-weight:700' });
+        const ok = h('button', { cls: 'btn blue' }, 'OK');
+        tap(ok, () => { if (G.promo(inp.value)) renderModal(); });
+        inp.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter' && G.promo(inp.value)) renderModal(); });
+        body.append(h('div', { style: 'display:flex;gap:8px;margin-top:10px' }, inp, ok));
       } else if (t === 'work') renderWorkshop(body);
       else {
         const hd = HEROES[S.hero], P = G.player();
