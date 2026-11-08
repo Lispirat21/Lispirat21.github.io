@@ -454,6 +454,7 @@ body.cutscene #touch { pointer-events:none; }
   <div id="toolbar">
     <button class="slot" data-slot="axe">🪓<small data-i18n="tb_axe"></small></button>
     <button class="slot" data-slot="pick">⛏️<small data-i18n="tb_pick"></small></button>
+    <button class="slot" data-slot="weapon">⚔️<small data-i18n="tb_weapon"></small></button>
     <button class="slot" data-slot="build">🔨<small data-i18n="tb_build"></small></button>
     <button class="slot" data-slot="inv">🎒<small data-i18n="tb_inv"></small></button>
     <button class="slot" data-slot="birds">🐦<small data-i18n="tb_birds"></small></button>
@@ -558,6 +559,7 @@ const RES_INFO = {
   coal:  { name: 'Уголь',   icon: "<svg class=\"rico\" viewBox=\"0 0 24 24\"><path d=\"M3 15 6 7l6-3 7 3 2 8-5 5H8z\" fill=\"#2b2d33\" stroke=\"#b8bec8\" stroke-width=\"1.4\" stroke-linejoin=\"round\"/><path d=\"M6 7l6-3 7 3-6 3z\" fill=\"#5a5e68\"/><path d=\"M12 10l7-3 2 8-7 1z\" fill=\"#3c3f47\"/><path d=\"M3 15l3-8 6 3 2 6-6 4z\" fill=\"#1c1d21\"/><path d=\"M9 6.5l2.5-1M15 6l2 .8M5.5 11l1-2\" stroke=\"#c8ccd6\" stroke-width=\"1.1\" stroke-linecap=\"round\"/></svg>" },
   food:  { name: 'Еда',     icon: '🍖' },
   coins: { name: 'Монеты',  icon: '🪙' },
+  ruby:  { name: 'Рубины',  icon: "<svg class=\"rico\" viewBox=\"0 0 24 24\"><path d=\"M7 3h10l5 6-10 12L2 9z\" fill=\"#e0204a\" stroke=\"#7a0018\" stroke-width=\"1.3\" stroke-linejoin=\"round\"/><path d=\"M2 9h20M7 3l5 6 5-6M12 9v12\" stroke=\"#ff8aa0\" stroke-width=\"1\" fill=\"none\"/><path d=\"M7 3l-5 6h5z\" fill=\"#ff6a88\"/></svg>" },
 };
 
 // Птицы. dmg/rate/range — множители для пушки, за которой сидит птица.
@@ -652,7 +654,7 @@ const BUILD = {
   workshop:   { max: 1, name: 'Мастерская',         cat: 'prod',    cost: { wood: 40 },             hp: 350,  size: [3.6, 3],   icon: '⚒️', desc: 'Инструменты и технологии.', unique: true },
   farm:       { max: 4, name: 'Ферма',              cat: 'prod',    cost: { wood: 25 },             hp: 200,  size: [4, 4],   icon: '🌾', desc: 'Производит еду.' },
   mineshaft:  { max: 3, name: 'Своя шахта',         cat: 'prod',    cost: { wood: 50, stone: 30 },  hp: 500,  size: [3.4, 3.4], icon: '🕳️', desc: 'Ставится где угодно. Сама добывает камень, уголь и железо. Улучшается до 3 уровня.', req: 'stone' },
-  minelift:   { max: 2, name: 'Шахтный подъёмник',  cat: 'prod',    cost: { wood: 40, stone: 20 },  hp: 400,  size: [3, 3],   icon: '⛏️', desc: 'Ставится в карьере. Сам добывает камень, уголь и железо.', req: 'stone' },
+  minelift:   { max: 2, name: 'Шахтный подъёмник',  cat: 'prod',    cost: { wood: 40, stone: 20 },  hp: 400,  size: [3, 3],   icon: '⛏️', desc: 'Ставится в карьере. Сам добывает камень и уголь, после улучшений — железо и рубины.', req: 'stone' },
   core:       { max: 1, name: 'Великое гнездо',     cat: 'none',    cost: {},                       hp: 1200, size: [5, 5],   icon: '🪺', desc: 'Сердце базы. Если его разрушат — игра окончена.' },
 };
 const BUILD_CATS = [
@@ -669,11 +671,22 @@ const AXES = [
   { name: 'Деревянный топор', power: 1 },
   { name: 'Каменный топор',   power: 2,   cost: { wood: 15, stone: 10 } },
   { name: 'Железный топор',   power: 3.5, cost: { wood: 15, iron: 10, coal: 5 }, req: 'metal' },
+  { name: 'Рубиновый топор',  power: 6,   cost: { ruby: 6, iron: 6, coal: 6 }, req: 'metal' },
+  { name: 'Бензопила',        power: 10,  cost: { ruby: 20, iron: 40, coal: 30, coins: 500 }, req: 'mech' },
 ];
 const PICKS = [
   { name: 'Кирка',            power: 1,   cost: { wood: 20 } },
   { name: 'Улучшенная кирка', power: 1.8, cost: { wood: 10, stone: 20 } },
   { name: 'Железная кирка',   power: 3,   cost: { iron: 12, coal: 8 }, req: 'metal' },
+  { name: 'Рубиновая кирка',  power: 5,   cost: { ruby: 6, iron: 6, coal: 6 }, req: 'metal' },
+  { name: 'Отбойный молоток', power: 9,   cost: { ruby: 20, iron: 40, coal: 30, coins: 500 }, req: 'mech' },
+];
+// Мечи: mul — множитель урона героя по врагам
+const SWORDS = [
+  { name: 'Деревянный меч', mul: 1.2, cost: { wood: 15 } },
+  { name: 'Каменный меч',   mul: 1.6, cost: { wood: 10, stone: 15 } },
+  { name: 'Железный меч',   mul: 2.2, cost: { wood: 5, iron: 12, coal: 6 }, req: 'metal' },
+  { name: 'Рубиновый меч',  mul: 3.4, cost: { ruby: 8, iron: 6, coal: 6 }, req: 'metal' },
 ];
 
 const NODE_INFO = {
@@ -681,6 +694,7 @@ const NODE_INFO = {
   stone: { hp: 10, res: 'stone', ratio: 1,   tool: 'pick', minPick: 0,  regrow: 180, name: 'Камень' },
   coal:  { hp: 9,  res: 'coal',  ratio: 1,   tool: 'pick', minPick: 0,  regrow: 220, name: 'Уголь' },
   iron:  { hp: 12, res: 'iron',  ratio: 0.6, tool: 'pick', minPick: 1,  regrow: 260, name: 'Железная руда' },
+  ruby:  { hp: 18, res: 'ruby',  ratio: 0.3, tool: 'pick', minPick: 2,  regrow: 420, name: 'Рубиновая руда' },
   berry: { hp: 1,  res: 'food',  ratio: 4,   tool: 'hand', minPick: -1, regrow: 70,  name: 'Ягодный куст' },
 };
 
@@ -722,9 +736,15 @@ const GATE_LEVELS = [
 const BALLISTA_LEVELS = [
   { name: 'Авто-арбалет',   kind: 'bolt',   dmg: 45, rate: 0.7, range: 26, splash: 0,   hp: 400, cost: { wood: 20, iron: 12, coal: 5 } },
   { name: 'Пулемёт',        kind: 'bullet', dmg: 9,  rate: 7,   range: 24, splash: 0,   hp: 650, cost: { iron: 22, coal: 12, coins: 150 } },
-  { name: 'Ракетница',      kind: 'rocket', dmg: 75, rate: 0.8, range: 32, splash: 3.6, hp: 900, cost: { iron: 35, coal: 25, coins: 300 } },
+  { name: 'Ракетница',      kind: 'rocket', dmg: 160, rate: 1.4, range: 36, splash: 5, hp: 1200, cost: { iron: 35, coal: 25, coins: 300 } },
 ];
 // Уровни своей шахты: секунды на 1 единицу ресурса
+// Шахтный подъёмник (карьерный добытчик): 0 — не добывает этот ресурс
+const LIFT_LEVELS = [
+  { name: 'Подъёмник',            hp: 400,  stone: 6, coal: 14, iron: 0,  ruby: 0,  cost: { wood: 40, stone: 20 } },
+  { name: 'Усиленный подъёмник',  hp: 650,  stone: 4, coal: 10, iron: 20, ruby: 0,  cost: { wood: 40, stone: 50, iron: 10 } },
+  { name: 'Рубиновый подъёмник',  hp: 1000, stone: 3, coal: 6,  iron: 12, ruby: 60, cost: { stone: 60, iron: 40, coal: 25, coins: 200 }, req: 'metal' },
+];
 const SHAFT_LEVELS = [
   { name: 'Шахта',              hp: 500,  stone: 9, coal: 20, iron: 34, cost: { wood: 50, stone: 30 } },
   { name: 'Глубокая шахта',     hp: 750,  stone: 6, coal: 13, iron: 22, cost: { wood: 40, stone: 50, iron: 10 } },
@@ -734,6 +754,12 @@ const SHAFT_LEVELS = [
 const GEAR = {
   lamp:   { name: 'Ручная лампа',          icon: '🪔', cost: { wood: 10, coal: 3, coins: 30 },   desc: 'Слабо светит вокруг героя в темноте.' },
   helmet: { name: 'Каска с прожектором',   icon: '⛑️', cost: { iron: 8, coal: 6, coins: 120 },  desc: 'Мощный луч света туда, куда смотрит герой.' },
+};
+// Броня героя: уменьшает получаемый урон
+const ARMOR = {
+  leather: { icon: '🦺', red: 0.2, cost: { wood: 10, food: 12, coins: 40 } },
+  iron:    { icon: '🛡️', red: 0.4, cost: { iron: 20, coal: 10, coins: 120 }, req: 'metal' },
+  ruby:    { icon: '💎', red: 0.6, cost: { ruby: 15, iron: 15, coins: 300 }, req: 'metal' },
 };
 
 </script>
@@ -1230,11 +1256,14 @@ function applyDataLang() {
   GATE_LEVELS.forEach((l, i) => l.name = tr('gl' + (i + 1)));
   BALLISTA_LEVELS.forEach((l, i) => l.name = tr('bl' + (i + 1)));
   SHAFT_LEVELS.forEach((l, i) => l.name = tr('sl' + (i + 1)));
+  if (typeof LIFT_LEVELS !== 'undefined') LIFT_LEVELS.forEach((l, i) => l.name = tr('ll' + (i + 1)));
   for (const k in TECH) { TECH[k].name = tr('t.' + k); TECH[k].desc = tr('td.' + k); }
   AXES.forEach((a, i) => a.name = tr('ax' + i));
   PICKS.forEach((a, i) => a.name = tr('pk' + i));
+  if (typeof SWORDS !== 'undefined') SWORDS.forEach((a, i) => a.name = tr('sw' + i));
   for (const k in NODE_INFO) NODE_INFO[k].name = tr('n.' + k);
   for (const k in GEAR) { GEAR[k].name = tr('g.' + k); GEAR[k].desc = tr('gd.' + k); }
+  if (typeof ARMOR !== 'undefined') for (const k in ARMOR) { ARMOR[k].name = tr('a.' + k); ARMOR[k].desc = tr('ad.' + k); }
   for (const k in DIFFICULTY) { DIFFICULTY[k].name = tr('d.' + k); DIFFICULTY[k].desc = tr('dd.' + k); }
   QUESTS.forEach((q, i) => q.text = tr('q' + i));
   if (typeof World !== 'undefined' && World.BIOMES) World.BIOMES.forEach(b => b.name = tr('bio.' + b.id));
@@ -1365,6 +1394,46 @@ Object.assign(TR_UI, {
   mp_st_ok:    ["✔ Connected! Waiting for the host to start…", "✔ Подключено! Ждём, пока хост начнёт…", "✔ ¡Conectado! Esperando al anfitrión…", "✔ Conectado! Esperando o anfitrião…", "✔ Connecté ! En attente de l'hôte…", "✔ Verbunden! Warte auf den Host…", "✔ 已连接！等待房主开始…", "✔ 接続しました！ホストを待っています…", "✔ जुड़ गए! होस्ट का इंतज़ार…", "✔ تم الاتصال! بانتظار المضيف…"],
   mp_server:   ["Could not reach the connection server. Check your internet or try Wi-Fi.", "Не удалось связаться с сервером соединения. Проверьте интернет или попробуйте через Wi-Fi.", "No se pudo contactar el servidor de conexión. Revisa internet o prueba Wi-Fi.", "Não foi possível alcançar o servidor. Verifique a internet ou use Wi-Fi.", "Serveur de connexion injoignable. Vérifiez internet ou essayez le Wi-Fi.", "Verbindungsserver nicht erreichbar. Internet prüfen oder WLAN nutzen.", "无法连接服务器，请检查网络或改用 Wi-Fi。", "接続サーバーに届きません。ネットかWi-Fiを確認してください。", "कनेक्शन सर्वर तक नहीं पहुँचे। इंटरनेट जाँचें या Wi-Fi आज़माएँ।", "تعذّر الوصول لخادم الاتصال. تحقق من الإنترنت أو جرّب Wi-Fi."],
   mp_sandbox:  ["Multiplayer does not work on this page (network is blocked here). Open the game on the site: lispirat21.github.io/bird-fortress", "Совместная игра не работает на этой странице (здесь запрещена сеть). Откройте игру на сайте: lispirat21.github.io/bird-fortress", "El multijugador no funciona en esta página. Abre el juego en: lispirat21.github.io/bird-fortress", "O multijogador não funciona nesta página. Abra o jogo em: lispirat21.github.io/bird-fortress", "Le multijoueur ne marche pas sur cette page. Ouvrez le jeu sur : lispirat21.github.io/bird-fortress", "Mehrspieler funktioniert hier nicht. Öffne das Spiel auf: lispirat21.github.io/bird-fortress", "此页面无法多人游戏（网络被禁用）。请在网站打开：lispirat21.github.io/bird-fortress", "このページではマルチプレイ不可。サイトで開いてください：lispirat21.github.io/bird-fortress", "इस पेज पर मल्टीप्लेयर नहीं चलता। साइट पर खोलें: lispirat21.github.io/bird-fortress", "اللعب الجماعي لا يعمل هنا. افتح اللعبة على: lispirat21.github.io/bird-fortress"],
+});
+Object.assign(TR_DATA, {
+  'a.leather':  ["Leather Armor", "Кожаная броня", "Armadura de cuero", "Armadura de couro", "Armure de cuir", "Lederrüstung", "皮甲", "革の鎧", "चमड़े का कवच", "درع جلدي"],
+  'ad.leather': ["Vest, shoulder pads and bracers. −20% damage taken.", "Жилет, наплечники и наручи. −20% получаемого урона.", "Chaleco, hombreras y brazales. −20% de daño recibido.", "Colete, ombreiras e braçadeiras. −20% de dano recebido.", "Gilet, épaulettes et brassards. −20 % de dégâts subis.", "Weste, Schulterpolster und Armschienen. −20 % Schaden.", "背心、护肩和护腕。受到伤害−20%。", "ベスト、肩当て、籠手。被ダメージ−20%。", "बनियान, कंधे और कलाई रक्षक। −20% नुकसान।", "صدرية وواقيات أكتاف وسواعد. −20% من الضرر."],
+  'a.iron':     ["Iron Armor", "Железная броня", "Armadura de hierro", "Armadura de ferro", "Armure de fer", "Eisenrüstung", "铁甲", "鉄の鎧", "लोहे का कवच", "درع حديدي"],
+  'ad.iron':    ["Steel breastplate, pauldrons and greaves. −40% damage taken.", "Стальной нагрудник, наплечники и поножи. −40% получаемого урона.", "Peto de acero, hombreras y grebas. −40% de daño recibido.", "Peitoral de aço, ombreiras e grevas. −40% de dano recebido.", "Plastron d'acier, spalières et jambières. −40 % de dégâts subis.", "Stahlbrustplatte, Schulterplatten und Beinschienen. −40 % Schaden.", "钢制胸甲、肩甲和护腿。受到伤害−40%。", "鋼の胸当て、肩鎧、すね当て。被ダメージ−40%。", "इस्पात का सीना, कंधे और पैर कवच। −40% नुकसान।", "صدرية فولاذية وواقيات أكتاف وسيقان. −40% من الضرر."],
+});
+Object.assign(TR_UI, {
+  armor_title: ["🛡 Armor — less damage", "🛡 Броня — меньше урона", "🛡 Armadura — menos daño", "🛡 Armadura — menos dano", "🛡 Armure — moins de dégâts", "🛡 Rüstung — weniger Schaden", "🛡 护甲 — 减少伤害", "🛡 鎧 — ダメージ軽減", "🛡 कवच — कम नुकसान", "🛡 الدروع — ضرر أقل"],
+});
+Object.assign(TR_DATA, {
+  'r.ruby': ["Rubies", "Рубины", "Rubíes", "Rubis", "Rubis", "Rubine", "红宝石", "ルビー", "माणिक", "ياقوت"],
+  'n.ruby': ["ruby ore", "рубиновая руда", "mena de rubí", "minério de rubi", "minerai de rubis", "Rubinerz", "红宝石矿", "ルビー鉱石", "माणिक अयस्क", "خام الياقوت"],
+  'ax3': ["Ruby Axe", "Рубиновый топор", "Hacha de rubí", "Machado de rubi", "Hache en rubis", "Rubinaxt", "红宝石斧", "ルビーの斧", "माणिक कुल्हाड़ी", "فأس الياقوت"],
+  'pk3': ["Ruby Pickaxe", "Рубиновая кирка", "Pico de rubí", "Picareta de rubi", "Pioche en rubis", "Rubinspitzhacke", "红宝石镐", "ルビーのツルハシ", "माणिक कुदाल", "معول الياقوت"],
+  'sw0': ["Wooden Sword", "Деревянный меч", "Espada de madera", "Espada de madeira", "Épée en bois", "Holzschwert", "木剑", "木の剣", "लकड़ी की तलवार", "سيف خشبي"],
+  'sw1': ["Stone Sword", "Каменный меч", "Espada de piedra", "Espada de pedra", "Épée en pierre", "Steinschwert", "石剑", "石の剣", "पत्थर की तलवार", "سيف حجري"],
+  'sw2': ["Iron Sword", "Железный меч", "Espada de hierro", "Espada de ferro", "Épée en fer", "Eisenschwert", "铁剑", "鉄の剣", "लोहे की तलवार", "سيف حديدي"],
+  'sw3': ["Ruby Sword", "Рубиновый меч", "Espada de rubí", "Espada de rubi", "Épée en rubis", "Rubinschwert", "红宝石剑", "ルビーの剣", "माणिक तलवार", "سيف الياقوت"],
+});
+Object.assign(TR_UI, {
+  tb_weapon: ["Weapon", "Оружие", "Arma", "Arma", "Arme", "Waffe", "武器", "武器", "हथियार", "سلاح"],
+  no_sword: ["No sword yet! Craft one in the workshop.", "Меча пока нет! Сделайте его в мастерской.", "¡Aún no tienes espada! Créala en el taller.", "Ainda sem espada! Faça uma na oficina.", "Pas encore d'épée ! Fabriquez-en une à l'atelier.", "Noch kein Schwert! Stelle eins in der Werkstatt her.", "还没有剑！去工坊制作。", "まだ剣がない！工房で作ろう。", "अभी तलवार नहीं! कार्यशाला में बनाएँ।", "لا سيف بعد! اصنعه في الورشة."],
+  sword_dmg: ["Damage ×{n}", "Урон ×{n}", "Daño ×{n}", "Dano ×{n}", "Dégâts ×{n}", "Schaden ×{n}", "伤害 ×{n}", "ダメージ ×{n}", "नुकसान ×{n}", "الضرر ×{n}"],
+  sword_need: ["Hits enemies much harder than an axe", "Бьёт врагов гораздо сильнее топора", "Golpea mucho más fuerte que un hacha", "Bate muito mais forte que um machado", "Frappe bien plus fort qu'une hache", "Trifft viel härter als eine Axt", "比斧头伤害高得多", "斧よりずっと強く敵を斬る", "कुल्हाड़ी से कहीं ज़्यादा नुकसान", "يضرب الأعداء أقوى بكثير من الفأس"],
+  need_pick3: ["Rubies need an iron pickaxe", "Для рубинов нужна железная кирка", "Los rubíes requieren pico de hierro", "Rubis exigem picareta de ferro", "Les rubis exigent une pioche en fer", "Rubine brauchen eine Eisenspitzhacke", "红宝石需要铁镐", "ルビーには鉄のツルハシが必要", "माणिक के लिए लोहे की कुदाल चाहिए", "الياقوت يحتاج معولًا حديديًا"],
+});
+Object.assign(TR_DATA, {
+  'Bd.minelift': ["Only in the quarry. Mines stone and coal; upgrades add iron, then rubies.", "Ставится в карьере. Добывает камень и уголь, после улучшений — железо, а потом рубины.", "Solo en la cantera. Extrae piedra y carbón; mejoras: hierro y rubíes.", "Só na pedreira. Extrai pedra e carvão; melhorias: ferro e rubis.", "Seulement dans la carrière. Pierre et charbon ; améliorations : fer puis rubis.", "Nur im Steinbruch. Stein und Kohle; Upgrades: Eisen, dann Rubine.", "仅限采石场。开采石头和煤，升级后开采铁和红宝石。", "採石場専用。石と石炭、強化で鉄とルビーも。", "केवल खदान में। पत्थर और कोयला; उन्नयन से लोहा, फिर माणिक।", "في المحجر فقط. حجر وفحم، وبالتطوير حديد ثم ياقوت."],
+  'll1': ["Mine Hoist", "Подъёмник", "Montacargas", "Elevador", "Chevalement", "Förderturm", "矿井升降机", "巻き上げ機", "खदान लिफ्ट", "رافعة المنجم"],
+  'll2': ["Reinforced Hoist", "Усиленный подъёмник", "Montacargas reforzado", "Elevador reforçado", "Chevalement renforcé", "Verstärkter Förderturm", "加固升降机", "強化巻き上げ機", "मज़बूत लिफ्ट", "رافعة معززة"],
+  'll3': ["Ruby Hoist", "Рубиновый подъёмник", "Montacargas de rubí", "Elevador de rubi", "Chevalement à rubis", "Rubin-Förderturm", "红宝石升降机", "ルビー巻き上げ機", "माणिक लिफ्ट", "رافعة الياقوت"],
+  'ax4': ["Chainsaw", "Бензопила", "Motosierra", "Motosserra", "Tronçonneuse", "Kettensäge", "电锯", "チェーンソー", "चेनसॉ", "منشار آلي"],
+  'pk4': ["Jackhammer", "Отбойный молоток", "Martillo neumático", "Britadeira", "Marteau-piqueur", "Presslufthammer", "风镐", "削岩機", "जैकहैमर", "مطرقة هوائية"],
+  'a.ruby': ["Ruby Armor", "Рубиновая броня", "Armadura de rubí", "Armadura de rubi", "Armure de rubis", "Rubinrüstung", "红宝石甲", "ルビーの鎧", "माणिक कवच", "درع الياقوت"],
+  'ad.ruby': ["Glowing ruby plates. −60% damage taken.", "Сияющие рубиновые латы. −60% получаемого урона.", "Placas de rubí brillantes. −60% de daño recibido.", "Placas de rubi brilhantes. −60% de dano recebido.", "Plaques de rubis lumineuses. −60 % de dégâts subis.", "Leuchtende Rubinplatten. −60 % Schaden.", "闪耀的红宝石甲片。受到伤害−60%。", "輝くルビーの鎧。被ダメージ−60%。", "चमकती माणिक प्लेटें। −60% नुकसान।", "صفائح ياقوت لامعة. −60% من الضرر."],
+});
+Object.assign(TR_UI, {
+  mine_head: ["Mines:", "Добывает:", "Extrae:", "Extrai:", "Extrait :", "Fördert:", "开采：", "採掘：", "निकालता है:", "يستخرج:"],
+  mine_each: ["{a} every {x}s", "{a} раз в {x}с", "{a} cada {x}s", "{a} a cada {x}s", "{a} toutes les {x}s", "{a} alle {x}s", "{a} 每{x}秒", "{a} {x}秒ごと", "{a} हर {x}से", "{a} كل {x}ث"],
 });
 
 </script>
@@ -1848,7 +1917,7 @@ const Models = (() => {
   function makeHero(type) {
     const L = HERO_LOOK[type]; const root = new THREE.Group(); const P = { root };
     const hips = group(root, 0, 0.92, 0); P.hips = hips;
-    const torso = group(hips, 0, 0, 0); P.torso = torso;
+    const torso = group(hips, 0, 0, 0); P.torso = torso; P.torsoW = L.width;
     box(L.width, 0.62, 0.32, L.shirt, 0, 0.36, 0, torso);
     box(L.width + 0.02, 0.1, 0.34, 0x3a2614, 0, 0.06, 0, torso); // пояс
     box(0.12, 0.08, 0.05, 0xd8b040, 0, 0.06, 0.18, torso, false);
@@ -1965,14 +2034,66 @@ const Models = (() => {
       const glass = cyl(0.075, 0.075, 0.02, mat(0xffffff, { emissive: 0xfff4c0, emissiveIntensity: 2.5 }), 0, 0.18, 0.26, hd, 10, false); glass.rotation.x = Math.PI / 2;
     }
   }
+  // Броня: кожаная (жилет, наплечники, наручи) или железная (нагрудник, наплечники, поножи)
+  function setArmor(root, id) {
+    const P = root.userData.parts;
+    if (P.armor) { P.armor.forEach(o => o.parent && o.parent.remove(o)); }
+    P.armor = [];
+    if (!id) return;
+    const ruby = id === 'ruby', iron = id === 'iron' || ruby;
+    const m1 = ruby ? mat(0xe0204a, { emissive: 0x900018, emissiveIntensity: 0.6, roughness: 0.25 }) : iron ? mat(0xd4dae2, { metalness: 0.3, roughness: 0.3 }) : mat(0x7a4a24, { roughness: 0.85 });
+    const m2 = ruby ? mat(0x8a1028, { roughness: 0.35 }) : iron ? mat(0x9aa2ae, { metalness: 0.3, roughness: 0.4 }) : mat(0x4a2c14, { roughness: 0.9 });
+    const rim = iron ? mat(0xd8b040, { metalness: 0.6, roughness: 0.35 }) : mat(0xc8a070);
+    const w = (P.torsoW || 0.56) + 0.06;
+    const t = group(P.torso, 0, 0, 0); P.armor.push(t);
+    box(w, 0.5, 0.38, m1, 0, 0.4, 0, t);                       // корпус
+    if (iron) {
+      box(w * 0.7, 0.3, 0.04, m2, 0, 0.48, 0.2, t);             // выпуклая пластина
+      box(w + 0.02, 0.05, 0.4, rim, 0, 0.66, 0, t, false);
+      box(w + 0.02, 0.05, 0.4, rim, 0, 0.16, 0, t, false);
+      box(0.24, 0.12, 0.3, m1, 0, 0.72, 0, t);                  // горжет
+    } else {
+      [-1, 1].forEach(sx => { const st = box(0.06, 0.62, 0.02, m2, sx * w * 0.22, 0.4, 0.2, t, false); st.rotation.z = sx * 0.5; });
+      box(0.08, 0.06, 0.02, rim, 0, 0.4, 0.21, t, false);       // пряжка
+      box(w + 0.02, 0.06, 0.4, m2, 0, 0.18, 0, t, false);
+    }
+    P.arms.forEach((a, i) => {
+      const sx = i ? 1 : -1;
+      const g = group(a, 0, 0, 0); P.armor.push(g);
+      const sh = sph(0.27, iron ? 0.2 : 0.16, 0.27, m1, sx * 0.02, 0.02, 0, g, true); // наплечник
+      if (iron) box(0.22, 0.04, 0.24, rim, sx * 0.02, -0.06, 0, g, false);
+      box(0.18, 0.18, 0.2, iron ? m1 : m2, 0, -0.44, 0, g);     // наруч
+    });
+    P.legs.forEach(l => {
+      const g = group(l, 0, 0, 0); P.armor.push(g);
+      if (iron) { box(0.24, 0.3, 0.26, m1, 0, -0.5, 0.01, g); sph(0.12, 0.1, 0.1, m2, 0, -0.36, 0.12, g, true); }
+      else box(0.24, 0.16, 0.26, m2, 0, -0.06, 0, g);           // кожаная юбка
+    });
+  }
   function makeTool(kind, tier) {
     const g = new THREE.Group();
-    const headC = [0x8a6a44, 0x8a8a8a, 0xd8dce4][Math.max(0, tier)] || 0x8a6a44;
-    const metal = tier >= 2 ? { metalness: 0.6, roughness: 0.35 } : undefined;
+    const headC = [0x8a6a44, 0x8a8a8a, 0xd8dce4, 0xe0204a][Math.max(0, tier)] || 0x8a6a44;
+    const metal = tier >= 3 ? { emissive: 0xa00020, emissiveIntensity: 0.7, roughness: 0.25 } : tier >= 2 ? { metalness: 0.6, roughness: 0.35 } : undefined;
     cyl(0.035, 0.035, 0.75, 0x6a4424, 0, 0.25, 0, g, 6);
-    if (kind === 'axe') {
+    if (kind === 'axe' && tier >= 4) { // бензопила
+      g.children[0].visible = false;
+      box(0.07, 0.14, 0.12, 0x2a2a2a, 0, 0.0, 0, g);                     // рукоять
+      box(0.2, 0.24, 0.36, 0xf08a10, 0, 0.18, -0.04, g);                  // корпус
+      box(0.21, 0.08, 0.2, 0x2a2a2a, 0, 0.33, -0.08, g, false);
+      box(0.04, 0.8, 0.14, mat(0xc8ccd4, { metalness: 0.6, roughness: 0.35 }), 0, 0.68, 0.06, g);  // шина
+      cyl(0.07, 0.07, 0.05, 0xc8ccd4, 0, 1.08, 0.06, g, 10).rotation.z = Math.PI / 2;
+      for (let i = 0; i < 8; i++) box(0.06, 0.04, 0.18, 0x3a3a3a, 0, 0.33 + i * 0.1, 0.06, g, false); // цепь
+    } else if (kind === 'pick' && tier >= 4) { // отбойный молоток
+      g.children[0].visible = false;
+      box(0.36, 0.06, 0.06, 0x2a2a2a, 0, -0.02, 0, g);                   // поперечная рукоять
+      box(0.18, 0.4, 0.18, 0xf2c41a, 0, 0.22, 0, g);                      // корпус
+      box(0.2, 0.06, 0.2, 0x2a2a2a, 0, 0.44, 0, g, false);
+      cyl(0.06, 0.07, 0.24, 0x5a5a62, 0, 0.56, 0, g, 8);
+      const bit = mat(0xe0204a, { emissive: 0x900018, emissiveIntensity: 0.6, roughness: 0.25 });
+      cyl(0.03, 0.03, 0.34, bit, 0, 0.82, 0, g, 6); cone(0.04, 0.1, bit, 0, 1.02, 0, g, 6, false);
+    } else if (kind === 'axe') {
       box(0.06, 0.2, 0.24, mat(headC, metal), 0, 0.52, 0.1, g);
-      box(0.04, 0.24, 0.05, mat(tier >= 1 ? 0xcfd2d8 : 0x6a4a2a, metal), 0, 0.52, 0.23, g, false);
+      box(0.04, 0.24, 0.05, mat(tier >= 3 ? 0xff5070 : tier >= 1 ? 0xcfd2d8 : 0x6a4a2a, metal), 0, 0.52, 0.23, g, false);
     } else if (kind === 'pick') {
       const a = box(0.06, 0.06, 0.32, mat(headC, metal), 0, 0.58, 0.14, g); a.rotation.x = 0.35;
       const b = box(0.06, 0.06, 0.32, mat(headC, metal), 0, 0.58, -0.14, g); b.rotation.x = -0.35;
@@ -1980,9 +2101,11 @@ const Models = (() => {
       box(0.14, 0.14, 0.26, 0x5a5a5a, 0, 0.56, 0, g);
     } else if (kind === 'sword') {
       g.children[0].visible = false;
-      const steel = mat(0xdde2ea, { metalness: 0.8, roughness: 0.25 });
+      // 0 — дерево, 1 — камень, 2 — сталь, 3 — рубин
+      const st = Math.max(0, Math.min(3, tier));
+      const steel = [mat(0xa87444, { roughness: 0.9 }), mat(0x9a9a96, { roughness: 0.85 }), mat(0xdde2ea, { metalness: 0.8, roughness: 0.25 }), mat(0xe8204a, { emissive: 0xb00024, emissiveIntensity: 0.8, roughness: 0.2 })][st];
       cyl(0.035, 0.035, 0.22, 0x5a3a1a, 0, 0.0, 0, g, 6);
-      box(0.3, 0.05, 0.08, 0xd8b040, 0, 0.12, 0, g);
+      box(0.3, 0.05, 0.08, st >= 2 ? 0xd8b040 : 0x6a4424, 0, 0.12, 0, g);
       box(0.08, 0.85, 0.025, steel, 0, 0.56, 0, g);
       cone(0.04, 0.12, steel, 0, 1.04, 0, g, 4, false);
     } else if (kind === 'bow') {
@@ -2448,6 +2571,16 @@ const Models = (() => {
         const wh = torus(0.7, 0.07, 0x5a5a62, 0, 4.4, 0, g, 16); g.userData.spin = wh;
         cyl(0.03, 0.03, 4.2, 0x2a2a2a, 0, 2.2, 0, g, 4, false);
         box(0.8, 0.5, 0.6, 0x5a5a62, 1.6, 0.5, 0, g); for (let i = 0; i < 3; i++) sph(0.25, 0.2, 0.25, 0x606060, 1.5 + i * 0.12, 0.85, 0, g, true);
+        if (lvl >= 2) { // железные распорки и вагонетка с рудой
+          [-1, 1].forEach(sx => box(0.1, 0.1, 1.4, 0x8a8f98, sx * 0.9, 2.6, 0, g));
+          box(0.9, 0.5, 0.7, 0x6a6e76, -1.6, 0.45, 0, g); for (let i = 0; i < 3; i++) sph(0.22, 0.18, 0.22, 0xc87a40, -1.7 + i * 0.12, 0.8, 0, g, true);
+          box(1.9, 0.12, 1.5, 0x8a8f98, 0, 4.05, 0, g);
+        }
+        if (lvl >= 3) { // рубины на крыше и в вагонетке
+          const rm = mat(0xe8204a, { emissive: 0xb00024, emissiveIntensity: 0.9, roughness: 0.25 });
+          [[-0.7, 0.55], [0.7, -0.55], [0, 0]].forEach(([x, z], i) => { const c = new THREE.Mesh(new THREE.OctahedronGeometry(0.28, 0), rm); c.scale.set(0.8, 1.6, 0.8); c.position.set(x, 4.45 + (i === 2 ? 0.95 : 0), z); g.add(c); });
+          for (let i = 0; i < 3; i++) sph(0.18, 0.16, 0.18, rm, 1.5 + i * 0.12, 1.0, 0.1, g, true);
+        }
         break;
       }
       case 'core': {
@@ -2521,12 +2654,13 @@ const Models = (() => {
     const stone = merge([[new THREE.DodecahedronGeometry(1, 0), 0x9a9a96, mtx(0, 0.5, 0, 1.2, 0.85, 1)], [new THREE.DodecahedronGeometry(0.6, 0), 0x8a8a86, mtx(0.8, 0.3, 0.3)]]);
     const coal = merge([[new THREE.DodecahedronGeometry(1, 0), 0x6a6a66, mtx(0, 0.5, 0, 1.1, 0.8, 1)], [new THREE.OctahedronGeometry(0.35, 0), 0x151515, mtx(0.5, 0.8, 0.5)], [new THREE.OctahedronGeometry(0.3, 0), 0x101010, mtx(-0.6, 0.6, 0.2)], [new THREE.OctahedronGeometry(0.28, 0), 0x1a1a1a, mtx(0.1, 1.0, -0.5)]]);
     const iron = merge([[new THREE.DodecahedronGeometry(1, 0), 0x7a706a, mtx(0, 0.5, 0, 1.1, 0.85, 1)], [new THREE.OctahedronGeometry(0.32, 0), 0xc87a40, mtx(0.55, 0.8, 0.4)], [new THREE.OctahedronGeometry(0.28, 0), 0xd88a50, mtx(-0.6, 0.6, 0.3)], [new THREE.OctahedronGeometry(0.25, 0), 0xb06a34, mtx(0, 1.05, -0.45)]]);
+    const ruby = merge([[new THREE.DodecahedronGeometry(1, 0), 0x5a5054, mtx(0, 0.5, 0, 1.1, 0.85, 1)], [new THREE.OctahedronGeometry(0.4, 0), 0xe0204a, mtx(0.45, 1.2, 0.35, 1, 1.7, 1)], [new THREE.OctahedronGeometry(0.32, 0), 0xff3a5e, mtx(-0.55, 1.0, 0.3, 1, 1.6, 1)], [new THREE.OctahedronGeometry(0.3, 0), 0xc01036, mtx(0.05, 1.35, -0.35, 1, 1.8, 1)]]);
     const berry = merge([[new THREE.IcosahedronGeometry(0.8, 0), 0x3a7a30, mtx(0, 0.6, 0, 1.2, 0.9, 1.2)], [new THREE.IcosahedronGeometry(0.55, 0), 0x46883a, mtx(0.5, 0.5, 0.3)],
       ...[[0.5, 0.9, 0.5], [-0.6, 0.7, 0.4], [0.2, 1.1, -0.4], [-0.3, 0.9, 0.7], [0.7, 0.6, -0.3], [0, 0.4, 0.95]].map(p => [new THREE.IcosahedronGeometry(0.11, 0), 0xd02040, mtx(p[0], p[1], p[2])])]);
-    return { stone, coal, iron, berry };
+    return { stone, coal, iron, ruby, berry };
   }
 
-  return { setDetail, get detail() { return HI; }, makeHelicopter, setGear, mat, texMat, T, box, sph, cyl, cone, torus, group, makeBird, animBird, makeHero, makeTool, animHero, makeEnemy, animEnemy, makeBuilding, makeCannon, merge, mtx, treeGeos, rockGeos, WALL_H: l => WALL_LEVELS[l - 1].h };
+  return { setDetail, get detail() { return HI; }, makeHelicopter, setGear, setArmor, mat, texMat, T, box, sph, cyl, cone, torus, group, makeBird, animBird, makeHero, makeTool, animHero, makeEnemy, animEnemy, makeBuilding, makeCannon, merge, mtx, treeGeos, rockGeos, WALL_H: l => WALL_LEVELS[l - 1].h };
 })();
 
 </script>
@@ -2705,8 +2839,14 @@ const World = (() => {
     // ----- Ресурсы (деревья, камни, руда, ягоды) -----
     const rnd = mulberry32(seed + 42);
     const occupied = (x, z, r) => { for (const n of nodesNear(x, z, r + 3)) if (Math.hypot(n.x - x, n.z - z) < r + n.r) return true; return false; };
+    // Прочность дерева растёт с размером; дуб крепче всех, берёза слабее
+    function nodeHp(kind, sub, scale) {
+      if (kind !== 'tree') return NODE_INFO[kind].hp;
+      const k = sub === 'oak' ? 1.3 : sub === 'birch' ? 0.85 : 1;
+      return Math.round(NODE_INFO.tree.hp * k * Math.max(1, scale * scale));
+    }
     function addNode(kind, sub, x, z, scale) {
-      const n = { kind, sub, x, z, y: groundAt(x, z), scale, r: (kind === 'tree' ? 0.45 : 0.95) * scale, hp: NODE_INFO[kind].hp, maxHp: NODE_INFO[kind].hp, alive: true, regrow: 0, rot: rnd() * 6.28, idx: nodes.length, acc: 0, shake: 0, grow: 1 };
+      const n = { kind, sub, x, z, y: groundAt(x, z), scale, r: (kind === 'tree' ? 0.45 : 0.95) * scale, hp: nodeHp(kind, sub, scale), maxHp: nodeHp(kind, sub, scale), alive: true, regrow: 0, rot: rnd() * 6.28, idx: nodes.length, acc: 0, shake: 0, grow: 1 };
       nodes.push(n); gridAdd(n); return n;
     }
     const nearBridge = (x, z) => W.bridge && Math.hypot(x - W.bridge.x, z - W.bridge.z) < W.bridge.len / 2 + 4;
@@ -2727,7 +2867,10 @@ const World = (() => {
       if (dens < BI.dens && Math.hypot(x, z) > 60) continue;
       const s = 0.8 + rnd() * 0.6;
       if (occupied(x, z, 1.6 * s)) continue;
-      const r = rnd(); addNode('tree', r < BI.mix[0] ? 'pine' : (r < BI.mix[1] ? 'oak' : 'birch'), x, z, s); trees++;
+      // ~15% деревьев — великаны: в 1.8 раза больше, рубить дольше, дерева больше.
+      // Считается по координатам без rnd(), чтобы не сдвинуть мир старых сохранений.
+      const hsh = Math.abs(Math.sin(x * 12.9898 + z * 78.233) * 43758.5453) % 1;
+      const r = rnd(); addNode('tree', r < BI.mix[0] ? 'pine' : (r < BI.mix[1] ? 'oak' : 'birch'), x, z, hsh < 0.15 ? s * 1.8 : s); trees++;
     }
     const scatter = (kind, count, fx) => { let c = 0, t = 0; while (c < count && t < 3000) { t++; const p = fx(); if (!p) continue; const [x, z, s] = p; if (occupied(x, z, 1.2 * s)) continue; addNode(kind, kind, x, z, s); c++; } };
     scatter('stone', 34, () => { const a = rnd() * 6.28, R = 34 + rnd() * 120, x = Math.cos(a) * R, z = Math.sin(a) * R; return valid(x, z, 32) ? [x, z, 0.8 + rnd() * 0.5] : null; });
@@ -2737,10 +2880,13 @@ const World = (() => {
     const cl = Math.hypot(CAVE.x, CAVE.z), cix = -CAVE.x / cl, ciz = -CAVE.z / cl;
     scatter('iron', 5, () => { const a = rnd() * 6.28, R = 2 + rnd() * 8; const x = CAVE.x + cix * 14 + Math.cos(a) * R, z = CAVE.z + ciz * 14 + Math.sin(a) * R; return heightAt(x, z) > WATER_Y + 0.4 ? [x, z, 0.9] : null; });
     scatter('berry', 30, () => { const a = rnd() * 6.28, R = 30 + rnd() * 90, x = Math.cos(a) * R, z = Math.sin(a) * R; return valid(x, z, 29) ? [x, z, 0.9 + rnd() * 0.3] : null; });
+    // редкие рубины: немного в шахте и у пещеры (добавлены в конец, чтобы не сбить старые сохранения)
+    scatter('ruby', 3, inPit);
+    scatter('ruby', 3, () => { const a = rnd() * 6.28, R = 2 + rnd() * 8; const x = CAVE.x + cix * 14 + Math.cos(a) * R, z = CAVE.z + ciz * 14 + Math.sin(a) * R; return heightAt(x, z) > WATER_Y + 0.4 ? [x, z, 0.85] : null; });
 
     const tg2 = Models.treeGeos(BI.trees), rg = Models.rockGeos();
     const vMat = own(new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.9 }));
-    const geos = { pine: tg2.pine, oak: tg2.oak, birch: tg2.birch, stone: rg.stone, coal: rg.coal, iron: rg.iron, berry: rg.berry };
+    const geos = { pine: tg2.pine, oak: tg2.oak, birch: tg2.birch, stone: rg.stone, coal: rg.coal, iron: rg.iron, ruby: rg.ruby, berry: rg.berry };
     for (const sub in geos) {
       own(geos[sub]);
       const list = nodes.filter(n => n.sub === sub);
@@ -2964,7 +3110,7 @@ const World = (() => {
     flock.forEach((b, i) => {
       const f = b.userData.fl, ang = time * f.sp + f.ph;
       b.position.set(f.cx + Math.cos(ang) * f.r, f.h + Math.sin(time * 0.7 + i) * 2, f.cz + Math.sin(ang) * f.r);
-      b.rotation.y = -ang; Models.animBird(b, (Math.sin(time * 0.5 + i) > -0.2) ? 'fly' : 'glide', time, i);
+      b.rotation.y = -ang; Models.animBird(b, 'fly', time, i);
     });
     return daylight;
   }
@@ -3248,7 +3394,7 @@ const G = window.G = {};
     if (P && S) {
       const fresh = Models.makeHero(S.hero); fresh.traverse(o => { if (o.isMesh) o.castShadow = true; });
       P.mesh = swap(P.mesh, fresh); P.tool = null; P.toolTier = -9; setTool('axe');
-      if (S.gear) Models.setGear(P.mesh, S.gear.eq);
+      if (S.gear) { Models.setGear(P.mesh, S.gear.eq); Models.setArmor(P.mesh, S.gear.armor); }
     }
   }
 
@@ -3256,8 +3402,8 @@ const G = window.G = {};
   function newState(hero, diff) {
     const D = DIFFICULTY[diff] || DIFFICULTY.normal, st = D.start;
     return {
-      v: 1, hero, diff: diff || 'normal', res: { wood: Math.round(30 * st), stone: 0, iron: 0, coal: 0, food: Math.round(10 * st), coins: Math.round(60 * st) },
-      tools: { axe: 0, pick: -1 }, tech: { stone: false, metal: false, mech: false },
+      v: 1, hero, diff: diff || 'normal', res: { wood: Math.round(30 * st), stone: 0, iron: 0, coal: 0, ruby: 0, food: Math.round(10 * st), coins: Math.round(60 * st) },
+      tools: { axe: 0, pick: -1, sword: -1 }, tech: { stone: false, metal: false, mech: false },
       wave: 1, waveTimer: Math.round(D.prep * 1.25), waveActive: false, dayTime: 0.02, day: 1, quest: 0,
       player: { x: 0, z: 6, hp: HEROES[hero].hp }, stats: { wood: 0, stone: 0, iron: 0, coal: 0, food: 0, coins: 0, kills: 0, bosses: 0, built: 0, boughtBirds: 0, time: 0 },
     };
@@ -3323,32 +3469,45 @@ const G = window.G = {};
     P.pos.y = World.groundAt(P.pos.x, P.pos.z);
     setTool('axe');
     if (!S.gear) S.gear = { own: {}, eq: null };
-    Models.setGear(mesh, S.gear.eq);
+    if (S.hero === 'knight' && !S.gear.own.a_iron) { S.gear.own.a_iron = true; S.gear.armor = 'iron'; }
+    Models.setGear(mesh, S.gear.eq); Models.setArmor(mesh, S.gear.armor);
+  }
+  // Меч: уровень из мастерской; у рыцаря железный меч есть с самого начала
+  G.swordTier = () => Math.max(S.tools.sword == null ? -1 : S.tools.sword, S.hero === 'knight' ? 2 : -1);
+  // kind: axe | pick | weapon (меч, иначе оружие героя) | hw (только оружие героя, напр. лук)
+  function toolModel(kind) {
+    if (kind === 'axe') return ['axe', S.tools.axe];
+    if (kind === 'pick') return ['pick', S.tools.pick];
+    const w = HEROES[S.hero].weapon;
+    if (kind === 'weapon') { const st = G.swordTier(); if (st >= 0) return ['sword', st]; }
+    return w && w !== 'sword' ? [w, 0] : ['axe', S.tools.axe];
   }
   function setTool(kind) {
     if (kind === 'pick' && S.tools.pick < 0) kind = 'axe';
-    const weapon = HEROES[S.hero].weapon;
-    if (kind === 'weapon' && !weapon) kind = 'axe';
-    const tier = kind === 'axe' ? S.tools.axe : kind === 'pick' ? S.tools.pick : 0;
-    if (P.tool === kind && P.toolTier === tier) return;
+    const [model, tier] = toolModel(kind);
+    if (P.tool === kind && P.toolModel === model && P.toolTier === tier) return;
     const hand = P.mesh.userData.parts.hand;
     while (hand.children.length) hand.remove(hand.children[0]);
-    hand.add(Models.makeTool(kind === 'weapon' ? weapon : kind, tier));
-    P.tool = kind; P.toolTier = tier;
+    hand.add(Models.makeTool(model, tier));
+    P.tool = kind; P.toolTier = tier; P.toolModel = model;
   }
-  G.selectTool = k => { if (k === 'pick' && S.tools.pick < 0) { UI.toast(tr('no_pick_yet'), 'warn'); return; } setTool(k); };
-  G.playerTool = () => P ? P.tool : 'axe';
+  G.selectTool = k => {
+    if (k === 'pick' && S.tools.pick < 0) { UI.toast(tr('no_pick_yet'), 'warn'); return; }
+    if (k === 'weapon' && G.swordTier() < 0) { UI.toast(tr('no_sword'), 'warn'); return; }
+    setTool(k);
+  };
+  G.playerTool = () => P ? (P.tool === 'hw' ? 'weapon' : P.tool) : 'axe';
 
   // ---------------- Постройки ----------------
   const PASS_PLAYER = { gate: 1, stonegate: 1, spikes: 1, farm: 1 };
   const PASS_ENEMY = { spikes: 1, farm: 1 };
   const WALLISH = { wall: 1, fence: 1, gate: 1, stonegate: 1 };
   function footprint(t, rot) { const s = BUILD[t].size; return rot % 2 ? [s[1], s[0]] : [s[0], s[1]]; }
-  const LEVELS = { wall: WALL_LEVELS, cannon: CANNON_LEVELS, gate: GATE_LEVELS, ballista: BALLISTA_LEVELS, mineshaft: SHAFT_LEVELS };
+  const LEVELS = { wall: WALL_LEVELS, cannon: CANNON_LEVELS, gate: GATE_LEVELS, ballista: BALLISTA_LEVELS, mineshaft: SHAFT_LEVELS, minelift: LIFT_LEVELS };
   G.LEVELS = LEVELS;
   function maxHpOf(b) {
     if (b.t === 'core') return Math.round(BUILD.core.hp * (DF().core || 1));
-    if (b.t === 'wall' || b.t === 'gate' || b.t === 'ballista' || b.t === 'mineshaft') return LEVELS[b.t][b.lvl - 1].hp;
+    if (b.t === 'wall' || b.t === 'gate' || b.t === 'ballista' || b.t === 'mineshaft' || b.t === 'minelift') return LEVELS[b.t][b.lvl - 1].hp;
     if (b.t === 'cannon') return BUILD.cannon.hp + (b.lvl - 1) * 110;
     return BUILD[b.t].hp;
   }
@@ -3886,7 +4045,8 @@ const G = window.G = {};
   // ---------------- Игрок ----------------
   function hurtPlayer(dmg) {
     if (P.dead) return;
-    P.hp -= dmg * (HEROES[S.hero].armor || 1); P.lastHurt = time;
+    const ar = S.gear && S.gear.armor && ARMOR[S.gear.armor];
+    P.hp -= dmg * (HEROES[S.hero].armor || 1) * (ar ? 1 - ar.red : 1); P.lastHurt = time;
     Sound.play('hurt'); UI.flash();
     if (P.hp <= 0) {
       P.hp = 0; P.dead = 5; P.mesh.rotation.x = -Math.PI / 2;
@@ -3896,7 +4056,7 @@ const G = window.G = {};
   function nodeOK(n) {
     const info = NODE_INFO[n.kind];
     if (info.tool === 'pick' && S.tools.pick < info.minPick) {
-      if (time - P.hintT > 3) { P.hintT = time; UI.toast(S.tools.pick < 0 ? tr('need_pick') : tr('need_pick2'), 'warn'); }
+      if (time - P.hintT > 3) { P.hintT = time; UI.toast(S.tools.pick < 0 ? tr('need_pick') : tr(info.minPick >= 2 ? 'need_pick3' : 'need_pick2'), 'warn'); }
       return false;
     }
     return true;
@@ -3926,7 +4086,8 @@ const G = window.G = {};
     const hero = HEROES[S.hero];
     if (t.e) {
       if (t.e.dying) return;
-      hurtEnemy(t.e, hero.dmg * (0.9 + S.tools.axe * 0.35));
+      const st = G.swordTier();
+      hurtEnemy(t.e, hero.dmg * (st >= 0 ? SWORDS[st].mul : 0.9 + S.tools.axe * 0.35));
       Sound.play('hit'); spawnParticles(t.e.pos.clone().add(V(0, 0.7, 0)), 0xffffff, 4, 2.5, 0.14, 0.4);
       return;
     }
@@ -3955,7 +4116,7 @@ const G = window.G = {};
     const whole = Math.floor(n.acc); if (whole > 0) { n.acc -= whole; addRes(info.res, whole, pos); }
     n.shake = 0.3;
     Sound.play(n.kind === 'tree' ? 'chop' : 'mine');
-    spawnParticles(V(n.x, n.y + (n.kind === 'tree' ? 1.0 : 0.7), n.z), n.kind === 'tree' ? 0xc89a5e : (n.kind === 'coal' ? 0x222222 : n.kind === 'iron' ? 0xc87a40 : 0x9a9a96), 5, 3, 0.14, 0.6);
+    spawnParticles(V(n.x, n.y + (n.kind === 'tree' ? 1.0 : 0.7), n.z), n.kind === 'tree' ? 0xc89a5e : (n.kind === 'coal' ? 0x222222 : n.kind === 'iron' ? 0xc87a40 : n.kind === 'ruby' ? 0xe0204a : 0x9a9a96), 5, 3, 0.14, 0.6);
     if (n.hp <= 0.001) {
       if (n.acc > 0.3) addRes(info.res, 1, pos);
       if (n.kind === 'tree') fellTree(n);
@@ -4041,7 +4202,7 @@ const G = window.G = {};
       if (P.bowCd <= 0 && P.swing <= 0) {
         const e = nearestEnemy(P.pos.x, P.pos.z, hero.bowRange);
         if (e) {
-          P.bowCd = 1 / hero.atkRate; setTool('weapon');
+          P.bowCd = 1 / hero.atkRate; setTool('hw');
           P.yaw = Math.atan2(e.pos.x - P.pos.x, e.pos.z - P.pos.z);
           fire(V(P.pos.x, P.pos.y + 1.5, P.pos.z), e, { kind: 'arrow', dmg: hero.dmg, splash: 0 });
           Sound.play('arrow');
@@ -4072,6 +4233,20 @@ const G = window.G = {};
   G.equipGear = function (id) {
     S.gear.eq = S.gear.eq === id ? null : id;
     Models.setGear(P.mesh, S.gear.eq); Sound.play('click');
+    return true;
+  };
+  // Броня: покупка один раз, носится одна
+  G.buyArmor = function (id) {
+    if (!S.gear) S.gear = { own: {}, eq: null };
+    const a = ARMOR[id]; if (!a) return false;
+    if (!S.gear.own['a_' + id]) {
+      if (a.req && !S.tech[a.req]) { UI.toast(tr('need_tech_t', { name: TECH[a.req].name }), 'warn'); Sound.play('error'); return false; }
+      if (Net.isClient) { if (!G.canAfford(a.cost)) { UI.toast(tr('not_enough') + G.missing(a.cost), 'warn'); return false; } Net.toHost({ c: 'spend', cost: a.cost }); }
+      else if (!tryPay(a.cost)) return false;
+      S.gear.own['a_' + id] = true; Sound.play('upgrade'); UI.toast(tr('gear_bought', { name: a.name }), 'good');
+    } else Sound.play('click');
+    S.gear.armor = S.gear.armor === id ? null : id;
+    Models.setArmor(P.mesh, S.gear.armor);
     return true;
   };
   G.eat = function () {
@@ -4138,11 +4313,12 @@ const G = window.G = {};
   G.hasWorkshop = () => G.countB('workshop') > 0;
   G.craftTool = function (kind) {
     if (!G.hasWorkshop()) { UI.toast(tr('build_ws_first'), 'warn'); return false; }
-    const list = kind === 'axe' ? AXES : PICKS; const cur = S.tools[kind]; const next = list[cur + 1];
+    const list = { axe: AXES, pick: PICKS, sword: SWORDS }[kind]; if (!list) return false;
+    const cur = kind === 'sword' ? G.swordTier() : S.tools[kind]; const next = list[cur + 1];
     if (!next) return false;
     if (next.req && !S.tech[next.req]) { UI.toast(tr('need_tech_t', { name: TECH[next.req].name }), 'warn'); Sound.play('error'); return false; }
     if (!tryPay(next.cost)) return false;
-    S.tools[kind]++; P.toolTier = -9; setTool(kind);
+    S.tools[kind] = cur + 1; P.toolTier = -9; setTool(kind === 'sword' ? 'weapon' : kind);
     Sound.play('upgrade'); UI.toast(tr('crafted', { name: next.name }), 'good');
     return true;
   };
@@ -4299,11 +4475,13 @@ const G = window.G = {};
         if (b.mesh.userData.gear) b.mesh.userData.gear.rotation.y += dt * 3;
       }
       if (b.t === 'minelift') {
-        b.prodT += dt; b.prod2 += dt; b.prod3 += dt;
+        const L = LIFT_LEVELS[(b.lvl || 1) - 1];
+        b.prodT += dt; b.prod2 += dt; b.prod3 += dt; b.prod4 = (b.prod4 || 0) + dt;
         const near = Math.hypot(P.pos.x - b.x, P.pos.z - b.z) < 25;
-        if (b.prodT >= 6) { b.prodT = 0; addRes('stone', 1, near ? V(b.x, b.y + 2, b.z) : null); }
-        if (b.prod2 >= 14) { b.prod2 = 0; addRes('coal', 1, near ? V(b.x, b.y + 2.6, b.z) : null); }
-        if (b.prod3 >= 24) { b.prod3 = 0; addRes('iron', 1, near ? V(b.x, b.y + 3.2, b.z) : null); }
+        if (b.prodT >= L.stone) { b.prodT = 0; addRes('stone', 1, near ? V(b.x, b.y + 2, b.z) : null); }
+        if (b.prod2 >= L.coal) { b.prod2 = 0; addRes('coal', 1, near ? V(b.x, b.y + 2.6, b.z) : null); }
+        if (L.iron && b.prod3 >= L.iron) { b.prod3 = 0; addRes('iron', 1, near ? V(b.x, b.y + 3.2, b.z) : null); }
+        if (L.ruby && b.prod4 >= L.ruby) { b.prod4 = 0; addRes('ruby', 1, near ? V(b.x, b.y + 3.8, b.z) : null); }
         if (b.mesh.userData.spin) b.mesh.userData.spin.rotation.z += dt * 2;
       }
       if (S.hero === 'engineer' && b.hp < b.maxHp && Math.hypot(P.pos.x - b.x, P.pos.z - b.z) < 15) b.hp = Math.min(b.maxHp, b.hp + b.maxHp * 0.015 * dt);
@@ -4336,7 +4514,7 @@ const G = window.G = {};
     if (!vm) { vm = new THREE.Group(); camera.add(vm); scene.add(camera); }
     vm.visible = fp && !P.dead;
     if (!fp) return;
-    const key = S.hero + P.tool + P.toolTier;
+    const key = S.hero + P.toolModel + P.toolTier;
     if (key !== vmKey) {
       vmKey = key; while (vm.children.length) vm.remove(vm.children[0]);
       const look = { defender: [0x3d7a3a, 0xf1c7a0], builder: [0xe8b890, 0xe8b890], hunter: [0x8a5a32, 0xf3cfa8], knight: [0x9aa0aa, 0xf0c4a0], ranger: [0x2f5a3a, 0xe8c09a], engineer: [0x3a5a8a, 0xd8a888], druid: [0x5a3a8a, 0xf0d0b0] }[S.hero] || [0x3d7a3a, 0xf1c7a0];
@@ -4348,7 +4526,7 @@ const G = window.G = {};
       Models.box(0.14, 0.26, 0.16, S.hero === 'builder' ? look[1] : look[0], 0, -0.44, 0, arm, false);
       Models.sph(0.15, 0.15, 0.15, look[1], 0, -0.6, 0, arm, true, false);
       const hand = Models.group(arm, 0, -0.62, 0.02); hand.rotation.set(-0.75, 0, -0.35);
-      hand.add(Models.makeTool(P.tool, P.toolTier));
+      hand.add(Models.makeTool(P.toolModel || 'axe', P.toolTier));
       arm.traverse(o => { if (o.isMesh) { o.castShadow = false; o.receiveShadow = false; } });
     }
     const rig = vm.userData.rig, arm = vm.userData.arm, sw = P.swing;
@@ -4414,7 +4592,7 @@ const G = window.G = {};
       const prev = menuBird.position.clone(); menuBird.position.copy(bp); menuBird.visible = true;
       const dir = bp.clone().sub(prev); if (dir.lengthSq() > 1e-6) menuBird.lookAt(bp.clone().add(dir)); menuBird.rotateY(0);
       menuBird.rotation.z += Math.cos(bt) * 0.25;
-      Models.animBird(menuBird, Math.sin(time * 0.8) > -0.3 ? 'fly' : 'glide', time);
+      Models.animBird(menuBird, 'fly', time);
       skyT = 0.18 + Math.sin(time * 0.01) * 0.04;
       World.updateSky(skyT, camera.position.clone().setY(0), dt, time);
       renderer.render(scene, camera);
@@ -4584,7 +4762,7 @@ const G = window.G = {};
   G.showHero = function (type) {
     if (selHero) selScene.remove(selHero);
     selHero = Models.makeHero(type); selScene.add(selHero);
-    const hand = selHero.userData.parts.hand; hand.add(Models.makeTool(HEROES[type].weapon || (type === 'builder' ? 'hammer' : 'axe'), type === 'hunter' ? 1 : 0));
+    const hand = selHero.userData.parts.hand; hand.add(Models.makeTool(HEROES[type].weapon || (type === 'builder' ? 'hammer' : 'axe'), type === 'hunter' ? 1 : type === 'knight' ? 2 : 0));
   };
 
 
@@ -4663,11 +4841,12 @@ const G = window.G = {};
 
   function makePuppet(pid, hero) {
     const mesh = Models.makeHero(hero); mesh.traverse(o => { if (o.isMesh) o.castShadow = true; });
-    mesh.userData.parts.hand.add(Models.makeTool(HEROES[hero].weapon || 'axe', 0));
+    mesh.userData.parts.hand.add(Models.makeTool(HEROES[hero].weapon || 'axe', hero === 'knight' ? 2 : 0));
     scene.add(mesh);
     const pp = { pid, hero, mesh, pos: V(2 * pid, 0, 6), tgt: V(2 * pid, 0, 6), yaw: 0, anim: 0, swing: 0, dead: false, animT: Math.random() * 5, hp: HEROES[hero].hp };
     puppets.set(pid, pp); return pp;
   }
+  function setPupArmor(pp, ar) { ar = ARMOR[ar] ? ar : 0; if (pp.ar === ar) return; pp.ar = ar; Models.setArmor(pp.mesh, ar); }
   function removePuppet(pid) { const pp = puppets.get(pid); if (pp) { scene.remove(pp.mesh); puppets.delete(pid); } }
   function updatePuppets(dt) {
     puppets.forEach(pp => {
@@ -4678,7 +4857,7 @@ const G = window.G = {};
       pp.animT += dt; Models.animHero(m, ['idle', 'walk', 'run'][pp.anim] || 'idle', pp.animT, HEROES[pp.hero].speed / 6, pp.swing);
     });
   }
-  const myState = () => ({ c: 'me', x: +P.pos.x.toFixed(2), z: +P.pos.z.toFixed(2), y: +P.yaw.toFixed(2), a: P.moving || 0, s: +P.swing.toFixed(2), d: P.dead ? 1 : 0, h: S.hero });
+  const myState = () => ({ c: 'me', x: +P.pos.x.toFixed(2), z: +P.pos.z.toFixed(2), y: +P.yaw.toFixed(2), a: P.moving || 0, s: +P.swing.toFixed(2), d: P.dead ? 1 : 0, h: S.hero, ar: (S.gear && S.gear.armor) || 0 });
 
   // ---------- хост: снимок мира ----------
   const birdCode = b => b.hidden ? 3 : b.state === 'fly' ? 1 : b.state === 'gunner' ? 2 : b.state === 'walk' ? 0 : 4;
@@ -4692,8 +4871,8 @@ const G = window.G = {};
     s.bd = BD.map(b => { const m = b.mesh.position; return [b.id, b.sp, r1(m.x), +m.y.toFixed(2), r1(m.z), +b.mesh.rotation.y.toFixed(2), birdCode(b), b.cannon ? b.cannon.id : 0, Math.round(b.hp)]; });
     const dead = World.nodes.filter(n => !n.alive).map(n => n.idx); const dKey = dead.length + ':' + dead.reduce((a, v) => a + v, 0);
     if (full || dKey !== lastDead) s.dead = dead;
-    s.pl = [[0, S.hero, r1(P.pos.x), r1(P.pos.z), +P.yaw.toFixed(2), P.moving || 0, +P.swing.toFixed(2), P.dead ? 1 : 0]];
-    puppets.forEach(pp => s.pl.push([pp.pid, pp.hero, r1(pp.tgt.x), r1(pp.tgt.z), pp.yaw, pp.anim, pp.swing, pp.dead ? 1 : 0]));
+    s.pl = [[0, S.hero, r1(P.pos.x), r1(P.pos.z), +P.yaw.toFixed(2), P.moving || 0, +P.swing.toFixed(2), P.dead ? 1 : 0, (S.gear && S.gear.armor) || 0]];
+    puppets.forEach(pp => s.pl.push([pp.pid, pp.hero, r1(pp.tgt.x), r1(pp.tgt.z), pp.yaw, pp.anim, pp.swing, pp.dead ? 1 : 0, pp.ar || 0]));
     s.fx = fxQueue.splice(0);
     return { s, blKey, dKey };
   }
@@ -4729,7 +4908,7 @@ const G = window.G = {};
     if (!L || G.state !== 'play') return;
     if (m.c === 'me') {
       let pp = puppets.get(L.pid) || makePuppet(L.pid, m.h || L.hero);
-      pp.tgt.set(m.x, 0, m.z); pp.yaw = m.y; pp.anim = m.a; pp.swing = m.s; pp.dead = !!m.d;
+      pp.tgt.set(m.x, 0, m.z); pp.yaw = m.y; pp.anim = m.a; pp.swing = m.s; pp.dead = !!m.d; setPupArmor(pp, m.ar);
     } else if (m.c === 'hitNode') { const n = World.nodes[m.i]; if (n && n.alive) hostHitNode(n, Math.min(6, +m.p || 1), V(n.x, n.y + 1.6, n.z)); }
     else if (m.c === 'hitEnemy') { const e = E.find(x => x.id === m.id); if (e) hurtEnemy(e, Math.min(400, +m.dmg || 0)); }
     else if (m.c === 'place') { if (BUILD[m.t]) doPlace(m.t, +m.x, +m.z, (m.r | 0) % 4, m.w | 0); }
@@ -4824,9 +5003,9 @@ const G = window.G = {};
     if (s.dead) { const dead = new Set(s.dead); World.nodes.forEach(n => { const a = !dead.has(n.idx); if (a !== n.alive) { if (!a && n.kind === 'tree' && Math.hypot(n.x - P.pos.x, n.z - P.pos.z) < 30) fellTree(n); n.alive = a; n.grow = a ? 0.05 : 1; World.updateNodeMatrix(n); } }); }
     // другие игроки
     const seenP = new Set();
-    s.pl.forEach(([pid, hero, x, z, yaw, anim, sw, dead]) => {
+    s.pl.forEach(([pid, hero, x, z, yaw, anim, sw, dead, ar]) => {
       if (pid === guestPid) return; seenP.add(pid);
-      const pp = puppets.get(pid) || makePuppet(pid, hero); pp.tgt.set(x, 0, z); pp.yaw = yaw; pp.anim = anim; pp.swing = sw; pp.dead = !!dead;
+      const pp = puppets.get(pid) || makePuppet(pid, hero); pp.tgt.set(x, 0, z); pp.yaw = yaw; pp.anim = anim; pp.swing = sw; pp.dead = !!dead; setPupArmor(pp, ar);
     });
     puppets.forEach((_, pid) => { if (!seenP.has(pid)) removePuppet(pid); });
     // выстрелы — только картинка
@@ -4899,7 +5078,8 @@ const G = window.G = {};
     delete S.buildings; delete S.birds; delete S.nodes;
     if (!S.diff) S.diff = 'normal';
     S.stats = Object.assign({ wood: 0, stone: 0, iron: 0, coal: 0, food: 0, coins: 0, kills: 0, bosses: 0, built: 0, boughtBirds: 0, time: 0 }, S.stats);
-    S.res = Object.assign({ wood: 0, stone: 0, iron: 0, coal: 0, food: 0, coins: 0 }, S.res);
+    S.res = Object.assign({ wood: 0, stone: 0, iron: 0, coal: 0, ruby: 0, food: 0, coins: 0 }, S.res);
+    S.tools = Object.assign({ axe: 0, pick: -1, sword: -1 }, S.tools);
     S.waveActive = false;
     blds.filter(b => !b.w).forEach(b => addBuilding(b.t, b.x, b.z, b.r, b.l, b.hp, null, b.id));
     blds.filter(b => b.w).forEach(b => { if (byId[b.w]) addBuilding(b.t, b.x, b.z, b.r, b.l, b.hp, b.w, b.id); });
@@ -5286,7 +5466,7 @@ const UI = window.UI = {};
   tap($('over-menu'), () => { if (Net.active) G.mpLeave(); refreshGB(); document.body.classList.remove('cutscene'); $('over').classList.add('hidden'); G.state = 'menu'; show('menu'); backToMain(); clearFloats(); });
 
   // ---------------- HUD ----------------
-  const RES_KEYS = ['wood', 'stone', 'iron', 'coal', 'food', 'coins'];
+  const RES_KEYS = ['wood', 'stone', 'iron', 'coal', 'ruby', 'food', 'coins'];
   const chips = {};
   function buildResChips() {
     const r = $('res'); r.innerHTML = '';
@@ -5323,8 +5503,8 @@ const UI = window.UI = {};
       $('birdcount').textContent = tr('bird_count', { n: birds.length, cap: G.birdCap(), c: birds.filter(b => b.cannon).length });
       // кнопка действия и инструмент
       const tool = G.playerTool();
-      document.querySelectorAll('.slot').forEach(s => { s.classList.toggle('on', s.dataset.slot === tool); if (s.dataset.slot === 'pick') s.classList.toggle('locked', S.tools.pick < 0); });
-      $('btn-act').textContent = tool === 'pick' ? '⛏️' : '🪓';
+      document.querySelectorAll('.slot').forEach(s => { s.classList.toggle('on', s.dataset.slot === tool); if (s.dataset.slot === 'pick') s.classList.toggle('locked', S.tools.pick < 0); if (s.dataset.slot === 'weapon') s.classList.toggle('locked', G.swordTier() < 0); });
+      $('btn-act').textContent = tool === 'pick' ? '⛏️' : tool === 'weapon' ? '⚔️' : '🪓';
       // подсказка взаимодействия
       const b = G.building();
       $('buildbar').classList.toggle('hidden', !b);
@@ -5467,7 +5647,7 @@ const UI = window.UI = {};
     if (b.t === 'ballista') { const L = BALLISTA_LEVELS[b.lvl - 1]; sect.append(h('div', { style: 'margin-top:6px;font-size:13px' }, tr('turret_info', { name: L.name, d: L.dmg, r: L.rate, g: L.range, s: L.splash ? tr('blast', { s: L.splash }) : '' }))); }
     if (b.t === 'mineshaft') { const L = SHAFT_LEVELS[b.lvl - 1]; sect.append(h('div', { style: 'margin-top:6px', html: tr('mine_info', { a: RES_INFO.stone.icon, x: L.stone, b: RES_INFO.coal.icon, y: L.coal, c: RES_INFO.iron.icon, z: L.iron }) })); }
     if (b.t === 'gate') sect.append(h('div', { style: 'margin-top:6px;font-size:13px' }, tr('gate_info')));
-    if (b.t === 'minelift') sect.append(h('div', { html: tr('mine_info', { a: RES_INFO.stone.icon, x: 6, b: RES_INFO.coal.icon, y: 14, c: RES_INFO.iron.icon, z: 24 }) }));
+    if (b.t === 'minelift') { const L = LIFT_LEVELS[(b.lvl || 1) - 1]; sect.append(h('div', { style: 'margin-top:6px', html: tr('mine_head') + ' ' + ['stone', 'coal', 'iron', 'ruby'].filter(k => L[k]).map(k => tr('mine_each', { a: RES_INFO[k].icon, x: L[k] })).join(', ') + '.' })); }
     if (b.t === 'storage') sect.append(h('div', null, tr('cap_info', { n: G.cap() })));
     if (d.cap) sect.append(h('div', null, tr('bird_slots', { n: d.cap, t: G.birdCap() })));
     const acts = h('div', { cls: 'acts' });
@@ -5524,12 +5704,23 @@ const UI = window.UI = {};
       gg.append(h('div', { cls: 'item' }, h('div', { cls: 'ico' }, d.icon), h('div', { cls: 'nm' }, d.name + (on ? ' ✔' : '')), h('div', { cls: 'ds' }, d.desc), own ? null : h('div', { cls: 'cost', html: costHtml(d.cost) }), btn));
     });
     gear.append(gg); body.append(gear);
+    const arm = h('div', { cls: 'sect' }, h('h4', null, tr('armor_title')));
+    const ag = h('div', { cls: 'grid' });
+    Object.keys(ARMOR).forEach(id => {
+      const d = ARMOR[id], own = G2.own['a_' + id], on = G2.armor === id, locked = d.req && !S.tech[d.req];
+      const btn = h('button', { cls: 'btn' + (own ? (on ? ' red' : ' blue') : ' gold') }, own ? (on ? tr('take_off2') : tr('put_on')) : tr('buy'));
+      if (!own && locked) btn.disabled = true;
+      tap(btn, () => { G.buyArmor(id); renderModal(); });
+      ag.append(h('div', { cls: 'item' }, h('div', { cls: 'ico' }, d.icon), h('div', { cls: 'nm' }, d.name + (on ? ' ✔' : '')), h('div', { cls: 'ds' }, d.desc), own ? null : h('div', { cls: 'cost', html: costHtml(d.cost) }), (!own && locked) ? h('div', { cls: 'ds' }, `🔒 ${TECH[d.req].name}`) : null, btn));
+    });
+    arm.append(ag); body.append(arm);
     const tools = h('div', { cls: 'sect' }, h('h4', null, tr('tools')));
     const g1 = h('div', { cls: 'grid' });
-    [['axe', AXES, '🪓'], ['pick', PICKS, '⛏️']].forEach(([k, list, ic]) => {
-      const cur = S.tools[k], next = list[cur + 1];
+    [['axe', AXES, '🪓'], ['pick', PICKS, '⛏️'], ['sword', SWORDS, '⚔️']].forEach(([k, list, ic]) => {
+      const sw = k === 'sword', cur = sw ? G.swordTier() : S.tools[k], next = list[cur + 1];
       const curName = cur >= 0 ? list[cur].name : tr('none');
-      const item = h('div', { cls: 'item' }, h('div', { cls: 'ico' }, ic), h('div', { cls: 'nm' }, tr('now', { name: curName })), h('div', { cls: 'ds' }, cur >= 0 ? tr('power', { n: list[cur].power }) : tr('pick_need')));
+      const ds = sw ? (cur >= 0 ? tr('sword_dmg', { n: list[cur].mul }) : tr('sword_need')) : (cur >= 0 ? tr('power', { n: list[cur].power }) : tr('pick_need'));
+      const item = h('div', { cls: 'item' }, h('div', { cls: 'ico' }, ic), h('div', { cls: 'nm' }, tr('now', { name: curName })), h('div', { cls: 'ds' }, ds));
       if (next) {
         const cost = next.cost; const locked = next.req && !S.tech[next.req];
         item.append(h('div', { cls: 'cost', html: `→ ${next.name}: ${costHtml(cost)}` }));
@@ -5619,7 +5810,7 @@ const UI = window.UI = {};
   // ---------------- Кнопки HUD ----------------
   document.querySelectorAll('.slot').forEach(s => press(s, () => {
     const k = s.dataset.slot;
-    if (k === 'axe' || k === 'pick') G.selectTool(k);
+    if (k === 'axe' || k === 'pick' || k === 'weapon') G.selectTool(k);
     if (k === 'build') openBuildMenu();
     if (k === 'inv') openInventory();
     if (k === 'birds') openBirds();
@@ -5734,7 +5925,7 @@ const UI = window.UI = {};
     if (k === 'v' || k === 'м') $('btn-view').click();
     if (k === 'n') G.startWaveNow();
     if (k === 'enter' && G.building()) G.placeBuild();
-    if (k === '1') G.selectTool('axe'); if (k === '2') G.selectTool('pick');
+    if (k === '1') G.selectTool('axe'); if (k === '2') G.selectTool('pick'); if (k === '3') G.selectTool('weapon');
     updKeys();
   });
   window.addEventListener('keyup', e => {
