@@ -5108,13 +5108,15 @@ const UI = window.UI = {};
   const $ = id => document.getElementById(id);
   const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
   const SKEY = 'birdfortress_settings_v1';
-  const DEF = { view: 'third', uiScale: 100, quality: isTouch ? 'medium' : 'high', resolution: 'auto', musicOn: true, musicVol: 60, sfxOn: true, sfxVol: 80, autoAct: true, camDist: 100, sens: 100 };
+  const DEF = { view: 'third', uiScale: 85, quality: isTouch ? 'medium' : 'high', resolution: 'auto', musicOn: true, musicVol: 60, sfxOn: true, sfxVol: 80, autoAct: true, camDist: 100, sens: 100 };
   let saved = {}; try { saved = JSON.parse(localStorage.getItem(SKEY)) || {}; } catch (e) { }
   G.settings = Object.assign({}, DEF, saved);
+  // новый размер интерфейса по умолчанию 85%: один раз переводим тех, у кого стояло старое значение 100%
+  if (!G.settings.ui85) { if (G.settings.uiScale === 100) G.settings.uiScale = 85; G.settings.ui85 = 1; }
   const saveSettings = () => { try { localStorage.setItem(SKEY, JSON.stringify(G.settings)); } catch (e) { } };
   const applyAudio = () => Sound.set({ musicOn: G.settings.musicOn, sfxOn: G.settings.sfxOn, musicVol: G.settings.musicVol / 100, sfxVol: G.settings.sfxVol / 100 });
   applyAudio();
-  const applyUiScale = () => document.documentElement.style.setProperty('--ui', (G.settings.uiScale || 100) / 100);
+  const applyUiScale = () => document.documentElement.style.setProperty('--ui', (G.settings.uiScale || 85) / 100);
   applyUiScale();
 
   // Золотая птица — особая валюта между прохождениями
@@ -5830,7 +5832,7 @@ const UI = window.UI = {};
   const sticks = { L: { el: $('stickL'), id: null, ox: 0, oy: 0 }, R: { el: $('stickR'), id: null, ox: 0, oy: 0, lx: 0, ly: 0 } };
   function placeIdleSticks() {
     const W = window.innerWidth, H = window.innerHeight;
-    R = 55 * (G.settings.uiScale || 100) / 100;
+    R = 55 * (G.settings.uiScale || 85) / 100;
     if (!isTouch) { sticks.L.el.style.display = sticks.R.el.style.display = 'none'; return; }
     if (sticks.L.id === null) setStick(sticks.L, Math.max(100, W * 0.12), H - Math.max(110, H * 0.24));
     if (sticks.R.id === null) setStick(sticks.R, W - Math.max(190, W * 0.22), H - Math.max(150, H * 0.33));
