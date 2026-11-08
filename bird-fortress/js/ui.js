@@ -657,6 +657,9 @@ const UI = window.UI = {};
         const eat = h('button', { cls: 'btn gold', style: 'margin-top:10px' }, tr('eat_btn')); tap(eat, () => { G.eat(); renderModal(); });
         body.append(eat);
         body.append(h('div', { cls: 'perk', style: 'margin-top:10px' }, tr('where')));
+        const pr = h('button', { cls: 'btn blue', style: 'margin-top:10px' }, '🎁 Промокод');
+        tap(pr, () => { const c = prompt('Промокод:'); if (c != null) { G.promo(c); renderModal(); } });
+        body.append(pr);
       } else if (t === 'work') renderWorkshop(body);
       else {
         const hd = HEROES[S.hero], P = G.player();
