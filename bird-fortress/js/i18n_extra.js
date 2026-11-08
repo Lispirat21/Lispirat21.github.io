@@ -156,3 +156,6 @@ Object.assign(TR_UI, {
 Object.assign(TR_DATA, {
   'cl6': ["Bird Rocket Launcher", "Птичья ракетница", "Lanzacohetes aviar", "Lança-foguetes das aves", "Lance-roquettes des oiseaux", "Vogel-Raketenwerfer", "鸟儿火箭炮", "鳥のロケットランチャー", "पक्षी रॉकेट लॉन्चर", "قاذفة صواريخ الطيور"],
 });
+Object.assign(TR_DATA, {
+  'gl6': ["Bunker Gate", "Ворота бункера", "Puerta de búnker", "Portão de bunker", "Porte de bunker", "Bunkertor", "地堡大门", "バンカーゲート", "बंकर गेट", "بوابة المخبأ"],
+});

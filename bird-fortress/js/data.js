@@ -181,6 +181,7 @@ const GATE_LEVELS = [
   { name: 'Каменные ворота',         hp: 950,  cost: { stone: 25, wood: 8 },  req: 'stone' },
   { name: 'Крепостные ворота',       hp: 1450, cost: { stone: 40, iron: 8 },  req: 'stone' },
   { name: 'Стальные ворота-решётка', hp: 2200, cost: { stone: 40, iron: 20, coal: 10 }, req: 'metal' },
+  { name: 'Ворота бункера',          hp: 3400, cost: { iron: 45, coal: 20, stone: 30, coins: 250 }, req: 'mech' },
 ];
 // Уровни авто-турели
 const BALLISTA_LEVELS = [

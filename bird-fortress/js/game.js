@@ -1156,6 +1156,16 @@ const G = window.G = {};
       gearSpot.position.set(P.pos.x, P.mesh.position.y + 2.0, P.pos.z);
       gearSpot.target.position.set(P.pos.x + fx * 20 * Math.cos(pitch), P.mesh.position.y + 2.0 + Math.sin(pitch) * 20, P.pos.z + fz * 20 * Math.cos(pitch));
     } else gearSpot.intensity = 0;
+    // ворота бункера: быстро разъезжаются, когда рядом игрок (звери всё равно не пройдут)
+    for (const b of B) {
+      const sl = b.mesh.userData.slide; if (!sl) continue;
+      let near = !P.dead && Math.hypot(P.pos.x - b.x, P.pos.z - b.z) < 7;
+      if (!near) puppets.forEach(pp => { if (!pp.dead && Math.hypot(pp.pos.x - b.x, pp.pos.z - b.z) < 7) near = true; });
+      sl.open += ((near ? 1 : 0) - sl.open) * Math.min(1, dt * 14);           // ~0.25 с на открытие
+      sl.doors[0].position.x = -0.62 - sl.open * 1.04; sl.doors[1].position.x = 0.62 + sl.open * 1.04;
+      sl.lampG.visible = sl.open > 0.5; sl.lampR.visible = sl.open <= 0.5;
+      if (near !== !!sl.was) { sl.was = near; Sound.play('click', 0.5); }
+    }
     for (const b of B) { const f = b.mesh.userData.fire; if (f) { f.scale.set(1 + Math.sin(time * 13 + b.id) * 0.08, 1 + Math.sin(time * 9 + b.id * 2) * 0.15, 1); } }
     lightT -= dt;
     if (lightT <= 0) {

@@ -697,6 +697,26 @@ const Models = (() => {
   function makeGate(lvl) {
     const g = new THREE.Group();
     const steel = mat(0x5a5a62, { metalness: 0.5, roughness: 0.4 });
+    if (lvl >= 6) { // ворота бункера: бетонная рама и две стальные створки, которые разъезжаются в стороны
+      const con = mat(0x8a8c90, { roughness: 0.9 }), dk = mat(0x3a3d44, { metalness: 0.5, roughness: 0.45 }), pl = mat(0x6a7078, { metalness: 0.55, roughness: 0.35 });
+      const yel = mat(0xf2c41a, { roughness: 0.5 }), blk = mat(0x1a1a1e);
+      [-1.75, 1.75].forEach(x => { box(1.1, 4.4, 1.6, con, x, 2.2, 0, g); box(1.14, 0.2, 1.64, dk, x, 4.3, 0, g, false); });
+      box(4.6, 0.9, 1.6, con, 0, 4.0, 0, g);
+      for (let i = 0; i < 6; i++) box(0.4, 0.3, 0.04, i % 2 ? blk : yel, -1.0 + i * 0.4, 3.75, 0.82, g, false); // жёлто-чёрная полоса
+      box(2.6, 0.12, 0.5, dk, 0, 3.45, 0, g, false); box(2.6, 0.12, 0.5, dk, 0, 0.06, 0, g, false); // направляющие
+      const lampG = mat(0x40ff60, { emissive: 0x20ff40, emissiveIntensity: 2 }), lampR = mat(0xff3030, { emissive: 0xff2020, emissiveIntensity: 2 });
+      const lg = sph(0.14, 0.14, 0.14, lampG, 1.2, 4.0, 0.85, g, true, false), lr = sph(0.14, 0.14, 0.14, lampR, -1.2, 4.0, 0.85, g, true, false);
+      const doors = [-1, 1].map(sx => {
+        const d = group(g, sx * 0.62, 0, 0);
+        box(1.24, 3.35, 0.32, pl, 0, 1.72, 0, d);
+        for (let i = 0; i < 3; i++) box(1.1, 0.08, 0.36, dk, 0, 0.6 + i * 1.1, 0, d, false);           // рёбра
+        box(0.08, 3.3, 0.36, yel, -sx * 0.6, 1.72, 0, d, false);                                         // жёлтая кромка стыка
+        [-0.3, 0.3].forEach(z => box(0.6, 0.6, 0.04, dk, 0, 1.72, z > 0 ? 0.17 : -0.17, d, false));        // ромб-усилитель
+        return d;
+      });
+      g.userData.slide = { doors, open: 0, lampG: lg, lampR: lr };
+      return g;
+    }
     if (lvl <= 2) {
       [-1.75, 1.75].forEach(x => { cyl(lvl === 2 ? 0.38 : 0.32, 0.36, 3.2, WOOD_D, x, 1.6, 0, g, 6); cone(0.36, 0.6, lvl === 2 ? 0x8a8a94 : WOOD_L, x, 3.5, 0, g, 6); });
       box(3.1, 2.3, 0.2, texMat(T.planks()), 0, 1.2, 0, g);
