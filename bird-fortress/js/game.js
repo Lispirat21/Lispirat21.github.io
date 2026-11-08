@@ -27,7 +27,9 @@ const G = window.G = {};
     const q = G.settings.quality;
     renderer = new THREE.WebGLRenderer({ canvas, antialias: q !== 'low', powerPreference: 'high-performance' });
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    // мягкие тени дорогие для телефона: на «ПК»/ультра — PCFSoft, иначе обычный PCF (почти не отличим)
+    renderer.shadowMap.type = (q === 'pc' || q === 'ultra') ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
+    renderer.shadowMap.autoUpdate = false; // тени обновляем через кадр (см. G.frame)
   };
   G.init = function (canvas) { if (!renderer) G.initRenderer(canvas); G.initWorld(); };
   G.initWorld = function () {
@@ -60,7 +62,7 @@ const G = window.G = {};
     const res = G.settings.resolution;
     let pr;
     if (res && res !== 'auto') pr = parseInt(res, 10) / h;
-    else pr = Math.min(window.devicePixelRatio || 1, { low: 0.75, medium: 1, high: 1.5, ultra: 2, pc: 2 }[G.settings.quality] || 1);
+    else pr = Math.min(window.devicePixelRatio || 1, { low: 0.75, medium: 1, high: 1.5, ultra: 2, pc: 2 }[G.settings.quality] || 1) * dynScale;
     renderer.setPixelRatio(clamp(pr, 0.4, 3));
     renderer.setSize(w, h, false);
     camera.aspect = w / h; camera.updateProjectionMatrix();
@@ -618,7 +620,7 @@ const G = window.G = {};
 
   // ---------------- Пушки и снаряды ----------------
   const projGeo = { bullet: new THREE.CylinderGeometry(0.035, 0.035, 0.5, 4), rocket: new THREE.ConeGeometry(0.12, 0.6, 6), ball: new THREE.SphereGeometry(0.2, 8, 6), arrow: new THREE.CylinderGeometry(0.03, 0.03, 0.9, 4), bolt: new THREE.CylinderGeometry(0.06, 0.06, 1.6, 5) };
-  const projMat = { bullet: Models.mat(0xffe070, { emissive: 0xffc030, emissiveIntensity: 2 }), rocket: Models.mat(0x3e9a3a, { emissive: 0x206a10, emissiveIntensity: 0.4 }), fire: Models.mat(0xff7a20, { emissive: 0xff5010, emissiveIntensity: 1.6 }), ball: Models.mat(0x1a1a1a, { metalness: 0.5 }), slow: Models.mat(0x80d0ff, { emissive: 0x3080ff, emissiveIntensity: 0.8 }), arrow: Models.mat(0x6a4a2a), bolt: Models.mat(0xd8b040, { metalness: 0.6 }) };
+  const projMat = { bullet: Models.mat(0xffe070, { emissive: 0xffc030, emissiveIntensity: 2 }), rocket: Models.mat(0x3e9a3a, { emissive: 0x206a10, emissiveIntensity: 0.4 }), rocketRed: Models.mat(0xe03030, { emissive: 0xa01010, emissiveIntensity: 0.6 }), fire: Models.mat(0xff7a20, { emissive: 0xff5010, emissiveIntensity: 1.6 }), ball: Models.mat(0x1a1a1a, { metalness: 0.5 }), slow: Models.mat(0x80d0ff, { emissive: 0x3080ff, emissiveIntensity: 0.8 }), arrow: Models.mat(0x6a4a2a), bolt: Models.mat(0xd8b040, { metalness: 0.6 }) };
   function nearestEnemy(x, z, range) {
     let best = null, bd = range;
     for (const e of E) { if (e.dying || e.flee) continue; const d = Math.hypot(e.pos.x - x, e.pos.z - z); if (d < bd) { bd = d; best = e; } }
@@ -626,7 +628,7 @@ const G = window.G = {};
   }
   function fire(from, e, o) {
     const kind = o.kind;
-    const mesh = new THREE.Mesh(projGeo[kind], o.slow ? projMat.slow : o.burn ? projMat.fire : projMat[kind]); mesh.castShadow = false;
+    const mesh = new THREE.Mesh(projGeo[kind], o.slow ? projMat.slow : o.burn ? projMat.fire : o.red ? projMat.rocketRed : projMat[kind]); mesh.castShadow = false;
     scene.add(mesh);
     const speed = kind === 'ball' ? 22 : kind === 'bullet' ? 75 : kind === 'rocket' ? 24 : 40;
     const to = e.pos.clone(); const dist = from.distanceTo(to); const tFlight = dist / speed;
@@ -657,7 +659,7 @@ const G = window.G = {};
         if (!bird && b.lvl < 4) continue; // без птицы стреляют только автоматические пушки
         const bs = bird ? BIRDS[bird.sp] : { dmg: 1, rate: 0.6, range: 1 };
         dmg = L.dmg * bs.dmg * (S.hero === 'defender' ? 1.15 : S.hero === 'engineer' ? 1.25 : 1) * (S.hero === 'druid' && bird ? 1.25 : 1) * (bird && bs.special === 'night' && night ? 1.7 : 1);
-        rate = L.rate * bs.rate; range = L.range * bs.range; splash = L.splash * (bird && bs.special === 'splash' ? 1.5 : 1); kind = 'ball';
+        rate = L.rate * bs.rate; range = L.range * bs.range; splash = L.splash * (bird && bs.special === 'splash' ? 1.5 : 1); kind = L.kind || 'ball';
       } else if (b.t === 'ballista') { const L = BALLISTA_LEVELS[b.lvl - 1]; dmg = L.dmg * (S.hero === 'engineer' ? 1.25 : 1); rate = L.rate; range = L.range; splash = L.splash; kind = L.kind; }
       else { const D = BUILD[b.t]; dmg = D.dmg * (S.hero === 'engineer' ? 1.25 : 1); rate = D.rate; range = D.range; kind = 'arrow'; }
       const mp = b.mesh.position; const e = nearestEnemy(mp.x, mp.z, range);
@@ -675,9 +677,10 @@ const G = window.G = {};
         const bs = bird ? BIRDS[bird.sp] : {};
         let fd = dmg, crit = false;
         if (bs.special === 'crit' && Math.random() < 0.25) { fd *= 2.5; crit = true; }
-        fire(muzzle, e, { kind, dmg: fd, splash, slow: bs.special === 'slow', crit, stun: bs.special === 'stun', burn: bs.special === 'burn' });
+        fire(muzzle, e, { kind, red: isCannon && kind === 'rocket', dmg: fd, splash, slow: bs.special === 'slow', crit, stun: bs.special === 'stun', burn: bs.special === 'burn' });
         if (bs.special === 'double') setTimeout(() => { if (!e.dying && G.state === 'play') fire(muzzle, e, { kind, dmg: fd * 0.8, splash, crit: false }); }, 140);
-        if (isCannon) {
+        if (isCannon && kind === 'rocket') { Sound.play('rocket'); spawnParticles(muzzle, 0xcccccc, 6, 1.5, 0.3, 0.7, -0.3); if (bird) bird.flap = 0.35; }
+        else if (isCannon) {
           Sound.play('boom', 0.6);
           spawnParticles(muzzle, 0xdddddd, 5, 2, 0.3, 0.6, -0.5);
           spawnParticles(muzzle, 0xffa030, 3, 3, 0.18, 0.25, 0);
@@ -704,7 +707,7 @@ const G = window.G = {};
         if (p.splash > 0) {
           if (!p.visual) for (const e of E) { if (e.dying) continue; if (Math.hypot(e.pos.x - p.to.x, e.pos.z - p.to.z) < p.splash + e.d.radius) { hurtEnemy(e, p.dmg); applyFx(e, p); } }
           spawnParticles(p.to, p.slow ? 0x9adfff : 0xffa040, p.kind === 'rocket' ? 18 : 8, p.kind === 'rocket' ? 6 : 4, 0.26, 0.5);
-          if (p.kind === 'rocket') spawnParticles(p.to, 0x60d040, 8, 5, 0.2, 0.5);
+          if (p.kind === 'rocket') spawnParticles(p.to, p.red ? 0xffe040 : 0x60d040, 8, 5, 0.2, 0.5);
           spawnParticles(p.to, 0x8a7a6a, 6, 2.5, 0.3, 0.8);
           Sound.play('boom', 0.35);
         } else {
@@ -1279,8 +1282,23 @@ const G = window.G = {};
 
   // ---------------- Главный цикл ----------------
   let skyT = 0;
+  // Авто-разрешение: если кадр стабильно дольше ~22 мс, немного снижаем чёткость; если запас — возвращаем
+  let dynScale = 1, perfAcc = 0, perfN = 0, shadowTick = 0;
+  function autoPerf(dt) {
+    if (G.settings.resolution && G.settings.resolution !== 'auto') return;
+    perfAcc += dt; perfN++;
+    if (perfAcc < 2) return;
+    const avg = perfAcc / perfN; perfAcc = 0; perfN = 0;
+    const prev = dynScale;
+    if (avg > 0.022 && dynScale > 0.7) dynScale = Math.max(0.7, dynScale - 0.1);
+    else if (avg < 0.0175 && dynScale < 1) dynScale = Math.min(1, dynScale + 0.05);
+    if (dynScale !== prev) G.resize();
+  }
   G.frame = function (dt) {
     time += dt;
+    autoPerf(dt);
+    // тени: каждый 2-й кадр (на «ПК» — каждый)
+    if (renderer) { shadowTick++; if (G.settings.quality === 'pc' || shadowTick % 2 === 0) renderer.shadowMap.needsUpdate = true; }
     if (G.state === 'menu' || G.state === 'loading' || G.state === 'bye') {
       if (vm) vm.visible = false;
       // атмосферный пролёт камеры над лесом

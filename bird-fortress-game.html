@@ -632,6 +632,7 @@ const CANNON_LEVELS = [
   { name: 'Бронзовая двуствольная',   dmg: 28, rate: 1.0, range: 21, splash: 2.5, cost: { stone: 25, iron: 5, coins: 60 }, req: 'stone' },
   { name: 'Автоматическая пушка',     dmg: 22, rate: 2.6, range: 23, splash: 1.6, cost: { iron: 15, coal: 10, coins: 100 }, req: 'mech' },
   { name: 'Тяжёлый автомат',          dmg: 34, rate: 3.2, range: 26, splash: 2.0, cost: { iron: 30, coal: 20, coins: 200 }, req: 'mech' },
+  { name: 'Птичья ракетница',         dmg: 80, rate: 1.5, range: 30, splash: 4.2, kind: 'rocket', cost: { iron: 40, coal: 30, ruby: 10, coins: 400 }, req: 'mech' },
 ];
 
 // Постройки. size = [ширина по X, глубина по Z] при повороте 0
@@ -1435,6 +1436,9 @@ Object.assign(TR_DATA, {
 Object.assign(TR_UI, {
   mine_head: ["Mines:", "Добывает:", "Extrae:", "Extrai:", "Extrait :", "Fördert:", "开采：", "採掘：", "निकालता है:", "يستخرج:"],
   mine_each: ["{a} every {x}s", "{a} раз в {x}с", "{a} cada {x}s", "{a} a cada {x}s", "{a} toutes les {x}s", "{a} alle {x}s", "{a} 每{x}秒", "{a} {x}秒ごと", "{a} हर {x}से", "{a} كل {x}ث"],
+});
+Object.assign(TR_DATA, {
+  'cl6': ["Bird Rocket Launcher", "Птичья ракетница", "Lanzacohetes aviar", "Lança-foguetes das aves", "Lance-roquettes des oiseaux", "Vogel-Raketenwerfer", "鸟儿火箭炮", "鳥のロケットランチャー", "पक्षी रॉकेट लॉन्चर", "قاذفة صواريخ الطيور"],
 });
 
 </script>
@@ -2382,6 +2386,15 @@ const Models = (() => {
       if (lvl === 2) { torus(0.25, 0.05, 0x8a8a94, 0, 0, 0.2, barrel); torus(0.24, 0.04, 0x8a8a94, 0, 0, 0.65, barrel); }
     } else if (lvl === 3) {
       [-0.2, 0.2].forEach(x => { const b = cyl(0.15, 0.2, 1.4, metal, x, 0, 0.5, barrel, 10); b.rotation.x = Math.PI / 2; torus(0.16, 0.04, 0x5a3a1a, x, 0, 1.15, barrel); });
+    } else if (lvl >= 6) { // птичья ракетница: красный короб на 4 трубы с золотой каймой
+      const red = mat(0xc8242a, { roughness: 0.45 }), gold = mat(0xd8b040, { metalness: 0.6, roughness: 0.35 });
+      box(1.0, 0.8, 1.2, red, 0, 0.1, 0.25, barrel);
+      box(1.04, 0.08, 1.24, gold, 0, 0.52, 0.25, barrel, false); box(1.04, 0.08, 1.24, gold, 0, -0.32, 0.25, barrel, false);
+      [[-0.25, 0.28], [0.25, 0.28], [-0.25, -0.08], [0.25, -0.08]].forEach(([x, y]) => {
+        const t = cyl(0.15, 0.15, 0.3, 0x2a2a30, x, y, 0.82, barrel, 10); t.rotation.x = Math.PI / 2;
+        const r = cone(0.11, 0.22, mat(0xf0f0f0, { emissive: 0xff3020, emissiveIntensity: 0.5 }), x, y, 0.98, barrel, 8, false); r.rotation.x = Math.PI / 2;
+      });
+      box(0.12, 0.3, 0.12, 0x2a2a30, 0.42, 0.7, -0.1, barrel); sph(0.1, 0.1, 0.1, mat(0xff3020, { emissive: 0xff2010, emissiveIntensity: 1.5 }), 0.42, 0.9, -0.1, barrel, true, false); // прицел
     } else {
       const n = 6, R = lvl === 5 ? 0.22 : 0.18;
       const spin = group(barrel, 0, 0, 0); g.userData.spin = spin;
@@ -3122,6 +3135,7 @@ const World = (() => {
     const pc = q === 'pc';
     buildGrass(q);
     const frac = { low: 0, medium: 0.3, high: 0.65, ultra: 1, pc: 1 }[q] ?? 0.3;
+    grassMesh.receiveShadow = q === 'ultra' || q === 'pc'; // тень на траве почти не видна, а стоит дорого
     grassMesh.count = Math.floor(grassMesh.userData.max * frac);
     grassMesh.visible = frac > 0;
     flowerMesh.count = Math.floor(flowerMesh.userData.max * Math.max(0.2, frac));
@@ -3335,7 +3349,9 @@ const G = window.G = {};
     const q = G.settings.quality;
     renderer = new THREE.WebGLRenderer({ canvas, antialias: q !== 'low', powerPreference: 'high-performance' });
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    // мягкие тени дорогие для телефона: на «ПК»/ультра — PCFSoft, иначе обычный PCF (почти не отличим)
+    renderer.shadowMap.type = (q === 'pc' || q === 'ultra') ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
+    renderer.shadowMap.autoUpdate = false; // тени обновляем через кадр (см. G.frame)
   };
   G.init = function (canvas) { if (!renderer) G.initRenderer(canvas); G.initWorld(); };
   G.initWorld = function () {
@@ -3368,7 +3384,7 @@ const G = window.G = {};
     const res = G.settings.resolution;
     let pr;
     if (res && res !== 'auto') pr = parseInt(res, 10) / h;
-    else pr = Math.min(window.devicePixelRatio || 1, { low: 0.75, medium: 1, high: 1.5, ultra: 2, pc: 2 }[G.settings.quality] || 1);
+    else pr = Math.min(window.devicePixelRatio || 1, { low: 0.75, medium: 1, high: 1.5, ultra: 2, pc: 2 }[G.settings.quality] || 1) * dynScale;
     renderer.setPixelRatio(clamp(pr, 0.4, 3));
     renderer.setSize(w, h, false);
     camera.aspect = w / h; camera.updateProjectionMatrix();
@@ -3926,7 +3942,7 @@ const G = window.G = {};
 
   // ---------------- Пушки и снаряды ----------------
   const projGeo = { bullet: new THREE.CylinderGeometry(0.035, 0.035, 0.5, 4), rocket: new THREE.ConeGeometry(0.12, 0.6, 6), ball: new THREE.SphereGeometry(0.2, 8, 6), arrow: new THREE.CylinderGeometry(0.03, 0.03, 0.9, 4), bolt: new THREE.CylinderGeometry(0.06, 0.06, 1.6, 5) };
-  const projMat = { bullet: Models.mat(0xffe070, { emissive: 0xffc030, emissiveIntensity: 2 }), rocket: Models.mat(0x3e9a3a, { emissive: 0x206a10, emissiveIntensity: 0.4 }), fire: Models.mat(0xff7a20, { emissive: 0xff5010, emissiveIntensity: 1.6 }), ball: Models.mat(0x1a1a1a, { metalness: 0.5 }), slow: Models.mat(0x80d0ff, { emissive: 0x3080ff, emissiveIntensity: 0.8 }), arrow: Models.mat(0x6a4a2a), bolt: Models.mat(0xd8b040, { metalness: 0.6 }) };
+  const projMat = { bullet: Models.mat(0xffe070, { emissive: 0xffc030, emissiveIntensity: 2 }), rocket: Models.mat(0x3e9a3a, { emissive: 0x206a10, emissiveIntensity: 0.4 }), rocketRed: Models.mat(0xe03030, { emissive: 0xa01010, emissiveIntensity: 0.6 }), fire: Models.mat(0xff7a20, { emissive: 0xff5010, emissiveIntensity: 1.6 }), ball: Models.mat(0x1a1a1a, { metalness: 0.5 }), slow: Models.mat(0x80d0ff, { emissive: 0x3080ff, emissiveIntensity: 0.8 }), arrow: Models.mat(0x6a4a2a), bolt: Models.mat(0xd8b040, { metalness: 0.6 }) };
   function nearestEnemy(x, z, range) {
     let best = null, bd = range;
     for (const e of E) { if (e.dying || e.flee) continue; const d = Math.hypot(e.pos.x - x, e.pos.z - z); if (d < bd) { bd = d; best = e; } }
@@ -3934,7 +3950,7 @@ const G = window.G = {};
   }
   function fire(from, e, o) {
     const kind = o.kind;
-    const mesh = new THREE.Mesh(projGeo[kind], o.slow ? projMat.slow : o.burn ? projMat.fire : projMat[kind]); mesh.castShadow = false;
+    const mesh = new THREE.Mesh(projGeo[kind], o.slow ? projMat.slow : o.burn ? projMat.fire : o.red ? projMat.rocketRed : projMat[kind]); mesh.castShadow = false;
     scene.add(mesh);
     const speed = kind === 'ball' ? 22 : kind === 'bullet' ? 75 : kind === 'rocket' ? 24 : 40;
     const to = e.pos.clone(); const dist = from.distanceTo(to); const tFlight = dist / speed;
@@ -3965,7 +3981,7 @@ const G = window.G = {};
         if (!bird && b.lvl < 4) continue; // без птицы стреляют только автоматические пушки
         const bs = bird ? BIRDS[bird.sp] : { dmg: 1, rate: 0.6, range: 1 };
         dmg = L.dmg * bs.dmg * (S.hero === 'defender' ? 1.15 : S.hero === 'engineer' ? 1.25 : 1) * (S.hero === 'druid' && bird ? 1.25 : 1) * (bird && bs.special === 'night' && night ? 1.7 : 1);
-        rate = L.rate * bs.rate; range = L.range * bs.range; splash = L.splash * (bird && bs.special === 'splash' ? 1.5 : 1); kind = 'ball';
+        rate = L.rate * bs.rate; range = L.range * bs.range; splash = L.splash * (bird && bs.special === 'splash' ? 1.5 : 1); kind = L.kind || 'ball';
       } else if (b.t === 'ballista') { const L = BALLISTA_LEVELS[b.lvl - 1]; dmg = L.dmg * (S.hero === 'engineer' ? 1.25 : 1); rate = L.rate; range = L.range; splash = L.splash; kind = L.kind; }
       else { const D = BUILD[b.t]; dmg = D.dmg * (S.hero === 'engineer' ? 1.25 : 1); rate = D.rate; range = D.range; kind = 'arrow'; }
       const mp = b.mesh.position; const e = nearestEnemy(mp.x, mp.z, range);
@@ -3983,9 +3999,10 @@ const G = window.G = {};
         const bs = bird ? BIRDS[bird.sp] : {};
         let fd = dmg, crit = false;
         if (bs.special === 'crit' && Math.random() < 0.25) { fd *= 2.5; crit = true; }
-        fire(muzzle, e, { kind, dmg: fd, splash, slow: bs.special === 'slow', crit, stun: bs.special === 'stun', burn: bs.special === 'burn' });
+        fire(muzzle, e, { kind, red: isCannon && kind === 'rocket', dmg: fd, splash, slow: bs.special === 'slow', crit, stun: bs.special === 'stun', burn: bs.special === 'burn' });
         if (bs.special === 'double') setTimeout(() => { if (!e.dying && G.state === 'play') fire(muzzle, e, { kind, dmg: fd * 0.8, splash, crit: false }); }, 140);
-        if (isCannon) {
+        if (isCannon && kind === 'rocket') { Sound.play('rocket'); spawnParticles(muzzle, 0xcccccc, 6, 1.5, 0.3, 0.7, -0.3); if (bird) bird.flap = 0.35; }
+        else if (isCannon) {
           Sound.play('boom', 0.6);
           spawnParticles(muzzle, 0xdddddd, 5, 2, 0.3, 0.6, -0.5);
           spawnParticles(muzzle, 0xffa030, 3, 3, 0.18, 0.25, 0);
@@ -4012,7 +4029,7 @@ const G = window.G = {};
         if (p.splash > 0) {
           if (!p.visual) for (const e of E) { if (e.dying) continue; if (Math.hypot(e.pos.x - p.to.x, e.pos.z - p.to.z) < p.splash + e.d.radius) { hurtEnemy(e, p.dmg); applyFx(e, p); } }
           spawnParticles(p.to, p.slow ? 0x9adfff : 0xffa040, p.kind === 'rocket' ? 18 : 8, p.kind === 'rocket' ? 6 : 4, 0.26, 0.5);
-          if (p.kind === 'rocket') spawnParticles(p.to, 0x60d040, 8, 5, 0.2, 0.5);
+          if (p.kind === 'rocket') spawnParticles(p.to, p.red ? 0xffe040 : 0x60d040, 8, 5, 0.2, 0.5);
           spawnParticles(p.to, 0x8a7a6a, 6, 2.5, 0.3, 0.8);
           Sound.play('boom', 0.35);
         } else {
@@ -4587,8 +4604,23 @@ const G = window.G = {};
 
   // ---------------- Главный цикл ----------------
   let skyT = 0;
+  // Авто-разрешение: если кадр стабильно дольше ~22 мс, немного снижаем чёткость; если запас — возвращаем
+  let dynScale = 1, perfAcc = 0, perfN = 0, shadowTick = 0;
+  function autoPerf(dt) {
+    if (G.settings.resolution && G.settings.resolution !== 'auto') return;
+    perfAcc += dt; perfN++;
+    if (perfAcc < 2) return;
+    const avg = perfAcc / perfN; perfAcc = 0; perfN = 0;
+    const prev = dynScale;
+    if (avg > 0.022 && dynScale > 0.7) dynScale = Math.max(0.7, dynScale - 0.1);
+    else if (avg < 0.0175 && dynScale < 1) dynScale = Math.min(1, dynScale + 0.05);
+    if (dynScale !== prev) G.resize();
+  }
   G.frame = function (dt) {
     time += dt;
+    autoPerf(dt);
+    // тени: каждый 2-й кадр (на «ПК» — каждый)
+    if (renderer) { shadowTick++; if (G.settings.quality === 'pc' || shadowTick % 2 === 0) renderer.shadowMap.needsUpdate = true; }
     if (G.state === 'menu' || G.state === 'loading' || G.state === 'bye') {
       if (vm) vm.visible = false;
       // атмосферный пролёт камеры над лесом

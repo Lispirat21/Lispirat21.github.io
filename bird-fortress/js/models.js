@@ -719,6 +719,15 @@ const Models = (() => {
       if (lvl === 2) { torus(0.25, 0.05, 0x8a8a94, 0, 0, 0.2, barrel); torus(0.24, 0.04, 0x8a8a94, 0, 0, 0.65, barrel); }
     } else if (lvl === 3) {
       [-0.2, 0.2].forEach(x => { const b = cyl(0.15, 0.2, 1.4, metal, x, 0, 0.5, barrel, 10); b.rotation.x = Math.PI / 2; torus(0.16, 0.04, 0x5a3a1a, x, 0, 1.15, barrel); });
+    } else if (lvl >= 6) { // птичья ракетница: красный короб на 4 трубы с золотой каймой
+      const red = mat(0xc8242a, { roughness: 0.45 }), gold = mat(0xd8b040, { metalness: 0.6, roughness: 0.35 });
+      box(1.0, 0.8, 1.2, red, 0, 0.1, 0.25, barrel);
+      box(1.04, 0.08, 1.24, gold, 0, 0.52, 0.25, barrel, false); box(1.04, 0.08, 1.24, gold, 0, -0.32, 0.25, barrel, false);
+      [[-0.25, 0.28], [0.25, 0.28], [-0.25, -0.08], [0.25, -0.08]].forEach(([x, y]) => {
+        const t = cyl(0.15, 0.15, 0.3, 0x2a2a30, x, y, 0.82, barrel, 10); t.rotation.x = Math.PI / 2;
+        const r = cone(0.11, 0.22, mat(0xf0f0f0, { emissive: 0xff3020, emissiveIntensity: 0.5 }), x, y, 0.98, barrel, 8, false); r.rotation.x = Math.PI / 2;
+      });
+      box(0.12, 0.3, 0.12, 0x2a2a30, 0.42, 0.7, -0.1, barrel); sph(0.1, 0.1, 0.1, mat(0xff3020, { emissive: 0xff2010, emissiveIntensity: 1.5 }), 0.42, 0.9, -0.1, barrel, true, false); // прицел
     } else {
       const n = 6, R = lvl === 5 ? 0.22 : 0.18;
       const spin = group(barrel, 0, 0, 0); g.userData.spin = spin;

@@ -153,3 +153,6 @@ Object.assign(TR_UI, {
   mine_head: ["Mines:", "Добывает:", "Extrae:", "Extrai:", "Extrait :", "Fördert:", "开采：", "採掘：", "निकालता है:", "يستخرج:"],
   mine_each: ["{a} every {x}s", "{a} раз в {x}с", "{a} cada {x}s", "{a} a cada {x}s", "{a} toutes les {x}s", "{a} alle {x}s", "{a} 每{x}秒", "{a} {x}秒ごと", "{a} हर {x}से", "{a} كل {x}ث"],
 });
+Object.assign(TR_DATA, {
+  'cl6': ["Bird Rocket Launcher", "Птичья ракетница", "Lanzacohetes aviar", "Lança-foguetes das aves", "Lance-roquettes des oiseaux", "Vogel-Raketenwerfer", "鸟儿火箭炮", "鳥のロケットランチャー", "पक्षी रॉकेट लॉन्चर", "قاذفة صواريخ الطيور"],
+});

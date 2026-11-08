@@ -80,6 +80,7 @@ const CANNON_LEVELS = [
   { name: 'Бронзовая двуствольная',   dmg: 28, rate: 1.0, range: 21, splash: 2.5, cost: { stone: 25, iron: 5, coins: 60 }, req: 'stone' },
   { name: 'Автоматическая пушка',     dmg: 22, rate: 2.6, range: 23, splash: 1.6, cost: { iron: 15, coal: 10, coins: 100 }, req: 'mech' },
   { name: 'Тяжёлый автомат',          dmg: 34, rate: 3.2, range: 26, splash: 2.0, cost: { iron: 30, coal: 20, coins: 200 }, req: 'mech' },
+  { name: 'Птичья ракетница',         dmg: 80, rate: 1.5, range: 30, splash: 4.2, kind: 'rocket', cost: { iron: 40, coal: 30, ruby: 10, coins: 400 }, req: 'mech' },
 ];
 
 // Постройки. size = [ширина по X, глубина по Z] при повороте 0

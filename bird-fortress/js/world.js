@@ -454,6 +454,7 @@ const World = (() => {
     const pc = q === 'pc';
     buildGrass(q);
     const frac = { low: 0, medium: 0.3, high: 0.65, ultra: 1, pc: 1 }[q] ?? 0.3;
+    grassMesh.receiveShadow = q === 'ultra' || q === 'pc'; // тень на траве почти не видна, а стоит дорого
     grassMesh.count = Math.floor(grassMesh.userData.max * frac);
     grassMesh.visible = frac > 0;
     flowerMesh.count = Math.floor(flowerMesh.userData.max * Math.max(0.2, frac));
