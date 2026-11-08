@@ -4677,6 +4677,16 @@ const G = window.G = {};
     if (t < dt * 1.5) camera.position.copy(target); else camera.position.lerp(target, 1 - Math.exp(-dt * 3));
     camera.lookAt(lx, ly, lz);
     if (vm) vm.visible = false;
+    // все птицы кружат над базой стаей, каждая по своей орбите
+    BD.forEach((b, i) => {
+      const m = b.mesh; m.visible = true;
+      const R = 10 + (i % 5) * 4, h = 7 + (i % 4) * 2.2, sp = 0.35 + (i % 3) * 0.08, a = flyT * sp + i * 2.39;
+      const x = Math.cos(a) * R, z = Math.sin(a) * R, y = h + Math.sin(flyT * 1.3 + i) * 0.8;
+      if (!b.winInit) { b.winInit = true; m.position.set(x, y, z); }
+      m.position.lerp(tv.set(x, y, z), 1 - Math.exp(-dt * 2));
+      m.rotation.set(0, Math.atan2(-Math.sin(a), Math.cos(a)), 0); m.rotation.z = -0.25;
+      Models.animBird(m, 'fly', flyT, i);
+    });
     // плавная смена ракурса: затемнение на стыках
     const f = Math.min(t, 9 - t); document.getElementById('flash').style.cssText = f < 0.6 ? `opacity:${(1 - f / 0.6) * 0.85};background:#000` : '';
   }
