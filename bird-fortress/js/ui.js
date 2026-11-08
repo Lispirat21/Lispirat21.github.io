@@ -391,6 +391,7 @@ const UI = window.UI = {};
       $('phptxt').textContent = P.dead ? tr('wounded') : `${Math.ceil(P.hp)}/${P.maxHp}`;
       const dl = World.daylight;
       const dc = G.dayClock(), mmss = n => `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`;
+      const sb = $('btn-speed'), sp = S.speed === 2 ? 2 : 1; if (sb.textContent !== 'x' + sp) { sb.textContent = 'x' + sp; sb.classList.toggle('x2', sp === 2); }
       $('daytxt').innerHTML = `${dc.night || G.eternalNight() ? '🌙' : '☀️'} ${tr('goal_day', { n: S.day })} · ${G.diff().icon}<br><small>${G.eternalNight() ? tr('eternal') : tr(dc.night ? 'morning_in' : 'night_in', { t: mmss(dc.left) })}</small>`;
       const st = P.st / P.maxSt; $('pst').style.width = (st * 100) + '%'; $('pst').className = P.tired ? 'tired' : '';
       $('btn-run').classList.toggle('on', !!G.input.run);
@@ -729,6 +730,17 @@ const UI = window.UI = {};
     if (k === 'birds') openBirds();
   }));
   press($('btn-use'), () => openBuildingPanel(G.interactTarget()));
+  // ускорение времени: x1 бесплатно, x2 открывается один раз за рубины
+  press($('btn-speed'), () => {
+    const S = G.S(); if (!S) return;
+    if (Net.isClient) { toast('Скорость меняет хост', 'warn'); return; }
+    if (!S.fastOwn) {
+      const cost = { ruby: 60 };
+      if (!G.canAfford(cost)) { toast('Ускорение x2 стоит 60 рубинов ' + RES_INFO.ruby.icon + ' (покупается один раз)', 'warn'); return; }
+      G.pay(cost); S.fastOwn = 1; toast('⏩ Ускорение x2 открыто навсегда!', 'good');
+    }
+    S.speed = S.speed === 2 ? 1 : 2;
+  });
   press($('btn-run'), () => { const P = G.player(); if (P && P.tired) { toast(tr('no_stamina'), 'warn'); return; } G.input.run = !G.input.run; });
   tap($('btn-wave'), () => { G.startWaveNow(); toast(tr('wave_early'), 'warn'); });
   press($('bb-rot'), () => G.rotateBuild());
@@ -745,7 +757,9 @@ const UI = window.UI = {};
     const W = window.innerWidth, H = window.innerHeight;
     R = 55 * (G.settings.uiScale || 85) / 100;
     if (!isTouch) { sticks.L.el.style.display = sticks.R.el.style.display = 'none'; return; }
-    if (sticks.L.id === null) setStick(sticks.L, Math.max(100, W * 0.12), H - Math.max(110, H * 0.24));
+    // левый джойстик правее панели здоровья в левом нижнем углу
+    const li = $('leftinfo').getBoundingClientRect(), lx = Math.max(100, W * 0.12, (li.width ? li.right : 200) + R + 26);
+    if (sticks.L.id === null) setStick(sticks.L, lx, H - Math.max(110, H * 0.24));
     if (sticks.R.id === null) setStick(sticks.R, W - Math.max(190, W * 0.22), H - Math.max(150, H * 0.33));
   }
   function setStick(s, x, y) { s.ox = x; s.oy = y; s.el.style.left = x + 'px'; s.el.style.top = y + 'px'; s.el.querySelector('.knob').style.transform = ''; }

@@ -273,6 +273,7 @@ const G = window.G = {};
   G.canAfford = cost => { for (const k in cost) if ((S.res[k] || 0) < cost[k]) return false; return true; };
   G.missing = cost => Object.keys(cost).filter(k => (S.res[k] || 0) < cost[k]).map(k => `${RES_INFO[k].icon}${cost[k] - (S.res[k] || 0)}`).join(' ');
   function pay(cost) { for (const k in cost) S.res[k] -= cost[k]; }
+  G.pay = c => pay(c);
   function tryPay(cost) {
     if (!G.canAfford(cost)) { UI.toast(tr('not_enough') + G.missing(cost), 'warn'); Sound.play('error'); return false; }
     pay(cost); return true;
@@ -1332,7 +1333,7 @@ const G = window.G = {};
       return;
     }
     if (G.state === 'play' || G.state === 'over') {
-      if (G.state === 'play' && (!G.paused || Net.active)) update(dt);
+      if (G.state === 'play' && (!G.paused || Net.active)) { const k = !Net.isClient && S.speed === 2 ? 2 : 1; for (let i = 0; i < k; i++) update(dt); } // x2: два шага симуляции
       updateCamera(dt);
       renderer.render(scene, camera);
       if (G.state === 'play') UI.hud(dt);
