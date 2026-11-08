@@ -1295,12 +1295,32 @@ const G = window.G = {};
     else if (avg < 0.0175 && dynScale < 1) dynScale = Math.min(1, dynScale + 0.05);
     if (dynScale !== prev) G.resize();
   }
+  // После победы: плавные пролёты над базой с разных ракурсов (сменяются каждые ~9 с)
+  let flyT = 0, flyFade = false;
+  const FLY = [
+    t => [Math.cos(t * 0.12) * 42, 26 + Math.sin(t * 0.3) * 3, Math.sin(t * 0.12) * 42, 0, 2, 0],         // высокий облёт
+    t => [-55 + t * 3.2, 9, 30, 0, 3, 0],                                                                   // низкий пролёт сбоку
+    t => [Math.cos(t * 0.08 + 2) * 18, 48 - t * 1.2, Math.sin(t * 0.08 + 2) * 18, 0, 0, 0],                  // спуск сверху
+    t => [Math.cos(-t * 0.15 + 4) * 26, 12, Math.sin(-t * 0.15 + 4) * 26, 0, 4, 0],                        // близкий облёт стен
+  ];
+  function winFlyby(dt) {
+    flyT += dt; flyFade = true; document.body.classList.add('cutscene'); // прячем HUD — видна только база
+    const seg = Math.floor(flyT / 9) % FLY.length, t = flyT % 9;
+    const [x, y, z, lx, ly, lz] = FLY[seg](t);
+    const target = V(x, Math.max(y, World.groundAt(x, z) + 4), z);
+    if (t < dt * 1.5) camera.position.copy(target); else camera.position.lerp(target, 1 - Math.exp(-dt * 3));
+    camera.lookAt(lx, ly, lz);
+    if (vm) vm.visible = false;
+    // плавная смена ракурса: затемнение на стыках
+    const f = Math.min(t, 9 - t); document.getElementById('flash').style.cssText = f < 0.6 ? `opacity:${(1 - f / 0.6) * 0.85};background:#000` : '';
+  }
   G.frame = function (dt) {
     time += dt;
     autoPerf(dt);
     // тени: каждый 2-й кадр (на «ПК» — каждый)
     if (renderer) { shadowTick++; if (G.settings.quality === 'pc' || shadowTick % 2 === 0) renderer.shadowMap.needsUpdate = true; }
     if (G.state === 'menu' || G.state === 'loading' || G.state === 'bye') {
+      if (flyFade) { flyFade = false; flyT = 0; document.body.classList.remove('cutscene'); document.getElementById('flash').style.cssText = ''; }
       if (vm) vm.visible = false;
       // атмосферный пролёт камеры над лесом
       const a = time * 0.04;
@@ -1334,7 +1354,7 @@ const G = window.G = {};
     }
     if (G.state === 'play' || G.state === 'over') {
       if (G.state === 'play' && (!G.paused || Net.active)) { const k = !Net.isClient && S.speed === 2 ? 2 : 1; for (let i = 0; i < k; i++) update(dt); } // x2: два шага симуляции
-      updateCamera(dt);
+      if (G.state === 'over' && S && S.won) winFlyby(dt); else updateCamera(dt);
       renderer.render(scene, camera);
       if (G.state === 'play') UI.hud(dt);
     }
