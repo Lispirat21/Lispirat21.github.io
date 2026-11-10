@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#000000">
+<title>Хоумлендер: Ярость</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Press+Start+2P&family=Rubik:wght@500;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<!-- ============ ЗАГРУЗКА ============ -->
+<div id="loading" class="screen">
+  <div class="load-eyes"><i></i><i></i></div>
+  <div class="lbar"><i id="lbar"></i></div>
+  <div id="ltxt">Загрузка…</div>
+</div>
+
+<!-- ============ ГЛАВНОЕ МЕНЮ ============ -->
+<div id="menu" class="screen hidden">
+  <div class="menu-left">
+    <div class="title">
+      <div class="t1">ХОУМЛЕНДЕР</div>
+      <div class="t2">Я&nbsp;могу делать всё, что захочу</div>
+    </div>
+    <div class="menu-col" id="menuMain">
+      <button class="mbtn" data-act="continue" id="btnContinue">Продолжить</button>
+      <button class="mbtn" data-act="new">Новая игра</button>
+      <button class="mbtn" data-act="missions">Миссии</button>
+      <button class="mbtn" data-act="free">Свободный полёт</button>
+      <button class="mbtn" data-act="dossier">Досье</button>
+      <button class="mbtn" data-act="settings">Настройки</button>
+      <button class="mbtn" data-act="about">Об игре</button>
+      <button class="mbtn dim" data-act="exit">← На сайт</button>
+    </div>
+  </div>
+  <div class="menu-foot">Одиночная сюжетная игра · фан-проект по мотивам сериала · v1.0</div>
+  <div class="menu-tap hidden" id="menuTap">Нажмите, чтобы включить звук</div>
+</div>
+
+<!-- ============ ПАНЕЛИ МЕНЮ ============ -->
+<div id="panel" class="screen hidden">
+  <div class="pbox">
+    <div class="phead"><span id="ptitle">Настройки</span><button class="pclose" id="pclose">✕</button></div>
+    <div class="pbody" id="pbody"></div>
+  </div>
+</div>
+
+<!-- ============ HUD ============ -->
+<div id="hud" class="hidden">
+  <div id="hudTL">
+    <div class="avatar">ВЫ</div>
+    <div class="bars">
+      <div class="bar hp"><span>ЗДОРОВЬЕ</span><em id="hpTxt">100%</em><i id="hpBar"></i></div>
+      <div class="bar rage"><span>ЯРОСТЬ</span><em id="rageTxt"></em><i id="rageBar"></i></div>
+      <div class="bar heat"><span>ЛАЗЕР</span><i id="heatBar"></i></div>
+    </div>
+  </div>
+  <div id="approval"><span>РЕЙТИНГ ОДОБРЕНИЯ</span><b id="apTxt">70%</b><div class="abar"><i id="apBar"></i></div></div>
+  <div id="objective"><div class="otitle" id="oTitle">Миссия</div><div class="otext" id="oText"></div><div class="otimer" id="oTimer"></div></div>
+  <div id="bossbar" class="hidden"><div class="bname" id="bName"></div><div class="bbar"><i id="bBar"></i></div></div>
+  <div id="cross"><i></i></div>
+  <div id="waypoint" class="hidden"><div class="wp-dot"></div><div class="wp-dist" id="wpDist"></div></div>
+  <div id="markers"></div>
+  <div id="tags"></div>
+  <div id="fps" class="hidden"></div>
+  <button id="pauseBtn">❚❚</button>
+</div>
+
+<div id="fxDamage"></div>
+<div id="fxRage"></div>
+<div id="fxHear"></div>
+<div id="fxDepower"></div>
+<div id="fxFlash"></div>
+<div id="fxFade"></div>
+
+<div id="location" class="pixel"></div>
+<div id="statcard" class="pixel hidden"></div>
+<div id="caption"></div>
+<div id="dialog" class="hidden"><div class="who" id="dWho"></div><div class="txt" id="dTxt"></div></div>
+<div id="hint"></div>
+
+<!-- ============ СЕНСОРНОЕ УПРАВЛЕНИЕ ============ -->
+<div id="touch" class="hidden">
+  <div id="joy"><div id="joyKnob"></div></div>
+  <div id="tbtns">
+    <button class="tb big red" data-k="laser">ЛАЗЕР</button>
+    <button class="tb" data-k="punch">УДАР</button>
+    <button class="tb" data-k="up">▲</button>
+    <button class="tb" data-k="down">▼</button>
+    <button class="tb" data-k="fly">ПОЛЁТ</button>
+    <button class="tb" data-k="boost">⚡</button>
+    <button class="tb sm" data-k="hear">СЛУХ</button>
+    <button class="tb sm" data-k="use" id="tbUse">ВЗЯТЬ</button>
+    <button class="tb sm" data-k="pose">ПОЗА</button>
+    <button class="tb sm rage" data-k="rage" id="tbRage">ЯРОСТЬ</button>
+  </div>
+</div>
+
+<!-- ============ ПАУЗА / РЕЗУЛЬТАТ / ВЫБОР ============ -->
+<div id="pause" class="screen hidden">
+  <div class="ptitle2">ПАУЗА</div>
+  <div class="menu-col center">
+    <button class="mbtn" data-p="resume">Продолжить</button>
+    <button class="mbtn" data-p="restart">Начать миссию заново</button>
+    <button class="mbtn" data-p="settings">Настройки</button>
+    <button class="mbtn" data-p="controls">Управление</button>
+    <button class="mbtn dim" data-p="menu">Выйти в меню</button>
+  </div>
+</div>
+
+<div id="result" class="screen hidden">
+  <div class="rtitle" id="rTitle">МИССИЯ ВЫПОЛНЕНА</div>
+  <div class="rsub" id="rSub"></div>
+  <div class="rstats" id="rStats"></div>
+  <div class="menu-col center" id="rBtns"></div>
+</div>
+
+<div id="choice" class="screen hidden">
+  <div class="ctitle" id="cTitle"></div>
+  <div class="cbtns" id="cBtns"></div>
+</div>
+
+<script src="js/three.min.js"></script>
+<script src="js/core.js?v=1"></script>
+<script src="js/settings.js?v=1"></script>
+<script src="js/audio.js?v=1"></script>
+<script src="js/input.js?v=1"></script>
+<script src="js/models.js?v=1"></script>
+<script src="js/world.js?v=1"></script>
+<script src="js/fx.js?v=1"></script>
+<script src="js/actors.js?v=1"></script>
+<script src="js/player.js?v=1"></script>
+<script src="js/missions.js?v=1"></script>
+<script src="js/ui.js?v=1"></script>
+<script src="js/menu.js?v=1"></script>
+<script src="js/game.js?v=1"></script>
+</body>
+</html>

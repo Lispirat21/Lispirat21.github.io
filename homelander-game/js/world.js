@@ -1,0 +1,466 @@
+// Город: кварталы, здания (склеенная геометрия), красная стена с башней, башня Vought, порт, парки
+HL.World = (function () {
+  const T = THREE, U = HL.U, M = HL.Models;
+  const PITCH = 70, ROAD = 14, HALF = 280; // дороги по x,z = 0, ±70, ±140, ±210, ±280
+
+  const PALETTES = [
+    { wall: '#e0705c', glass: '#3c6fd2' },
+    { wall: '#d4523e', glass: '#3a66c4' },
+    { wall: '#ead8b4', glass: '#4878c8' },
+    { wall: '#b9bdc6', glass: '#3e5f9a' },
+    { wall: '#e6ad4c', glass: '#3f6cc0' },
+    { wall: '#f0e6d8', glass: '#4a82d0' },
+  ];
+
+  function facadeTex(p, night, seed) {
+    const r = U.seeded(seed);
+    const N = 8, S = 64;
+    const mk = (emissive) => M.canvasTex(N * S, N * S, (x) => {
+      x.fillStyle = emissive ? '#000' : p.wall; x.fillRect(0, 0, N * S, N * S);
+      const rr = U.seeded(seed + 99);
+      for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+        const ox = i * S, oy = j * S;
+        const lit = night && rr() < 0.35;
+        if (!emissive) {
+          x.fillStyle = '#fbfbf6'; x.fillRect(ox + 12, oy + 8, 40, 46);
+          const g = x.createLinearGradient(0, oy + 12, 0, oy + 50);
+          g.addColorStop(0, night ? '#1a2440' : '#7fa6ec'); g.addColorStop(1, night ? '#0d1428' : p.glass);
+          x.fillStyle = g; x.fillRect(ox + 16, oy + 12, 32, 38);
+          x.fillStyle = '#fbfbf6'; x.fillRect(ox + 31, oy + 12, 2, 38);
+          if (r() < 0.3) { x.fillStyle = '#e8e8e2'; for (let k = 0; k < 6; k++) x.fillRect(ox + 12 + k * 7.5, oy + 40, 3, 16); x.fillRect(ox + 10, oy + 38, 44, 3); }
+        } else if (lit) {
+          x.fillStyle = rr() < 0.5 ? '#ffd88a' : '#ffeab8'; x.fillRect(ox + 16, oy + 12, 32, 38);
+        }
+      }
+    });
+    const map = mk(false);
+    map.anisotropy = 4;
+    const emap = night ? mk(true) : null;
+    return { map, emap };
+  }
+
+  // Геометрия-сборщик: много коробок в один буфер
+  function Builder() { return { pos: [], nor: [], uv: [], col: [], idx: [] }; }
+  function quad(b, p, n, uw, vh, color) {
+    const i = b.pos.length / 3;
+    for (const q of p) b.pos.push(q[0], q[1], q[2]);
+    for (let k = 0; k < 4; k++) b.nor.push(n[0], n[1], n[2]);
+    b.uv.push(0, 0, uw, 0, uw, vh, 0, vh);
+    if (color) for (let k = 0; k < 4; k++) b.col.push(color.r, color.g, color.b);
+    b.idx.push(i, i + 1, i + 2, i, i + 2, i + 3);
+  }
+  function boxSides(b, x0, y0, z0, x1, y1, z1, tw, th, color, top) {
+    const w = x1 - x0, h = y1 - y0, d = z1 - z0, uw = w / tw, ud = d / tw, vh = h / th;
+    quad(b, [[x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]], [0, 0, 1], uw, vh, color);
+    quad(b, [[x1, y0, z0], [x0, y0, z0], [x0, y1, z0], [x1, y1, z0]], [0, 0, -1], uw, vh, color);
+    quad(b, [[x1, y0, z1], [x1, y0, z0], [x1, y1, z0], [x1, y1, z1]], [1, 0, 0], ud, vh, color);
+    quad(b, [[x0, y0, z0], [x0, y0, z1], [x0, y1, z1], [x0, y1, z0]], [-1, 0, 0], ud, vh, color);
+    if (top) quad(top, [[x0, y1, z1], [x1, y1, z1], [x1, y1, z0], [x0, y1, z0]], [0, 1, 0], w / 8, d / 8, color);
+  }
+  function toGeo(b) {
+    const g = new T.BufferGeometry();
+    g.setAttribute('position', new T.Float32BufferAttribute(b.pos, 3));
+    g.setAttribute('normal', new T.Float32BufferAttribute(b.nor, 3));
+    g.setAttribute('uv', new T.Float32BufferAttribute(b.uv, 2));
+    if (b.col.length) g.setAttribute('color', new T.Float32BufferAttribute(b.col, 3));
+    g.setIndex(b.idx);
+    g.computeBoundingSphere();
+    return g;
+  }
+
+  function build(scene, opts = {}) {
+    const time = opts.time || 'day';
+    const night = time === 'night';
+    const S = HL.Settings;
+    const rnd = U.seeded(1337);
+    const W = {
+      boxes: [], grid: new Map(), cell: 40, time, night, group: new T.Group(), parks: [], sidewalkPts: [], lots: [], special: {},
+      clouds: [], updaters: [], HALF, PITCH, ROAD,
+    };
+    scene.add(W.group);
+    const add = (o) => { W.group.add(o); return o; };
+
+    // ---------- небо и свет ----------
+    const SKY = {
+      day: { top: 0x3f7fd8, bot: 0xb9d6f2, fog: 0xb5d1ee, hemiS: 0xcfe4ff, hemiG: 0x6a6050, sun: 0xffffff, sunI: 1.15, hemiI: 0.75 },
+      dusk: { top: 0x3a3f7a, bot: 0xf2a070, fog: 0xd99a7a, hemiS: 0xffc8a0, hemiG: 0x4a3a40, sun: 0xffb070, sunI: 1.0, hemiI: 0.6 },
+      dawn: { top: 0x5a7ab8, bot: 0xf0c8a0, fog: 0xd8c0aa, hemiS: 0xffe0c0, hemiG: 0x5a5050, sun: 0xffd0a0, sunI: 1.0, hemiI: 0.65 },
+      night: { top: 0x04060f, bot: 0x18203a, fog: 0x141a2e, hemiS: 0x4a5a90, hemiG: 0x15131a, sun: 0x8aa0ff, sunI: 0.35, hemiI: 0.42 },
+    }[time];
+    const skyMat = new T.ShaderMaterial({
+      side: T.BackSide, depthWrite: false, fog: false,
+      uniforms: { top: { value: new T.Color(SKY.top) }, bot: { value: new T.Color(SKY.bot) } },
+      vertexShader: 'varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+      fragmentShader: 'uniform vec3 top; uniform vec3 bot; varying vec3 vP; void main(){ float h = clamp(vP.y*1.6+0.08,0.0,1.0); gl_FragColor = vec4(mix(bot, top, pow(h,0.7)),1.0); }',
+    });
+    const sky = new T.Mesh(new T.SphereGeometry(1400, 24, 12), skyMat); sky.renderOrder = -1;
+    W.sky = add(sky);
+    scene.fog = new T.Fog(SKY.fog, S.drawDistance * 0.35, S.drawDistance);
+    scene.background = new T.Color(SKY.fog);
+    const hemi = new T.HemisphereLight(SKY.hemiS, SKY.hemiG, SKY.hemiI); add(hemi);
+    const sun = new T.DirectionalLight(SKY.sun, SKY.sunI);
+    sun.position.set(80, 160, 60);
+    add(sun); add(sun.target);
+    W.sun = sun; W.sunOffset = new T.Vector3(70, 140, 50);
+    if (S.data.shadows > 0) {
+      sun.castShadow = true;
+      const sz = S.shadowSize, ext = [0, 45, 70, 95][S.data.shadows];
+      sun.shadow.mapSize.set(sz, sz);
+      Object.assign(sun.shadow.camera, { left: -ext, right: ext, top: ext, bottom: -ext, near: 10, far: 420 });
+      sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.04;
+    }
+    if (night) {
+      const g = new T.BufferGeometry(); const p = [];
+      for (let i = 0; i < 900; i++) { const a = rnd() * Math.PI * 2, e = 0.08 + rnd() * 1.4; p.push(Math.cos(a) * Math.cos(e) * 1300, Math.sin(e) * 1300, Math.sin(a) * Math.cos(e) * 1300); }
+      g.setAttribute('position', new T.Float32BufferAttribute(p, 3));
+      W.stars = add(new T.Points(g, new T.PointsMaterial({ color: 0xffffff, size: 2.2, sizeAttenuation: false, fog: false })));
+      const moon = M.glowSprite(0xdde6ff, 160); moon.position.set(-500, 600, -800); add(moon);
+    } else {
+      // облака
+      const cm = M.toon(time === 'day' ? 0xffffff : 0xffd8c8);
+      for (let i = 0; i < 16; i++) {
+        const cg = new T.Group();
+        for (let k = 0; k < 5; k++) {
+          const s = new T.Mesh(M.sph(1), cm); s.scale.set(10 + rnd() * 10, 5 + rnd() * 4, 8 + rnd() * 6); s.position.set((k - 2) * 11 + rnd() * 5, rnd() * 4, rnd() * 8); cg.add(s);
+        }
+        cg.position.set((rnd() - 0.5) * 1200, 170 + rnd() * 80, (rnd() - 0.5) * 1200);
+        add(cg); W.clouds.push(cg);
+      }
+    }
+
+    // ---------- земля и дороги ----------
+    const ground = new T.Mesh(new T.PlaneGeometry(2600, 2600), M.toon(night ? 0x2a2c33 : 0x5d6068));
+    ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; add(ground);
+    const grass = new T.Mesh(new T.RingGeometry(HALF + 30, 1300, 4, 1, Math.PI / 4), M.toon(night ? 0x1e3020 : 0x5f9a4a));
+    grass.rotation.x = -Math.PI / 2; grass.position.y = 0.03; grass.scale.set(1.414, 1.414, 1); add(grass);
+
+    const markM = new T.MeshBasicMaterial({ color: night ? 0xb8b8b0 : 0xf4f4ee });
+    const dashes = [];
+    for (let k = -4; k <= 4; k++) {
+      const c = k * PITCH;
+      for (let s = -HALF; s < HALF; s += 8) {
+        const inX = Math.abs(((s % PITCH) + PITCH) % PITCH) < ROAD / 2 + 1 || Math.abs(((s % PITCH) + PITCH) % PITCH) > PITCH - ROAD / 2 - 1;
+        if (inX) continue;
+        if (k === 0) { dashes.push([c, s + 4, 0.5, 8.2]); } // сплошная по главному проспекту
+        else dashes.push([c, s + 4, 0.35, 4]);
+        dashes.push([s + 4, c, 4, 0.35]);
+      }
+    }
+    const dm = new T.InstancedMesh(new T.BoxGeometry(1, 0.05, 1), markM, dashes.length);
+    const mtx = new T.Matrix4();
+    dashes.forEach((d, i) => { mtx.makeScale(d[2], 1, d[3]); mtx.setPosition(d[0], 0.03, d[1]); dm.setMatrixAt(i, mtx); });
+    add(dm);
+
+    // ---------- здания ----------
+    const pal = PALETTES.map((p, i) => ({ p, tex: facadeTex(p, night, 50 + i), b: Builder(), top: Builder() }));
+    const shops = Builder();
+    const pave = [];
+    const trees = [];
+    const lamps = [];
+    const SHOPC = [0xc8302a, 0x2a52b0, 0xe6b23c, 0x2f8a4a, 0x222222, 0xf2f2f2].map((c) => new T.Color(c));
+
+    const addBox = (x0, z0, x1, z1, h, kind, ref) => {
+      const b = { x0, x1, z0, z1, y0: 0, y1: h, kind, ref, id: W.boxes.length };
+      W.boxes.push(b);
+      const c = W.cell;
+      for (let i = Math.floor(x0 / c); i <= Math.floor(x1 / c); i++)
+        for (let j = Math.floor(z0 / c); j <= Math.floor(z1 / c); j++) {
+          const k = i + ',' + j; if (!W.grid.has(k)) W.grid.set(k, []); W.grid.get(k).push(b);
+        }
+      return b;
+    };
+    W.addBox = addBox;
+
+    const building = (x0, z0, x1, z1, h, pi, opt = {}) => {
+      const P = pal[pi % pal.length];
+      boxSides(P.b, x0, 0, z0, x1, h, z1, 30, 28, null, P.top);
+      if (opt.shop !== false && h > 10) boxSides(shops, x0 - 0.35, 0, z0 - 0.35, x1 + 0.35, 4.2, z1 + 0.35, 1, 1, U.pick(SHOPC), shops);
+      if (S.data.details > 1 && rnd() < 0.6) { // крыши: вентиляция
+        const cx = U.lerp(x0 + 3, x1 - 3, rnd()), cz = U.lerp(z0 + 3, z1 - 3, rnd());
+        boxSides(P.top, cx - 1.5, h, cz - 1.5, cx + 1.5, h + 2, cz + 1.5, 8, 8, null, P.top);
+      }
+      return addBox(x0, z0, x1, z1, h, 'building', opt.ref);
+    };
+    W.building = building;
+
+    const blockCenters = [];
+    for (let i = -4; i < 4; i++) for (let j = -4; j < 4; j++) blockCenters.push([i * PITCH + PITCH / 2, j * PITCH + PITCH / 2]);
+
+    for (const [cx, cz] of blockCenters) {
+      const bx0 = cx - (PITCH - ROAD) / 2, bx1 = cx + (PITCH - ROAD) / 2, bz0 = cz - (PITCH - ROAD) / 2, bz1 = cz + (PITCH - ROAD) / 2;
+      const key = cx + ',' + cz;
+      // особые кварталы
+      const kremlin = cz < -210 && Math.abs(cx) < 220;
+      const plaza = cz === -175 && Math.abs(cx) <= 35;
+      const port = cx === 245;
+      const isVought = cx === 105 && cz === 35;
+      const park = !kremlin && !plaza && !port && !isVought && (key === '-105,-35' || key === '175,-105' || key === '-175,175' || key === '35,175' || rnd() < 0.06);
+      const pavCol = park ? (night ? 0x22401f : 0x6aaa4e) : plaza || kremlin ? (night ? 0x4a3a3a : 0x9a8a84) : (night ? 0x50535c : 0xa9adb4);
+      pave.push([cx, cz, PITCH - ROAD, PITCH - ROAD, pavCol]);
+      // фонари по периметру квартала
+      for (let s = -1; s <= 1; s += 2) for (let t = -20; t <= 20; t += 20) { lamps.push([cx + s * ((PITCH - ROAD) / 2 - 1), cz + t]); }
+      // точки тротуара для пешеходов
+      for (let t = -24; t <= 24; t += 8) {
+        W.sidewalkPts.push(new T.Vector3(bx0 + 1.5, 0, cz + t), new T.Vector3(bx1 - 1.5, 0, cz + t), new T.Vector3(cx + t, 0, bz0 + 1.5), new T.Vector3(cx + t, 0, bz1 - 1.5));
+      }
+      if (kremlin) {
+        // дворец за стеной
+        if (Math.abs(cx) < 40) { boxSides(pal[4].b, cx - 22, 0, cz - 10, cx + 22, 18, cz + 12, 30, 28, null, pal[4].top); addBox(cx - 22, cz - 10, cx + 22, cz + 12, 18, 'building'); }
+        else for (let k = 0; k < 4; k++) trees.push([cx + (rnd() - 0.5) * 40, cz + (rnd() - 0.5) * 40, 1 + rnd() * 0.5]);
+        continue;
+      }
+      if (plaza) { W.parks.push([cx, cz]); continue; }
+      if (park) {
+        W.parks.push([cx, cz]);
+        for (let k = 0; k < 14; k++) trees.push([cx + (rnd() - 0.5) * 48, cz + (rnd() - 0.5) * 48, 0.8 + rnd() * 0.7]);
+        continue;
+      }
+      if (port) { buildPort(cx, cz); continue; }
+      if (isVought) { buildVought(cx, cz); continue; }
+      // обычный квартал: 1..4 здания
+      const m = 3, ix0 = bx0 + m, ix1 = bx1 - m, iz0 = bz0 + m, iz1 = bz1 - m;
+      const distC = Math.hypot(cx, cz);
+      const hmax = distC < 150 ? 58 : 36;
+      const pi = (rnd() * pal.length) | 0;
+      const split = rnd();
+      const hh = () => 12 + rnd() * hmax;
+      let lots = [];
+      if (split < 0.25) lots = [[ix0, iz0, ix1, iz1]];
+      else if (split < 0.55) { const s = U.lerp(ix0 + 14, ix1 - 14, rnd()); lots = [[ix0, iz0, s - 2, iz1], [s + 2, iz0, ix1, iz1]]; }
+      else { const sx = (ix0 + ix1) / 2, sz = (iz0 + iz1) / 2; lots = [[ix0, iz0, sx - 2, sz - 2], [sx + 2, iz0, ix1, sz - 2], [ix0, sz + 2, sx - 2, iz1], [sx + 2, sz + 2, ix1, iz1]]; }
+      for (const l of lots) {
+        const h = Math.round(hh() / 3.5) * 3.5;
+        const b = building(l[0], l[1], l[2], l[3], h, pi + ((rnd() * 2) | 0));
+        W.lots.push(b);
+      }
+      // деревья вдоль тротуара
+      if (rnd() < 0.5) for (let t = -18; t <= 18; t += 12) trees.push([bx0 + 1.2, cz + t, 0.6]);
+    }
+
+    function buildPort(cx, cz) {
+      const wm = M.toon(night ? 0x4a5468 : 0x7d8aa2);
+      for (const dz of [-14, 14]) {
+        const x0 = cx - 24, x1 = cx + 20, z0 = cz + dz - 10, z1 = cz + dz + 10;
+        const m = new T.Mesh(new T.BoxGeometry(x1 - x0, 11, z1 - z0), wm); m.position.set((x0 + x1) / 2, 5.5, (z0 + z1) / 2); m.castShadow = m.receiveShadow = true; add(m);
+        const roof = new T.Mesh(new T.CylinderGeometry(10, 10, x1 - x0, 12, 1, false, 0, Math.PI), M.toon(night ? 0x3a3a48 : 0x5a6274));
+        roof.rotation.z = Math.PI / 2; roof.rotation.y = Math.PI / 2; roof.scale.z = 0.35; roof.position.set((x0 + x1) / 2, 11, (z0 + z1) / 2); add(roof);
+        addBox(x0, z0, x1, z1, 13, 'warehouse');
+      }
+      const cc = [0xc8302a, 0x2a52b0, 0xe6b23c, 0x2f8a4a, 0xe07020];
+      for (let k = 0; k < 7; k++) {
+        const x = cx + 23 + (k % 2) * 3.2, z = cz - 24 + k * 7.5;
+        const st = 1 + (k % 3 === 0 ? 1 : 0);
+        for (let s = 0; s < st; s++) {
+          const m = new T.Mesh(M.box(2.6, 2.6, 6), M.toon(cc[(k + s) % cc.length])); m.position.set(x, 1.3 + s * 2.6, z); m.castShadow = true; add(m);
+        }
+        addBox(x - 1.3, z - 3, x + 1.3, z + 3, 2.6 * st, 'container');
+        W.special['container' + k] = new T.Vector3(x, 0, z);
+      }
+      // кран
+      const crane = new T.Group();
+      const cm = M.toon(0xe6a020);
+      const p = new T.Mesh(M.box(2, 40, 2), cm); p.position.y = 20; crane.add(p);
+      const a = new T.Mesh(M.box(30, 1.5, 1.5), cm); a.position.set(-8, 40, 0); crane.add(a);
+      crane.position.set(cx + 27, 0, cz + 30); add(crane); addBox(cx + 26, cz + 29, cx + 28, cz + 31, 40, 'crane');
+    }
+
+    function buildVought(cx, cz) {
+      const h = 150;
+      const gl = new T.Mesh(new T.BoxGeometry(34, h, 34), M.toonX(0x2e4a7a, { emissive: night ? 0x0a1830 : 0x000000 }));
+      gl.position.set(cx, h / 2, cz); gl.castShadow = true; add(gl);
+      // полосы стекла
+      for (let y = 6; y < h; y += 6) {
+        const r = new T.Mesh(M.box(34.4, 0.6, 34.4), M.toon(0x9ab0cc)); r.position.set(cx, y, cz); add(r);
+      }
+      const top = new T.Mesh(new T.BoxGeometry(26, 14, 26), M.toon(0x1c2c48)); top.position.set(cx, h + 7, cz); add(top);
+      // логотип V
+      const vs = new T.Shape(); vs.moveTo(-5, 5); vs.lineTo(-2.6, 5); vs.lineTo(0, -1.6); vs.lineTo(2.6, 5); vs.lineTo(5, 5); vs.lineTo(1.2, -5); vs.lineTo(-1.2, -5); vs.closePath();
+      const vg = new T.ShapeGeometry(vs);
+      const vm = new T.MeshBasicMaterial({ color: 0xe6c060, side: T.DoubleSide, fog: false });
+      for (let k = 0; k < 4; k++) {
+        const v = new T.Mesh(vg, vm); const a = (k * Math.PI) / 2;
+        v.position.set(cx + Math.sin(a) * 13.1, h + 7, cz + Math.cos(a) * 13.1); v.rotation.y = a; add(v);
+      }
+      addBox(cx - 17, cz - 17, cx + 17, cz + 17, h + 14, 'vought');
+      W.special.vought = new T.Vector3(cx, h + 14, cz);
+      W.parks.push([cx, cz]);
+    }
+
+    // ---------- Красная стена и башня с часами ----------
+    {
+      const zW = -213, x0 = -200, x1 = 200;
+      const red = M.toon(night ? 0x7a1e1a : 0xb8352c), roofM = M.toon(night ? 0x183a2a : 0x2e6a48);
+      const wall1 = new T.Mesh(new T.BoxGeometry(x1 - x0, 14, 5), red); wall1.position.set(0, 7, zW); wall1.castShadow = wall1.receiveShadow = true; add(wall1);
+      addBox(x0, zW - 2.5, -9, zW + 2.5, 14, 'wall'); addBox(9, zW - 2.5, x1, zW + 2.5, 14, 'wall');
+      // зубцы
+      const n = Math.floor((x1 - x0) / 3.4);
+      const merl = new T.InstancedMesh(new T.BoxGeometry(1.8, 2.4, 1.2), red, n * 2);
+      let k = 0;
+      for (let i = 0; i < n; i++) for (const dz of [-1.9, 1.9]) { mtx.makeTranslation(x0 + 1.7 + i * 3.4, 15.2, zW + dz); merl.setMatrixAt(k++, mtx); }
+      merl.castShadow = true; add(merl);
+      // боковые башни
+      for (const tx of [-200, -120, 120, 200]) {
+        const tw = new T.Mesh(new T.BoxGeometry(9, 26, 9), red); tw.position.set(tx, 13, zW); tw.castShadow = true; add(tw);
+        const rf = new T.Mesh(new T.ConeGeometry(7, 12, 4), roofM); rf.position.set(tx, 32, zW); rf.rotation.y = Math.PI / 4; add(rf);
+        addBox(tx - 4.5, zW - 4.5, tx + 4.5, zW + 4.5, 26, 'tower');
+      }
+      // главная башня (ворота над дорогой)
+      const g = new T.Group(); g.position.set(0, 0, zW);
+      const base = new T.Mesh(new T.BoxGeometry(18, 34, 14), red); base.position.y = 17; base.castShadow = true; g.add(base);
+      const gate = new T.Mesh(new T.BoxGeometry(8, 11, 14.4), M.toon(0x2a2224)); gate.position.y = 5.5; g.add(gate);
+      const mid = new T.Mesh(new T.BoxGeometry(14, 14, 11), red); mid.position.y = 41; g.add(mid);
+      const wh = new T.Mesh(new T.BoxGeometry(14.4, 1.2, 11.4), M.toon(0xf0ece2)); wh.position.y = 34.5; g.add(wh);
+      for (const s of [1, -1]) {
+        const cl = new T.Mesh(new T.CylinderGeometry(4.2, 4.2, 0.6, 28), M.toon(0xf2f0e8)); cl.rotation.x = Math.PI / 2; cl.position.set(0, 41, 5.6 * s); g.add(cl);
+        const rim = new T.Mesh(new T.TorusGeometry(4.3, 0.35, 6, 28), M.toon(0xe6b23c)); rim.position.set(0, 41, 5.9 * s); g.add(rim);
+        const hh = new T.Mesh(M.box(0.35, 3.0, 0.2), M.toon(0x111111)); hh.position.set(0, 42.2, 6.05 * s); g.add(hh);
+        const mh = new T.Mesh(M.box(0.3, 2.2, 0.2), M.toon(0x111111)); mh.position.set(1.0, 40.6, 6.1 * s); mh.rotation.z = 1.1; g.add(mh);
+      }
+      const t2 = new T.Mesh(new T.BoxGeometry(9, 10, 9), red); t2.position.y = 53; g.add(t2);
+      const sp = new T.Mesh(new T.ConeGeometry(6.5, 26, 8), roofM); sp.position.y = 71; g.add(sp);
+      const st = new T.Mesh(M.star(2.4), new T.MeshBasicMaterial({ color: 0xff2a2a, side: T.DoubleSide })); st.position.y = 87; g.add(st);
+      const stg = M.glowSprite(0xff3030, 10); stg.position.y = 87; g.add(stg);
+      W.updaters.push((dt, t) => { st.rotation.y = t * 0.4; });
+      add(g);
+      addBox(-9, zW - 7, 9, zW + 7, 48, 'tower'); addBox(-4.5, zW - 4.5, 4.5, zW + 4.5, 80, 'spire');
+      W.special.tower = new T.Vector3(0, 0, zW);
+      W.special.plaza = new T.Vector3(0, 0, -175);
+    }
+
+    // ---------- материалы зданий ----------
+    for (const P of pal) {
+      if (!P.b.pos.length) continue;
+      const m = M.toonX(0xffffff, { map: P.tex.map });
+      if (P.tex.emap) { m.emissive = new T.Color(0xffffff); m.emissiveMap = P.tex.emap; m.emissiveIntensity = 0.9; }
+      const mesh = new T.Mesh(toGeo(P.b), m); mesh.castShadow = mesh.receiveShadow = true; add(mesh);
+      const roof = new T.Mesh(toGeo(P.top), M.toon(night ? 0x3a3c44 : 0x8a8d96)); roof.castShadow = roof.receiveShadow = true; add(roof);
+    }
+    if (shops.pos.length) {
+      const sm = new T.MeshToonMaterial({ vertexColors: true, gradientMap: M.grad });
+      if (night) { sm.emissive = new T.Color(0x3a2a10); }
+      add(new T.Mesh(toGeo(shops), sm));
+    }
+    // тротуары/кварталы
+    {
+      const im = new T.InstancedMesh(new T.BoxGeometry(1, 0.25, 1), new T.MeshToonMaterial({ color: 0xffffff, gradientMap: M.grad }), pave.length);
+      const col = new T.Color();
+      pave.forEach((p, i) => { mtx.makeScale(p[2], 1, p[3]); mtx.setPosition(p[0], 0.12, p[1]); im.setMatrixAt(i, mtx); im.setColorAt(i, col.setHex(p[4])); });
+      im.receiveShadow = true; add(im);
+    }
+    // деревья (инстансы + контур)
+    if (trees.length) {
+      const fg = new T.IcosahedronGeometry(2.0, 1), tg = new T.CylinderGeometry(0.3, 0.4, 3, 6);
+      const fol = new T.InstancedMesh(fg, M.toon(night ? 0x24502a : 0x3f8a3c), trees.length);
+      const folO = new T.InstancedMesh(fg, M.outlineMat, trees.length);
+      const tr = new T.InstancedMesh(tg, M.toon(0x6a4628), trees.length);
+      trees.forEach((t, i) => {
+        const s = t[2] * 1.1;
+        mtx.makeScale(s, s * 1.15, s); mtx.setPosition(t[0], 3 + 2.0 * s, t[1]); fol.setMatrixAt(i, mtx); folO.setMatrixAt(i, mtx);
+        mtx.makeScale(1, 1, 1); mtx.setPosition(t[0], 1.5 + 0.25, t[1]); tr.setMatrixAt(i, mtx);
+        addBox(t[0] - 0.4, t[1] - 0.4, t[0] + 0.4, t[1] + 0.4, 4, 'tree');
+      });
+      fol.castShadow = tr.castShadow = true;
+      add(fol); add(folO); add(tr);
+    }
+    // фонари
+    {
+      const pm = new T.InstancedMesh(new T.CylinderGeometry(0.12, 0.15, 7, 6), M.toon(0x3a3d44), lamps.length);
+      const hm = new T.InstancedMesh(new T.BoxGeometry(0.7, 0.25, 1.4), night ? new T.MeshBasicMaterial({ color: 0xffe6a0 }) : M.toon(0x3a3d44), lamps.length);
+      lamps.forEach((l, i) => { mtx.makeTranslation(l[0], 3.5, l[1]); pm.setMatrixAt(i, mtx); mtx.makeTranslation(l[0], 7, l[1]); hm.setMatrixAt(i, mtx); });
+      add(pm); add(hm);
+      if (night && S.data.details > 0) {
+        const gl = new T.InstancedMesh(new T.PlaneGeometry(1, 1), new T.MeshBasicMaterial({ map: M.glowTex(), color: 0xffcf80, transparent: true, opacity: 0.55, depthWrite: false, blending: T.AdditiveBlending }), lamps.length);
+        lamps.forEach((l, i) => { mtx.makeRotationX(-Math.PI / 2); mtx.scale(new T.Vector3(9, 9, 9)); mtx.setPosition(l[0], 0.3, l[1]); gl.setMatrixAt(i, mtx); });
+        add(gl);
+      }
+    }
+
+    // ---------- физика ----------
+    const stamp = { v: 0 };
+    W.query = function (x, z, r) {
+      const c = W.cell, out = [];
+      stamp.v++;
+      for (let i = Math.floor((x - r) / c); i <= Math.floor((x + r) / c); i++)
+        for (let j = Math.floor((z - r) / c); j <= Math.floor((z + r) / c); j++) {
+          const L = W.grid.get(i + ',' + j); if (!L) continue;
+          for (const b of L) { if (b._s === stamp.v) continue; b._s = stamp.v; out.push(b); }
+        }
+      return out;
+    };
+    // столкновение капсулы (pos — ступни) с коробками; возвращает высоту опоры или null
+    W.collide = function (pos, r, h, prevY) {
+      let ground = null;
+      for (const b of W.query(pos.x, pos.z, r + 1)) {
+        if (pos.y >= b.y1 - 0.05 || pos.y + h <= b.y0) {
+          if (pos.x > b.x0 - r * 0.5 && pos.x < b.x1 + r * 0.5 && pos.z > b.z0 - r * 0.5 && pos.z < b.z1 + r * 0.5 && pos.y >= b.y1 - 0.6 && pos.y <= b.y1 + 0.05) {
+            ground = Math.max(ground == null ? -1 : ground, b.y1);
+          }
+          continue;
+        }
+        const cx = U.clamp(pos.x, b.x0, b.x1), cz = U.clamp(pos.z, b.z0, b.z1);
+        let dx = pos.x - cx, dz = pos.z - cz; const d2 = dx * dx + dz * dz;
+        if (d2 >= r * r) continue;
+        if (prevY != null && prevY >= b.y1 - 0.6) { pos.y = b.y1; ground = b.y1; continue; }
+        if (d2 > 1e-6) {
+          const d = Math.sqrt(d2); pos.x = cx + (dx / d) * r; pos.z = cz + (dz / d) * r;
+        } else {
+          const pen = [pos.x - b.x0, b.x1 - pos.x, pos.z - b.z0, b.z1 - pos.z];
+          const m = Math.min(...pen), k = pen.indexOf(m);
+          if (k === 0) pos.x = b.x0 - r; else if (k === 1) pos.x = b.x1 + r; else if (k === 2) pos.z = b.z0 - r; else pos.z = b.z1 + r;
+        }
+      }
+      return ground;
+    };
+    // луч против коробок и земли
+    W.raycast = function (o, d, maxT) {
+      let best = maxT, nrm = null, box = null;
+      if (d.y < -1e-6) { const t = -o.y / d.y; if (t > 0 && t < best) { best = t; nrm = new T.Vector3(0, 1, 0); } }
+      for (const b of W.boxes) {
+        if (b.kind === 'tree') continue;
+        let tmin = 0, tmax = best, ax = -1, sgn = 0;
+        const lo = [b.x0, b.y0, b.z0], hi = [b.x1, b.y1, b.z1], oo = [o.x, o.y, o.z], dd = [d.x, d.y, d.z];
+        let ok = true;
+        for (let a = 0; a < 3; a++) {
+          if (Math.abs(dd[a]) < 1e-8) { if (oo[a] < lo[a] || oo[a] > hi[a]) { ok = false; break; } continue; }
+          let t1 = (lo[a] - oo[a]) / dd[a], t2 = (hi[a] - oo[a]) / dd[a], s = -1;
+          if (t1 > t2) { const tt = t1; t1 = t2; t2 = tt; s = 1; }
+          if (t1 > tmin) { tmin = t1; ax = a; sgn = s; }
+          if (t2 < tmax) tmax = t2;
+          if (tmin > tmax) { ok = false; break; }
+        }
+        if (ok && ax >= 0 && tmin < best) {
+          best = tmin; box = b;
+          nrm = new T.Vector3(ax === 0 ? sgn : 0, ax === 1 ? sgn : 0, ax === 2 ? sgn : 0);
+        }
+      }
+      return nrm ? { t: best, normal: nrm, box, point: o.clone().addScaledVector(d, best) } : null;
+    };
+    W.los = function (a, b) {
+      const d = b.clone().sub(a); const L = d.length(); d.divideScalar(L);
+      const h = W.raycast(a, d, L - 0.5);
+      return !h;
+    };
+    W.inside = function (x, y, z) {
+      for (const b of W.query(x, z, 0.5)) if (x > b.x0 && x < b.x1 && z > b.z0 && z < b.z1 && y > b.y0 && y < b.y1) return b;
+      return null;
+    };
+    W.randomSidewalk = () => U.pick(W.sidewalkPts).clone();
+    W.update = function (dt, t, focus) {
+      for (const c of W.clouds) { c.position.x += dt * 3; if (c.position.x > 650) c.position.x -= 1300; }
+      for (const f of W.updaters) f(dt, t);
+      if (focus) {
+        sun.position.copy(focus).add(W.sunOffset); sun.target.position.copy(focus);
+        sky.position.copy(focus);
+        if (W.stars) W.stars.position.copy(focus);
+      }
+    };
+    W.dispose = function () {
+      scene.remove(W.group);
+      W.group.traverse((o) => { if (o.geometry && !o.geometry._shared) o.geometry.dispose(); });
+      for (const P of pal) { P.tex.map.dispose(); if (P.tex.emap) P.tex.emap.dispose(); }
+    };
+    return W;
+  }
+
+  return { build, PITCH, ROAD, HALF };
+})();
