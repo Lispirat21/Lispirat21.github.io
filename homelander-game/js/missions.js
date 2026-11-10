@@ -360,7 +360,7 @@ HL.Missions = (function () {
         g.spawnCrowd();
         const path = [V(0, 0, -70), V(140, 0, -70), V(140, 0, 70), V(70, 0, 70), V(70, 0, 210), V(-140, 0, 210), V(-140, 0, 0), V(-210, 0, 0), V(-210, 0, -140), V(0, 0, -140), V(0, 0, -175)];
         v.path = path;
-        const at = g.spawn('atrain', 4, 20, { path: path.map((p) => p.clone()), speed: 58 }); at.yaw = Math.PI; v.at = at;
+        const at = g.spawn('atrain', 4, 20, { path: path.map((p) => p.clone()), speed: 48 }); at.yaw = Math.PI; v.at = at;
         v.ringPts = path.map((p, i) => V(p.x, i === path.length - 1 ? 40 : 14 + (i % 3) * 10, p.z));
       },
       steps: [
