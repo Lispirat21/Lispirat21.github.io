@@ -360,7 +360,7 @@ HL.Missions = (function () {
         g.spawnCrowd();
         const path = [V(0, 0, -70), V(140, 0, -70), V(140, 0, 70), V(70, 0, 70), V(70, 0, 210), V(-140, 0, 210), V(-140, 0, 0), V(-210, 0, 0), V(-210, 0, -140), V(0, 0, -140), V(0, 0, -175)];
         v.path = path;
-        const at = g.spawn('atrain', 4, 20, { path: path.map((p) => p.clone()), speed: 38 }); at.yaw = Math.PI; v.at = at;
+        const at = g.spawn('atrain', 4, 20, { path: path.map((p) => p.clone()), speed: 26 }); at.yaw = Math.PI; v.at = at;
         v.ringPts = path.map((p, i) => V(p.x, i === path.length - 1 ? 40 : 14 + (i % 3) * 10, p.z));
       },
       steps: [
@@ -378,7 +378,7 @@ HL.Missions = (function () {
           update(g, dt, v) {
             v.cd -= dt; const n = Math.ceil(v.cd);
             if (n !== v.last) { v.last = n; if (n > 0) { g.ui.caption(String(n), 0.9); HL.Audio.beep(); } }
-            if (v.cd <= 0) { g.controlsEnabled = true; g.ui.caption('МАРШ!', 0.8); HL.Audio.go(); v.at.running = true; return true; }
+            if (v.cd <= 0) { g.player.flying = true; g.player.vel.y = 8; g.controlsEnabled = true; g.ui.caption('МАРШ!', 0.8); HL.Audio.go(); v.at.running = true; return true; }
             return false;
           },
         },
@@ -387,14 +387,21 @@ HL.Missions = (function () {
           enter(g, v) { v.rings = v.ringPts.map((p) => g.addRing(p)); v.ri = 0; g.highlightRing(v.rings, 0); g.ui.hint('Shift (⚡) — суперскорость!', 3); },
           update(g, dt, v) {
             const r = v.rings[v.ri];
-            if (g.player.passed(r.position, 7.5)) {
+            if (g.player.passed(r.position, 9)) {
               g.removeRing(r); HL.Audio.objective(); v.ri++;
               if (v.ri >= v.rings.length) return true;
               g.highlightRing(v.rings, v.ri);
             }
             const atI = Math.min(v.at.i, v.path.length);
             // Эй-Трейн поддаётся: если он впереди — сбавляет, если отстал — чуть ускоряется
-            v.at.speed = atI > v.ri + 1 ? 22 : atI > v.ri ? 30 : 38;
+            v.at.speed = atI > v.ri ? 14 : 26;
+            if (atI >= v.path.length - 1 && v.ri < v.rings.length - 1) v.at.speed = 3; // ждёт у финиша, пока вы не догоните
+            // помощь в полёте: мягко доворачивает к следующему кольцу
+            const P = g.player, nr = v.rings[v.ri];
+            if (P.flying && nr) {
+              const to = nr.position.clone().sub(P.center); const d = to.length(); const sp = P.vel.length();
+              if (d < 160 && sp > 8) P.vel.lerp(to.normalize().multiplyScalar(sp), 1 - Math.exp(-2.5 * dt));
+            }
             g.ui.el.oText.textContent = `Кольца: ${v.ri}/${v.rings.length} · Эй-Трейн: ${atI}/${v.path.length}` + (atI > v.ri ? ' — ОН ВПЕРЕДИ!' : '');
             if (v.at.done) g.fail('Эй-Трейн пришёл первым. «Кто последний — тот лох».');
             return false;
