@@ -442,8 +442,12 @@ HL.Game = (function () {
     const p = b.dataset.p;
     if (p === 'resume') resume();
     else if (p === 'restart') { $('pause').classList.add('hidden'); restart(); }
-    else if (p === 'settings') HL.UI.openSettings();
-    else if (p === 'controls') HL.UI.openControls();
+    else if (p === 'settings' || p === 'controls') {
+      // окно паузы прячем, пока открыто окно настроек/управления, и возвращаем после закрытия
+      $('pause').classList.add('hidden');
+      const back = () => { if (g.state === 'paused') $('pause').classList.remove('hidden'); };
+      if (p === 'settings') HL.UI.openSettings(back); else HL.UI.openControls(back);
+    }
     else if (p === 'menu') { $('pause').classList.add('hidden'); toMenu(); }
   }));
   $('pauseBtn').addEventListener('click', (e) => { e.stopPropagation(); A.click(); pause(); });
