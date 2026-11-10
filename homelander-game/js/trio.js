@@ -239,7 +239,7 @@ HL.Trio = (function () {
           cam(g, h.pivot.clone().add(V(0.6, 1.4, 5.2)), h.pivot.clone().add(V(0, 1.2, 0)), 6);
           if (k >= 1) {
             A().slam(); A().punch(); g.fx.addShake(1.4); g.ui.flash(0.25); g.hitStop = 0.12;
-            g.fx.dust(P.pos, 20); g.fx.burst(P.pos.clone().setY(0.2), 22, { color: [0x7a5232, 0x5a3a22, 0xd8ccb0], speed: 9, size: 0.3, life: 1, g: -20, up: true });
+            g.fx.dust(P.pos, 7); g.fx.burst(P.pos.clone().setY(0.2), 22, { color: [0x7a5232, 0x5a3a22, 0xd8ccb0], speed: 9, size: 0.3, life: 1, g: -20, up: true });
             for (let i = 0; i < 5; i++) g.fx.scorch(P.pos.clone().add(V(U.rand(-0.9, 0.9), 0.08, U.rand(-0.9, 0.9))), V(0, 1, 0));
             go('pin');
           }
@@ -248,14 +248,16 @@ HL.Trio = (function () {
         case 'pin': { // прижимают лицом к полу
           if (h.T < dt * 1.5) {
             g.ui.flash(0.15);
-            P.place(c.x, 0, c.z + 0.5, Math.PI / 2); P.scriptPose = 'prone'; P.scriptOpt = { struggle: 0.3 }; P.scriptVel = V(0, 0, 0);
+            // лицом к камере: голова смотрит на +x, камеры стоят спереди
+            P.place(c.x, 0, c.z + 0.5, Math.PI / 2); P.scriptFace = Math.PI / 2; P.scriptPose = 'prone'; P.scriptOpt = { struggle: 0.3 }; P.scriptVel = V(0, 0, 0);
             const f = V(1, 0, 0), l = V(0, 0, -1);
-            sb.pos.copy(P.pos).addScaledVector(f, 0.55).setY(0.28); sb.yaw = Math.PI / 2;
-            b.pos.copy(P.pos).addScaledVector(f, 0.9).addScaledVector(l, 1.05); hu.pos.copy(P.pos).addScaledVector(f, 0.9).addScaledVector(l, -1.05);
-            b.face(P.pos.clone().addScaledVector(f, 0.9), 0); hu.face(P.pos.clone().addScaledVector(f, 0.9), 0);
-            sb.think = function () { this.anim = 'sit'; this.animOpt = {}; this.vel.set(0, 0, 0); };
-            b.think = hu.think = function () { this.anim = 'charge'; this.animOpt = { lash: false }; this.vel.set(0, 0, 0); };
-            cut(g, c.clone().add(V(3.2, 2.6, 4.2)), P.center.add(V(0.6, -0.6, 0)));
+            h.head = P.pos.clone().addScaledVector(f, 0.95).setY(0.35);
+            sb.pos.copy(P.pos).addScaledVector(f, -0.1).setY(-0.15); sb.yaw = Math.PI / 2; // навис на коленях над поясницей
+            b.pos.copy(P.pos).addScaledVector(f, 0.45).addScaledVector(l, 1.0).setY(-0.38); hu.pos.copy(P.pos).addScaledVector(f, 0.45).addScaledVector(l, -1.0).setY(-0.38);
+            b.face(P.pos.clone().addScaledVector(f, 0.45), 0); hu.face(P.pos.clone().addScaledVector(f, 0.45), 0);
+            sb.think = function () { this.anim = 'charge'; this.animOpt = {}; this.vel.set(0, 0, 0); };
+            b.think = hu.think = function () { this.anim = 'charge'; this.animOpt = { lash: false }; this.vel.set(0, 0, 0); }; // присели и давят на руки
+            cut(g, h.head.clone().add(V(4.2, 1.6, 2.6)), h.head.clone().add(V(-0.4, 0, 0)));
             g.ui.say([['but', 'Держи его, Хьюи! ДЕРЖИ!', 1.8]]);
           }
           if (h.T > 1.4) {
@@ -276,14 +278,14 @@ HL.Trio = (function () {
           const chest = V(); sb.chestGlow.getWorldPosition(chest);
           g.fx.flashLight(chest, 0xffa040, 1 + k * 6, 0.06, 10 + k * 10);
           if (Math.random() < 0.3 + k) g.fx.burst(chest, 1, { color: [0xffd080, 0xffa040], speed: 3, size: 0.2, life: 0.4, g: 0 });
-          P.scriptOpt = { struggle: 0.3 + k * 1.4 }; P.scriptGlow = k > 0.35;
+          P.scriptOpt = { struggle: 0.3 + k * 1.4 }; P.scriptGlow = k > 0.35; P.scriptFace = Math.PI / 2;
           P.pos.x = c.x + Math.sin(g.time * 23) * 0.05 * k; g.fx.addShake(0.05 + k * 0.2 * dt * 10);
           h.hb -= dt; if (h.hb <= 0) { h.hb = 0.9 - k * 0.6; A().heartbeat(0.4 + k * 0.5); }
           // кадры: лицо у пола → общий → Солдатик
           const shot = Math.floor(h.T / 2.4) % 3;
-          if (shot === 0) cam(g, P.center.add(V(3.6, -0.55, 0)), P.center.add(V(0.8, -0.85, 0)), 4);
-          else if (shot === 1) cam(g, c.clone().add(V(3.6, 3.2, 4.6)), P.center.add(V(0.5, -0.4, 0)), 3);
-          else cam(g, chest.clone().add(V(1.6, 0.6, 1.4)), chest, 4);
+          if (shot === 0) cam(g, h.head.clone().add(V(2.3, 0.35, 0.25)), h.head.clone().add(V(0, 0.05, 0)), 4); // крупно лицо у пола
+          else if (shot === 1) cam(g, h.head.clone().add(V(4.4, 2.0, 3.2)), h.head.clone().add(V(-0.6, -0.1, 0)), 3);
+          else cam(g, chest.clone().add(V(2.4, 0.3, 0.6)), chest.clone().lerp(h.head, 0.5), 4);
           if (k >= 1) { // РЫК
             go('roar'); A().roar(); A().stinger(); g.ui.flash(0.6); g.fx.addShake(1.5); g.hitStop = 0.15;
             sb.chestGlow.visible = false; P.scriptGlow = true;
@@ -347,8 +349,162 @@ HL.Trio = (function () {
     },
   };
 
+
+  // ---------- 7. Хоумлендер выслеживает Хьюи ----------
+  const HUGHIE = V(-70, 0, 38);
+  const findHughieStep = {
+    text: 'Найдите Хьюи',
+    enter(g, v) {
+      const P = g.player;
+      for (const a of [v.sb, v.b, v.hu]) hide(a);
+      g.cinema(null); g.noDeath = false; g.slowmo = false;
+      P.scriptPose = null; P.scriptOpt = null; P.scriptVel = null; P.scriptFace = null; P.noClip = false; P.scriptGlow = false;
+      P.place(HUGHIE.x + 60, 70, HUGHIE.z - 90, -0.6); P.flying = true;
+      g.camYaw = Math.atan2(HUGHIE.x - P.pos.x, HUGHIE.z - P.pos.z); g.camPitch = 0.25;
+      const hu = g.spawn('hughieV', HUGHIE.x, HUGHIE.z, {}); v.h2 = hu; hu.invuln = true; hu.boss = false;
+      hu.think = function (dt) { this.stop(dt); this.anim = 'scared'; this.animOpt = {}; this.face(g.player.pos, dt, 3); };
+      g.ui.say([['hl', 'Сначала — Хьюи. Он всегда был самым слабым звеном.', 2.6]]);
+      g.ui.hint('Хьюи прячется в городе. Летите к маркеру', 3.5);
+      g.music('calm');
+    },
+    update(g, dt, v) { return g.player.pos.distanceTo(v.h2.pos) < 18; },
+    wp: (g, v) => v.h2 && v.h2.center,
+  };
+
+  // ---------- 8. Замедленная съёмка: лазеры к лицу Хьюи… Эй-Трейн отталкивает его ----------
+  const slowStep = {
+    text: '…',
+    enter(g, v) {
+      const P = g.player, hu = v.h2;
+      const dir = V(1, 0, 0.35).normalize();
+      P.place(hu.pos.x + dir.x * 6.5, 0, hu.pos.z + dir.z * 6.5, 0); P.flying = false; P.scriptVel = null;
+      P.scriptFace = Math.atan2(hu.pos.x - P.pos.x, hu.pos.z - P.pos.z);
+      hu.yaw = Math.atan2(P.pos.x - hu.pos.x, P.pos.z - hu.pos.z);
+      hu.think = function (dt) { this.vel.set(0, this.vel.y, 0); this.anim = 'scared'; this.animOpt = {}; };
+      g.cinema(P.center, hu.center); g.music(null);
+      v.s = { ev: 0, T: 0 };
+      cut(g, ots(hu, P, 1).pos, P.center.add(V(0, 0.4, 0)));
+      chain(g, v, [
+        ['hl', 'Хьюи. Маленький, жалкий Хьюи.', 2.2],
+        ['hu', 'Н-не надо… пожалуйста…', 1.8],
+        ['hl', 'Тсс. Это будет быстро.', 1.6],
+      ], [() => ots(hu, P, 1), () => ots(P, hu, -1), () => ots(hu, P, 1)], () => { v.s.ev = 1; v.s.T = 0; });
+    },
+    update(g, dt, v) {
+      const s = v.s, P = g.player, hu = v.h2;
+      s.T += dt;
+      const face = hu.center.add(V(0, 0.38, 0));
+      const side = V(-(face.z - P.pos.z), 0, face.x - P.pos.x).normalize();
+      if (s.ev === 0 && v.shot) cam(g, v.shot.pos, v.shot.look, 5);
+      if (s.ev === 1) { // глаза загораются
+        P.scriptGlow = true;
+        if (s.T < dt * 1.5) A().charge(0.9);
+        cam(g, P.center.add(V(0, 0.55, 0)).addScaledVector(face.clone().sub(P.center).normalize(), 1.4).addScaledVector(side, 0.5), P.center.add(V(0, 0.6, 0)), 5);
+        if (s.T > 0.9) { s.ev = 2; s.T = 0; g.slowmo = true; A().stinger(); A().heartbeat(0.8); s.e0 = P.eyePos(0); s.e1 = P.eyePos(1); }
+      } else if (s.ev === 2) { // замедленная съёмка (s.T здесь «медленное» время)
+        const k = Math.min(1, s.T / 0.75);
+        const tip0 = s.e0.clone().lerp(face, k), tip1 = s.e1.clone().lerp(face, k);
+        g.fx.setBeam(0, s.e0, tip0, 1.3); g.fx.setBeam(1, s.e1, tip1, 1.3);
+        // камера у лица Хьюи: лучи медленно летят прямо на него
+        const toHL = P.pos.clone().sub(hu.pos).setY(0).normalize();
+        cam(g, face.clone().addScaledVector(side, 2.3).addScaledVector(toHL, 0.9).add(V(0, 0.1, 0)), face.clone().addScaledVector(toHL, 1.3), 3); // профиль: лицо Хьюи и летящие к нему лучи
+        g.fx.laserLight.position.copy(tip0.clone().lerp(tip1, 0.5)); g.fx.laserLight.intensity = 3.5;
+        if (!v.at && k > 0.35) { // Эй-Трейн несётся сбоку
+          const at = g.spawn('atrainNPC', hu.pos.x - side.x * 30, hu.pos.z - side.z * 30, {}); v.at = at; at.noPhysics = true; at.invuln = true;
+          at.think = function () { this.vel.set(0, 0, 0); };
+          s.atFrom = at.pos.clone();
+        }
+        if (v.at && !s.pushed) {
+          const kk = Math.min(1, (k - 0.35) / 0.45);
+          v.at.pos.lerpVectors(s.atFrom, hu.pos.clone().addScaledVector(side, -0.5), kk); v.at.pos.y = 0;
+          v.at.face(hu.pos, 0); v.at.anim = 'run'; v.at.moveSpeed = 9;
+          if (Math.random() < 0.9) g.fx.burst(v.at.center, 1, { color: [0x3a7aff, 0x9ac0ff, 0xffffff], speed: 1, size: 0.35, life: 0.5, g: 0, drag: 2 });
+          if (kk >= 1) { // аккуратно отталкивает Хьюи — и подставляет своё плечо
+            s.pushed = true; A().whoosh();
+            hu.noPhysics = false; hu.vel.copy(side).multiplyScalar(5).setY(3); hu.airborne = true; hu.spin = 4; hu.downT = 1.6;
+            v.at.pos.copy(hu.pos).addScaledVector(side, -0.15); v.at.pos.y = 0; v.at.anim = 'idle';
+          }
+        }
+        if (k >= 1) { // лазеры задевают плечо Эй-Трейна; время снова нормальное
+          s.ev = 3; s.T = 0; g.slowmo = false; g.fx.laserLight.intensity = 0;
+          const sh = v.at.center.add(V(0, 0.45, 0)).addScaledVector(side, 0.25);
+          g.fx.sparks(sh, 0xffb0a0, 16); g.fx.burst(sh, 12, { color: [0xb01818, 0x7a0e0e], speed: 6, size: 0.15, life: 0.5, g: -16 });
+          A().hurt(); A().punch(); g.fx.addShake(0.5); g.ui.flash(0.15);
+          v.at.anim = 'scared';
+          g.fx.setBeam(0, P.eyePos(0), sh, 1.3); g.fx.setBeam(1, P.eyePos(1), sh, 1.3);
+        }
+      } else if (s.ev === 3) { // Хоумлендер оборачивается к Эй-Трейну
+        if (s.T > 0.3 && !s.off) { s.off = true; g.fx.setBeam(0, null); g.fx.setBeam(1, null); P.scriptGlow = false; }
+        P.scriptFace = Math.atan2(v.at.pos.x - P.pos.x, v.at.pos.z - P.pos.z);
+        v.at.anim = s.T < 1.2 ? 'scared' : 'idle'; v.at.face(P.pos, 0);
+        cam(g, ots(v.at, P, -1).pos, P.center.add(V(0, 0.4, 0)), 3);
+        if (!s.talk) {
+          s.talk = true;
+          chain(g, v, [
+            ['at', 'А-а-а! Плечо! …Хьюи, беги!', 1.8],
+            ['hl', 'Эй-Трейн. Ты только что выбрал не ту сторону.', 2.4],
+            ['at', 'Ох… чёрт.', 1.2],
+          ], [() => ots(P, v.at, 1), () => ots(v.at, P, -1), () => ots(P, v.at, 1)], () => { s.done = true; });
+        }
+        if (v.shot && s.T > 0.6) cam(g, v.shot.pos, v.shot.look, 5);
+        if (s.done) return true;
+      }
+      return false;
+    },
+    exit(g, v) {
+      g.slowmo = false; g.fx.setBeam(0, null); g.fx.setBeam(1, null); A().setLaser(false);
+      const P = g.player; P.scriptGlow = false; P.scriptFace = null;
+      if (v.h2) { const hu = v.h2; setTimeout(() => hide(hu), 2500); hu.think = function (dt) { this.moveToward(V(HUGHIE.x - 40, 0, HUGHIE.z), 9, dt); this.anim = 'run'; this.moveSpeed = 9; }; }
+      g.camYaw = P.yaw; g.camPitch = 0.15;
+      g.cinema(null);
+    },
+  };
+
+  // ---------- 9. Погоня: догнать и уничтожить Эй-Трейна ----------
+  const chaseStep = {
+    text: 'Догоните Эй-Трейна',
+    enter(g, v) {
+      const at = v.at, P = g.player;
+      at.faction = 'enemy'; at.invuln = false; at.hp = at.maxHp = 1000; at.boss = true; at.noPhysics = true; at.keepBody = true; at.knockMul = 0;
+      at.node = V(Math.round(at.pos.x / 70) * 70, 0, Math.round(at.pos.z / 70) * 70); at.prev = null;
+      at.think = function (dt) {
+        const d = this.pos.distanceTo(P.pos);
+        // бежит по дорогам от перекрёстка к перекрёстку
+        let tgt = this.node, to = V(tgt.x - this.pos.x, 0, tgt.z - this.pos.z), L = to.length();
+        if (L < 1.5) {
+          const opts = [[70, 0], [-70, 0], [0, 70], [0, -70]].map(([dx, dz]) => V(tgt.x + dx, 0, tgt.z + dz))
+            .filter((n) => Math.abs(n.x) <= 210 && Math.abs(n.z) <= 210 && !(this.prev && n.distanceTo(this.prev) < 1));
+          // убегает подальше от Хоумлендера
+          opts.sort((a, b) => b.distanceTo(P.pos) - a.distanceTo(P.pos));
+          this.prev = tgt.clone(); this.node = (Math.random() < 0.7 ? opts[0] : U.pick(opts)).clone();
+          tgt = this.node; to.set(tgt.x - this.pos.x, 0, tgt.z - this.pos.z); L = to.length();
+        }
+        const sp = this.hurtT > 0 ? 20 : d < 30 ? 50 : 44; // Хоумлендер с ускорением (Shift) догоняет
+        this.hurtT = (this.hurtT || 0) - dt;
+        to.multiplyScalar(Math.min(L, sp * dt) / Math.max(L, 1e-4));
+        this.pos.add(to); this.pos.y = 0; this.vel.set(to.x / dt, 0, to.z / dt);
+        this.face(tgt, dt, 15); this.anim = 'run'; this.moveSpeed = 9;
+        if (Math.random() < 0.9) g.fx.burst(this.center, 1, { color: [0x3a7aff, 0x9ac0ff, 0xffffff], speed: 1, size: 0.35, life: 0.5, g: 0, drag: 2 });
+      };
+      at.onHurt = function () { this.hurtT = 0.6; };
+      g.music('boss');
+      g.ui.tag('ДОГОНИТЕ ЭЙ-ТРЕЙНА!', '#6aa0ff', 2);
+      g.ui.hint('Летите с ускорением (Shift / кнопка ускорения) и бейте или жгите лазером', 4);
+    },
+    update(g, dt, v) {
+      const at = v.at, P = g.player;
+      g.ui.boss('Эй-Трейн', at.hp / at.maxHp);
+      if (g.ui.el && g.ui.el.oText) g.ui.el.oText.textContent = 'Догоните и уничтожьте Эй-Трейна: ' + Math.round(at.pos.distanceTo(P.pos)) + ' м';
+      if (!at.alive && !v.atDead) { v.atDead = true; v.atT = 0; g.ui.boss(null); g.ui.say([['hl', 'Самый быстрый человек на свете. Был.', 2.4]]); g.music(null); }
+      if (v.atDead) { v.atT += dt; return v.atT > 3; }
+      return false;
+    },
+    wp: (g, v) => v.at && v.at.alive && v.at.center,
+    exit(g) { g.ui.boss(null); },
+  };
+
   const mission = {
-    id: 'trio', title: 'Трое против одного', desc: 'Ночью Бутчер находит Солдатика и предлагает сделку. К ним присоединяется Хьюи на Темп-V.',
+    id: 'trio', title: 'Трое против одного', desc: 'Ночью Бутчер находит Солдатика и предлагает сделку. К ним присоединяется Хьюи на Темп-V. А потом — охота.',
     time: 'night', location: 'НЬЮ-ЙОРК · 02:14', start: [-160, 0, -120, 0], music: null,
     setup(g, v) {
       v.house = g.world.buildHouse(HOUSE.x, HOUSE.z);
@@ -359,7 +515,7 @@ HL.Trio = (function () {
       v.fire = V(MEET.x + 1.5, 1.05, MEET.z + 1.1);
       g.missionUpdate = () => { if (Math.random() < 0.6) g.fx.burst(v.fire.clone().add(V(U.rand(-0.2, 0.2), 0, U.rand(-0.2, 0.2))), 1, { color: [0xffd040, 0xff8020, 0xff4010], speed: 1, size: 0.3, life: 0.6, g: 4, drag: 0.8, grow: -0.6, up: true }); fl.intensity = 2 + Math.random() * 0.5; };
     },
-    steps: [meetStep, flyStep, sbStep, butStep, trioStep, houseStep],
+    steps: [meetStep, flyStep, sbStep, butStep, trioStep, houseStep, findHughieStep, slowStep, chaseStep],
   };
 
   return { mission };

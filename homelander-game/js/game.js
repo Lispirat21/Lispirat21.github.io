@@ -88,6 +88,7 @@ HL.Game = (function () {
       case 'hughieV': a = new AC.HughieV(g, o); break;
       case 'butcher': a = new AC.Actor(g, D.butcher, Object.assign({ faction: 'ally', hp: 1e9 }, o)); break;
       case 'atrain': a = new AC.Runner(g, o.path, o); break;
+      case 'atrainNPC': a = new AC.Actor(g, D.atrain, Object.assign({ faction: 'prop', hp: 1e9, name: 'Эй-Трейн' }, o)); break;
       case 'van': case 'police': case 'ambulance': case 'car': case 'taxi':
         a = new AC.Vehicle(g, kind, Object.assign({ hp: kind === 'van' ? 900 : kind === 'ambulance' ? 1e9 : 140, faction: 'vehicle' }, o));
         if (kind === 'ambulance') a.invuln = true;
@@ -336,7 +337,7 @@ HL.Game = (function () {
     const st = def.start;
     g.player.place(st[0], st[1], st[2], st[3]);
     g.camYaw = st[3]; g.camPitch = 0.18;
-    g.cinema(null); g.noDeath = false;
+    g.cinema(null); g.noDeath = false; g.slowmo = false;
     if (def.rain) rain = makeRain();
     mission = { def, idx, si: -1, v: {}, timer: null, t0: 0 };
     def.setup && def.setup(g, mission.v);
@@ -544,6 +545,8 @@ HL.Game = (function () {
     } else if (scene) {
       let dt = rdt;
       if (g.hitStop > 0) { g.hitStop -= rdt; dt *= 0.2; }
+      if (g.slowmo) dt *= 0.14; // замедленная съёмка
+      document.body.classList.toggle('slowmo', !!g.slowmo);
       if (g.state === 'play') step(dt);
       else if (g.state === 'result' && g.player) { // мир живёт на фоне результатов
         for (const a of g.actors) if (!a.removed) a.update(dt * 0.5);

@@ -244,3 +244,6 @@ body.touch #dialog .txt{font-size:12px}
 #tbtns{transform:scale(var(--ui));transform-origin:bottom right}
 #statcard{left:max(12px,env(safe-area-inset-left));top:max(96px,calc(env(safe-area-inset-top) + 86px));transform:scale(var(--ui));transform-origin:top left;width:min(44vw,380px)}
 @keyframes popin{from{transform:scale(calc(var(--ui) * .6));opacity:0}}
+
+/* замедленная съёмка */
+body.slowmo #c{filter:saturate(.4) contrast(1.18) brightness(.92) sepia(.15)}
