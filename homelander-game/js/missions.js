@@ -99,7 +99,7 @@ HL.Missions = (function () {
           A().punch(); A().slam(); g.fx.addShake(1.3); g.fx.ring(b.center, 0xffffff, 5, 0.4); g.ui.flash(0.35);
           g.fx.burst(b.center, 14, { color: [0xb01818, 0x7a0e0e, 0xffffff], speed: 12, size: 0.2, life: 0.5, g: -16 });
           const dir = b.pos.clone().sub(P.pos).setY(0).normalize();
-          b.invuln = false; b.damage(220, P); b.invuln = true;
+          b.invuln = false; HL.Finale.cineHit(g, () => b.damage(220, P)); b.invuln = true;
           b.vel.copy(dir.multiplyScalar(18)).setY(6); b.airborne = true; b.spin = 9; b.downT = 6;
         }
       } else if (cs.ev === 1) { // Бутчер летит и падает; Хоумлендер идёт к нему
@@ -115,7 +115,7 @@ HL.Missions = (function () {
         const k = Math.floor(cs.T / 0.42);
         P.scriptPose = (cs.T % 0.42) < 0.2 ? 'punch' : null;
         if (k > cs.n && cs.n < 3) {
-          cs.n++; b.invuln = false; b.damage(110, P); b.invuln = true; b.downT = 3;
+          cs.n++; b.invuln = false; HL.Finale.cineHit(g, () => b.damage(110, P)); b.invuln = true; b.downT = 3;
           A().punch(); g.fx.addShake(0.8); g.hitStop = 0.06;
           g.fx.burst(b.center.setY(0.4), 10, { color: [0xb01818, 0x7a0e0e], speed: 8, size: 0.18, life: 0.5, g: -16 });
           g.fx.ring(b.pos.clone().setY(0.3), 0xffffff, 3, 0.25);
@@ -153,7 +153,7 @@ HL.Missions = (function () {
         cs.slams++;
         A().slam(); A().punch(); g.fx.addShake(1.4); g.fx.dust(P.pos, 8); g.fx.ring(P.pos.clone().setY(0.2), 0xffffff, 7, 0.45); g.ui.flash(0.25); g.hitStop = 0.1;
         g.fx.burst(P.pos.clone().setY(0.3), 18, { color: [0xd8ccb0, 0x8a7a60, 0x6a5a40], speed: 12, size: 0.35, life: 1, g: -20, up: true });
-        g.hurtPlayer(Math.max(0, Math.min(110, P.hp - 80)), b.pos, { silent: false });
+        HL.Finale.cineHit(g, () => g.hurtPlayer(Math.max(0, Math.min(110, P.hp - 80)), b.pos, { silent: false }));
         if (cs.slams < 2) { cs.ev = 3; cs.T = 0; }
         else { cs.ev = 4; cs.T = 0; g.ui.say([['but', 'Это за Бекку, ублюдок!', 2.2]]); }
       }
@@ -716,6 +716,7 @@ HL.Missions = (function () {
               for (let i = 0; i < 25; i++) g.fx.burst(ep, 1, { color: [0xf1e7c6, 0xd8ccb0, 0x8a7a60], speed: 18, size: 0.5, life: 1.6, g: -22, drag: 0.5, dir: V(-1, 0.3, 0), spread: 0.8 });
               g.alarm(bp, 60);
               g.ui.caption('БУМ.', 0.6);
+              v.liveCam = HL.Finale.makeLiveCam(g, O); // камера репортёра падает на пол — и продолжает снимать
               P.scriptPose = null; P.scriptFace = Math.PI / 2;
               v.cam = { pos: V(-6, 2.2, O.center.z + 3), look: bp.clone().setY(1.6) };
               v.ev = 2; v.T = 0;
@@ -737,7 +738,7 @@ HL.Missions = (function () {
               // заходят Райан и Кимико
               const cor = O.corridor();
               const k = g.spawn('kimiko', cor.x, cor.z - 1.2, {}); const r = g.spawn('ryan', cor.x, cor.z + 1.2, {});
-              for (const a of [k, r]) { a._think = a.think; a.invuln = true; a.noPhysics = true; }
+              for (const a of [k, r]) { a._think = a.think; a.invuln = true; a.noPhysics = true; a.keepBody = true; }
               k.think = v.walk(V(O.center.x + 8.6, 0, O.center.z - 2.2), 2.6); r.think = v.walk(V(O.center.x + 8.6, 0, O.center.z + 2.2), 2.6);
               v.k = k; v.r = r;
               v.cam = { pos: V(O.center.x + 1.5, 2.1, O.center.z + 5), look: V(O.center.x + 9, 1.5, O.center.z) };
@@ -805,11 +806,12 @@ HL.Missions = (function () {
         },
         {
           text: 'Победите Кимико',
-          enter(g, v) { const k = v.k; k.think = k._think; k.invuln = false; g.spawnGroup('f1', 'agent', V(v.O.center.x + 11, 0, v.O.center.z), 3, { spread: 4, weapon: 'rifle', hp: 80 }); },
+          enter(g, v) { const k = v.k; k.think = k._think; k.invuln = false; },
           update(g, dt, v) { g.ui.boss('Кимико', v.k.hp / v.k.maxHp); return !v.k.alive; },
           wp: (g, v) => v.k.alive && v.k.center,
           exit(g) { g.ui.boss(null); },
         },
+        HL.Finale.armyStep,
         {
           text: 'Райан',
           enter(g, v) {
@@ -834,8 +836,8 @@ HL.Missions = (function () {
             g.ui.boss('Билли Бутчер (Темп-V)', f);
             if (b.alive && f < 0.7 && !v.cs1) { v.cs1 = true; butcherCine(g, v, 'rush'); return false; }
             if (b.alive && f < 0.42 && !v.cs2) { v.cs2 = true; butcherCine(g, v, 'slam'); return false; }
-            if (f < 0.66 && !v.summon[0]) { v.summon[0] = true; g.spawnGroup('adds', 'agent', b.pos, 4, { spread: 5, weapon: 'antisupe', hp: 80 }); g.ui.say([['but', 'Парни! Через пролом! Огонь по нему!']]); }
-            if (f < 0.33 && !v.summon[1]) { v.summon[1] = true; g.spawnGroup('adds', 'agent', b.pos, 4, { spread: 5, weapon: 'rifle', hp: 80 }); g.ui.say([['but', 'Я тебя не отпущу, слышишь?! Никогда!']]); }
+            if (f < 0.66 && !v.summon[0]) { v.summon[0] = true; g.ui.say([['but', 'Ты всего лишь пацан в плаще, которого никто не любил!', 2.4]]); }
+            if (f < 0.33 && !v.summon[1]) { v.summon[1] = true; g.ui.say([['but', 'Я тебя не отпущу, слышишь?! Никогда!', 2.2]]); }
             return !b.alive;
           },
           wp: (g, v) => v.b.alive && v.b.center,
@@ -855,6 +857,7 @@ HL.Missions = (function () {
           update: (g, dt, v) => v.done,
           exit(g, v) { g.ending = v.ending; },
         },
+        HL.Finale.endingStep,
       ],
     },
   ];

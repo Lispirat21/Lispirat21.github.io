@@ -35,6 +35,7 @@ HL.Player = (function () {
     stun(t) { this.stunT = Math.max(this.stunT, t); }
     hurt(dmg, from, o = {}) {
       if (this.dead || this.g.godMode) return;
+      if (this.g.cinematic && !this.g.cineHit) return; // в кат-сценах урона нет
       let mul = this.rageT > 0 ? 0.35 : 1;
       if (this.depowerT > 0) mul *= 1.6;
       mul *= this.g.diffMul || 1;
@@ -250,6 +251,7 @@ HL.Player = (function () {
       else if (hs > 0.6) mode = hs > 6 ? 'run' : 'walk';
       else if (this.poseT > 0 || this.idleT > 4) mode = 'akimbo';
       if (this.lasering) opt.headPitch = (this.flying && mode === 'fly' ? 0 : U.clamp(pitch - 0.2, -0.6, 0.8));
+      if (this.scriptHead != null) opt.headPitch = this.scriptHead;
       // плащ
       if (mode === 'fly') { this.c.capeAng = 0.12; this.c.capeAmp = 0.2 + Math.min(0.3, this.vel.length() * 0.004); }
       else if (mode === 'hover') { this.c.capeAng = 0.1; this.c.capeAmp = 0.1; }

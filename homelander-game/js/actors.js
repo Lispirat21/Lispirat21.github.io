@@ -33,6 +33,7 @@ HL.Actors = (function () {
     dist2D(p) { return U.dist2D(this.pos, p); }
     damage(amount, src, knock) {
       if (!this.alive || this.invuln) return 0;
+      if (this.g.cinematic && !this.g.cineHit) return 0; // в кат-сценах урона нет
       amount *= this.dmgMul;
       this.hp -= amount;
       this.lastHurt = this.g.time; this.lastHurtBy = src;
@@ -357,9 +358,9 @@ HL.Actors = (function () {
   // ================= Солдатик (босс) =================
   class SoldierBoy extends Actor {
     constructor(g, o = {}) {
-      super(g, M.DEFS.soldierboy, Object.assign({ hp: 3200, faction: 'enemy', name: 'Солдатик', radius: 0.55 }, o));
-      this.boss = true; this.st = 'chase'; this.stT = 0; this.throwCd = 3; this.blastCd = 8; this.meleeCd = 0; this.hasShield = true; this.knockMul = 0.25;
-      this.dmgMul = 0.6;
+      super(g, M.DEFS.soldierboy, Object.assign({ hp: 5400, faction: 'enemy', name: 'Солдатик', radius: 0.55 }, o));
+      this.boss = true; this.st = 'chase'; this.stT = 0; this.throwCd = 2.5; this.blastCd = 7; this.meleeCd = 0; this.hasShield = true; this.knockMul = 0.08; this.leapCd = 3; this.combo = 0;
+      this.dmgMul = 0.45;
       this.chestGlow = M.glowSprite(0xffa040, 0.5); this.chestGlow.position.set(0, 0.5, 0.3); this.c.spine.add(this.chestGlow); this.chestGlow.visible = false;
       this.aim = V(0, 0, 1);
     }
@@ -367,25 +368,39 @@ HL.Actors = (function () {
     think(dt) {
       const g = this.g, P = g.player, pc = P.center.clone();
       const phase2 = this.hp < this.maxHp * 0.5;
-      this.throwCd -= dt; this.blastCd -= dt; this.meleeCd -= dt; this.stT -= dt;
+      this.throwCd -= dt; this.blastCd -= dt; this.meleeCd -= dt; this.leapCd -= dt; this.stT -= dt;
       const d = this.dist2D(P.pos), dy = P.pos.y - this.pos.y;
-      this.dmgMul = this.st === 'recover' ? 1.8 : 0.6;
+      this.dmgMul = this.st === 'recover' ? 1.5 : 0.45; // второй по силе после Хоумлендера
       this.animOpt = {};
       switch (this.st) {
         case 'chase': {
           this.face(P.pos, dt, 6);
-          const sp = phase2 ? 12 : 9;
+          const sp = phase2 ? 17 : 13.5;
           if (d > 2.6) { this.moveToward(P.pos, sp, dt, 6); this.anim = 'run'; this.moveSpeed = sp; } else { this.stop(dt); this.anim = 'idle'; }
-          if (d < 9 && dy > 2 && dy < 9 && !this.inAir) this.vel.y = 15;
-          if (d < 3.2 && Math.abs(dy) < 2.5 && this.meleeCd <= 0) { this.setSt('melee', 0.45); this.hit = false; }
+          if (d < 9 && dy > 2 && dy < 9 && !this.inAir) this.vel.y = 17;
+          // суперпрыжок: достаёт Хоумлендера даже в воздухе
+          if (this.leapCd <= 0 && !this.inAir && dy > 4 && dy < 40 && d < 45) {
+            this.leapCd = phase2 ? 3.5 : 5; A().whoosh(); g.fx.dust(this.pos, 14); g.fx.ring(this.pos, 0xffffff, 6, 0.35);
+            const T2 = 0.9, to = pc.clone().add(P.vel.clone().multiplyScalar(0.5));
+            this.vel.set((to.x - this.pos.x) / T2, (to.y - this.pos.y) / T2 + 14 * T2, (to.z - this.pos.z) / T2); this.leapHit = false;
+            g.ui.tag('СОЛДАТИК ПРЫГАЕТ!', '#ffb050', 0.8);
+          }
+          if (this.inAir && this.leapHit === false && this.center.distanceTo(pc) < 2.6) {
+            this.leapHit = true; A().punch(); g.fx.addShake(0.8); g.fx.ring(pc, 0xffffff, 4, 0.3);
+            g.hurtPlayer(phase2 ? 200 : 160, this.pos, { knock: 26, down: true });
+          }
+          if (d < 3.4 && Math.abs(dy) < 2.5 && this.meleeCd <= 0) { this.setSt('melee', 0.4); this.hit = false; }
           else if (this.blastCd <= 0 && d < 80) { this.setSt('charge', phase2 ? 1.4 : 1.9); g.ui.tag('ЗАРЯД ИЗ ГРУДИ! УКРОЙСЯ ЗА ЗДАНИЕМ', '#ffb050', this.stT); A().charge(this.stT); this.chestGlow.visible = true; }
           else if (this.hasShield && this.throwCd <= 0 && (d > 7 || dy > 4)) { this.setSt('throw', 0.6); this.thrown = false; }
           break;
         }
         case 'melee':
           this.face(P.pos, dt, 10); this.stop(dt); this.anim = 'punch'; this.animOpt = { p: 1 - this.stT / 0.45 };
-          if (!this.hit && this.stT < 0.25) { this.hit = true; A().punch(); if (d < 3.6 && Math.abs(dy) < 2.5) g.hurtPlayer(phase2 ? 150 : 120, this.pos, { knock: 22, down: Math.random() < 0.6 }); }
-          if (this.stT <= 0) { this.meleeCd = phase2 ? 0.6 : 1.0; this.setSt('chase'); }
+          if (!this.hit && this.stT < 0.22) {
+            this.hit = true; A().punch(); this.combo++;
+            if (d < 3.8 && Math.abs(dy) < 2.5) { g.hurtPlayer(phase2 ? 230 : 185, this.pos, { knock: 26, down: this.combo % 2 === 0 || Math.random() < 0.5 }); g.fx.addShake(0.6); g.fx.ring(pc, 0xffd080, 3, 0.25); }
+          }
+          if (this.stT <= 0) { this.meleeCd = this.combo % 3 ? 0.15 : (phase2 ? 0.5 : 0.8); this.setSt('chase'); }
           break;
         case 'throw':
           this.face(P.pos, dt, 10); this.stop(dt); this.anim = 'throw'; this.animOpt = { p: 1 - this.stT / 0.6 };
@@ -393,10 +408,10 @@ HL.Actors = (function () {
             this.thrown = true; this.hasShield = false; this.c.shield.visible = false;
             const from = this.center.clone().add(V(0, 0.4, 0));
             const dir = pc.clone().add(P.vel.clone().multiplyScalar(0.4)).sub(from).normalize();
-            g.spawnProj('shield', from, dir.multiplyScalar(phase2 ? 48 : 40), { dmg: phase2 ? 140 : 115, owner: this, maxDist: 70 });
+            g.spawnProj('shield', from, dir.multiplyScalar(phase2 ? 62 : 52), { dmg: phase2 ? 220 : 180, owner: this, maxDist: 80 });
             A().shield();
           }
-          if (this.stT <= 0) { this.throwCd = phase2 ? 3 : 4.5; this.setSt('chase'); }
+          if (this.stT <= 0) { this.throwCd = phase2 ? 2.2 : 3.4; this.setSt('chase'); }
           break;
         case 'charge': {
           this.blastHit = false;
@@ -423,14 +438,14 @@ HL.Actors = (function () {
           const rel = pc.clone().sub(from); const t = rel.dot(this.aim);
           if (t > 0 && t < L) {
             const dist = rel.sub(this.aim.clone().multiplyScalar(t)).length();
-            if (dist < 2.4) { g.hurtPlayer(330 * dt, from, { knock: 0, silent: true }); P.depower(4); if (!this.blastHit) { this.blastHit = true; P.knockdown(this.aim.clone(), 24, 1.5); } }
+            if (dist < 2.8) { g.hurtPlayer(520 * dt, from, { knock: 0, silent: true }); P.depower(4); if (!this.blastHit) { this.blastHit = true; P.knockdown(this.aim.clone(), 24, 1.5); } }
           }
           // и по прохожим
           for (const a of g.actors) if (a.faction === 'civ' && a.alive) {
             const r2 = a.center.clone().sub(from); const t2 = r2.dot(this.aim);
             if (t2 > 0 && t2 < L && r2.sub(this.aim.clone().multiplyScalar(t2)).length() < 2.4) a.damage(999, this);
           }
-          if (this.stT <= 0) { g.fx.setBeam(4, null); this.chestGlow.visible = false; this.setSt('recover', 4); g.ui.tag('СОЛДАТИК УЯЗВИМ! АТАКУЙ!', '#7cff7c', 3); this.blastCd = phase2 ? 7 : 10; }
+          if (this.stT <= 0) { g.fx.setBeam(4, null); this.chestGlow.visible = false; this.setSt('recover', 3); g.ui.tag('СОЛДАТИК УЯЗВИМ! АТАКУЙ!', '#7cff7c', 2.5); this.blastCd = phase2 ? 6 : 8; }
           break;
         }
         case 'recover':

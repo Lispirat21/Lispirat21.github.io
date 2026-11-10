@@ -21,6 +21,7 @@ HL.Game = (function () {
       const n = document.createElement('canvas'); n.id = 'c'; cv.replaceWith(n); cv = n;
     }
     renderer = new T.WebGLRenderer({ canvas: cv, antialias: !!S.data.antialias, powerPreference: 'high-performance' });
+    g.renderer = renderer;
     renderer.shadowMap.enabled = S.data.shadows > 0;
     renderer.shadowMap.type = T.PCFSoftShadowMap;
     sizeRenderer();
@@ -245,6 +246,7 @@ HL.Game = (function () {
   function updateCamera(dt) {
     const P = g.player;
     if (g.camOverride) {
+      if (g.camOverride.snap) { camPos.copy(g.camOverride.pos); camLook.copy(g.camOverride.look); g.camOverride.snap = false; }
       const cr = g.camOverride.rate || 3; camPos.lerp(g.camOverride.pos, 1 - Math.exp(-cr * dt)); camLook.lerp(g.camOverride.look, 1 - Math.exp(-cr * dt));
       camera.position.copy(camPos); camera.lookAt(camLook);
       return;
@@ -514,7 +516,7 @@ HL.Game = (function () {
         }
       }
     }
-    g.world.update(dt, g.time, P.pos);
+    g.world.update(dt, g.time, g.camOverride ? g.camOverride.pos : P.pos);
     g.fx.update(dt, camera);
     if (rain) updateRain(dt);
     if (deathT > 0) { deathT -= dt; if (deathT <= 0) g.fail('Даже боги падают. Хоумлендер повержен.'); }

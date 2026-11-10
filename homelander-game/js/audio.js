@@ -216,6 +216,12 @@ HL.Audio = (function () {
     },
     stinger() { tone({ type: 'sawtooth', f: 55, dur: 1.8, vol: 0.3, a: 0.01 }); tone({ type: 'sawtooth', f: 58.3, dur: 1.8, vol: 0.25 }); burst({ dur: 1.5, f: 600, f2: 60, vol: 0.5 }); },
     heartbeat,
+    sonic() { // хлопок звукового барьера: двойной удар + гул
+      burst({ dur: 0.35, f: 5000, f2: 300, vol: 1 }); tone({ type: 'sine', f: 90, f2: 28, dur: 0.5, vol: 1 });
+      burst({ dur: 0.4, f: 4000, f2: 200, vol: 0.9, delay: 0.12 }); tone({ type: 'sine', f: 70, f2: 22, dur: 0.6, vol: 0.9, delay: 0.12 });
+      burst({ dur: 2.6, type: 'lowpass', f: 900, f2: 60, vol: 0.6, a: 0.05, delay: 0.25 }); tone({ type: 'sawtooth', f: 45, f2: 25, dur: 2.2, vol: 0.25, delay: 0.25 });
+    },
+    static() { burst({ dur: 1.4, type: 'highpass', f: 2500, vol: 0.35, a: 0.01 }); tone({ type: 'square', f: 1000, dur: 0.9, vol: 0.05, delay: 0.1 }); },
     beep() { tone({ type: 'square', f: 880, dur: 0.12, vol: 0.08 }); },
     go() { tone({ type: 'square', f: 1320, dur: 0.35, vol: 0.1 }); },
   };
