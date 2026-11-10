@@ -536,11 +536,37 @@ HL.Actors = (function () {
     constructor(g, o = {}) {
       super(g, M.DEFS.ryan, Object.assign({ hp: 1700, faction: 'enemy', name: 'Райан', height: 1.6 }, o));
       this.boss = true; this.noPhysics = true; this.st = 'orbit'; this.stT = 2.5; this.knockMul = 0.25; this.keepBody = true; this.orb = Math.random() * 6;
-      this.aim = V(0, 0, 1);
+      this.aim = V(0, 0, 1); this.talkT = 3; this.punches = 0;
     }
+    say(txt) { if (!this.g.ui.talking) this.g.ui.say([['ry', txt, 2.2]]); }
     think(dt) {
       const g = this.g, P = g.player, pc = P.center;
-      this.stT -= dt; this.orb += dt * 0.8;
+      this.stT -= dt; this.orb += dt * 0.8; this.talkT -= dt;
+      if (this.talkT <= 0) {
+        this.talkT = U.rand(6, 9);
+        this.say(U.pick(['Я не хочу этого, пап!', 'Мама бы этого не хотела!', 'Почему ты не можешь просто остановиться?!', 'Я тоже умею драться, видишь?!',
+          'Ты говорил, что я особенный. Это вот это?', 'Пап, прошу, хватит!', 'Я… я не знаю, что делаю!']));
+      }
+      if (this.st === 'brawl') {
+        // серия ударов кулаками вблизи
+        this.vel.multiplyScalar(Math.exp(-8 * dt)); this.face(P.pos, dt, 12);
+        const tgt = pc.clone().add(this.pos.clone().sub(pc).setY(0).normalize().multiplyScalar(1.3)); tgt.y = Math.max(0.3, pc.y - 1.0);
+        this.vel.lerp(tgt.sub(this.pos).multiplyScalar(5), 1 - Math.exp(-6 * dt));
+        const ph = (this.stT % 0.5) / 0.5;
+        this.anim = 'punch'; this.animOpt = { p: 1 - ph };
+        if (ph < 0.45 && !this.hitThis) {
+          this.hitThis = true;
+          if (this.center.distanceTo(pc) < 2.4) {
+            A().punch(); g.hurtPlayer(38, this.pos, { knock: 4 }); g.fx.burst(pc, 4, { color: [0xffffff, 0x9ac0ff], speed: 6, size: 0.15, life: 0.25 });
+            if (++this.punches % 3 === 0) { P.knockdown(pc.clone().sub(this.center).setY(0).normalize(), 16, 0.8); }
+          } else A().whiff();
+        }
+        if (ph > 0.6) this.hitThis = false;
+        if (this.stT <= 0) { this.st = 'orbit'; this.stT = U.rand(1.6, 2.6); }
+        if (this.pos.y < 0.3) this.pos.y = 0.3;
+        const O2 = g.world.oval; if (O2) O2.clampInside(this.pos);
+        return;
+      }
       const phase2 = this.hp < this.maxHp * 0.5;
       if (this.st === 'crash') {
         this.vel.multiplyScalar(Math.exp(-8 * dt)); this.vel.y -= 20 * dt; this.anim = 'knocked'; this.dmgMul = 2;
@@ -570,16 +596,16 @@ HL.Actors = (function () {
           this.hit = true; A().punch(); g.fx.addShake(0.5);
           g.hurtPlayer(phase2 ? 110 : 85, this.pos, { knock: 0 });
           P.knockdown(this.aim.clone(), 26, 1.2);
-          this.vel.multiplyScalar(-0.3); this.stT = Math.min(this.stT, 0.2);
+          this.vel.multiplyScalar(-0.3); this.st = 'brawl'; this.stT = 1.5; this.hitThis = true;
         }
-        if (this.stT <= 0) { this.st = 'orbit'; this.stT = U.rand(phase2 ? 1.4 : 2.2, phase2 ? 2.4 : 3.5); }
+        if (this.stT <= 0) { if (this.center.distanceTo(pc) < 4) { this.st = 'brawl'; this.stT = 1.5; this.hitThis = false; } else { this.st = 'orbit'; this.stT = U.rand(phase2 ? 1.4 : 2.2, phase2 ? 2.4 : 3.5); } }
       }
       if (this.pos.y < 0.3) { this.pos.y = 0.3; if (this.vel.y < 0) this.vel.y = 0; }
       // в помещении: стены и потолок
       const O = g.world.oval;
       if (O && O.clampInside(this.pos) && this.st === 'dash') {
         this.st = 'crash'; this.stT = 1.6; this.vel.set(0, 0, 0); A().slam(); g.fx.dust(this.pos, 10); g.fx.addShake(0.4);
-        g.ui.tag('РАЙАН ВРЕЗАЛСЯ — БЕЙ!', '#7cff7c', 1.4);
+        g.ui.tag('РАЙАН ВРЕЗАЛСЯ — БЕЙ!', '#7cff7c', 1.4); this.say(U.pick(['Ай! Стена…', 'Ой… я не рассчитал!', 'Блин, опять…']));
         return;
       }
       if (O) return;

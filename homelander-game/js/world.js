@@ -559,11 +559,25 @@ HL.World = (function () {
       const l2 = new T.PointLight(0xffe4c0, 1.1, 34, 1.4); l2.position.set(cx, H - 1, cz + 5); add(l2);
       O.desk = new T.Vector3(cx, 0, cz + dz); O.chair = new T.Vector3(cx, 0, cz + dz - 1.3);
       // пролом в стене со стороны angle
-      O.breach = function (ang = Math.PI / 2, w = 0.5) {
+      // пролом: стена разрушена, за ней коридор Белого дома (выйти наружу нельзя)
+      O.breach = function (ang = Math.PI / 2, w = 0.36) {
         O.wall.geometry.dispose(); O.wall.geometry = wallGeo(ang, w);
-        for (const b of O.segs) { let d = Math.abs(((b.ang - ang + Math.PI * 3) % (Math.PI * 2)) - Math.PI); if (d < w / 2 + 0.03) W.removeBox(b); }
-        return new T.Vector3(cx + Math.sin(ang) * RX, 0, cz + Math.cos(ang) * RZ);
+        const hx = Math.sin(ang) * RX, hz = Math.cos(ang) * RZ;
+        const cor = new T.Mesh(new T.BoxGeometry(8, 5.5, 6.4), M.toonX(0xd9cdb0, { side: T.BackSide }));
+        cor.position.set(hx + 3.6 * Math.sin(ang), 2.75, hz + 3.6 * Math.cos(ang)); cor.rotation.y = ang - Math.PI / 2; grp.add(cor);
+        const cl = new T.PointLight(0xffe0b0, 0.9, 14, 1.5); cl.position.set(cx + hx + 3 * Math.sin(ang), 4, cz + hz + 3 * Math.cos(ang)); add(cl);
+        // обломки
+        const rm = M.toon(0xe6dcc0);
+        for (let i = 0; i < 14; i++) {
+          const r = new T.Mesh(M.box(0.4 + Math.random() * 0.8, 0.25 + Math.random() * 0.5, 0.4 + Math.random() * 0.7), rm);
+          const d = 0.5 + Math.random() * 3.5, sp = (Math.random() - 0.5) * 3;
+          r.position.set(hx - Math.sin(ang) * d + Math.cos(ang) * sp, 0.15, hz - Math.cos(ang) * d - Math.sin(ang) * sp);
+          r.rotation.set(Math.random(), Math.random() * 3, Math.random()); r.castShadow = true; grp.add(r);
+        }
+        // невидимая стена в проёме остаётся (коллайдеры не удаляем)
+        return new T.Vector3(cx + hx, 0, cz + hz);
       };
+      O.corridor = (ang = Math.PI / 2) => new T.Vector3(cx + Math.sin(ang) * (RX + 3.5), 0, cz + Math.cos(ang) * (RZ + 3.5));
       O.inside = (p) => ((p.x - cx) / (RX - 1)) ** 2 + ((p.z - cz) / (RZ - 1)) ** 2 < 1;
       O.clampInside = (p) => {
         const k = ((p.x - cx) / (RX - 1.2)) ** 2 + ((p.z - cz) / (RZ - 1.2)) ** 2;

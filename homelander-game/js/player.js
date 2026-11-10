@@ -236,7 +236,7 @@ HL.Player = (function () {
       // анимация
       let mode = 'idle', sp = hs, opt = {};
       if (hs > 0.5 || Math.abs(this.vel.y) > 1 || this.lasering) this.idleT = 0; else this.idleT += dt;
-      if (this.scriptPose) mode = this.scriptPose;
+      if (this.scriptPose) { mode = this.scriptPose; opt = { p: 0.35 }; }
       else if (this.carry) { mode = 'carry'; opt = { fly: this.flying }; }
       else if (this.punchT > 0) { mode = 'punch'; opt = { p: 1 - this.punchT / 0.35, air: this.flying }; }
       else if (this.flying) {

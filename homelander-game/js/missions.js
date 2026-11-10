@@ -540,6 +540,7 @@ HL.Missions = (function () {
             const O = v.O;
             g.controlsEnabled = false; g.cinematic = true;
             v.ev = 0; v.T = 0; v.done = false;
+            v.walk = (tgt, sp) => function (dt) { const d = this.moveToward(tgt, sp, dt, 6); this.face(d > 0.3 ? tgt : g.player.pos, dt, 6); this.anim = d > 0.3 ? 'walk' : 'idle'; this.moveSpeed = sp; this.animOpt = { lash: false }; this.pos.y = 0; this.vel.y = 0; };
             v.cam = { pos: V(0.4, 1.6, O.desk.z + 7.2), look: V(0, 1.5, O.desk.z) };
             g.ui.caption('ОВАЛЬНЫЙ КАБИНЕТ. ПРЯМОЙ ЭФИР.', 0.42);
             g.ui.say([['hl', 'Американцы. Я обращаюсь к вам из Овального кабинета.'], ['hl', 'Всю жизнь я защищал вас. Теперь пришло время вести вас.'],
@@ -559,25 +560,74 @@ HL.Missions = (function () {
               P.scriptPose = null; P.scriptFace = Math.PI / 2;
               v.cam = { pos: V(-6, 2.2, O.center.z + 3), look: bp.clone().setY(1.6) };
               v.ev = 2; v.T = 0;
-            } else if (v.ev === 2 && v.T > 1.6) {
-              // входят Бутчер, Кимико, Райан
-              const out = V(1, 0, 0);
-              const walk = function (tgt) { return function (dt) { const d = this.moveToward(tgt, 2.2, dt, 6); this.face(d > 0.3 ? tgt : g.player.pos, dt, 6); this.anim = d > 0.3 ? 'walk' : 'idle'; this.moveSpeed = 2.2; this.animOpt = { lash: false }; if (this.noPhysics) this.pos.y = 0; }; };
-              const mkA = (kind, dz, tgt) => { const a = g.spawn(kind, v.bp.x + 4 + Math.abs(dz) * 0.6, v.bp.z + dz, {}); a._think = a.think; a.think = walk(tgt); a.invuln = true; return a; };
-              v.b = mkA('butcherBoss', 0, V(O.center.x + 8, 0, O.center.z));
-              v.k = mkA('kimiko', -1.6, V(O.center.x + 9.5, 0, O.center.z - 2));
-              v.r = mkA('ryan', 1.6, V(O.center.x + 9.5, 0, O.center.z + 2));
+            } else if (v.ev === 2 && v.T > 1.4) {
+              // первым входит только Бутчер с ломом (щупальца спрятаны)
+              const cor = O.corridor();
+              const b = g.spawn('butcherBoss', cor.x, cor.z, {}); v.b = b;
+              b._think = b.think; b.invuln = true; b.noPhysics = true;
+              b.c.tentacles.forEach((t) => (t.root.visible = false));
+              b.think = v.walk(V(O.center.x + 7, 0, O.center.z), 2.0);
+              v.cam = { pos: V(O.center.x + 1, 2.0, O.center.z + 4), look: V(O.center.x + 11, 1.6, O.center.z) };
               v.ev = 3; v.T = 0;
-            } else if (v.ev === 3 && v.T > 2.4) {
-              g.ui.statcard('БИЛЛИ БУТЧЕР', [['СИЛА', 'ТЕМП-V'], ['ЛОМ', 'ДА'], ['НЕНАВИСТЬ', 'MAX'], ['УРОВЕНЬ', '99']], 'С ним Кимико и Райан.', 4.5);
-              v.cam = { pos: V(O.center.x + 2, 1.9, O.center.z + 3.5), look: V(O.center.x + 8.5, 1.6, O.center.z) };
-              g.ui.say([['but', 'Извини, что прерываю, дорогуша. Эфир окончен.'], ['hl', 'Билли. Ты вломился в Белый дом.'], ['but', 'Ага. С ломом. По-старинке.'],
-                ['ry', 'Пап… хватит. Пожалуйста.'], ['hl', 'Райан? Ты… с НИМИ?']], () => { v.ev = 5; v.T = 0; });
+            } else if (v.ev === 3 && v.T > 3.4) {
+              v.cam = { pos: V(O.center.x + 3.5, 1.8, O.center.z + 2.6), look: V(O.center.x + 7, 1.7, O.center.z) };
+              g.ui.statcard('БИЛЛИ БУТЧЕР', [['СИЛА', 'ТЕМП-V'], ['ЛОМ', 'ДА'], ['НЕНАВИСТЬ', 'MAX'], ['УРОВЕНЬ', '99']], 'Щупальца пока спрятаны…', 4);
+              g.ui.say([['but', 'Батя дома.', 2.0], ['hl', 'Я уж думал, ты забыл про наш уговор.', 2.6], ['but', 'Выжженная земля.', 2.4]], () => { v.ev = 5; v.T = 0; });
               v.ev = 4;
             } else if (v.ev === 5) {
-              g.ui.statcard('РАЙАН', [['ВОЗРАСТ', '16'], ['СИЛА', 'MAX'], ['ОПЫТ', 'МАЛО'], ['УРОВЕНЬ', '70']], 'Сильный, но неопытный: промахивается и врезается в стены.', 4.5);
-              g.ui.say([['ki', '*молча встаёт перед Райаном*'], ['but', 'Кимико. Начинай.']], () => { v.done = true; });
-              v.ev = 6;
+              // заходят Райан и Кимико
+              const cor = O.corridor();
+              const k = g.spawn('kimiko', cor.x, cor.z - 1.2, {}); const r = g.spawn('ryan', cor.x, cor.z + 1.2, {});
+              for (const a of [k, r]) { a._think = a.think; a.invuln = true; a.noPhysics = true; }
+              k.think = v.walk(V(O.center.x + 8.6, 0, O.center.z - 2.2), 2.6); r.think = v.walk(V(O.center.x + 8.6, 0, O.center.z + 2.2), 2.6);
+              v.k = k; v.r = r;
+              v.cam = { pos: V(O.center.x + 1.5, 2.1, O.center.z + 5), look: V(O.center.x + 9, 1.5, O.center.z) };
+              v.ev = 6; v.T = 0;
+            } else if (v.ev === 6 && v.T > 3.0) {
+              g.ui.say([['ry', 'Пап… прости. Но это надо остановить.', 2.4], ['hl', 'Райан? Ты… с НИМИ?', 2.2], ['ki', '*молча встаёт в стойку*', 1.6]], () => { v.ev = 8; v.T = 0; });
+              v.ev = 7;
+            } else if (v.ev === 8) {
+              // короткая кат-сцена драки
+              const b = v.b, k = v.k, r = v.r;
+              g.ui.caption('НАЧАЛОСЬ.', 0.6); HL.Audio.stinger(); g.music('boss');
+              b.noPhysics = false; k.noPhysics = false;
+              b.think = function (dt) { const d = this.moveToward(P.pos, 9, dt, 8); this.face(P.pos, dt, 10); this.anim = d > 1.8 ? 'run' : 'punch'; this.moveSpeed = 9; this.animOpt = { p: 0.3 }; if (d < 1.8) this.stop(dt); };
+              k.think = function (dt) { this.anim = 'idle'; this.stop(dt); this.face(P.pos, dt, 6); };
+              r.think = function (dt) { this.anim = 'hover'; this.vel.set(0, 0, 0); this.face(P.pos, dt, 6); this.pos.y = Math.max(this.pos.y, 0.6); };
+              v.cam = { pos: V(O.center.x + 2, 2.6, O.center.z + 7), look: V(O.center.x + 1, 1.4, O.center.z) };
+              v.ev = 9; v.T = 0;
+            } else if (v.ev === 9) {
+              const b = v.b, k = v.k, r = v.r;
+              P.scriptFace = Math.atan2(b.pos.x - P.pos.x, b.pos.z - P.pos.z);
+              if (v.T > 1.0 && !v.f1) { // ловит лом
+                v.f1 = true; P.scriptPose = 'grab'; HL.Audio.clang(); g.fx.sparks(P.center.add(V(0.6, 0.4, 0)), 0xffffff, 14); g.fx.addShake(0.4);
+                b.think = function (dt) { this.anim = 'punch'; this.animOpt = { p: 0.35 }; this.stop(dt); };
+              }
+              if (v.T > 1.8 && !v.f2) { // отбрасывает Бутчера
+                v.f2 = true; P.scriptPose = 'punch'; HL.Audio.punch(); g.fx.addShake(0.7); g.fx.ring(b.center, 0xffffff, 3, 0.3);
+                const dir = b.pos.clone().sub(P.pos).setY(0).normalize();
+                b.vel.copy(dir.multiplyScalar(20)).setY(7); b.airborne = true; b.spin = 8; b.downT = 1.6;
+                b.think = function (dt) { this.anim = 'idle'; this.stop(dt); this.face(P.pos, dt, 4); };
+              }
+              if (v.T > 2.4 && !v.f3) { // Кимико прыгает
+                v.f3 = true; P.scriptPose = null;
+                const dir = P.pos.clone().sub(k.pos).setY(0); const L = dir.length(); dir.normalize();
+                k.vel.copy(dir.multiplyScalar(Math.min(14, L * 1.4))).setY(9);
+                k.think = function (dt) { this.anim = this.inAir ? 'jump' : 'idle'; this.face(P.pos, dt, 10); if (!this.inAir) this.stop(dt); };
+              }
+              if (v.T > 2.7 && v.T < 3.3) { // лазер мимо — она уворачивается
+                P.scriptGlow = true; P.scriptFace = Math.atan2(k.pos.x - P.pos.x, k.pos.z - P.pos.z);
+                const tgt = k.center.add(V(0, 0.2, 1.6));
+                g.fx.setBeam(0, P.eyePos(0), tgt); g.fx.setBeam(1, P.eyePos(1), tgt); g.fx.sparks(tgt, 0xffb0a0, 2); HL.Audio.setLaser(true);
+                if (!v.f4) { v.f4 = true; k.vel.set(0, 6, -8); }
+              } else if (v.f4 && !v.f5) { v.f5 = true; P.scriptGlow = false; g.fx.setBeam(0, null); g.fx.setBeam(1, null); HL.Audio.setLaser(false); }
+              if (v.T > 3.6 && !v.f6) { // Райан таранит отца
+                v.f6 = true;
+                r.think = function (dt) { const to = P.center.sub(this.center); const d = to.length(); this.vel.copy(to.normalize().multiplyScalar(30)); this.anim = 'fly'; this.animOpt = { pitch: 1.4 };
+                  if (d < 1.6) { HL.Audio.punch(); g.fx.addShake(0.8); P.knockdown(to.setY(0), 14, 1.0); this.vel.set(0, 0, 0); this.think = function () { this.anim = 'hover'; this.vel.set(0, 0, 0); }; g.ui.say([['ry', 'Прости! Я… не хотел так сильно!', 2]]); } };
+              }
+              if (v.T > 6.0) v.done = true;
+              v.cam = { pos: V(O.center.x + 1.5, 3, O.center.z + 8), look: V(O.center.x + 2, 1.3, O.center.z) };
             }
             // камера
             if (v.cam) g.camOverride = { pos: v.cam.pos, look: v.cam.look };
@@ -586,6 +636,8 @@ HL.Missions = (function () {
           exit(g, v) {
             const P = g.player; P.scriptPose = null; P.scriptFace = null;
             P.place(v.O.center.x - 3, 0, v.O.center.z + 1, Math.PI / 2); g.camYaw = Math.PI / 2; g.camPitch = 0.12;
+            g.fx.setBeam(0, null); g.fx.setBeam(1, null); HL.Audio.setLaser(false); P.scriptGlow = false;
+            if (v.b) v.b.noPhysics = false; if (v.k) v.k.noPhysics = false;
             for (const a of [v.k, v.r, v.b]) a.think = function (dt) { this.anim = 'idle'; this.animOpt = { lash: false }; this.vel.set(0, this.vel.y, 0); this.face(g.player.pos, dt, 3); if (this.noPhysics) this.vel.y = 0; };
             g.cinema(null); g.music('boss');
           },
@@ -611,8 +663,9 @@ HL.Missions = (function () {
         {
           text: 'Победите Бутчера',
           enter(g, v) {
-            const b = v.b; b.think = b._think; b.invuln = false;
-            g.ui.say([['ry', 'Прости… я просто хотел, чтобы ты остановился…'], ['but', 'Ты сделал больно собственному сыну. Вот кто ты, дорогуша.'], ['hl', 'Билли. Хватит болтать.']]);
+            const b = v.b; b.think = b._think; b.invuln = false; b.c.tentacles.forEach((t) => (t.root.visible = true));
+            g.fx.burst(b.center, 20, { color: [0x8e3434, 0x5a1010], speed: 8, size: 0.3, life: 0.6 }); HL.Audio.stinger();
+            g.ui.say([['ry', 'Прости… я просто хотел, чтобы ты остановился…'], ['but', 'Ты сделал больно собственному сыну. А теперь — по-взрослому.'], ['sys', '*из спины Бутчера вырываются щупальца*'], ['hl', 'Билли. Хватит болтать.']]);
           },
           update(g, dt, v) {
             const b = v.b, f = b.hp / b.maxHp;
