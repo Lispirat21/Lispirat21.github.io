@@ -132,6 +132,7 @@ HL.UI = (function () {
       hurtV = Math.max(0, hurtV - rdt * 1.6); el.fxDamage.style.opacity = hurtV.toFixed(2);
       flashV = Math.max(0, flashV - rdt); el.fxFlash.style.opacity = Math.min(1, flashV).toFixed(2);
       if (!P) return;
+      el.hud.classList.toggle('cine', !!g.cinematic);
       el.fxRage.style.opacity = P.rageT > 0 ? 1 : 0;
       el.fxHear.style.opacity = P.hearT > 0 ? 1 : 0;
       el.fxDepower.style.opacity = P.depowerT > 0 ? 1 : 0;

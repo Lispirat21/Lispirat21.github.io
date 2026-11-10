@@ -94,7 +94,7 @@ HL.Models = (function () {
       arms: 0x56603a, forearms: 0x5e3d22, gloves: 0x5e3d22, legs: 0x4c5534, boots: 0x3a2716, belt: 0x5e3d22, shield: true, eye: 0x5a7a9a, brows: 0x2a1a10, angry: true, bulk: 1.15, scale: 1.05 },
     starlight: { name: 'Старлайт', skin: 0xf3c9a9, hair: 0xf6df8e, hairStyle: 'long', torso: 0xeef2fb, emblem: 0x2f62e0, arms: 0xeef2fb, forearms: 0x2f62e0,
       gloves: 0xeef2fb, legs: 0xeef2fb, boots: 0x2f62e0, belt: 0xc8cedc, eye: 0x4a7a3a, brows: 0xb09a50, bulk: 0.86, scale: 0.94 },
-    atrain: { name: 'Эй-Трейн', skin: 0x6e4630, hair: 0x111111, hairStyle: 'short', torso: 0x2050c4, stripe: 0xf2f2f2, arms: 0x2050c4, forearms: 0xf2f2f2,
+    atrain: { name: 'Эй-Трейн', atrain: true, belt: 0xc8ccd6, collar: 0xf2f2f2, skin: 0x6e4630, hair: 0x111111, hairStyle: 'short', torso: 0x2050c4, stripe: 0xf2f2f2, arms: 0x2050c4, forearms: 0xf2f2f2,
       gloves: 0xf2f2f2, legs: 0x2050c4, boots: 0xf2f2f2, eye: 0x2a1a10, brows: 0x111111, bulk: 0.95 },
     hughie: { name: 'Хьюи', skin: 0xf1c6a3, hair: 0x6a4a2a, hairStyle: 'curly', torso: 0x8a7656, arms: 0x8a7656, forearms: 0x8a7656, gloves: 0xf1c6a3,
       legs: 0x3d4e6e, boots: 0x5a3622, eye: 0x4a6a8a, brows: 0x5a3a1a, bulk: 0.85, scale: 0.9 },
@@ -230,6 +230,30 @@ HL.Models = (function () {
       c.capeAng = 0.06; c.capeAmp = 0.05;
     }
     // щупальца (Бутчер на Темп-V)
+    // Эй-Трейн: фирменные очки на лбу и белые полосы на костюме
+    if (def.atrain) {
+      const W = toon(0xf4f4f4), lens = new T.MeshBasicMaterial({ color: 0x48c8ff });
+      const band = part(head, G('atband', () => new T.TorusGeometry(0.205, 0.022, 6, 24)), toon(0x1a1a1a), 0, 0.12, -0.005, false);
+      band.rotation.x = Math.PI / 2 - 0.25; band.scale.set(1, 1.04, 1);
+      for (const side of [1, -1]) {
+        const g2 = new T.Group(); g2.position.set(0.075 * side, 0.15, 0.17); g2.rotation.x = -0.45; head.add(g2);
+        const rim = part(g2, G('atrim', () => new T.TorusGeometry(0.058, 0.017, 6, 18)), W, 0, 0, 0, false);
+        const l = new T.Mesh(sph(0.055), lens); l.scale.z = 0.35; g2.add(l);
+        const sh = new T.Mesh(sph(0.018), new T.MeshBasicMaterial({ color: 0xffffff })); sh.position.set(-0.02, 0.02, 0.018); g2.add(sh);
+      }
+      part(head, box(0.05, 0.03, 0.04), W, 0, 0.15, 0.2, false); // перемычка
+      for (const [p, side] of [[c.legL, 1], [c.legR, -1]]) {
+        part(p, cap(0.028, 0.5), W, 0.1 * side * bulk, -0.36, 0.02, false);
+        part(p, cap(0.022, 0.5), W, 0.07 * side * bulk, -0.36, 0.085, false);
+      }
+      for (const [a, side] of [[c.armL, 1], [c.armR, -1]]) part(a, cap(0.024, 0.2), W, 0.075 * side * bulk, -0.17, 0, false);
+      for (const side of [1, -1]) {
+        const v2 = part(spine, box(0.05, 0.42, 0.04), W, 0.1 * side, 0.46, 0.185 * bulk, false); v2.rotation.z = 0.45 * side; v2.rotation.x = -0.08;
+        const sd = part(spine, cap(0.025, 0.45), W, 0.28 * side * bulk, 0.4, 0, false);
+      }
+      const bolt = new T.Shape(); bolt.moveTo(0.02, 0.09); bolt.lineTo(-0.045, -0.005); bolt.lineTo(0.0, -0.005); bolt.lineTo(-0.02, -0.09); bolt.lineTo(0.05, 0.015); bolt.lineTo(0.005, 0.015); bolt.closePath();
+      const bm = new T.Mesh(new T.ShapeGeometry(bolt), new T.MeshBasicMaterial({ color: 0xffd23a })); bm.position.set(0, 0.62, 0.2 * bulk); spine.add(bm);
+    }
     if (def.tentacles) {
       c.tentacles = [];
       for (let i = 0; i < 3; i++) {
@@ -449,6 +473,17 @@ HL.Models = (function () {
       case 'tumble':
         tg.pitch = (opt.spin || 0); tg.aLz = 1.4; tg.aRz = -1.4; tg.lLz = 0.4; tg.lRz = -0.4; rate = 30;
         break;
+      case 'grab': // рука на шее противника
+        tg.aRx = -2.0; tg.aRz = -0.12; tg.eRx = -0.15; tg.spineX = 0.04; tg.headX = 0.05 + Math.sin(t * 9) * 0.015;
+        tg.aLz = 0.62; tg.eLz = -1.55; tg.lLx = -0.2; tg.lRx = 0.25;
+        rate = 20; break;
+      case 'choked':
+        tg.aLx = -1.4; tg.aLz = -0.35; tg.eLx = -1.7; tg.aRx = -1.4; tg.aRz = 0.35; tg.eRx = -1.7;
+        tg.lLx = Math.sin(t * 11) * 0.35; tg.lRx = -Math.sin(t * 11) * 0.35; tg.headX = -0.25; tg.spineX = -0.05;
+        rate = 18; break;
+      case 'sit':
+        tg.bodyY = 0.42; tg.lLx = -1.5; tg.lRx = -1.4; tg.lLz = 0.15; tg.lRz = -0.15; tg.spineX = 0.25; tg.aLx = -0.5; tg.aRx = -1.3; tg.eRx = -1.4; tg.headX = 0.25;
+        rate = 8; break;
       case 'knocked':
         tg.pitch = -1.52; tg.bodyY = 0.24; tg.aLz = 0.6; tg.aRz = -1.6; tg.lLx = -0.6; tg.headX = 0.4 + Math.sin(t * 2) * 0.1;
         rate = 8; break;

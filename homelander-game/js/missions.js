@@ -31,7 +31,7 @@ HL.Missions = (function () {
       enter(g, v) { v.rings = points.map((p) => g.addRing(p)); v.ri = 0; g.highlightRing(v.rings, 0); },
       update(g, dt, v) {
         const r = v.rings[v.ri];
-        if (g.player.center.distanceTo(r.position) < 5.2) {
+        if (g.player.passed(r.position, 5.2)) {
           g.removeRing(r); HL.Audio.objective(); v.ri++;
           if (v.ri >= v.rings.length) return true;
           g.highlightRing(v.rings, v.ri);
@@ -41,6 +41,87 @@ HL.Missions = (function () {
       },
       wp: (g, v) => v.rings && v.rings[v.ri] && v.rings[v.ri].position,
       exit(g, v) { (v.rings || []).forEach((r) => g.removeRing(r)); },
+    };
+  }
+
+  // ---------- сцена после гонки: «Самый быстрый клоун в мире» ----------
+  function afterRace() {
+    const A = () => HL.Audio;
+    return {
+      text: 'Победа!',
+      enter(g, v) {
+        const P = g.player, at = v.at;
+        const base = V(0, 0, -150);
+        v.base = base;
+        // Эй-Трейн стоит на площади, Хоумлендер приземляется перед ним
+        at.done = true; at.running = false; at.noPhysics = true;
+        at.place(base.x + 1.3, 0, base.z); at.yaw = -Math.PI / 2;
+        v.atAnim = 'idle'; v.atYaw = -Math.PI / 2;
+        at.think = function (dt) { this.vel.set(0, 0, 0); this.anim = v.atAnim; this.animOpt = {}; this.yaw = U.dampAng(this.yaw, v.atYaw, 7, dt); };
+        for (const a of g.actors) if (a.faction === 'civ' && a.pos.distanceTo(base) < 14) a.place(a.pos.x + 20, 0, a.pos.z + 20);
+        P.flying = false; P.vel.set(0, 0, 0); P.place(base.x - 1.3, 0, base.z, Math.PI / 2);
+        P.scriptFace = Math.PI / 2;
+        g.controlsEnabled = false; g.cinematic = true; HL.Input.unlock();
+        v.T = 0; v.ev = 0; v.grabT = -1; v.done = false; v.shot = 'wide';
+        g.ui.say([['at', '…Да ну на фиг. Как?!'], ['hl', 'Я — Хоумлендер.'], ['at', 'Ладно, ладно. Слушай… Пацаны прячутся в порту. Я тебе ничего не говорил.']], () => { v.ev = 1; v.T = 0; });
+      },
+      update(g, dt, v) {
+        const P = g.player, at = v.at;
+        v.T += dt;
+        const T = v.T;
+        if (v.ev === 1) {
+          g.ui.say([['hl', 'Самый быстрый клоун в мире.', 2.6]]); v.ev = 2;
+        } else if (v.ev === 2 && T > 2.8) {
+          // уходит пешком
+          P.scriptFace = null; P.scriptMove = v.base.clone().add(V(-11, 0, 0)); P.scriptSpeed = 1.7; v.ev = 3; v.shot = 'walk';
+        } else if (v.ev === 3 && T > 5.4) {
+          v.atYaw = Math.PI / 2; // отвернулся
+          g.ui.say([['at', '*себе под нос, отвернувшись* …Иди нахер.', 2.3]]); v.ev = 4;
+        } else if (v.ev === 4 && T > 7.6) {
+          P.scriptMove = null; P.vel.set(0, 0, 0); P.scriptFace = Math.PI / 2; v.ev = 5; v.shot = 'hl';
+        } else if (v.ev === 5 && T > 8.3) {
+          g.ui.say([['hl', 'Ты что мне сейчас сказал?', 2.0]]); A().heartbeat(0.5); v.ev = 6;
+        } else if (v.ev === 6 && T > 10.0) {
+          // быстро и уверенно идёт к нему
+          v.atYaw = -Math.PI / 2; v.atAnim = 'scared';
+          P.scriptMove = at.pos.clone().add(V(-0.85, 0, -0.38)); P.scriptSpeed = 3.6; P.scriptGlow = true; v.ev = 7; v.shot = 'walk';
+        } else if (v.ev === 7 && (P.pos.distanceTo(P.scriptMove) < 0.2 || T > 16)) {
+          // хватает за шею
+          P.scriptMove = null; P.vel.set(0, 0, 0); P.scriptFace = Math.PI / 2; P.scriptPose = 'grab';
+          at.pos.y = 0.22; v.atAnim = 'choked';
+          g.fx.addShake(0.7); A().punch(); A().stinger();
+          g.ui.caption('ТЫ ЧТО МНЕ СЕЙЧАС СКАЗАЛ?', 0.42);
+          g.ui.say([['hl', 'ТЫ ЧТО МНЕ СЕЙЧАС СКАЗАЛ?!', 2.6]]);
+          v.ev = 8; v.grabT = T; v.shot = 'close';
+        } else if (v.ev === 8 && T > v.grabT + 2.8) {
+          g.ui.say([['at', 'Блин… прости! Прости, прости!', 2.3]]); v.ev = 9;
+        } else if (v.ev === 9 && T > v.grabT + 5.2) {
+          g.ui.caption('ПОВТОРИ. ПОВТОРИ!', 0.5); g.fx.addShake(0.6); A().heartbeat(0.7);
+          g.ui.say([['hl', 'ПОВТОРИ. ПОВТОРИ!', 2.4]]); v.ev = 10;
+        } else if (v.ev === 10 && T > v.grabT + 7.8) {
+          // отпускает
+          P.scriptPose = null; P.scriptGlow = false; at.pos.y = 0; v.atAnim = 'sit'; A().whiff(); v.ev = 11;
+        } else if (v.ev === 11 && T > v.grabT + 8.8) {
+          // улетает
+          P.flying = true; P.scriptFace = null; P.scriptVel = V(-14, 34, -8); A().whoosh(); v.ev = 12; v.shot = 'fly';
+        } else if (v.ev === 12 && T > v.grabT + 11.5) { v.done = true; }
+
+        // камера
+        const mid = P.pos.clone().add(at.pos).multiplyScalar(0.5);
+        let pos, look;
+        if (v.shot === 'close') { pos = mid.clone().add(V(0.6, 1.95, 3.1)); look = mid.clone().add(V(0, 1.75, 0)); }
+        else if (v.shot === 'hl') { pos = P.pos.clone().add(V(2.6, 1.8, 2.4)); look = P.pos.clone().add(V(0, 1.7, 0)); }
+        else if (v.shot === 'fly') { pos = at.pos.clone().add(V(2.5, 1.6, 5)); look = P.pos.clone().add(V(0, 1, 0)); }
+        else if (v.shot === 'walk') { pos = mid.clone().add(V(0, 2.4, 10)); look = mid.clone().add(V(0, 1.4, 0)); }
+        else { pos = mid.clone().add(V(0.5, 2.1, 6.5)); look = mid.clone().add(V(0, 1.5, 0)); }
+        g.camOverride = { pos, look };
+        return v.done;
+      },
+      exit(g, v) {
+        const P = g.player;
+        P.scriptMove = null; P.scriptFace = null; P.scriptPose = null; P.scriptVel = null; P.scriptGlow = false;
+        g.cinema(null);
+      },
     };
   }
 
@@ -279,7 +360,7 @@ HL.Missions = (function () {
         g.spawnCrowd();
         const path = [V(0, 0, -70), V(140, 0, -70), V(140, 0, 70), V(70, 0, 70), V(70, 0, 210), V(-140, 0, 210), V(-140, 0, 0), V(-210, 0, 0), V(-210, 0, -140), V(0, 0, -140), V(0, 0, -175)];
         v.path = path;
-        const at = g.spawn('atrain', 4, 20, { path: path.map((p) => p.clone()), speed: 31 }); at.yaw = Math.PI; v.at = at;
+        const at = g.spawn('atrain', 4, 20, { path: path.map((p) => p.clone()), speed: 58 }); at.yaw = Math.PI; v.at = at;
         v.ringPts = path.map((p, i) => V(p.x, i === path.length - 1 ? 40 : 14 + (i % 3) * 10, p.z));
       },
       steps: [
@@ -306,7 +387,7 @@ HL.Missions = (function () {
           enter(g, v) { v.rings = v.ringPts.map((p) => g.addRing(p)); v.ri = 0; g.highlightRing(v.rings, 0); g.ui.hint('Shift (⚡) — суперскорость!', 3); },
           update(g, dt, v) {
             const r = v.rings[v.ri];
-            if (g.player.center.distanceTo(r.position) < 5.5) {
+            if (g.player.passed(r.position, 5.5)) {
               g.removeRing(r); HL.Audio.objective(); v.ri++;
               if (v.ri >= v.rings.length) return true;
               g.highlightRing(v.rings, v.ri);
@@ -319,7 +400,7 @@ HL.Missions = (function () {
           wp: (g, v) => v.rings && v.rings[v.ri] && v.rings[v.ri].position,
           exit(g, v) { (v.rings || []).forEach((r) => g.removeRing(r)); v.at.running = false; },
         },
-        talk([['at', '…Да ну на фиг. Как?!'], ['hl', 'Я — Хоумлендер.'], ['at', 'Ладно, ладно. Слушай… Пацаны прячутся в порту. Я тебе ничего не говорил.']], { text: 'Победа!' }),
+        afterRace(),
       ],
     },
     // ---------------- 5 ----------------

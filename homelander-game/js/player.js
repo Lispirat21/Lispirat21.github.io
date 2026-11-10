@@ -8,7 +8,8 @@ HL.Player = (function () {
       this.g = g;
       this.c = M.buildChar(M.DEFS.homelander);
       g.scene.add(this.c.root);
-      this.pos = V(); this.vel = V(); this.yaw = 0;
+      this.pos = V(); this.vel = V(); this.yaw = 0; this.prevPos = V();
+      this.scriptMove = null; this.scriptSpeed = 1.8; this.scriptFace = null; this.scriptPose = null; this.scriptVel = null; this.scriptGlow = false;
       this.flying = false; this.grounded = true;
       this.maxHp = 1000; this.hp = 1000;
       this.heat = 0; this.overheat = false; this.lasering = false;
@@ -67,6 +68,7 @@ HL.Player = (function () {
     update(dt) {
       const g = this.g, inp = g.controlsEnabled && this.stunT <= 0 && !this.dead;
       const In = I();
+      this.prevPos.copy(this.pos);
       this.hurtSnd -= dt; this.punchCd -= dt; this.poseCd -= dt; this.hearCd -= dt;
       if (this.stunT > 0) this.stunT -= dt;
       if (this.depowerT > 0) this.depowerT -= dt;
@@ -87,7 +89,12 @@ HL.Player = (function () {
       const ax = inp ? In.axis() : { x: 0, z: 0 };
       const yaw = g.camYaw, pitch = g.camPitch;
       const F = V(Math.sin(yaw), 0, Math.cos(yaw)), R = V(-Math.cos(yaw), 0, Math.sin(yaw));
-      const moveDir = F.clone().multiplyScalar(ax.z).add(R.clone().multiplyScalar(ax.x));
+      let moveDir = F.clone().multiplyScalar(ax.z).add(R.clone().multiplyScalar(ax.x));
+      let scriptSp = 0;
+      if (this.scriptMove) {
+        const d = V(this.scriptMove.x - this.pos.x, 0, this.scriptMove.z - this.pos.z);
+        if (d.length() > 0.12) { moveDir = d.normalize(); scriptSp = this.scriptSpeed; } else { this.vel.x = this.vel.z = 0; }
+      }
       const boost = inp && In.held('boost') && !depow;
       const upH = inp && In.held('up'), downH = inp && In.held('down');
 
@@ -121,14 +128,14 @@ HL.Player = (function () {
       // движение
       const prevY = this.pos.y;
       if (this.flying) {
-        const sp = boost ? 72 : 26;
-        const vy = -Math.sin(pitch - 0.22) * ax.z * sp * 0.9 + ((upH ? 1 : 0) - (downH ? 1 : 0)) * (boost ? 40 : 18);
+        const sp = boost ? 150 : 54;
+        const vy = -Math.sin(pitch - 0.22) * ax.z * sp * 0.9 + ((upH ? 1 : 0) - (downH ? 1 : 0)) * (boost ? 80 : 36);
         const want = moveDir.clone().multiplyScalar(sp * (1 - 0.4 * Math.abs(Math.sin(pitch - 0.22)) * Math.abs(ax.z)));
         want.y = vy;
         const k = boost ? 2.2 : 3.2;
         this.vel.x = U.damp(this.vel.x, want.x, k, dt); this.vel.z = U.damp(this.vel.z, want.z, k, dt); this.vel.y = U.damp(this.vel.y, want.y, k + 1, dt);
       } else {
-        const sp = depow ? 6 : boost ? 22 : 9;
+        const sp = scriptSp || (depow ? 6 : boost ? 22 : 9);
         const k = this.grounded ? 14 : 3;
         this.vel.x = U.damp(this.vel.x, moveDir.x * sp, k, dt); this.vel.z = U.damp(this.vel.z, moveDir.z * sp, k, dt);
         this.vel.y -= 32 * dt;
@@ -144,10 +151,17 @@ HL.Player = (function () {
           else this.doPunchHit(tg);
         } else if (!this.punchHit && this.punchT < 0.2) { this.punchHit = true; A().whiff(); }
       }
-      this.pos.addScaledVector(this.vel, dt);
-      // мир
+      if (this.scriptVel) this.vel.copy(this.scriptVel);
+      // мир (подшаги, чтобы на большой скорости не пролетать сквозь дома)
       const w = g.world;
-      const roof = w.collide(this.pos, this.radius, this.height, prevY);
+      const nSub = Math.min(10, Math.max(1, Math.ceil((this.vel.length() * dt) / 1.5)));
+      let roof = null;
+      for (let k = 0; k < nSub; k++) {
+        const py = this.pos.y;
+        this.pos.addScaledVector(this.vel, dt / nSub);
+        const r = w.collide(this.pos, this.radius, this.height, py);
+        if (r != null) roof = r;
+      }
       const gY = roof != null ? roof : 0;
       const wasGrounded = this.grounded;
       if (this.pos.y <= gY) {
@@ -178,6 +192,7 @@ HL.Player = (function () {
       let wantYaw = this.yaw;
       if (this.lasering || this.punchT > 0) wantYaw = yaw;
       else if (hs > 1.2) wantYaw = Math.atan2(this.vel.x, this.vel.z);
+      else if (this.scriptFace != null) wantYaw = this.scriptFace;
       const prevYaw = this.yaw;
       this.yaw = U.dampAng(this.yaw, wantYaw, this.flying ? 6 : 12, dt);
       const turn = U.angDiff(prevYaw, this.yaw) / Math.max(dt, 1e-3);
@@ -185,7 +200,8 @@ HL.Player = (function () {
       // анимация
       let mode = 'idle', sp = hs, opt = {};
       if (hs > 0.5 || Math.abs(this.vel.y) > 1 || this.lasering) this.idleT = 0; else this.idleT += dt;
-      if (this.carry) { mode = 'carry'; opt = { fly: this.flying }; }
+      if (this.scriptPose) mode = this.scriptPose;
+      else if (this.carry) { mode = 'carry'; opt = { fly: this.flying }; }
       else if (this.punchT > 0) { mode = 'punch'; opt = { p: 1 - this.punchT / 0.35, air: this.flying }; }
       else if (this.flying) {
         const sp3 = this.vel.length();
@@ -202,10 +218,17 @@ HL.Player = (function () {
       else if (mode === 'jump') { this.c.capeAng = this.vel.y < 0 ? -0.5 : 0.4; this.c.capeAmp = 0.15; }
       else { this.c.capeAng = 0.06; this.c.capeAmp = 0.05; }
       M.animate(this.c, dt, mode, sp, opt);
-      M.setGlow(this.c, this.lasering || this.rageT > 0 || (this.hearT > 0 && false), this.lasering ? 0xff2a1a : 0xff5030);
+      M.setGlow(this.c, this.lasering || this.rageT > 0 || this.scriptGlow, this.lasering ? 0xff2a1a : 0xff5030);
       if (this.lasering) for (const s of this.c.glow) s.scale.setScalar(0.4 + Math.random() * 0.15);
       A().setWind(this.flying ? this.vel.length() : 0);
       this.sync();
+    }
+    // пролетел ли игрок через точку за этот кадр (отрезок prevPos→pos)
+    passed(p, r) {
+      const a = this.prevPos.clone().setY(this.prevPos.y + 1.25), b = this.center;
+      const ab = b.clone().sub(a), L2 = ab.lengthSq();
+      const t = L2 > 1e-6 ? U.clamp(p.clone().sub(a).dot(ab) / L2, 0, 1) : 0;
+      return a.addScaledVector(ab, t).distanceTo(p) < r;
     }
     sync() { this.c.root.position.copy(this.pos); this.c.root.rotation.y = this.yaw; }
 

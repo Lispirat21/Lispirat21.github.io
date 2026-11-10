@@ -218,3 +218,5 @@ body.touch #bossbar{bottom:auto;top:max(70px,calc(env(safe-area-inset-top) + 64p
   .bar{width:150px}
   .avatar{width:46px;height:46px;font-size:15px}
 }
+
+#hud.cine #cross,#hud.cine #hudTL,#hud.cine #approval,#hud.cine #objective{opacity:0;transition:opacity .3s}
