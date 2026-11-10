@@ -317,6 +317,7 @@ HL.Missions = (function () {
             v._t = false;
             const c = V(70, 0, 100);
             g.spawnGroup('rob', 'thug', c, 6, { spread: 14, weapon: 'pistol', hp: 55 });
+            g.spawn('pyro', c.x + 6, c.z - 4, { group: 'rob' }); // супертеррорист прикрывает грабителей
             g.spawn('police', c.x - 12, c.z + 25, { yaw: 0.3 });
             g.spawn('police', c.x + 10, c.z - 22, { yaw: 2.5 });
             g.alarm(c, 40);
@@ -588,7 +589,8 @@ HL.Missions = (function () {
             g.spawnGroup('w1', 'agent', p, 4, { spread: 26, weapon: 'rifle', hp: 80 });
             g.spawnGroup('w1', 'agent', p, 2, { spread: 20, weapon: 'antisupe', hp: 80 });
             g.spawnGroup('w1', 'agent', V(232, 0, 0), 2, { weapon: 'rifle', hp: 80, roof: true });
-            g.ui.hint('Фиолетовые пули — анти-супер патроны. Они больнее!', 4);
+            g.spawn('volt', v.port.x - 10, v.port.z + 12, { group: 'w1' }); g.spawn('hawk', v.port.x + 8, v.port.z - 14, { group: 'w1', quiet: true });
+            g.ui.hint('Фиолетовые пули — анти-супер патроны. Осторожно: у Бутчера наняты супертеррористы!', 4);
             v._n = g.groupCount('w1');
           },
           update(g, dt, v) { const n = g.groupCount('w1'); g.ui.el.oText.textContent = `Зачистите порт: ${v._n - n}/${v._n}`; return n === 0; },
@@ -599,6 +601,7 @@ HL.Missions = (function () {
           enter(g, v) {
             const fr = g.spawn('frenchie', 250, -30, { group: 'w2' }), mm = g.spawn('mm', 255, 30, { group: 'w2' });
             g.spawnGroup('w2', 'agent', v.port, 3, { spread: 22, weapon: 'rifle', hp: 80 });
+            g.spawn('brute', v.port.x - 6, v.port.z, { group: 'w2' }); g.spawn('blink', v.port.x + 6, v.port.z + 8, { group: 'w2', quiet: true });
             g.ui.statcard('ФРЕНЧИ И М.М.', [['ГРАНАТЫ', 'ДА'], ['ПУЛЕМЁТ', 'ДА'], ['ДИСЦИПЛИНА', 'MAX'], ['УРОВЕНЬ', '35']], null, 3.5);
             g.ui.say([['fr', 'Mon dieu, он реально здесь…'], ['mm', 'Френчи, гранаты! Работаем!']]);
             v._n = g.groupCount('w2');
@@ -886,7 +889,10 @@ HL.Missions = (function () {
         if (v.active && n === 0) { v.active = false; v.count++; g.changeApproval(3, 'Преступление остановлено'); HL.Audio.success(); v.next = 25; g.music('calm'); }
         if (!v.active && v.next <= 0) {
           let p; for (let k = 0; k < 20; k++) { p = g.world.randomSidewalk(); if (p.distanceTo(g.player.pos) > 90) break; }
-          g.spawnGroup('crime', U.pick(['thug', 'thug', 'agent']), p, U.randi(3, 6), { spread: 12, weapon: U.pick(['pistol', 'rifle']), hp: 60 });
+          g.spawnGroup('crime', U.pick(['thug', 'thug', 'agent']), p, U.randi(2, 5), { spread: 12, weapon: U.pick(['pistol', 'rifle']), hp: 60 });
+          // часто преступлением руководят супертеррористы
+          const ns = Math.random() < 0.35 ? 2 : Math.random() < 0.75 ? 1 : 0;
+          for (let i = 0; i < ns; i++) g.spawn('supe', p.x + U.rand(-8, 8), p.z + U.rand(-8, 8), { group: 'crime' });
           g.alarm(p, 40); HL.Audio.alarm(); g.ui.hint('Преступление в городе! Следуйте за маркером', 3); v.active = true; g.music('combat');
         }
         g.ui.el.oText.textContent = v.active ? `Остановите преступников: осталось ${n} · Остановлено: ${v.count}` : `Город спокоен… Остановлено преступлений: ${v.count}`;

@@ -199,7 +199,7 @@ HL.Player = (function () {
       for (let k = 0; k < nSub; k++) {
         const py = this.pos.y;
         this.pos.addScaledVector(this.vel, dt / nSub);
-        const r = w.collide(this.pos, this.radius, this.height, py);
+        const r = this.noClip ? null : w.collide(this.pos, this.radius, this.height, py);
         if (r != null) roof = r;
       }
       const gY = roof != null ? roof : 0;

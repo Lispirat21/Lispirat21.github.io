@@ -202,8 +202,9 @@ HL.World = (function () {
     W.building = building;
 
     // ---------- разрушаемость ----------
+    W.destructible = false; // дома не ломаются (по просьбе игрока); код обрушения оставлен выключенным
     W.damageBuilding = function (b, amount, point) {
-      if (!b || b.kind !== 'building' || b.dead || !b.parts) return false;
+      if (!W.destructible || !b || b.kind !== 'building' || b.dead || !b.parts) return false;
       const before = b.hp / b.maxHp;
       b.hp -= amount;
       const fx = W.fx, after = Math.max(0, b.hp / b.maxHp);

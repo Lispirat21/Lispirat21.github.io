@@ -77,6 +77,7 @@ HL.Actors = (function () {
       this.pos.x = U.clamp(this.pos.x, -L, L); this.pos.z = U.clamp(this.pos.z, -L, L);
     }
     update(dt) {
+      if (this.puppet) { this.puppet(dt); this.sync(); return; } // управляется кат-сценой
       if (!this.alive) {
         this.deadT += dt;
         this.physics(dt);
@@ -710,6 +711,181 @@ HL.Actors = (function () {
     }
   }
 
+
+  // ================= Супертеррористы со способностями =================
+  const SUPE_DEFS = {
+    pyro: { name: 'Факел', skin: 0x2a1a14, hair: 0x2a1a14, hairStyle: 'mask', torso: 0x7a1e10, emblem: 0xffa020, arms: 0x7a1e10, forearms: 0x2a2a2a, gloves: 0xff7a20,
+      legs: 0x2a2a2e, boots: 0x3a1a10, belt: 0xffa020, eye: 0xffd040, brows: 0x111111, angry: true, bulk: 1.05 },
+    volt: { name: 'Вольт', skin: 0x1a2a4a, hair: 0x1a2a4a, hairStyle: 'mask', torso: 0x1a2a4a, emblem: 0xffe040, arms: 0x1a2a4a, forearms: 0xffe040, gloves: 0x6ad0ff,
+      legs: 0x1a2a4a, boots: 0xffe040, belt: 0xffe040, eye: 0x9ae8ff, brows: 0x111111, angry: true, bulk: 0.95 },
+    blink: { name: 'Блинк', skin: 0x3a1a5a, hair: 0x3a1a5a, hairStyle: 'mask', torso: 0x3a1a5a, emblem: 0xd090ff, arms: 0x3a1a5a, forearms: 0x3a1a5a, gloves: 0xb070ff,
+      legs: 0x24103a, boots: 0x111111, cape: 0x2a0f40, eye: 0xe0b0ff, brows: 0x111111, angry: true, bulk: 0.9, scale: 0.95 },
+    brute: { name: 'Громила', skin: 0x8a6a50, hair: 0x221a14, hairStyle: 'bald', stubble: 0x221a14, torso: 0x3a3a3a, arms: 0x8a6a50, forearms: 0x8a6a50, gloves: 0x222222,
+      legs: 0x4a3a2a, boots: 0x1a1a1a, belt: 0x6a5a40, muscles: true, eye: 0xff4020, brows: 0x111111, angry: true, bulk: 1.35, scale: 1.45 },
+    hawk: { name: 'Ястреб', skin: 0x1a4a2a, hair: 0x1a4a2a, hairStyle: 'mask', torso: 0x1a4a2a, emblem: 0x50ff9a, arms: 0x1a4a2a, forearms: 0x0f2a18, gloves: 0x50ff9a,
+      legs: 0x0f2a18, boots: 0x50ff9a, cape: 0x0f3a20, eye: 0x80ffb0, brows: 0x111111, angry: true, bulk: 0.95 },
+  };
+  const SUPE_INFO = {
+    pyro: { hp: 900, col: 0xff7a20, tag: 'ФАКЕЛ: огненные шары и огнемёт' },
+    volt: { hp: 850, col: 0x6ad0ff, tag: 'ВОЛЬТ: молния оглушает' },
+    blink: { hp: 650, col: 0xb070ff, tag: 'БЛИНК: телепортируется за спину' },
+    brute: { hp: 1900, col: 0xff4020, tag: 'ГРОМИЛА: швыряет глыбы, бьёт о землю' },
+    hawk: { hp: 700, col: 0x50ff9a, tag: 'ЯСТРЕБ: летает и стреляет' },
+  };
+  class Supe extends Actor {
+    constructor(g, kind, o = {}) {
+      const info = SUPE_INFO[kind];
+      super(g, SUPE_DEFS[kind], Object.assign({ hp: info.hp, faction: 'enemy', showHp: true, name: SUPE_DEFS[kind].name, radius: kind === 'brute' ? 0.85 : 0.5 }, o));
+      this.kind = kind; this.col = info.col; this.cd = U.rand(1.2, 2.4); this.st = 'move'; this.stT = 0; this.strafe = Math.random() < 0.5 ? 1 : -1;
+      this.knockMul = kind === 'brute' ? 0.05 : 0.35; this.supe = true;
+      this.glow = M.glowSprite(info.col, 0.9); this.glow.position.set(0, 0.45, 0.25); this.c.spine.add(this.glow);
+      this.hand = M.glowSprite(info.col, 0.5); this.hand.position.set(0, -0.45, 0); this.c.elbowR.add(this.hand);
+      if (kind === 'hawk') { this.noPhysics = true; this.orb = Math.random() * 6; }
+      if (kind === 'brute') this.height = 2.9;
+    }
+    get center() { return V(this.pos.x, this.pos.y + (this.kind === 'brute' ? 1.7 : 1.15), this.pos.z); }
+    handPos() { const p = V(); this.hand.getWorldPosition(p); return p; }
+    die(src) { this.noPhysics = false; this.g.fx.setBeam(2, null); this.g.fx.setBeam(3, null); this.g.fx.warn(2, null); this.glow.visible = this.hand.visible = false; super.die(src); }
+    keepDist(dt, pref, sp) {
+      const P = this.g.player; const d2 = this.dist2D(P.pos);
+      tmp2.set(P.pos.x - this.pos.x, 0, P.pos.z - this.pos.z).normalize();
+      const side = V(-tmp2.z, 0, tmp2.x).multiplyScalar(this.strafe);
+      const fwd = d2 > pref + 3 ? 1 : d2 < pref - 4 ? -1 : 0;
+      const want = tmp2.multiplyScalar(fwd).add(side.multiplyScalar(0.5)).normalize().multiplyScalar(sp);
+      this.vel.x = U.damp(this.vel.x, want.x, 6, dt); this.vel.z = U.damp(this.vel.z, want.z, 6, dt);
+      this.moveSpeed = Math.hypot(this.vel.x, this.vel.z); this.anim = this.moveSpeed > 1 ? 'run' : 'idle';
+      if (Math.random() < dt * 0.4) this.strafe *= -1;
+    }
+    think(dt) {
+      const g = this.g, P = g.player, pc = P.center;
+      if (P.dead) { this.anim = 'idle'; this.stop && this.stop(dt); return; }
+      this.cd -= dt; this.stT -= dt;
+      this.face(P.pos, dt, 8); this.animOpt = {};
+      const d = this.center.distanceTo(pc);
+      this.hand.scale.setScalar(0.5 + Math.sin(g.time * 12) * 0.08);
+      switch (this.kind) {
+        case 'pyro': {
+          if (this.st === 'flame') { // огнемёт вблизи
+            this.stop(dt); this.anim = 'shoot';
+            const from = this.handPos(), dir = pc.clone().sub(from).normalize();
+            for (let i = 0; i < 3; i++) g.fx.burst(from, 1, { color: [0xffd040, 0xff8020, 0xff4010], speed: 18, size: 0.5, life: 0.45, g: 2, drag: 1, grow: -0.4, dir: dir.clone().multiplyScalar(1.6), spread: 0.25 });
+            if (d < 9 && pc.clone().sub(from).normalize().dot(dir) > 0.9) g.hurtPlayer(170 * dt, from, { silent: true });
+            if (this.stT <= 0) { this.st = 'move'; this.cd = U.rand(1.4, 2.2); }
+            break;
+          }
+          this.keepDist(dt, 14, 6);
+          if (this.cd <= 0) {
+            if (d < 8) { this.st = 'flame'; this.stT = 1.3; A().blast(); }
+            else if (d < 70) {
+              const from = this.handPos(), T2 = Math.max(0.5, d / 34), to = pc.clone().add(P.vel.clone().multiplyScalar(T2 * 0.6));
+              const vel = to.sub(from).divideScalar(T2); vel.y += 0.5 * 6 * T2;
+              g.spawnProj('fireball', from, vel, { dmg: 85, owner: this, radius: 4.5, maxDist: 120 }); A().whoosh(); this.anim = 'throw'; this.animOpt = { p: 0.7 };
+              this.cd = U.rand(1.3, 2.0);
+            }
+          }
+          break;
+        }
+        case 'volt': {
+          if (this.st === 'charge') {
+            this.stop(dt); this.anim = 'charge'; this.hand.scale.setScalar(0.8 + (0.9 - this.stT) * 1.6);
+            if (Math.random() < 0.6) g.fx.sparks(this.handPos(), 0x9ae8ff, 1);
+            if (this.stT <= 0) {
+              this.st = 'zap'; this.stT = 0.3;
+              const from = this.handPos();
+              if (d < 80 && g.world.los(from, pc)) { g.hurtPlayer(130, from, { knock: 8 }); P.stun(0.6); g.ui.tag('ОГЛУШЁН!', '#9ae8ff', 0.8); this.zapTo = pc.clone(); }
+              else this.zapTo = from.clone().add(pc.clone().sub(from).normalize().multiplyScalar(Math.min(d, 60)));
+              A().blast(); g.fx.flashLight(this.zapTo, 0x9ae8ff, 6, 0.25, 30);
+            }
+            break;
+          }
+          if (this.st === 'zap') { // зигзаг молнии
+            this.stop(dt); this.anim = 'shoot';
+            const from = this.handPos(), to = this.zapTo, mid = from.clone().lerp(to, 0.5).add(V(U.rand(-1.5, 1.5), U.rand(-1, 1.5), U.rand(-1.5, 1.5)));
+            g.fx.setBeam(2, from, mid, 0.9, 0x6ad0ff, 0xffffff); g.fx.setBeam(3, mid, to, 0.9, 0x6ad0ff, 0xffffff); g.fx.sparks(to, 0x9ae8ff, 2);
+            if (this.stT <= 0) { g.fx.setBeam(2, null); g.fx.setBeam(3, null); this.st = 'move'; this.cd = U.rand(2.6, 3.6); }
+            break;
+          }
+          this.keepDist(dt, 20, 5.5);
+          if (this.cd <= 0 && d < 75) { this.st = 'charge'; this.stT = 0.9; A().charge(0.9); g.ui.tag('ВОЛЬТ ЗАРЯЖАЕТ МОЛНИЮ', '#9ae8ff', 0.9); }
+          break;
+        }
+        case 'blink': {
+          const puff = (p) => { g.fx.burst(p.clone().setY(p.y + 1), 16, { color: [0xb070ff, 0xe0b0ff, 0x3a1a5a], speed: 6, size: 0.35, life: 0.5, g: 0 }); };
+          if (this.st === 'strike') {
+            this.vel.set(0, 0, 0); this.anim = 'punch'; this.animOpt = { p: 1 - this.stT / 0.45 };
+            if (this.stT < 0.2 && !this.hitDone) {
+              this.hitDone = true; A().punch();
+              if (this.center.distanceTo(pc) < 2.8) { g.hurtPlayer(115, this.pos, { knock: 18, down: Math.random() < 0.45 }); g.fx.ring(pc, 0xb070ff, 3, 0.25); }
+              else A().whiff();
+            }
+            if (this.stT <= 0) { // исчезает подальше
+              puff(this.pos); A().whoosh();
+              const a = Math.random() * 6.28, r = U.rand(12, 18);
+              this.pos.set(P.pos.x + Math.cos(a) * r, 0, P.pos.z + Math.sin(a) * r); this.noPhysics = false; puff(this.pos);
+              this.st = 'move'; this.cd = U.rand(2.0, 3.2);
+            }
+            break;
+          }
+          this.keepDist(dt, 13, 7);
+          if (Math.random() < 0.02) { this.c.root.visible = !this.c.root.visible; } else this.c.root.visible = true;
+          if (this.cd <= 0) { // телепорт за спину
+            puff(this.pos); A().whoosh();
+            const back = V(-Math.sin(P.yaw), 0, -Math.cos(P.yaw)).multiplyScalar(1.6);
+            this.pos.copy(P.pos).add(back); this.noPhysics = P.pos.y > 0.5; this.vel.set(0, 0, 0); puff(this.pos);
+            this.face(P.pos, 0); this.st = 'strike'; this.stT = 0.45; this.hitDone = false;
+            g.ui.tag('БЛИНК ЗА СПИНОЙ!', '#e0b0ff', 0.7);
+          }
+          break;
+        }
+        case 'brute': {
+          if (this.st === 'slam') {
+            this.stop(dt); this.anim = 'charge'; g.fx.warn(2, this.pos, 7.5, Math.sin(g.time * 30) * 0.5 + 0.5);
+            if (this.stT <= 0) {
+              g.fx.warn(2, null); A().slam(); g.fx.addShake(0.8); g.fx.dust(this.pos, 22); g.fx.ring(this.pos, 0xffffff, 10, 0.45);
+              if (this.dist2D(P.pos) < 7.5 && P.pos.y - this.pos.y < 3) g.hurtPlayer(210, this.pos, { knock: 24, down: true });
+              this.st = 'move'; this.cd = U.rand(2.2, 3.2);
+            }
+            break;
+          }
+          if (this.st === 'throw') {
+            this.stop(dt); this.anim = 'throw'; this.animOpt = { p: 1 - this.stT / 0.9 };
+            if (!this.rockMesh) { this.rockMesh = new T.Mesh(M.box(1.3, 1.0, 1.2), M.toon(0x6a6560)); this.rockMesh.position.set(0, 3.4, 0); this.obj.add(this.rockMesh); }
+            if (this.stT < 0.3 && this.rockMesh) {
+              this.obj.remove(this.rockMesh); this.rockMesh = null;
+              const from = this.pos.clone().add(V(0, 4.2, 0)), T2 = Math.max(0.6, d / 36), to = pc.clone().add(P.vel.clone().multiplyScalar(T2 * 0.5));
+              const vel = to.sub(from).divideScalar(T2); vel.y += 0.5 * 14 * T2;
+              g.spawnProj('rock', from, vel, { dmg: 190, owner: this, radius: 5 }); A().whoosh();
+            }
+            if (this.stT <= 0) { this.st = 'move'; this.cd = U.rand(2.4, 3.4); }
+            break;
+          }
+          const dd = this.dist2D(P.pos);
+          if (dd > 3.5) { this.moveToward(P.pos, 5.5, dt, 4); this.anim = 'run'; this.moveSpeed = 5.5; } else { this.stop(dt); this.anim = 'idle'; }
+          if (this.cd <= 0) {
+            if (dd < 6 && P.pos.y - this.pos.y < 3) { this.st = 'slam'; this.stT = 0.9; g.ui.tag('ГРОМИЛА: УДАР О ЗЕМЛЮ!', '#ff8060', 0.9); }
+            else if (d < 80) { this.st = 'throw'; this.stT = 0.9; }
+          }
+          break;
+        }
+        case 'hawk': { // кружит в воздухе и стреляет очередями
+          this.orb += dt * 0.6;
+          const r = 16, tgt = P.pos.clone().add(V(Math.cos(this.orb) * r, 0, Math.sin(this.orb) * r)); tgt.y = Math.max(9, P.pos.y + 6);
+          const want = tgt.sub(this.pos); const L = want.length(); want.multiplyScalar(Math.min(20, L * 1.5) / Math.max(L, 0.01));
+          this.vel.lerp(want, 1 - Math.exp(-3 * dt)); this.anim = 'hover'; this.animOpt = { pitch: 0.2 };
+          const b = g.world.inside(this.pos.x, this.pos.y + 0.5, this.pos.z); if (b) this.pos.y = b.y1 + 1;
+          if (this.cd <= 0 && d < 80) {
+            this.shots = (this.shots || 0) + 1; this.anim = 'shoot';
+            const from = this.handPos(), dir = pc.clone().add(P.vel.clone().multiplyScalar(d / 70 * 0.5)).sub(from).normalize();
+            dir.add(V(U.rand(-0.03, 0.03), U.rand(-0.03, 0.03), U.rand(-0.03, 0.03))).normalize();
+            g.spawnProj('bolt', from, dir.multiplyScalar(70), { dmg: 38, owner: this }); A().shot();
+            this.cd = this.shots % 3 ? 0.18 : U.rand(1.6, 2.4);
+          }
+          break;
+        }
+      }
+    }
+  }
+
   // ================= снаряды =================
   const pmats = {};
   function pmat(c) { return pmats[c] || (pmats[c] = new T.MeshBasicMaterial({ color: c, fog: false })); }
@@ -726,6 +902,9 @@ HL.Actors = (function () {
         case 'light': mesh = M.glowSprite(0xfff0a0, 1.6); mesh.add(new T.Mesh(M.sph(0.18), pmat(0xffffff))); break;
         case 'shield': mesh = M.makeShieldMesh(); mesh.scale.setScalar(1.3); this.back = false; break;
         case 'car': mesh = o.mesh || M.buildCar('car'); break;
+        case 'fireball': mesh = M.glowSprite(0xff7a20, 2.2); mesh.add(new T.Mesh(M.sph(0.35), pmat(0xffd060))); break;
+        case 'rock': mesh = new T.Mesh(M.box(1.3, 1.0, 1.2), M.toon(0x6a6560)); break;
+        case 'bolt': mesh = M.glowSprite(0x50ff9a, 1.2); mesh.add(new T.Mesh(M.sph(0.14), pmat(0xd0ffe0))); break;
         default: mesh = new T.Mesh(M.sph(0.2), pmat(0xffffff));
       }
       this.mesh = mesh; mesh.position.copy(this.pos); g.scene.add(mesh);
@@ -735,6 +914,8 @@ HL.Actors = (function () {
       const g = this.g, P = g.player;
       this.t += dt;
       if (this.type === 'grenade' || this.type === 'car') this.vel.y -= (this.type === 'car' ? 12 : 22) * dt;
+      if (this.type === 'fireball') { this.vel.y -= 6 * dt; if (Math.random() < 0.8) g.fx.fire(this.pos, 1); }
+      if (this.type === 'rock') { this.vel.y -= 14 * dt; this.mesh.rotation.x += dt * 4; this.mesh.rotation.y += dt * 3; }
       if (this.type === 'shield') {
         // бумеранг: летит, затем возвращается к владельцу
         const ow = this.owner;
@@ -757,7 +938,7 @@ HL.Actors = (function () {
         const pc = P.center; const r = this.type === 'car' ? 3 : this.type === 'shield' ? 1.6 : 0.9;
         if (this.pos.distanceTo(pc) < r) {
           if (this.type === 'grenade') { this.boom(); return; }
-          if (this.type === 'car') { this.boom(); return; }
+          if (this.type === 'car' || this.type === 'fireball' || this.type === 'rock') { this.boom(); return; }
           g.hurtPlayer(this.dmg, this.pos, { knock: this.type === 'shield' ? 20 : this.type === 'antisupe' ? 3 : 0, type: this.type, down: this.type === 'shield' });
           if (this.type === 'shield') { this.back = true; A().clang(); g.fx.sparks(this.pos, 0xffffff, 10); return; }
           if (this.type === 'light') g.fx.burst(this.pos, 8, { color: [0xffffff, 0xfff0a0], speed: 8, size: 0.2, life: 0.4 });
@@ -767,7 +948,7 @@ HL.Actors = (function () {
       // попадание в мир
       if (this.pos.y < 0.1 || g.world.inside(this.pos.x, this.pos.y, this.pos.z)) {
         if (this.type === 'grenade') { this.vel.y = Math.abs(this.vel.y) * 0.35; this.vel.x *= 0.5; this.vel.z *= 0.5; this.pos.y = Math.max(0.15, this.pos.y); return; }
-        if (this.type === 'car') { this.boom(); return; }
+        if (this.type === 'car' || this.type === 'fireball' || this.type === 'rock') { this.boom(); return; }
         if (this.type === 'shield') { this.back = true; A().clang(); g.fx.sparks(this.pos, 0xffffff, 6); this.pos.addScaledVector(this.vel, -dt * 2); return; }
         g.fx.sparks(this.pos, this.type === 'antisupe' ? 0xc040ff : 0xffe0a0, 3);
         this.kill(); return;
@@ -777,10 +958,12 @@ HL.Actors = (function () {
     boom() {
       const r = this.o.radius || 6;
       this.g.explode(this.pos.clone(), r, this.dmg, this.owner, this.type === 'car' ? 1.4 : 0.8);
+      if (this.type === 'fireball') this.g.fx.fire(this.pos, 8);
+      if (this.type === 'rock') { this.g.fx.dust(this.pos, 14); this.g.fx.burst(this.pos, 12, { color: [0x6a6560, 0x8a8580], speed: 10, size: 0.4, life: 1, g: -20 }); }
       this.kill();
     }
     kill() { this.alive = false; this.g.scene.remove(this.mesh); }
   }
 
-  return { Ryan, Actor, Civilian, Victim, Gunman, Grenadier, Brawler, Starlight, Runner, SoldierBoy, ButcherBoss, Vehicle, Proj, WEAPONS };
+  return { Supe, SUPE_INFO, Ryan, Actor, Civilian, Victim, Gunman, Grenadier, Brawler, Starlight, Runner, SoldierBoy, ButcherBoss, Vehicle, Proj, WEAPONS };
 })();

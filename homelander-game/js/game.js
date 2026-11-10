@@ -76,6 +76,11 @@ HL.Game = (function () {
       case 'frenchie': a = new AC.Grenadier(g, D.frenchie, o); a.name = 'Френчи'; break;
       case 'mm': a = new AC.Gunman(g, D.mm, Object.assign({ weapon: 'heavy', hp: 620, showHp: true, prefDist: 20, speed: 3.5 }, o)); a.knockMul = 0.5; break;
       case 'kimiko': a = new AC.Brawler(g, D.kimiko, o); a.keepBody = true; break;
+      case 'supe': kind = U.pick(['pyro', 'volt', 'blink', 'brute', 'hawk']); // fallthrough
+      case 'pyro': case 'volt': case 'blink': case 'brute': case 'hawk':
+        a = new AC.Supe(g, kind, o);
+        if (!o.quiet) { const inf = AC.SUPE_INFO[kind]; ui.tag('СУПЕРЗЛОДЕЙ: ' + a.name.toUpperCase(), '#' + inf.col.toString(16).padStart(6, '0'), 1.6); if (!g._seenSupe) g._seenSupe = {}; if (!g._seenSupe[kind]) { g._seenSupe[kind] = 1; ui.hint(inf.tag, 3.5); } }
+        break;
       case 'ryan': a = new AC.Ryan(g, o); break;
       case 'starlight': a = new AC.Starlight(g, o); break;
       case 'soldierboy': a = new AC.SoldierBoy(g, o); break;
@@ -392,7 +397,7 @@ HL.Game = (function () {
   };
   function statRows() {
     const st = g.player.stats;
-    return [['РЕЙТИНГ', Math.round(g.approval) + '%'], ['ВРАГОВ', st.kills], ['ЖЕРТВ СРЕДИ ГРАЖДАН', st.civ], ['ЗДАНИЙ РАЗРУШЕНО', st.bld || 0], ['ВРЕМЯ', U.fmtTime(g.time)]];
+    return [['РЕЙТИНГ', Math.round(g.approval) + '%'], ['ВРАГОВ', st.kills], ['ЖЕРТВ СРЕДИ ГРАЖДАН', st.civ], ['ВРЕМЯ', U.fmtTime(g.time)]];
   }
   function complete() {
     const m = mission;
