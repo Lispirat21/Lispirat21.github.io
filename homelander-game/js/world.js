@@ -593,18 +593,18 @@ HL.World = (function () {
       }
       // стол президента (Resolute desk) и кресло
       const dz = -RZ + 3.4;
-      mk(M.box(3.6, 1.05, 1.6), wood, 0, 0.53, dz);
-      mk(M.box(3.8, 0.08, 1.75), M.toon(0x3a200c), 0, 1.09, dz);
-      mk(M.box(1.3, 0.75, 0.05), M.toon(0x7a4a24), 0, 0.55, dz + 0.81);
-      const deskSeal = mk(M.cyl(0.25, 0.25, 0.03, 16), gold, 0, 0.6, dz + 0.84); deskSeal.rotation.x = Math.PI / 2;
-      mk(M.box(0.5, 0.04, 0.35), M.toon(0xf4f0e0), -0.8, 1.15, dz); // бумаги
-      mk(M.box(0.3, 0.25, 0.3), M.toon(0x222222), 1.2, 1.24, dz); // телефон
+      mk(M.box(3.6, 0.76, 1.6), wood, 0, 0.38, dz); // стол ниже — сидящего Хоумлендера хорошо видно
+      mk(M.box(3.8, 0.08, 1.75), M.toon(0x3a200c), 0, 0.8, dz);
+      mk(M.box(1.3, 0.55, 0.05), M.toon(0x7a4a24), 0, 0.4, dz + 0.81);
+      const deskSeal = mk(M.cyl(0.25, 0.25, 0.03, 16), gold, 0, 0.42, dz + 0.84); deskSeal.rotation.x = Math.PI / 2;
+      mk(M.box(0.5, 0.04, 0.35), M.toon(0xf4f0e0), -0.8, 0.86, dz); // бумаги
+      mk(M.box(0.3, 0.25, 0.3), M.toon(0x222222), 1.2, 0.96, dz); // телефон
       const chair = new T.Group(); chair.position.set(0, 0, dz - 1.3); grp.add(chair);
       const cm = M.toon(0x2a1a14);
       const seat = new T.Mesh(M.box(1, 0.2, 0.9), cm); seat.position.y = 0.36; chair.add(seat);
       const back = new T.Mesh(M.box(1, 1.5, 0.2), cm); back.position.set(0, 1.05, -0.45); chair.add(back);
       const leg = new T.Mesh(M.cyl(0.08, 0.08, 0.5, 8), M.toon(0x777777)); leg.position.y = 0.25; chair.add(leg);
-      addBox(cx - 1.9, cz + dz - 0.85, cx + 1.9, cz + dz + 0.85, 1.12, 'desk');
+      addBox(cx - 1.9, cz + dz - 0.85, cx + 1.9, cz + dz + 0.85, 0.84, 'desk');
       // флаги за столом
       const ft = usFlagTex();
       for (const [fx, col] of [[-2.6, null], [2.6, 0x1c2c6a]]) {

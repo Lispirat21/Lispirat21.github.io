@@ -704,7 +704,7 @@ HL.Missions = (function () {
             g.controlsEnabled = false; g.cinematic = true;
             v.ev = 0; v.T = 0; v.done = false;
             v.walk = (tgt, sp) => function (dt) { const d = this.moveToward(tgt, sp, dt, 6); this.face(d > 0.3 ? tgt : g.player.pos, dt, 6); this.anim = d > 0.3 ? 'walk' : 'idle'; this.moveSpeed = sp; this.animOpt = { lash: false }; this.pos.y = 0; this.vel.y = 0; };
-            v.cam = { pos: V(0.9, 1.85, O.desk.z + 3.7), look: V(0, 1.45, O.chair.z) }; // крупно: Хоумлендер за столом
+            v.cam = { pos: V(-1.6, 1.75, O.desk.z + 2.6), look: V(0, 1.25, O.chair.z) }; // сбоку, из-за края стола: Хоумлендера хорошо видно // крупно: Хоумлендер за столом
             g.ui.caption('ОВАЛЬНЫЙ КАБИНЕТ. ПРЯМОЙ ЭФИР.', 0.42);
             g.ui.say([['hl', 'Американцы. Я обращаюсь к вам из Овального кабинета.'], ['hl', 'Всю жизнь я защищал вас. Теперь пришло время вести вас.'],
               ['hl', 'Больше никаких лжецов в костюмах. Только я. И правда…', 2.4]], () => { v.ev = 1; v.T = 0; });
