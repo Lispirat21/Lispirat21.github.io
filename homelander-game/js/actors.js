@@ -447,7 +447,7 @@ HL.Actors = (function () {
   // ================= Бутчер на Темп-V (финальный босс) =================
   class ButcherBoss extends Actor {
     constructor(g, o = {}) {
-      super(g, M.DEFS.butcherV, Object.assign({ hp: 4600, faction: 'enemy', name: 'Билли Бутчер', radius: 0.6, height: 2.3 }, o));
+      super(g, M.DEFS.butcherV, Object.assign({ hp: 3800, faction: 'enemy', name: 'Билли Бутчер', radius: 0.6, height: 2.3 }, o));
       this.boss = true; this.st = 'chase'; this.stT = 0; this.cd = { sweep: 2, grab: 5, leap: 6, car: 4 }; this.knockMul = 0.2;
       this.leapFrom = V(); this.leapTo = V(); this.c.irisMat.color.setHex(0xff3a1a);
     }

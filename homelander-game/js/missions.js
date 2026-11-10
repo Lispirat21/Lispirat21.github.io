@@ -8,6 +8,165 @@ HL.Missions = (function () {
     enter(g, v) { v._t = false; g.ui.say(lines, () => { v._t = true; }); },
     update(g, dt, v) { return v._t; },
   }, o);
+  // ---------- кат-сцены посреди боя с Бутчером ----------
+  function butcherCine(g, v, kind) {
+    const b = v.b, P = g.player, O = v.O;
+    g.fx.setBeam(5, null); g.fx.warn(0, null); g.fx.warn(1, null);
+    if (b.carMesh) { b.obj.remove(b.carMesh); b.carMesh = null; }
+    b.noPhysics = false; b.pos.y = 0; b.vel.set(0, 0, 0); b.setSt('chase', 0); b.invuln = true;
+    P.downT = 0; P.c.cur.pitch = 0; P.scriptVel = null; P.scriptPose = null;
+    if (P.carry) P.drop();
+    // остальных — на паузу
+    v.frozen = [];
+    for (const a of g.actors) if (a !== b && a.alive && a.faction === 'enemy') { v.frozen.push([a, a.think]); a.think = function (dt) { this.anim = 'idle'; this.stop && this.stop(dt); }; }
+    b.think = function (dt) { this.anim = 'idle'; this.animOpt = { lash: false }; this.stop(dt); this.face(P.pos, dt, 8); };
+    v.cs = { kind, T: 0, ev: 0 };
+    g.cinema(P.center, b.center); g.music('boss');
+    if (kind === 'rush') {
+      // разнести их по комнате: Хоумлендер у одной стены, Бутчер у другой
+      const c = O.center;
+      P.place(c.x - 9, 2.2, c.z, Math.PI / 2); P.flying = true;
+      b.place ? b.place(c.x + 6, 0, c.z) : b.pos.set(c.x + 6, 0, c.z);
+      g.ui.caption('ХОУМЛЕНДЕР В ЯРОСТИ', 0.8);
+    } else {
+      const c = O.center;
+      b.pos.set(c.x + 3, 0, c.z); P.place(c.x - 1, 0, c.z, Math.PI / 2);
+      g.ui.flash(0.3); g.ui.caption('ЩУПАЛЬЦА!', 0.6);
+    }
+    A().stinger();
+  }
+  function wakeButcher(g, v) {
+    const b = v.b; v.butActive = true;
+    b.think = b._think; b.invuln = false; b.c.tentacles.forEach((t) => (t.root.visible = true));
+    g.fx.burst(b.center, 20, { color: [0x8e3434, 0x5a1010], speed: 8, size: 0.3, life: 0.6 }); A().stinger();
+    if (g.ui && !g.ui.talking) g.ui.say([['but', 'Ну всё, дорогуша. Ты сам напросился.', 2.2]]);
+  }
+  // щупальца для кат-сцены: настоящие изогнутые трубы
+  let tentMat = null;
+  function tentacles(g, v, from, to, on = true) {
+    if (!v.tubes) {
+      tentMat = tentMat || HL.Models.toon(0x7e2a26);
+      v.tubes = [0, 1].map(() => { const m = new T.Mesh(new T.BufferGeometry(), tentMat); m.castShadow = true; m.frustumCulled = false; g.scene.add(m); return m; });
+    }
+    v.tubes.forEach((m, i) => {
+      m.visible = on; if (!on) return;
+      const s = i ? 1 : -1, t = g.time;
+      const a = from.clone().add(V(0, 0.15 * i, 0)), d = to.clone().sub(a), L = d.length();
+      const side = V(-d.z, 0, d.x).normalize().multiplyScalar(s * (0.6 + 0.25 * Math.sin(t * 9 + i)));
+      const c1 = a.clone().addScaledVector(d, 0.3).add(side).add(V(0, L * 0.25, 0));
+      const c2 = a.clone().addScaledVector(d, 0.7).sub(side.clone().multiplyScalar(0.5)).add(V(0, L * 0.12 + Math.sin(t * 12 + i) * 0.2, 0));
+      const end = to.clone().add(V(0.25 * s, 0.1 * i, 0));
+      const curve = new T.CubicBezierCurve3(a, c1, c2, end);
+      m.geometry.dispose();
+      m.geometry = new T.TubeGeometry(curve, 24, 0.14, 7, false);
+      // сужение к концу
+      const pos = m.geometry.attributes.position, n = pos.count, ring = 8;
+      for (let k = 0; k < n; k++) {
+        const seg = Math.floor(k / ring) / 24, cp = curve.getPoint(Math.min(1, seg));
+        const f = 1.25 - seg * 0.75;
+        pos.setXYZ(k, cp.x + (pos.getX(k) - cp.x) * f, cp.y + (pos.getY(k) - cp.y) * f, cp.z + (pos.getZ(k) - cp.z) * f);
+      }
+      m.geometry.computeVertexNormals();
+    });
+  }
+  function butcherCineEnd(g, v) {
+    const b = v.b, P = g.player;
+    for (const [a, th] of v.frozen) a.think = th;
+    v.frozen = null; v.cs = null;
+    b.think = b._think; b.invuln = false; b.setSt('chase', 0); b.cd.grab = 3; b.cd.sweep = 2; b.cd.leap = 4;
+    P.scriptVel = null; P.scriptPose = null; P.scriptFace = null; P.scriptMove = null; P.flying = false;
+    g.fx.setBeam(4, null); g.fx.setBeam(5, null); if (v.tubes) tentacles(g, v, null, null, false);
+    g.camYaw = Math.atan2(b.pos.x - P.pos.x, b.pos.z - P.pos.z); g.camPitch = 0.15;
+    g.cinema(null);
+  }
+  function butcherCineUpdate(g, dt, v) {
+    butcherCineStep(g, dt, v);
+    const co = g.camOverride;
+    if (co && v.O) { const p = co.pos.clone(); v.O.clampInside(p); p.y = Math.max(0.7, p.y); g.camOverride = { pos: p, look: co.look, rate: 9 }; }
+  }
+  function butcherCineStep(g, dt, v) {
+    const cs = v.cs, b = v.b, P = g.player, O = v.O; cs.T += dt;
+    const side = V(0, 0, 1);
+    if (cs.kind === 'rush') {
+      if (cs.ev === 0) { // разгон
+        const to = b.center.sub(P.center); const d = to.length();
+        P.scriptVel = to.normalize().multiplyScalar(cs.T < 0.35 ? 8 : 46); P.flying = true;
+        if (Math.random() < 0.8) g.fx.burst(P.center, 1, { color: [0xffffff, 0xff4030], speed: 1, size: 0.3, life: 0.3, g: 0 });
+        const mid = P.center.lerp(b.center, 0.5);
+        g.camOverride = { pos: mid.clone().addScaledVector(side, 6).setY(2.2), look: mid };
+        if (d < 1.7 || cs.T > 1.6) { // удар-таран
+          cs.ev = 1; cs.T = 0; P.scriptVel = V(); P.flying = false; P.scriptPose = 'punch'; g.hitStop = 0.12;
+          A().punch(); A().slam(); g.fx.addShake(1.3); g.fx.ring(b.center, 0xffffff, 5, 0.4); g.ui.flash(0.35);
+          g.fx.burst(b.center, 14, { color: [0xb01818, 0x7a0e0e, 0xffffff], speed: 12, size: 0.2, life: 0.5, g: -16 });
+          const dir = b.pos.clone().sub(P.pos).setY(0).normalize();
+          b.invuln = false; b.damage(220, P); b.invuln = true;
+          b.vel.copy(dir.multiplyScalar(18)).setY(6); b.airborne = true; b.spin = 9; b.downT = 6;
+        }
+      } else if (cs.ev === 1) { // Бутчер летит и падает; Хоумлендер идёт к нему
+        P.scriptVel = null; P.scriptPose = cs.T < 0.4 ? 'punch' : null;
+        const tgt = b.pos.clone().add(b.pos.clone().sub(O.center).setY(0).normalize().multiplyScalar(-1.3)); tgt.y = 0;
+        if (cs.T > 0.7) { P.scriptMove = tgt; P.scriptSpeed = 6; }
+        const look = b.center.lerp(P.center, 0.4);
+        g.camOverride = { pos: look.clone().addScaledVector(side, -5.5).setY(2.6), look };
+        if (cs.T > 1.2 && P.pos.distanceTo(tgt) < 0.5 && !b.airborne) { cs.ev = 2; cs.T = 0; cs.n = 0; P.scriptMove = null; }
+        if (cs.T > 3.2) { cs.ev = 2; cs.T = 0; cs.n = 0; P.scriptMove = null; }
+      } else if (cs.ev === 2) { // серия ударов по лежащему
+        P.scriptFace = Math.atan2(b.pos.x - P.pos.x, b.pos.z - P.pos.z);
+        const k = Math.floor(cs.T / 0.42);
+        P.scriptPose = (cs.T % 0.42) < 0.2 ? 'punch' : null;
+        if (k > cs.n && cs.n < 3) {
+          cs.n++; b.invuln = false; b.damage(110, P); b.invuln = true; b.downT = 3;
+          A().punch(); g.fx.addShake(0.8); g.hitStop = 0.06;
+          g.fx.burst(b.center.setY(0.4), 10, { color: [0xb01818, 0x7a0e0e], speed: 8, size: 0.18, life: 0.5, g: -16 });
+          g.fx.ring(b.pos.clone().setY(0.3), 0xffffff, 3, 0.25);
+          if (cs.n === 3) g.ui.say([['hl', 'Ты правда думал, что сможешь меня остановить, Билли?', 2.4]]);
+        }
+        const look = b.center.setY(0.6);
+        g.camOverride = { pos: P.center.clone().addScaledVector(side, 3.6).add(V(0, 1.0, 0)), look };
+        if (cs.T > 2.4) { b.downT = 0.6; butcherCineEnd(g, v); }
+      }
+      return;
+    }
+    // ---- щупальца: хватает и бьёт об пол ----
+    const from = b.center.add(V(0, 0.5, 0));
+    const tent = (to) => tentacles(g, v, from, to);
+    b.anim = 'shoot'; b.animOpt = { lash: true };
+    b.think = function (dt) { this.anim = 'shoot'; this.animOpt = { lash: true }; this.stop(dt); this.face(P.pos, dt, 10); };
+    const fw = P.pos.clone().sub(b.pos).setY(0); if (fw.lengthSq() < 0.01) fw.set(1, 0, 0); fw.normalize();
+    if (cs.ev === 0) { // щупальца летят к нему
+      const k = Math.min(1, cs.T / 0.45);
+      tent(from.clone().lerp(P.center, k));
+      P.scriptVel = V(); P.flying = true;
+      g.camOverride = { pos: b.center.addScaledVector(fw, -3.5).add(V(1.5, 1.2, 0)), look: P.center };
+      if (k >= 1) { cs.ev = 1; cs.T = 0; A().punch(); g.ui.tag('СХВАЧЕН!', '#ff6a6a', 1); P.scriptPose = 'choked'; cs.slams = 0; }
+    } else if (cs.ev === 1 || cs.ev === 3) { // поднимает вверх
+      const up = b.pos.clone().addScaledVector(fw, 3.2).setY(cs.ev === 1 ? 4.6 : 5.0);
+      if (cs.ev === 3) up.add(V(-fw.z, 0, fw.x).multiplyScalar(2.4 * (cs.slams % 2 ? 1 : -1)));
+      P.scriptVel = up.sub(P.pos).multiplyScalar(7); P.flying = true; P.scriptPose = 'choked';
+      tent(P.center);
+      g.camOverride = { pos: b.center.addScaledVector(fw, -1.5).add(V(-fw.z * 6, 0.2, fw.x * 6)), look: P.center.lerp(b.center, 0.4) };
+      if (cs.T > 0.75) { cs.ev = 2; cs.T = 0; }
+    } else if (cs.ev === 2) { // об пол!
+      P.scriptVel = V(0, -55, 0).addScaledVector(fw, 2); P.scriptPose = 'choked';
+      tent(P.center);
+      if (P.pos.y < 0.08 || cs.T > 0.5) {
+        cs.slams++;
+        A().slam(); A().punch(); g.fx.addShake(1.4); g.fx.dust(P.pos, 8); g.fx.ring(P.pos.clone().setY(0.2), 0xffffff, 7, 0.45); g.ui.flash(0.25); g.hitStop = 0.1;
+        g.fx.burst(P.pos.clone().setY(0.3), 18, { color: [0xd8ccb0, 0x8a7a60, 0x6a5a40], speed: 12, size: 0.35, life: 1, g: -20, up: true });
+        g.hurtPlayer(Math.max(0, Math.min(110, P.hp - 80)), b.pos, { silent: false });
+        if (cs.slams < 2) { cs.ev = 3; cs.T = 0; }
+        else { cs.ev = 4; cs.T = 0; g.ui.say([['but', 'Это за Бекку, ублюдок!', 2.2]]); }
+      }
+      g.camOverride = { pos: b.center.addScaledVector(fw, -3).add(V(-fw.z * 8, 1.8, fw.x * 8)), look: P.center.lerp(b.center, 0.3) };
+    } else if (cs.ev === 4) { // отпускает
+      P.scriptVel = null; P.scriptPose = null; P.flying = false;
+      if (cs.T < 0.3) tent(P.center); else tentacles(g, v, null, null, false);
+      if (cs.T > 0.3 && !cs.rel) { cs.rel = true; P.knockdown(fw.clone(), 8, 1.0); }
+      g.camOverride = { pos: b.center.addScaledVector(fw, -3).add(V(-fw.z * 8, 2.0, fw.x * 8)), look: P.center.lerp(b.center, 0.4) };
+      if (cs.T > 2.2) butcherCineEnd(g, v);
+    }
+  }
+  const A = () => HL.Audio;
   const wait = (sec, o = {}) => Object.assign({ enter(g, v) { v._w = sec; }, update(g, dt, v) { v._w -= dt; return v._w <= 0; } }, o);
   const goto = (pos, r, text, o = {}) => Object.assign({
     text, wp: () => pos,
@@ -531,7 +690,7 @@ HL.Missions = (function () {
           const def = Object.assign(HL.Models.randomCivDef(), { camera: true, simple: false });
           const r = g.spawn('civ', sd * 1.6, O.desk.z + 5.5, { def, mood: 'watch' }); r.yaw = Math.PI; v.rep.push(r);
         }
-        g.missionUpdate = () => { if (Math.random() < 0.5) g.fx.fire(O.fire.clone().add(V(U.rand(-0.5, 0.5), 0, 0)), 1); };
+        g.missionUpdate = () => { if (Math.random() < 0.5) g.fx.burst(O.fire.clone().add(V(U.rand(-0.5, 0.5), 0, 0)), 1, { color: [0xffd040, 0xff8020, 0xff4010], speed: 1, size: 0.35, life: 0.6, g: 4, drag: 0.8, grow: -0.6, up: true }); }; // огонь в камине без дыма в комнату
       },
       steps: [
         {
@@ -639,6 +798,8 @@ HL.Missions = (function () {
             g.fx.setBeam(0, null); g.fx.setBeam(1, null); HL.Audio.setLaser(false); P.scriptGlow = false;
             if (v.b) v.b.noPhysics = false; if (v.k) v.k.noPhysics = false;
             for (const a of [v.k, v.r, v.b]) if (a) a.think = function (dt) { this.anim = 'idle'; this.animOpt = { lash: false }; this.vel.set(0, this.vel.y, 0); this.face(g.player.pos, dt, 3); if (this.noPhysics) this.vel.y = 0; };
+            // Бутчера можно бить и пока он ждёт — тогда он сразу вступает в драку
+            if (v.b) { v.b.invuln = false; v.b.onHurt = function () { if (v.butActive || !this.alive) return; wakeButcher(g, v); }; }
             g.cinema(null); g.music('boss');
           },
         },
@@ -663,19 +824,22 @@ HL.Missions = (function () {
         {
           text: 'Победите Бутчера',
           enter(g, v) {
-            const b = v.b; b.think = b._think; b.invuln = false; b.c.tentacles.forEach((t) => (t.root.visible = true));
-            g.fx.burst(b.center, 20, { color: [0x8e3434, 0x5a1010], speed: 8, size: 0.3, life: 0.6 }); HL.Audio.stinger();
-            g.ui.say([['but', 'Ты сделал больно собственному сыну. А теперь — по-взрослому.'], ['sys', '*из спины Бутчера вырываются щупальца*'], ['hl', 'Билли. Хватит болтать.']]);
+            if (!v.b.alive) return;
+            if (!v.butActive) { wakeButcher(g, v); g.ui.say([['but', 'Ты сделал больно собственному сыну. А теперь — по-взрослому.'], ['sys', '*из спины Бутчера вырываются щупальца*'], ['hl', 'Билли. Хватит болтать.']]); }
           },
           update(g, dt, v) {
             const b = v.b, f = b.hp / b.maxHp;
+            if (!v.summon) v.summon = [false, false];
+            if (v.cs) { butcherCineUpdate(g, dt, v); return false; }
             g.ui.boss('Билли Бутчер (Темп-V)', f);
+            if (b.alive && f < 0.7 && !v.cs1) { v.cs1 = true; butcherCine(g, v, 'rush'); return false; }
+            if (b.alive && f < 0.42 && !v.cs2) { v.cs2 = true; butcherCine(g, v, 'slam'); return false; }
             if (f < 0.66 && !v.summon[0]) { v.summon[0] = true; g.spawnGroup('adds', 'agent', b.pos, 4, { spread: 5, weapon: 'antisupe', hp: 80 }); g.ui.say([['but', 'Парни! Через пролом! Огонь по нему!']]); }
             if (f < 0.33 && !v.summon[1]) { v.summon[1] = true; g.spawnGroup('adds', 'agent', b.pos, 4, { spread: 5, weapon: 'rifle', hp: 80 }); g.ui.say([['but', 'Я тебя не отпущу, слышишь?! Никогда!']]); }
             return !b.alive;
           },
           wp: (g, v) => v.b.alive && v.b.center,
-          exit(g) { g.ui.boss(null); g.music(null); },
+          exit(g, v) { if (v.cs) butcherCineEnd(g, v); g.ui.boss(null); g.music(null); },
         },
         talk([['but', 'Кх-х… Ну давай. Чего ждёшь?'], ['hl', '…'], ['ash', '*в наушнике* Хоумлендер, на тебя смотрят все камеры страны. И Райан тоже. Решай.']], { text: 'Решение' }),
         {

@@ -131,7 +131,7 @@ HL.FX = (function () {
     function addShake(v) { if (HL.Settings.data.shake) shake = Math.min(1.5, shake + v); }
 
     function update(dt, camera) {
-      let n = 0;
+      let n = 0; const cp = camera ? camera.position : null;
       for (let i = 0; i < MAX; i++) {
         const p = P[i];
         if (p.life <= 0) continue;
@@ -142,7 +142,8 @@ HL.FX = (function () {
         p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
         if (p.y < 0.05) { p.y = 0.05; p.vy *= -0.3; }
         const a = p.life / p.max;
-        const s = Math.max(0.01, p.s * (p.grow >= 0 ? 1 + (1 - a) * p.grow * 3 : Math.pow(a, -p.grow * 0.8)));
+        let s = Math.max(0.01, p.s * (p.grow >= 0 ? 1 + (1 - a) * p.grow * 3 : Math.pow(a, -p.grow * 0.8)));
+        if (cp) { const dx = p.x - cp.x, dy = p.y - cp.y, dz = p.z - cp.z, d2 = dx * dx + dy * dy + dz * dz, lim = (s + 1.2) * (s + 1.2) * 4; if (d2 < lim) s *= Math.max(0.02, Math.sqrt(d2 / lim) * 1.2 - 0.2); }
         p.rot += dt * 3;
         mtx.makeRotationY(p.rot); mtx.scale(sv.set(s, s, s)); mtx.setPosition(p.x, p.y, p.z);
         im.setMatrixAt(n, mtx); im.setColorAt(n, p.c); n++;

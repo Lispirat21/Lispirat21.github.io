@@ -245,7 +245,7 @@ HL.Game = (function () {
   function updateCamera(dt) {
     const P = g.player;
     if (g.camOverride) {
-      camPos.lerp(g.camOverride.pos, 1 - Math.exp(-3 * dt)); camLook.lerp(g.camOverride.look, 1 - Math.exp(-3 * dt));
+      const cr = g.camOverride.rate || 3; camPos.lerp(g.camOverride.pos, 1 - Math.exp(-cr * dt)); camLook.lerp(g.camOverride.look, 1 - Math.exp(-cr * dt));
       camera.position.copy(camPos); camera.lookAt(camLook);
       return;
     }
@@ -580,6 +580,8 @@ HL.Game = (function () {
   // для отладки/тестов
   g._start = (i) => startMission(i === 'free' ? HL.Missions.FREE : HL.Missions.LIST[i], i === 'free' ? null : i);
   g._next = () => nextStep();
+  g._m = () => mission;
+  g._step = (n, dt = 0.05) => { for (let i = 0; i < n && g.state === 'play'; i++) { step(dt); ui.update(dt, dt); if (g.player) updateCamera(dt); camera.updateMatrixWorld(); } }; // отладка: прокрутка без рендера
   g._toMenu = () => toMenu();
   Object.defineProperty(g, 'mission', { get: () => mission });
 
