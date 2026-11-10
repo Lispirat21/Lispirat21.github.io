@@ -726,18 +726,18 @@ HL.Actors = (function () {
       legs: 0x0f2a18, boots: 0x50ff9a, cape: 0x0f3a20, eye: 0x80ffb0, brows: 0x111111, angry: true, bulk: 0.95 },
   };
   const SUPE_INFO = {
-    pyro: { hp: 900, col: 0xff7a20, tag: 'ФАКЕЛ: огненные шары и огнемёт' },
-    volt: { hp: 850, col: 0x6ad0ff, tag: 'ВОЛЬТ: молния оглушает' },
-    blink: { hp: 650, col: 0xb070ff, tag: 'БЛИНК: телепортируется за спину' },
-    brute: { hp: 1900, col: 0xff4020, tag: 'ГРОМИЛА: швыряет глыбы, бьёт о землю' },
-    hawk: { hp: 700, col: 0x50ff9a, tag: 'ЯСТРЕБ: летает и стреляет' },
+    pyro: { hp: 320, col: 0xff7a20, tag: 'ФАКЕЛ: огненные шары и огнемёт' },
+    volt: { hp: 300, col: 0x6ad0ff, tag: 'ВОЛЬТ: бьёт молнией' },
+    blink: { hp: 220, col: 0xb070ff, tag: 'БЛИНК: телепортируется за спину' },
+    brute: { hp: 650, col: 0xff4020, tag: 'ГРОМИЛА: швыряет глыбы, бьёт о землю' },
+    hawk: { hp: 240, col: 0x50ff9a, tag: 'ЯСТРЕБ: летает и стреляет' },
   };
   class Supe extends Actor {
     constructor(g, kind, o = {}) {
       const info = SUPE_INFO[kind];
       super(g, SUPE_DEFS[kind], Object.assign({ hp: info.hp, faction: 'enemy', showHp: true, name: SUPE_DEFS[kind].name, radius: kind === 'brute' ? 0.85 : 0.5 }, o));
       this.kind = kind; this.col = info.col; this.cd = U.rand(1.2, 2.4); this.st = 'move'; this.stT = 0; this.strafe = Math.random() < 0.5 ? 1 : -1;
-      this.knockMul = kind === 'brute' ? 0.05 : 0.35; this.supe = true;
+      this.knockMul = kind === 'brute' ? 0.35 : 0.8; // слабее Хоумлендера: отлетают от ударов this.supe = true;
       this.glow = M.glowSprite(info.col, 0.9); this.glow.position.set(0, 0.45, 0.25); this.c.spine.add(this.glow);
       this.hand = M.glowSprite(info.col, 0.5); this.hand.position.set(0, -0.45, 0); this.c.elbowR.add(this.hand);
       if (kind === 'hawk') { this.noPhysics = true; this.orb = Math.random() * 6; }
@@ -769,7 +769,7 @@ HL.Actors = (function () {
             this.stop(dt); this.anim = 'shoot';
             const from = this.handPos(), dir = pc.clone().sub(from).normalize();
             for (let i = 0; i < 3; i++) g.fx.burst(from, 1, { color: [0xffd040, 0xff8020, 0xff4010], speed: 18, size: 0.5, life: 0.45, g: 2, drag: 1, grow: -0.4, dir: dir.clone().multiplyScalar(1.6), spread: 0.25 });
-            if (d < 9 && pc.clone().sub(from).normalize().dot(dir) > 0.9) g.hurtPlayer(170 * dt, from, { silent: true });
+            if (d < 9 && pc.clone().sub(from).normalize().dot(dir) > 0.9) g.hurtPlayer(28 * dt, from, { silent: true });
             if (this.stT <= 0) { this.st = 'move'; this.cd = U.rand(1.4, 2.2); }
             break;
           }
@@ -779,7 +779,7 @@ HL.Actors = (function () {
             else if (d < 70) {
               const from = this.handPos(), T2 = Math.max(0.5, d / 34), to = pc.clone().add(P.vel.clone().multiplyScalar(T2 * 0.6));
               const vel = to.sub(from).divideScalar(T2); vel.y += 0.5 * 6 * T2;
-              g.spawnProj('fireball', from, vel, { dmg: 85, owner: this, radius: 4.5, maxDist: 120 }); A().whoosh(); this.anim = 'throw'; this.animOpt = { p: 0.7 };
+              g.spawnProj('fireball', from, vel, { dmg: 24, owner: this, radius: 3, maxDist: 120 }); A().whoosh(); this.anim = 'throw'; this.animOpt = { p: 0.7 };
               this.cd = U.rand(1.3, 2.0);
             }
           }
@@ -792,7 +792,7 @@ HL.Actors = (function () {
             if (this.stT <= 0) {
               this.st = 'zap'; this.stT = 0.3;
               const from = this.handPos();
-              if (d < 80 && g.world.los(from, pc)) { g.hurtPlayer(130, from, { knock: 8 }); P.stun(0.6); g.ui.tag('ОГЛУШЁН!', '#9ae8ff', 0.8); this.zapTo = pc.clone(); }
+              if (d < 80 && g.world.los(from, pc)) { g.hurtPlayer(28, from, { knock: 2 }); this.zapTo = pc.clone(); }
               else this.zapTo = from.clone().add(pc.clone().sub(from).normalize().multiplyScalar(Math.min(d, 60)));
               A().blast(); g.fx.flashLight(this.zapTo, 0x9ae8ff, 6, 0.25, 30);
             }
@@ -815,7 +815,7 @@ HL.Actors = (function () {
             this.vel.set(0, 0, 0); this.anim = 'punch'; this.animOpt = { p: 1 - this.stT / 0.45 };
             if (this.stT < 0.2 && !this.hitDone) {
               this.hitDone = true; A().punch();
-              if (this.center.distanceTo(pc) < 2.8) { g.hurtPlayer(115, this.pos, { knock: 18, down: Math.random() < 0.45 }); g.fx.ring(pc, 0xb070ff, 3, 0.25); }
+              if (this.center.distanceTo(pc) < 2.8) { g.hurtPlayer(22, this.pos, { knock: 3 }); g.fx.ring(pc, 0xb070ff, 3, 0.25); }
               else A().whiff();
             }
             if (this.stT <= 0) { // исчезает подальше
@@ -842,7 +842,7 @@ HL.Actors = (function () {
             this.stop(dt); this.anim = 'charge'; g.fx.warn(2, this.pos, 7.5, Math.sin(g.time * 30) * 0.5 + 0.5);
             if (this.stT <= 0) {
               g.fx.warn(2, null); A().slam(); g.fx.addShake(0.8); g.fx.dust(this.pos, 22); g.fx.ring(this.pos, 0xffffff, 10, 0.45);
-              if (this.dist2D(P.pos) < 7.5 && P.pos.y - this.pos.y < 3) g.hurtPlayer(210, this.pos, { knock: 24, down: true });
+              if (this.dist2D(P.pos) < 7.5 && P.pos.y - this.pos.y < 3) g.hurtPlayer(40, this.pos, { knock: 6 });
               this.st = 'move'; this.cd = U.rand(2.2, 3.2);
             }
             break;
@@ -854,7 +854,7 @@ HL.Actors = (function () {
               this.obj.remove(this.rockMesh); this.rockMesh = null;
               const from = this.pos.clone().add(V(0, 4.2, 0)), T2 = Math.max(0.6, d / 36), to = pc.clone().add(P.vel.clone().multiplyScalar(T2 * 0.5));
               const vel = to.sub(from).divideScalar(T2); vel.y += 0.5 * 14 * T2;
-              g.spawnProj('rock', from, vel, { dmg: 190, owner: this, radius: 5 }); A().whoosh();
+              g.spawnProj('rock', from, vel, { dmg: 40, owner: this, radius: 3.5 }); A().whoosh();
             }
             if (this.stT <= 0) { this.st = 'move'; this.cd = U.rand(2.4, 3.4); }
             break;
@@ -877,7 +877,7 @@ HL.Actors = (function () {
             this.shots = (this.shots || 0) + 1; this.anim = 'shoot';
             const from = this.handPos(), dir = pc.clone().add(P.vel.clone().multiplyScalar(d / 70 * 0.5)).sub(from).normalize();
             dir.add(V(U.rand(-0.03, 0.03), U.rand(-0.03, 0.03), U.rand(-0.03, 0.03))).normalize();
-            g.spawnProj('bolt', from, dir.multiplyScalar(70), { dmg: 38, owner: this }); A().shot();
+            g.spawnProj('bolt', from, dir.multiplyScalar(70), { dmg: 7, owner: this }); A().shot();
             this.cd = this.shots % 3 ? 0.18 : U.rand(1.6, 2.4);
           }
           break;
