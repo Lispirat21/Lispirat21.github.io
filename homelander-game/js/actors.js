@@ -539,9 +539,37 @@ HL.Actors = (function () {
       this.aim = V(0, 0, 1); this.talkT = 3; this.punches = 0;
     }
     say(txt) { /* Райан молчит */ }
+    damage(amount, src, knock) {
+      // лазер Хоумлендера сбивает Райана в полёте
+      if (this.alive && src === this.g.player && amount < 25 && this.st !== 'shot' && this.st !== 'crash' && this.pos.y > 0.9) {
+        this.heat = (this.heat || 0) + amount;
+        if (this.heat > 45) this.shotDown(knock);
+      }
+      return super.damage(amount, src, knock);
+    }
+    shotDown(dir) {
+      const g = this.g; this.heat = 0;
+      this.st = 'shot'; this.stT = 3; this.dmgMul = 1.5;
+      const d = (dir && dir.lengthSq() > 0) ? dir.clone().setY(0).normalize() : this.pos.clone().sub(g.player.pos).setY(0).normalize();
+      this.vel.copy(d.multiplyScalar(7)).setY(2); this.spin = 10;
+      A().punch(); g.fx.burst(this.center, 8, { color: [0xff4020, 0xffd0a0], speed: 7, size: 0.2, life: 0.4 });
+      g.fx.smoke(this.center, 3); g.ui.tag('РАЙАН СБИТ!', '#ff7050', 1.2);
+    }
     think(dt) {
       const g = this.g, P = g.player, pc = P.center;
       this.stT -= dt; this.orb += dt * 0.8; this.talkT -= dt;
+      this.heat = Math.max(0, (this.heat || 0) - 40 * dt);
+      if (this.st === 'shot') {
+        // падает кувырком
+        this.vel.y -= 32 * dt; this.anim = 'tumble'; this.animOpt = { spin: ((this.c && this.c.cur.pitch) || 0) + this.spin * dt };
+        if (Math.random() < 0.5) g.fx.smoke(this.center, 1, [0x555555, 0x333333]);
+        const O3 = g.world.oval; if (O3) O3.clampInside(this.pos);
+        if (this.pos.y <= 0.05 || this.stT <= 0) {
+          this.pos.y = 0; this.vel.set(0, 0, 0); if (this.c) this.c.cur.pitch = -1.52; A().slam(); g.fx.dust(this.pos, 12); g.fx.addShake(0.5);
+          this.st = 'crash'; this.stT = 2.6; this.dmgMul = 2; g.ui.tag('РАЙАН НА ПОЛУ — БЕЙ!', '#7cff7c', 1.4);
+        }
+        return;
+      }
       if (this.talkT <= 0) {
         this.talkT = U.rand(6, 9);
         this.say(U.pick(['Я не хочу этого, пап!', 'Мама бы этого не хотела!', 'Почему ты не можешь просто остановиться?!', 'Я тоже умею драться, видишь?!',
@@ -600,7 +628,7 @@ HL.Actors = (function () {
         }
         if (this.stT <= 0) { if (this.center.distanceTo(pc) < 4) { this.st = 'brawl'; this.stT = 1.5; this.hitThis = false; } else { this.st = 'orbit'; this.stT = U.rand(phase2 ? 1.4 : 2.2, phase2 ? 2.4 : 3.5); } }
       }
-      if (this.pos.y < 0.3) { this.pos.y = 0.3; if (this.vel.y < 0) this.vel.y = 0; }
+      const minY = this.st === 'crash' ? 0 : 0.3; if (this.pos.y < minY) { this.pos.y = minY; if (this.vel.y < 0) this.vel.y = 0; }
       // в помещении: стены и потолок
       const O = g.world.oval;
       if (O && O.clampInside(this.pos) && this.st === 'dash') {

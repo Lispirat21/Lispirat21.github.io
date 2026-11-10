@@ -638,7 +638,7 @@ HL.Missions = (function () {
             P.place(v.O.center.x - 3, 0, v.O.center.z + 1, Math.PI / 2); g.camYaw = Math.PI / 2; g.camPitch = 0.12;
             g.fx.setBeam(0, null); g.fx.setBeam(1, null); HL.Audio.setLaser(false); P.scriptGlow = false;
             if (v.b) v.b.noPhysics = false; if (v.k) v.k.noPhysics = false;
-            for (const a of [v.k, v.r, v.b]) a.think = function (dt) { this.anim = 'idle'; this.animOpt = { lash: false }; this.vel.set(0, this.vel.y, 0); this.face(g.player.pos, dt, 3); if (this.noPhysics) this.vel.y = 0; };
+            for (const a of [v.k, v.r, v.b]) if (a) a.think = function (dt) { this.anim = 'idle'; this.animOpt = { lash: false }; this.vel.set(0, this.vel.y, 0); this.face(g.player.pos, dt, 3); if (this.noPhysics) this.vel.y = 0; };
             g.cinema(null); g.music('boss');
           },
         },
