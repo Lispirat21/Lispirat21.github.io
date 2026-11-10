@@ -538,7 +538,7 @@ HL.Actors = (function () {
       this.boss = true; this.noPhysics = true; this.st = 'orbit'; this.stT = 2.5; this.knockMul = 0.25; this.keepBody = true; this.orb = Math.random() * 6;
       this.aim = V(0, 0, 1); this.talkT = 3; this.punches = 0;
     }
-    say(txt) { if (!this.g.ui.talking) this.g.ui.say([['ry', txt, 2.2]]); }
+    say(txt) { /* Райан молчит */ }
     think(dt) {
       const g = this.g, P = g.player, pc = P.center;
       this.stT -= dt; this.orb += dt * 0.8; this.talkT -= dt;

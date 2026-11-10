@@ -584,7 +584,7 @@ HL.Missions = (function () {
               v.cam = { pos: V(O.center.x + 1.5, 2.1, O.center.z + 5), look: V(O.center.x + 9, 1.5, O.center.z) };
               v.ev = 6; v.T = 0;
             } else if (v.ev === 6 && v.T > 3.0) {
-              g.ui.say([['ry', 'Пап… прости. Но это надо остановить.', 2.4], ['hl', 'Райан? Ты… с НИМИ?', 2.2], ['ki', '*молча встаёт в стойку*', 1.6]], () => { v.ev = 8; v.T = 0; });
+              g.ui.say([['hl', 'Райан? Ты… с НИМИ?', 2.2], ['ki', '*молча встаёт в стойку*', 1.6]], () => { v.ev = 8; v.T = 0; });
               v.ev = 7;
             } else if (v.ev === 8) {
               // короткая кат-сцена драки
@@ -624,7 +624,7 @@ HL.Missions = (function () {
               if (v.T > 3.6 && !v.f6) { // Райан таранит отца
                 v.f6 = true;
                 r.think = function (dt) { const to = P.center.sub(this.center); const d = to.length(); this.vel.copy(to.normalize().multiplyScalar(30)); this.anim = 'fly'; this.animOpt = { pitch: 1.4 };
-                  if (d < 1.6) { HL.Audio.punch(); g.fx.addShake(0.8); P.knockdown(to.setY(0), 14, 1.0); this.vel.set(0, 0, 0); this.think = function () { this.anim = 'hover'; this.vel.set(0, 0, 0); }; g.ui.say([['ry', 'Прости! Я… не хотел так сильно!', 2]]); } };
+                  if (d < 1.6) { HL.Audio.punch(); g.fx.addShake(0.8); P.knockdown(to.setY(0), 14, 1.0); this.vel.set(0, 0, 0); this.think = function () { this.anim = 'hover'; this.vel.set(0, 0, 0); }; } };
               }
               if (v.T > 6.0) v.done = true;
               v.cam = { pos: V(O.center.x + 1.5, 3, O.center.z + 8), look: V(O.center.x + 2, 1.3, O.center.z) };
@@ -654,7 +654,7 @@ HL.Missions = (function () {
           enter(g, v) {
             const r = v.r; r.think = r._think; r.invuln = false;
             g.ui.hint('Райан неопытен: когда он врезается в стену — бейте!', 4);
-            g.ui.say([['ki', '*падает на колени, смотрит на Райана*'], ['hl', 'Райан. Ты же мой сын. Встань рядом со мной.'], ['ry', 'Нет, пап. Хватит! Я… я не хочу драться, но придётся!']]);
+            g.ui.say([['ki', '*падает на колени, смотрит на Райана*'], ['hl', 'Райан. Ты же мой сын. Встань рядом со мной.'], ['sys', '*Райан молча качает головой*']]);
           },
           update(g, dt, v) { g.ui.boss('Райан', v.r.hp / v.r.maxHp); return !v.r.alive; },
           wp: (g, v) => v.r.alive && v.r.center,
@@ -665,7 +665,7 @@ HL.Missions = (function () {
           enter(g, v) {
             const b = v.b; b.think = b._think; b.invuln = false; b.c.tentacles.forEach((t) => (t.root.visible = true));
             g.fx.burst(b.center, 20, { color: [0x8e3434, 0x5a1010], speed: 8, size: 0.3, life: 0.6 }); HL.Audio.stinger();
-            g.ui.say([['ry', 'Прости… я просто хотел, чтобы ты остановился…'], ['but', 'Ты сделал больно собственному сыну. А теперь — по-взрослому.'], ['sys', '*из спины Бутчера вырываются щупальца*'], ['hl', 'Билли. Хватит болтать.']]);
+            g.ui.say([['but', 'Ты сделал больно собственному сыну. А теперь — по-взрослому.'], ['sys', '*из спины Бутчера вырываются щупальца*'], ['hl', 'Билли. Хватит болтать.']]);
           },
           update(g, dt, v) {
             const b = v.b, f = b.hp / b.maxHp;
