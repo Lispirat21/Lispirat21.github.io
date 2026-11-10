@@ -165,7 +165,10 @@ HL.FX = (function () {
       for (const w of warns) w.visible = false;
       laserLight.intensity = 0;
     }
-    return { burst, explosion, sparks, smoke, fire, dust, flashLight, setBeam, scorch, ring, warn, update, clear, addShake, laserLight,
+    function clearScorch(b) {
+      for (const s of scorches) { const p = s.m.position; if (s.m.visible && p.x > b.x0 - 0.6 && p.x < b.x1 + 0.6 && p.z > b.z0 - 0.6 && p.z < b.z1 + 0.6) { s.m.visible = false; s.g.visible = false; s.t = 0; } }
+    }
+    return { burst, explosion, sparks, smoke, fire, dust, flashLight, setBeam, scorch, clearScorch, ring, warn, update, clear, addShake, laserLight,
       get shake() { return shake; } };
   }
   return { create };

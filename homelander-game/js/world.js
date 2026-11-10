@@ -187,15 +187,82 @@ HL.World = (function () {
 
     const building = (x0, z0, x1, z1, h, pi, opt = {}) => {
       const P = pal[pi % pal.length];
+      const mark = [P.b, P.top, shops].map((bl) => [bl, bl.pos.length / 3]);
       boxSides(P.b, x0, 0, z0, x1, h, z1, 30, 28, null, P.top);
       if (opt.shop !== false && h > 10) boxSides(shops, x0 - 0.35, 0, z0 - 0.35, x1 + 0.35, 4.2, z1 + 0.35, 1, 1, U.pick(SHOPC), shops);
       if (S.data.details > 1 && rnd() < 0.6) { // крыши: вентиляция
         const cx = U.lerp(x0 + 3, x1 - 3, rnd()), cz = U.lerp(z0 + 3, z1 - 3, rnd());
         boxSides(P.top, cx - 1.5, h, cz - 1.5, cx + 1.5, h + 2, cz + 1.5, 8, 8, null, P.top);
       }
-      return addBox(x0, z0, x1, z1, h, 'building', opt.ref);
+      const box = addBox(x0, z0, x1, z1, h, 'building', opt.ref);
+      box.parts = mark.map(([bl, s]) => ({ bl, s, e: bl.pos.length / 3 })).filter((q) => q.e > q.s);
+      box.h0 = h; box.hp = box.maxHp = 300 + h * 15;
+      return box;
     };
     W.building = building;
+
+    // ---------- разрушаемость ----------
+    W.damageBuilding = function (b, amount, point) {
+      if (!b || b.kind !== 'building' || b.dead || !b.parts) return false;
+      b.hp -= amount;
+      const fx = W.fx;
+      if (fx && point) {
+        if (Math.random() < Math.min(1, amount / 40)) fx.burst(point, 2, { color: [0x8a8a8a, 0x5a5a5a, 0xc0b8a8], speed: 6, size: 0.3, life: 0.7, g: -18 });
+        if (b.hp < b.maxHp * 0.5 && Math.random() < 0.15) fx.smoke(point, 1);
+      }
+      if (b.hp <= b.maxHp * 0.4 && !b.burning) { b.burning = true; b.firePt = point ? point.clone() : new T.Vector3((b.x0 + b.x1) / 2, b.y1 * 0.6, (b.z0 + b.z1) / 2); }
+      if (b.hp <= 0) { collapse(b); return true; }
+      return false;
+    };
+    function collapse(b) {
+      b.dead = true; b.burning = false;
+      const fx = W.fx, A = HL.Audio;
+      for (const q of b.parts) {
+        const pa = q.bl.mesh.geometry.attributes.position;
+        q.y = pa.array.slice(q.s * 3, q.e * 3);
+      }
+      if (fx) fx.clearScorch(b);
+      const cx = (b.x0 + b.x1) / 2, cz = (b.z0 + b.z1) / 2, base = new T.Vector3(cx, 0, cz);
+      A && A.explosion && A.explosion(1.6);
+      W.onCollapse && W.onCollapse(b, base);
+      let t = 0; const D = 3.2, sink = b.h0 - 1.4;
+      const f = (dt) => {
+        t += dt; const k = Math.min(1, t / D), e = k * k * (3 - 2 * k), dy = sink * e;
+        const jit = (1 - k) * 0.25;
+        const jx = (Math.random() - 0.5) * jit, jz = (Math.random() - 0.5) * jit;
+        for (const q of b.parts) {
+          const pa = q.bl.mesh.geometry.attributes.position, arr = pa.array, o = q.s * 3;
+          for (let i = 0; i < q.y.length; i += 3) { arr[o + i] = q.y[i] + jx; arr[o + i + 1] = Math.max(-0.5, q.y[i + 1] - dy); arr[o + i + 2] = q.y[i + 2] + jz; }
+          pa.needsUpdate = true;
+        }
+        b.y1 = Math.max(1.6, b.h0 - dy);
+        if (fx) {
+          if (Math.random() < dt * 30) fx.dust(new T.Vector3(U.lerp(b.x0, b.x1, Math.random()), 0.5, Math.random() < 0.5 ? b.z0 : b.z1), 2);
+          if (Math.random() < dt * 30) fx.dust(new T.Vector3(Math.random() < 0.5 ? b.x0 : b.x1, 0.5, U.lerp(b.z0, b.z1, Math.random())), 2);
+          if (Math.random() < dt * 12) fx.smoke(new T.Vector3(U.lerp(b.x0, b.x1, Math.random()), b.y1 + 1, U.lerp(b.z0, b.z1, Math.random())), 2);
+          if (k < 0.9) fx.addShake(0.25 * dt * 10);
+        }
+        if (k >= 1) {
+          rubble(b);
+          W.updaters.splice(W.updaters.indexOf(f), 1);
+        }
+      };
+      W.updaters.push(f);
+    }
+    const rubbleMats = [0x7a7672, 0x5e5a56, 0x8f8a82, 0x4a4744].map((c) => M.toon(c));
+    function rubble(b) {
+      const grp = new T.Group(), w = b.x1 - b.x0, d = b.z1 - b.z0, n = Math.min(40, 10 + ((w * d) / 40) | 0);
+      for (let i = 0; i < n; i++) {
+        const s = 1 + Math.random() * 3;
+        const m = new T.Mesh(M.box(s * (0.8 + Math.random()), s * 0.6, s * (0.8 + Math.random())), rubbleMats[i % 4]);
+        m.position.set(U.lerp(b.x0 + 1, b.x1 - 1, Math.random()), 0.6 + Math.random() * 1.2, U.lerp(b.z0 + 1, b.z1 - 1, Math.random()));
+        m.rotation.set(Math.random() - 0.5, Math.random() * 3, Math.random() - 0.5); m.castShadow = true;
+        grp.add(m);
+      }
+      add(grp);
+      // тлеющие обломки
+      if (W.fx) { const fx = W.fx; let tt = 0; const sm = (dt) => { tt += dt; if (Math.random() < dt * 4) fx.smoke(new T.Vector3(U.lerp(b.x0, b.x1, Math.random()), 2, U.lerp(b.z0, b.z1, Math.random())), 1); if (tt > 25) W.updaters.splice(W.updaters.indexOf(sm), 1); }; W.updaters.push(sm); }
+    }
 
     const blockCenters = [];
     for (let i = -4; i < 4; i++) for (let j = -4; j < 4; j++) blockCenters.push([i * PITCH + PITCH / 2, j * PITCH + PITCH / 2]);
@@ -363,13 +430,13 @@ HL.World = (function () {
       if (!P.b.pos.length) continue;
       const m = M.toonX(0xffffff, { map: P.tex.map });
       if (P.tex.emap) { m.emissive = new T.Color(0xffffff); m.emissiveMap = P.tex.emap; m.emissiveIntensity = 0.9; }
-      const mesh = new T.Mesh(toGeo(P.b), m); mesh.castShadow = mesh.receiveShadow = true; add(mesh);
-      const roof = new T.Mesh(toGeo(P.top), M.toon(night ? 0x3a3c44 : 0x8a8d96)); roof.castShadow = roof.receiveShadow = true; add(roof);
+      const mesh = new T.Mesh(toGeo(P.b), m); mesh.castShadow = mesh.receiveShadow = true; add(mesh); P.b.mesh = mesh;
+      const roof = new T.Mesh(toGeo(P.top), M.toon(night ? 0x3a3c44 : 0x8a8d96)); roof.castShadow = roof.receiveShadow = true; add(roof); P.top.mesh = roof;
     }
     if (shops.pos.length) {
       const sm = new T.MeshToonMaterial({ vertexColors: true, gradientMap: M.grad });
       if (night) { sm.emissive = new T.Color(0x3a2a10); }
-      add(new T.Mesh(toGeo(shops), sm));
+      { const shm = new T.Mesh(toGeo(shops), sm); add(shm); shops.mesh = shm; }
     }
     // тротуары/кварталы
     {
@@ -593,7 +660,8 @@ HL.World = (function () {
     W.update = function (dt, t, focus) {
       if (W.special.fountain && W.fx && Math.random() < dt * 25) W.fx.burst(W.special.fountain.clone().setY(1.2), 1, { color: [0xbfe4ff, 0xffffff], speed: 3, size: 0.18, life: 0.9, g: -12, drag: 0.2, up: true, dir: new T.Vector3(0, 2.2, 0), spread: 0.3 });
       for (const c of W.clouds) { c.position.x += dt * 3; if (c.position.x > 650) c.position.x -= 1300; }
-      for (const f of W.updaters) f(dt, t);
+      for (const f of W.updaters.slice()) f(dt, t);
+      if (W.fx) for (const b of W.lots) if (b.burning && !b.dead && Math.random() < dt * 6) { W.fx.fire(b.firePt.clone().add(new T.Vector3((Math.random() - 0.5) * 2, Math.random() * 2, (Math.random() - 0.5) * 2)), 1); if (Math.random() < 0.4) W.fx.smoke(b.firePt.clone().setY(b.firePt.y + 2), 1); }
       if (focus) {
         sun.position.copy(focus).add(W.sunOffset); sun.target.position.copy(focus);
         sky.position.copy(focus);

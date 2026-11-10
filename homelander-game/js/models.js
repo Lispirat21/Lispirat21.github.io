@@ -98,7 +98,7 @@ HL.Models = (function () {
   const DEFS = {
     homelander: { name: 'Хоумлендер', ribbed: true, muscles: true, eagle: 0xe6b23c, cuffs: 0xe6b23c, skin: 0xf2c4a0, hair: 0xf2d35e, hairStyle: 'slick', torso: 0x1d2c68, stripe: 0xc9232c, collar: 0xc9232c,
       arms: 0x1d2c68, forearms: 0xc9232c, gloves: 0xc9232c, legs: 0x1d2c68, boots: 0xc9232c, kneeDots: 0xe6b23c, belt: 0xe6b23c,
-      epaulettes: 0xe6b23c, cape: 0xb41c24, eye: 0x3a7be0, brows: 0x9a7a30, angry: true, bulk: 1.08 },
+      epaulettes: 0xe6b23c, cape: 0xb41c24, capeFlag: true, eye: 0x3a7be0, brows: 0x9a7a30, angry: true, bulk: 1.08 },
     butcher: { name: 'Бутчер', crowbar: true, skin: 0xd9a27a, hair: 0x17120e, hairStyle: 'short', beard: 0x16110d, torsoTex: 'camo', torso: 0xffffff,
       coat: 0x2e2f2a, arms: 0x2e2f2a, forearms: 0x2e2f2a, gloves: 0xd9a27a, legs: 0x26272a, boots: 0x161616, eye: 0x4a3420, brows: 0x111111, angry: true, bulk: 1.05 },
     butcherV: { name: 'Бутчер (Темп-V)', crowbar: true, skin: 0xcf9670, hair: 0x17120e, hairStyle: 'short', beard: 0x16110d, torsoTex: 'camo', torso: 0xffffff,
@@ -274,7 +274,7 @@ HL.Models = (function () {
 
     // плащ
     if (def.cape) {
-      c.cape = makeCape(def.cape);
+      c.cape = makeCape(def.cape, def.capeFlag);
       c.cape.position.set(0, 0.66, -0.2 * bulk);
       spine.add(c.cape);
       c.capeAng = 0.06; c.capeAmp = 0.05;
@@ -403,11 +403,27 @@ HL.Models = (function () {
   function makeShieldMesh() { const g = new T.Group(); buildShield(g); return g; }
 
   // ---------- плащ (вершинная анимация) ----------
-  function makeCape(color) {
+  let _flagCape = null;
+  function flagCapeTex() {
+    // флаг США, вытянутый по вертикали плаща: полосы поперёк, синий кантон со звёздами сверху
+    return _flagCape || (_flagCape = (() => {
+      const t = canvasTex(256, 448, (x, w, h) => {
+        for (let i = 0; i < 13; i++) { x.fillStyle = i % 2 ? '#f4f1ea' : '#b8202c'; x.fillRect(0, (i * h) / 13, w, h / 13 + 1); }
+        const cw = w * 0.5, ch = h * (7 / 13);
+        x.fillStyle = '#1f2f6e'; x.fillRect(0, 0, cw, ch);
+        x.fillStyle = '#fff';
+        const star = (cx, cy, r) => { x.beginPath(); for (let k = 0; k < 10; k++) { const a = -Math.PI / 2 + k * Math.PI / 5, rr = k % 2 ? r * 0.42 : r; x.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr); } x.closePath(); x.fill(); };
+        for (let r = 0; r < 9; r++) for (let c = 0; c < (r % 2 ? 5 : 6); c++) star(cw * ((c + (r % 2 ? 1 : 0.5)) / 6), ch * ((r + 0.7) / 9.6), 7.5);
+      });
+      t.wrapS = t.wrapT = T.ClampToEdgeWrapping; t.anisotropy = 4; t.repeat.x = -1; t.offset.x = 1; // кантон слева сверху, если смотреть со спины
+      return t;
+    })());
+  }
+  function makeCape(color, flag) {
     const W = 0.78, H = 1.45, SX = 6, SY = 14;
     const geo = new T.PlaneGeometry(W, H, SX, SY);
     geo.translate(0, -H / 2, 0);
-    const mat = toonX(color, { side: T.DoubleSide });
+    const mat = flag ? toonX(0xffffff, { side: T.DoubleSide, map: flagCapeTex() }) : toonX(color, { side: T.DoubleSide });
     const m = new T.Mesh(geo, mat); m.castShadow = true;
     m.userData = { base: geo.attributes.position.array.slice(), W, H, SX, SY, rowY: new Float32Array(SY + 1), rowZ: new Float32Array(SY + 1) };
     return m;

@@ -156,6 +156,12 @@ HL.Game = (function () {
         a.damage(dmg * (0.4 + 0.6 * k), src, a.faction === 'vehicle' ? null : a.center.sub(pos).normalize().multiplyScalar(14 * k + 6).setY(8 * k + 4));
       }
     }
+    for (const b of g.world.query(pos.x, pos.z, r)) {
+      if (b.kind !== 'building' || b.dead) continue;
+      const cx = U.clamp(pos.x, b.x0, b.x1), cz = U.clamp(pos.z, b.z0, b.z1), cy = U.clamp(pos.y, 0, b.y1);
+      const dd = Math.hypot(pos.x - cx, pos.y - cy, pos.z - cz);
+      if (dd < r) g.world.damageBuilding(b, dmg * 2.5 * (1 - dd / r * 0.6), V(cx, cy, cz));
+    }
     if (src !== g.player && g.player.center.distanceTo(pos) < r) g.hurtPlayer(dmg * (1 - g.player.center.distanceTo(pos) / r * 0.6), pos, { knock: 16, down: dmg >= 100 });
     g.alarm(pos, 45);
   };
@@ -231,7 +237,7 @@ HL.Game = (function () {
     }
     const A2 = g.aim;
     if (!(actor && S.useTouch && A2.point && actor.center.distanceTo(A2.point) < 0.01)) A2.point.copy(o).addScaledVector(d, tBest);
-    A2.actor = actor; A2.normal = actor ? null : wh && wh.t <= tBest + 0.01 ? wh.normal : null;
+    A2.actor = actor; A2.normal = actor ? null : wh && wh.t <= tBest + 0.01 ? wh.normal : null; A2.box = A2.normal && wh ? wh.box : null;
     A2.dir = A2.point.clone().sub(P.center).normalize();
   }
 
@@ -305,6 +311,18 @@ HL.Game = (function () {
     g.time = 0; g.approval = 70; g.waypoint = null; g.hitStop = 0; deathT = -1; g.ending = null;
     g.world = HL.World.build(scene, { time: def.time });
     g.fx = HL.FX.create(scene); g.world.fx = g.fx;
+    g.world.onCollapse = function (b, base) {
+      // обрушение: давит всех рядом
+      g.fx.addShake(1.2); A.explosion(1.2);
+      for (const a of g.actors) {
+        if (!a.alive || a.pickable || a.carried || a === g.player) continue;
+        if (a.pos.x > b.x0 - 4 && a.pos.x < b.x1 + 4 && a.pos.z > b.z0 - 4 && a.pos.z < b.z1 + 4) a.damage(a.boss ? 120 : 500, g.player, a.pos.clone().sub(base).setY(0).normalize().multiplyScalar(14).setY(8));
+      }
+      g.alarm(base, 70);
+      g.player.stats.bld = (g.player.stats.bld || 0) + 1;
+      ui.float(V((b.x0 + b.x1) / 2, Math.min(b.h0, 25), (b.z0 + b.z1) / 2), 'ЗДАНИЕ РУХНУЛО', '#ff9a40');
+      g.changeApproval(-3, 'Разрушено здание');
+    };
     g.player = new HL.Player(g);
     const st = def.start;
     g.player.place(st[0], st[1], st[2], st[3]);
@@ -371,7 +389,7 @@ HL.Game = (function () {
   };
   function statRows() {
     const st = g.player.stats;
-    return [['РЕЙТИНГ', Math.round(g.approval) + '%'], ['ВРАГОВ', st.kills], ['ЖЕРТВ СРЕДИ ГРАЖДАН', st.civ], ['ВРЕМЯ', U.fmtTime(g.time)]];
+    return [['РЕЙТИНГ', Math.round(g.approval) + '%'], ['ВРАГОВ', st.kills], ['ЖЕРТВ СРЕДИ ГРАЖДАН', st.civ], ['ЗДАНИЙ РАЗРУШЕНО', st.bld || 0], ['ВРЕМЯ', U.fmtTime(g.time)]];
   }
   function complete() {
     const m = mission;

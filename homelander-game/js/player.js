@@ -185,7 +185,10 @@ HL.Player = (function () {
           const to = tg.center.sub(this.center); const L = to.length();
           if (L > 2.2) this.vel.copy(to.normalize().multiplyScalar(Math.min(45, L * 12)));
           else this.doPunchHit(tg);
-        } else if (!this.punchHit && this.punchT < 0.2) { this.punchHit = true; A().whiff(); }
+        } else if (!this.punchHit && this.punchT < 0.2) {
+          this.punchHit = true;
+          if (this.punchWall) this.punchWallHit(this.punchWall); else A().whiff();
+        }
       }
       if (this.scriptVel) this.vel.copy(this.scriptVel);
       // мир (подшаги, чтобы на большой скорости не пролетать сквозь дома)
@@ -279,13 +282,14 @@ HL.Player = (function () {
       g.fx.laserLight.intensity = rage ? 5 : 3.2;
       this.stats.laser += dt;
       if (Math.random() < 0.7) g.fx.sparks(aim.point, rage ? 0xff8040 : 0xffd0a0, 1);
-      const dps = 175 * (rage ? 2.6 : 1);
+      const dps = 235 * (rage ? 2.6 : 1);
       if (aim.actor) {
         const a = aim.actor;
         a.damage(dps * dt, this, a.faction === 'vehicle' ? null : aim.dir.clone().multiplyScalar(rage ? 6 * dt : 0));
         if (Math.random() < 0.3) g.fx.smoke(aim.point, 1, [0x555555, 0x333333]);
       } else if (aim.normal) {
         g.fx.scorch(aim.point, aim.normal);
+        if (aim.box) g.world.damageBuilding(aim.box, dps * dt, aim.point);
         if (Math.random() < 0.15) g.fx.smoke(aim.point, 1);
       }
       if (rage) { // широкий луч задевает всё рядом с точкой
@@ -300,28 +304,43 @@ HL.Player = (function () {
       const camF = V(); g.camera.getWorldDirection(camF);
       let best = null, bs = -1;
       for (const a of g.actors) {
-        if (!a.alive || a.faction === 'civ' || a.faction === 'ally' || a.pickable) continue;
+        if (!a.alive || a.faction === 'ally' || a.pickable || a.carried) continue;
         const to = a.center.sub(this.center); const d = to.length(); if (d > 11) continue;
         const dot = to.normalize().dot(camF);
         if (dot < 0.55) continue;
-        const s = dot * 2 - d / 11;
+        const s = dot * 2 - d / 11 - (a.faction === 'civ' ? 0.6 : 0); // прохожих тоже можно бить, но враги в приоритете
         if (s > bs) { bs = s; best = a; }
       }
-      this.punchTarget = best;
-      if (!best) this.vel.addScaledVector(camF, 6);
+      this.punchTarget = best; this.punchWall = null;
+      if (!best) {
+        this.vel.addScaledVector(camF, 6);
+        const h = g.world.raycast(this.center, camF, 4.5);
+        if (h && h.box) this.punchWall = h;
+      }
     }
     doPunchHit(a) {
       const g = this.g;
       this.punchHit = true;
       const dir = a.center.sub(this.center).normalize();
       const rage = this.rageT > 0;
-      const dmg = (a.boss ? 90 : 150) * (rage ? 2.2 : 1);
-      a.damage(dmg, this, dir.clone().multiplyScalar(rage ? 40 : 26).add(V(0, rage ? 14 : 9, 0)));
+      const dmg = (a.boss ? 135 : 220) * (rage ? 2.2 : 1);
+      a.damage(dmg, this, dir.clone().multiplyScalar(rage ? 48 : 32).add(V(0, rage ? 16 : 11, 0)));
       this.vel.multiplyScalar(0.1);
-      A().punch(); g.fx.addShake(0.4);
+      A().punch(); g.fx.addShake(0.55);
+      g.fx.burst(a.center, 6, { color: [0xb01818, 0x7a0e0e], speed: 7, size: 0.16, life: 0.5, g: -16 });
       g.fx.burst(a.center, 10, { color: [0xffffff, 0xffe0a0], speed: 10, size: 0.2, life: 0.3 });
       g.fx.ring(a.center, 0xffffff, 3, 0.25);
       g.hitStop = 0.05;
+    }
+    punchWallHit(h) {
+      const g = this.g, rage = this.rageT > 0;
+      A().punch(); A().slam && A().slam(); g.fx.addShake(0.6); g.hitStop = 0.05;
+      g.fx.burst(h.point, 14, { color: [0x9a9590, 0x6a6560, 0xd0c8b8], speed: 11, size: 0.3, life: 0.8, g: -18 });
+      g.fx.dust(h.point, 4); g.fx.ring(h.point, 0xffffff, 2.5, 0.25);
+      if (h.normal) g.fx.scorch(h.point, h.normal);
+      g.world.damageBuilding(h.box, 260 * (rage ? 2.2 : 1), h.point);
+      this.vel.copy(h.normal || V()).multiplyScalar(4);
+      g.alarm(h.point, 25);
     }
     slam(v) {
       const g = this.g;
