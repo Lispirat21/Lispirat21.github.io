@@ -360,7 +360,7 @@ HL.Missions = (function () {
         g.spawnCrowd();
         const path = [V(0, 0, -70), V(140, 0, -70), V(140, 0, 70), V(70, 0, 70), V(70, 0, 210), V(-140, 0, 210), V(-140, 0, 0), V(-210, 0, 0), V(-210, 0, -140), V(0, 0, -140), V(0, 0, -175)];
         v.path = path;
-        const at = g.spawn('atrain', 4, 20, { path: path.map((p) => p.clone()), speed: 48 }); at.yaw = Math.PI; v.at = at;
+        const at = g.spawn('atrain', 4, 20, { path: path.map((p) => p.clone()), speed: 38 }); at.yaw = Math.PI; v.at = at;
         v.ringPts = path.map((p, i) => V(p.x, i === path.length - 1 ? 40 : 14 + (i % 3) * 10, p.z));
       },
       steps: [
@@ -387,12 +387,14 @@ HL.Missions = (function () {
           enter(g, v) { v.rings = v.ringPts.map((p) => g.addRing(p)); v.ri = 0; g.highlightRing(v.rings, 0); g.ui.hint('Shift (⚡) — суперскорость!', 3); },
           update(g, dt, v) {
             const r = v.rings[v.ri];
-            if (g.player.passed(r.position, 5.5)) {
+            if (g.player.passed(r.position, 7.5)) {
               g.removeRing(r); HL.Audio.objective(); v.ri++;
               if (v.ri >= v.rings.length) return true;
               g.highlightRing(v.rings, v.ri);
             }
             const atI = Math.min(v.at.i, v.path.length);
+            // Эй-Трейн поддаётся: если он впереди — сбавляет, если отстал — чуть ускоряется
+            v.at.speed = atI > v.ri + 1 ? 22 : atI > v.ri ? 30 : 38;
             g.ui.el.oText.textContent = `Кольца: ${v.ri}/${v.rings.length} · Эй-Трейн: ${atI}/${v.path.length}` + (atI > v.ri ? ' — ОН ВПЕРЕДИ!' : '');
             if (v.at.done) g.fail('Эй-Трейн пришёл первым. «Кто последний — тот лох».');
             return false;
