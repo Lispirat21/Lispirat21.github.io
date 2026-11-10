@@ -13,7 +13,7 @@ HL.Trio = (function () {
   // кадр «через плечо»: камера за плечом from, смотрит в лицо to
   function ots(from, to, side = 1) {
     const d = to.pos.clone().sub(from.pos).setY(0).normalize(), r = V(-d.z, 0, d.x).multiplyScalar(side);
-    return { pos: from.center.addScaledVector(d, -1.5).addScaledVector(r, 0.75).add(V(0, 0.45, 0)), look: to.center.add(V(0, 0.4, 0)) };
+    return { pos: from.center.addScaledVector(d, -2.3).addScaledVector(r, 1.35).add(V(0, 0.55, 0)), look: to.center.add(V(0, 0.35, 0)) };
   }
   // реплики по одной: перед каждой — свой кадр
   function chain(g, v, lines, shots, done) {
@@ -320,7 +320,7 @@ HL.Trio = (function () {
             go('after');
             P.scriptVel = V(0, 0, 0); P.place(c.x, 300, c.z, 0); P.scriptGlow = false;
             for (const a of [sb, b, hu]) { a.downT = 0; a.airborne = false; a.noPhysics = false; a.think = idle(() => c); }
-            sb.pos.set(c.x + 3.5, 0, c.z + 2); b.pos.set(c.x - 3.2, 0, c.z + 1); hu.pos.set(c.x - 1, 0, c.z - 3);
+            sb.pos.set(c.x + 3.5, 0, c.z + 2); b.pos.set(c.x - 1.5, 0, c.z - 2.2); hu.pos.set(c.x - 1, 0, c.z - 3);
             cut(g, c.clone().add(V(-6, 2.2, 4.5)), c.clone().add(V(0, 1.6, 0)));
             chain(g, v, [
               ['sb', '…Чёрт. Ещё секунда — и всё.', 2.2],
