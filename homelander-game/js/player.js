@@ -11,7 +11,7 @@ HL.Player = (function () {
       this.pos = V(); this.vel = V(); this.yaw = 0; this.prevPos = V();
       this.scriptMove = null; this.scriptSpeed = 1.8; this.scriptFace = null; this.scriptPose = null; this.scriptVel = null; this.scriptGlow = false;
       this.flying = false; this.grounded = true;
-      this.maxHp = 1000; this.hp = 1000;
+      this.maxHp = 2200; this.hp = 2200;
       this.heat = 0; this.overheat = false; this.lasering = false;
       this.rage = 0; this.rageT = 0;
       this.hearT = 0; this.hearCd = 0;
@@ -121,7 +121,7 @@ HL.Player = (function () {
       }
 
       // регенерация
-      if (g.time - this.lastHurt > 4 && this.hp < this.maxHp) this.hp = Math.min(this.maxHp, this.hp + (depow ? 10 : 55) * dt);
+      if (g.time - this.lastHurt > 4 && this.hp < this.maxHp) this.hp = Math.min(this.maxHp, this.hp + (depow ? 20 : 110) * dt);
 
       const ax = inp ? In.axis() : { x: 0, z: 0 };
       const yaw = g.camYaw, pitch = g.camPitch;
