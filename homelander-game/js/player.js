@@ -221,7 +221,7 @@ HL.Player = (function () {
       // лазер
       const wantLaser = inp && In.held('laser') && !this.carry && !depow && !this.overheat && this.punchT <= 0;
       if (wantLaser) {
-        this.heat += (this.rageT > 0 ? 7 : 20) * dt;
+        this.heat += (this.rageT > 0 ? 2.5 : 6) * dt; // ~16 с непрерывного луча до перегрева
         if (this.heat >= 100) { this.heat = 100; this.overheat = true; g.ui.tag('ПЕРЕГРЕВ', '#ff8040', 1.2); }
       } else { this.heat = Math.max(0, this.heat - 32 * dt); if (this.overheat && this.heat < 35) this.overheat = false; }
       if (wantLaser !== this.lasering) { this.lasering = wantLaser; A().setLaser(wantLaser, this.rageT > 0); }

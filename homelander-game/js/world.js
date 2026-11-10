@@ -196,7 +196,7 @@ HL.World = (function () {
       }
       const box = addBox(x0, z0, x1, z1, h, 'building', opt.ref);
       box.parts = mark.map(([bl, s]) => ({ bl, s, e: bl.pos.length / 3 })).filter((q) => q.e > q.s);
-      box.h0 = h; box.hp = box.maxHp = 300 + h * 15;
+      box.h0 = h; box.hp = box.maxHp = 160 + h * 8;
       return box;
     };
     W.building = building;
@@ -204,13 +204,20 @@ HL.World = (function () {
     // ---------- разрушаемость ----------
     W.damageBuilding = function (b, amount, point) {
       if (!b || b.kind !== 'building' || b.dead || !b.parts) return false;
+      const before = b.hp / b.maxHp;
       b.hp -= amount;
-      const fx = W.fx;
+      const fx = W.fx, after = Math.max(0, b.hp / b.maxHp);
+      W.onDamage && W.onDamage(b, after);
+      // каждые 25% — от здания откалываются куски
+      if (fx && point && Math.floor(before * 4) !== Math.floor(after * 4) && after > 0) {
+        fx.burst(point, 18, { color: [0x9a9590, 0x6a6560, 0xd0c8b8], speed: 14, size: 0.6, life: 1.4, g: -20 });
+        fx.dust(point, 6); fx.addShake(0.35); HL.Audio.slam();
+      }
       if (fx && point) {
         if (Math.random() < Math.min(1, amount / 40)) fx.burst(point, 2, { color: [0x8a8a8a, 0x5a5a5a, 0xc0b8a8], speed: 6, size: 0.3, life: 0.7, g: -18 });
         if (b.hp < b.maxHp * 0.5 && Math.random() < 0.15) fx.smoke(point, 1);
       }
-      if (b.hp <= b.maxHp * 0.4 && !b.burning) { b.burning = true; b.firePt = point ? point.clone() : new T.Vector3((b.x0 + b.x1) / 2, b.y1 * 0.6, (b.z0 + b.z1) / 2); }
+      if (b.hp <= b.maxHp * 0.6 && !b.burning) { b.burning = true; b.firePt = point ? point.clone() : new T.Vector3((b.x0 + b.x1) / 2, b.y1 * 0.6, (b.z0 + b.z1) / 2); }
       if (b.hp <= 0) { collapse(b); return true; }
       return false;
     };

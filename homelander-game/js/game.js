@@ -313,6 +313,7 @@ HL.Game = (function () {
     g.time = 0; g.approval = 70; g.waypoint = null; g.hitStop = 0; deathT = -1; g.ending = null;
     g.world = HL.World.build(scene, { time: def.time });
     g.fx = HL.FX.create(scene); g.world.fx = g.fx;
+    g.world.onDamage = function (b, f) { if (!b.dead) ui.hint('ЗДАНИЕ: ' + Math.ceil(f * 100) + '%', 0.6); };
     g.world.onCollapse = function (b, base) {
       // обрушение: давит всех рядом
       g.fx.addShake(1.2); A.explosion(1.2);
