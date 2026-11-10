@@ -585,6 +585,10 @@ HL.Models = (function () {
       case 'sit':
         tg.bodyY = 0.42; tg.lLx = -1.5; tg.lRx = -1.4; tg.lLz = 0.15; tg.lRz = -0.15; tg.spineX = 0.25; tg.aLx = -0.5; tg.aRx = -1.3; tg.eRx = -1.4; tg.headX = 0.25;
         rate = 8; break;
+      case 'prone': // лежит лицом в пол (можно «вырываться»)
+        tg.pitch = 1.5; tg.bodyY = 0.26; tg.aLz = 1.25; tg.aRz = -1.25; tg.eLx = -0.4; tg.eRx = -0.4; tg.headX = -0.55; tg.lLz = 0.12; tg.lRz = -0.12;
+        if (opt.struggle) { const k = opt.struggle; tg.aLz += Math.sin(t * 17) * 0.35 * k; tg.aRz += Math.sin(t * 15 + 1) * 0.35 * k; tg.headX += Math.sin(t * 11) * 0.25 * k; tg.lLx = Math.sin(t * 13) * 0.4 * k; tg.lRx = -Math.sin(t * 12) * 0.4 * k; tg.roll = Math.sin(t * 9) * 0.12 * k; }
+        rate = 14; break;
       case 'knocked':
         tg.pitch = -1.52; tg.bodyY = 0.24; tg.aLz = 0.6; tg.aRz = -1.6; tg.lLx = -0.6; tg.headX = 0.4 + Math.sin(t * 2) * 0.1;
         rate = 8; break;

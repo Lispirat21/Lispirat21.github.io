@@ -85,6 +85,7 @@ HL.Game = (function () {
       case 'starlight': a = new AC.Starlight(g, o); break;
       case 'soldierboy': a = new AC.SoldierBoy(g, o); break;
       case 'butcherBoss': a = new AC.ButcherBoss(g, o); break;
+      case 'hughieV': a = new AC.HughieV(g, o); break;
       case 'butcher': a = new AC.Actor(g, D.butcher, Object.assign({ faction: 'ally', hp: 1e9 }, o)); break;
       case 'atrain': a = new AC.Runner(g, o.path, o); break;
       case 'van': case 'police': case 'ambulance': case 'car': case 'taxi':
@@ -335,7 +336,7 @@ HL.Game = (function () {
     const st = def.start;
     g.player.place(st[0], st[1], st[2], st[3]);
     g.camYaw = st[3]; g.camPitch = 0.18;
-    g.cinema(null);
+    g.cinema(null); g.noDeath = false;
     if (def.rain) rain = makeRain();
     mission = { def, idx, si: -1, v: {}, timer: null, t0: 0 };
     def.setup && def.setup(g, mission.v);

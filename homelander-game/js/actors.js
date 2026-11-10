@@ -36,6 +36,7 @@ HL.Actors = (function () {
       if (this.g.cinematic && !this.g.cineHit) return 0; // в кат-сценах урона нет
       amount *= this.dmgMul;
       this.hp -= amount;
+      if (this.minHp && this.hp < this.minHp) this.hp = this.minHp; // сюжетно бессмертен
       this.lastHurt = this.g.time; this.lastHurtBy = src;
       this.onHurt && this.onHurt(amount, src);
       if (knock && this.knockMul > 0) {
@@ -466,7 +467,11 @@ HL.Actors = (function () {
       super(g, M.DEFS.butcherV, Object.assign({ hp: 3800, faction: 'enemy', name: 'Билли Бутчер', radius: 0.6, height: 2.3 }, o));
       this.boss = true; this.st = 'chase'; this.stT = 0; this.cd = { sweep: 2, grab: 5, leap: 6, car: 4 }; this.knockMul = 0.2;
       this.leapFrom = V(); this.leapTo = V(); this.c.irisMat.color.setHex(0xff3a1a);
+      // вариант для схватки «трое против одного»: без щупалец, с жёлтыми лазерами из глаз
+      this.eyes = !!o.eyes; this.noTent = !!o.noTent; this.cd.eyes = 3; this.cd.melee = 0; this.eyeAim = V();
+      if (this.noTent) this.c.tentacles.forEach((t) => (t.root.visible = false));
     }
+    eyePos(i) { const p = V(); this.c.glow[i].getWorldPosition(p); return p; }
     setSt(s, t) { this.st = s; this.stT = t; }
     think(dt) {
       const g = this.g, P = g.player, pc = P.center.clone();
@@ -480,10 +485,46 @@ HL.Actors = (function () {
           this.face(P.pos, dt, 6);
           const sp = enraged ? 11 : 8.5;
           if (d > 3) { this.moveToward(P.pos, sp, dt, 5); this.anim = 'run'; this.moveSpeed = sp; } else { this.stop(dt); this.anim = 'idle'; }
-          if (d < 8 && Math.abs(dy) < 6 && this.cd.sweep <= 0) { this.setSt('sweep', 0.9); g.ui.tag('ЩУПАЛЬЦА!', '#ff6a6a', 0.9); }
-          else if (d < 24 && dy < 12 && this.cd.grab <= 0) { this.setSt('grab', 1.2); this.grabbed = false; }
+          if (this.noTent) {
+            if (d < 3.2 && Math.abs(dy) < 2.5 && this.cd.melee <= 0) { this.setSt('melee', 0.45); this.hit = false; break; }
+            if (this.eyes && this.cd.eyes <= 0 && this.distTo(pc) < 70 && g.world.los(this.center.add(V(0, 0.8, 0)), pc)) {
+              this.setSt('eyecharge', 0.8); M.setGlow(this.c, true, 0xffd21a); A().charge(0.8); g.ui.tag('ЖЁЛТЫЕ ЛАЗЕРЫ БУТЧЕРА!', '#ffd21a', 0.9); break;
+            }
+          }
+          if (this.noTent) { /* без щупалец: ни волны, ни захвата */ }
+          else if (d < 8 && Math.abs(dy) < 6 && this.cd.sweep <= 0) { this.setSt('sweep', 0.9); g.ui.tag('ЩУПАЛЬЦА!', '#ff6a6a', 0.9); }
+          else if (!this.noTent && d < 24 && dy < 12 && this.cd.grab <= 0) { this.setSt('grab', 1.2); this.grabbed = false; }
           else if ((d > 20 || dy > 12) && this.cd.car <= 0) { this.setSt('car', 1.1); this.thrown = false; }
           else if (d > 12 && d < 60 && this.cd.leap <= 0 && dy < 8) { this.setSt('leap', 1.3); this.leapFrom.copy(this.pos); this.leapTo.set(P.pos.x, 0, P.pos.z); A().whoosh(); }
+          break;
+        }
+        case 'melee': {
+          this.face(P.pos, dt, 10); this.stop(dt); this.anim = 'punch'; this.animOpt = { p: 1 - this.stT / 0.45, lash: false };
+          if (!this.hit && this.stT < 0.22) {
+            this.hit = true; A().punch();
+            if (d < 3.6 && Math.abs(dy) < 2.5) { g.hurtPlayer(enraged ? 140 : 115, this.pos, { knock: 18, down: Math.random() < 0.35 }); g.fx.addShake(0.4); }
+          }
+          if (this.stT <= 0) { this.cd.melee = 0.7; this.setSt('chase', 0); }
+          break;
+        }
+        case 'eyecharge': {
+          this.stop(dt); this.face(P.pos, dt, 10); this.anim = 'idle';
+          for (const s of this.c.glow) s.scale.setScalar(0.35 + (0.8 - this.stT) * 0.6);
+          this.eyeAim.copy(pc);
+          if (this.stT <= 0) { this.setSt('eyes', 1.7); A().setLaser(true); }
+          break;
+        }
+        case 'eyes': {
+          this.stop(dt); this.face(P.pos, dt, 2.5); this.anim = 'idle';
+          this.eyeAim.lerp(pc, 1 - Math.exp(-1.6 * dt));
+          const e0 = this.eyePos(0), e1 = this.eyePos(1), mid = e0.clone().lerp(e1, 0.5);
+          const dir = this.eyeAim.clone().sub(mid).normalize();
+          const hit = g.world.raycast(mid, dir, 120), L = hit ? hit.t : 120, end = mid.clone().addScaledVector(dir, L);
+          g.fx.setBeam(2, e0, end, 1.1, 0xffc414, 0xfff6c0); g.fx.setBeam(3, e1, end, 1.1, 0xffc414, 0xfff6c0);
+          if (hit) { g.fx.sparks(end, 0xffe070, 2); g.fx.scorch(hit.point, hit.normal); }
+          const rel = pc.clone().sub(mid), tt = rel.dot(dir);
+          if (tt > 0 && tt < L && rel.sub(dir.clone().multiplyScalar(tt)).length() < 1.6) g.hurtPlayer((enraged ? 210 : 170) * dt, mid, { silent: true });
+          if (this.stT <= 0) { g.fx.setBeam(2, null); g.fx.setBeam(3, null); M.setGlow(this.c, false); A().setLaser(false); this.cd.eyes = enraged ? 4 : 5.5; this.setSt('chase', 0); }
           break;
         }
         case 'sweep': {
@@ -544,7 +585,49 @@ HL.Actors = (function () {
         }
       }
     }
-    die(src) { super.die(src); this.g.fx.setBeam(5, null); this.g.fx.warn(0, null); this.g.fx.warn(1, null); this.keepBody = true; }
+    die(src) { super.die(src); this.g.fx.setBeam(5, null); this.g.fx.setBeam(2, null); this.g.fx.setBeam(3, null); this.g.fx.warn(0, null); this.g.fx.warn(1, null); this.keepBody = true; }
+    stopEyes() { this.g.fx.setBeam(2, null); this.g.fx.setBeam(3, null); M.setGlow(this.c, false); if (this.st === 'eyes' || this.st === 'eyecharge') { A().setLaser(false); this.setSt('chase', 0); } }
+  }
+
+  // ================= Хьюи на Темп-V: быстрый, как Эй-Трейн =================
+  class HughieV extends Actor {
+    constructor(g, o = {}) {
+      super(g, M.DEFS.hughie, Object.assign({ hp: 1300, faction: 'enemy', name: 'Хьюи (Темп-V)' }, o));
+      this.boss = true; this.st = 'circle'; this.stT = 2; this.orb = Math.random() * 6; this.dir = Math.random() < 0.5 ? 1 : -1; this.knockMul = 0.3; this.keepBody = true;
+    }
+    trail() { if (Math.random() < 0.9) this.g.fx.burst(this.center, 1, { color: [0x6aa0ff, 0xffffff, 0x9ac8ff], speed: 1, size: 0.3, life: 0.35, g: 0, drag: 2 }); }
+    think(dt) {
+      const g = this.g, P = g.player, pc = P.center; this.stT -= dt;
+      const dy = P.pos.y - this.pos.y;
+      if (this.st === 'circle') { // носится кругами вокруг Хоумлендера
+        this.orb += dt * 2.6 * this.dir;
+        const tgt = P.pos.clone().add(V(Math.cos(this.orb) * 11, 0, Math.sin(this.orb) * 11)); tgt.y = 0;
+        this.moveToward(tgt, 34, dt, 9); this.anim = 'run'; this.moveSpeed = 30; this.trail();
+        this.yaw = Math.atan2(this.vel.x, this.vel.z);
+        if (this.stT <= 0) {
+          if (dy > 7) { this.st = 'throw'; this.stT = 0.6; this.thrown = false; }
+          else { this.st = 'dash'; this.stT = 1.0; this.hit = false; g.ui.tag('ХЬЮИ: РЫВОК!', '#9ac8ff', 0.5); A().whoosh(); }
+        }
+      } else if (this.st === 'dash') { // влетает и бьёт
+        const to = P.pos.clone().sub(this.pos).setY(0); const L = to.length();
+        if (L > 1.4) { to.normalize().multiplyScalar(40); this.vel.x = to.x; this.vel.z = to.z; }
+        if (dy > 1.5 && dy < 7 && !this.inAir) this.vel.y = 16;
+        this.face(P.pos, dt, 20); this.anim = L > 2 ? 'run' : 'punch'; this.moveSpeed = 34; this.animOpt = { p: 0.4 }; this.trail();
+        if (!this.hit && this.center.distanceTo(pc) < 2.2) {
+          this.hit = true; A().punch(); g.fx.addShake(0.35);
+          g.hurtPlayer(55, this.pos, { knock: 10, down: Math.random() < 0.2 });
+          this.st = 'circle'; this.stT = U.rand(1.6, 2.6); this.dir *= -1;
+        }
+        if (this.stT <= 0) { this.st = 'circle'; this.stT = U.rand(1.4, 2.4); }
+      } else if (this.st === 'throw') { // Хоумлендер высоко — кидает обломки
+        this.stop(dt); this.face(P.pos, dt, 10); this.anim = 'throw'; this.animOpt = { p: 1 - this.stT / 0.6 };
+        if (!this.thrown && this.stT < 0.3) {
+          this.thrown = true; const from = this.center.add(V(0, 0.6, 0)), dir = pc.clone().sub(from).normalize();
+          g.spawnProj('rock', from, dir.multiplyScalar(55).add(V(0, 4, 0)), { dmg: 45, owner: this, radius: 3 }); A().whoosh();
+        }
+        if (this.stT <= 0) { this.st = 'circle'; this.stT = U.rand(1.2, 2); }
+      }
+    }
   }
 
   // ================= Райан (летает, рывки-удары) =================
@@ -965,5 +1048,5 @@ HL.Actors = (function () {
     kill() { this.alive = false; this.g.scene.remove(this.mesh); }
   }
 
-  return { Supe, SUPE_INFO, Ryan, Actor, Civilian, Victim, Gunman, Grenadier, Brawler, Starlight, Runner, SoldierBoy, ButcherBoss, Vehicle, Proj, WEAPONS };
+  return { HughieV, Supe, SUPE_INFO, Ryan, Actor, Civilian, Victim, Gunman, Grenadier, Brawler, Starlight, Runner, SoldierBoy, ButcherBoss, Vehicle, Proj, WEAPONS };
 })();

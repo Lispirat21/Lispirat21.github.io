@@ -1,4 +1,4 @@
-// Сюжет: 7 миссий + свободный полёт
+// Сюжет: 8 миссий + свободный полёт
 HL.Missions = (function () {
   const T = THREE, U = HL.U;
   const V = (x = 0, y = 0, z = 0) => new T.Vector3(x, y, z);
@@ -676,9 +676,10 @@ HL.Missions = (function () {
           exit(g) { g.ui.boss(null); g.music(null); },
         },
         talk([['sb', 'Кх… Погоди. Эти глаза…'], ['sb', 'Ты… ты мой сын?'], ['hl', '…'], ['but', '*по рации* Спасибо за помощь, приятель. Его кровь — всё, что мне было нужно.'],
-          ['but', 'Темп-V. Сутки силы, как у вас, уродов. Встретимся в Белом доме. Приводи камеры.']], { text: 'Правда' }),
+          ['but', 'Темп-V. Сутки силы, как у вас, уродов. Скоро увидимся, дорогуша.']], { text: 'Правда' }),
       ],
     },
+    HL.Trio.mission, // Бутчер + Солдатик + Хьюи против Хоумлендера
     // ---------------- 7 ----------------
     {
       id: 'final', title: 'Финал: Белый дом', desc: 'Овальный кабинет. Прямой эфир. Стена взрывается — входят Бутчер с ломом, Кимико и Райан.',
@@ -703,7 +704,7 @@ HL.Missions = (function () {
             g.controlsEnabled = false; g.cinematic = true;
             v.ev = 0; v.T = 0; v.done = false;
             v.walk = (tgt, sp) => function (dt) { const d = this.moveToward(tgt, sp, dt, 6); this.face(d > 0.3 ? tgt : g.player.pos, dt, 6); this.anim = d > 0.3 ? 'walk' : 'idle'; this.moveSpeed = sp; this.animOpt = { lash: false }; this.pos.y = 0; this.vel.y = 0; };
-            v.cam = { pos: V(0.4, 1.6, O.desk.z + 7.2), look: V(0, 1.5, O.desk.z) };
+            v.cam = { pos: V(0.9, 1.85, O.desk.z + 3.7), look: V(0, 1.45, O.chair.z) }; // крупно: Хоумлендер за столом
             g.ui.caption('ОВАЛЬНЫЙ КАБИНЕТ. ПРЯМОЙ ЭФИР.', 0.42);
             g.ui.say([['hl', 'Американцы. Я обращаюсь к вам из Овального кабинета.'], ['hl', 'Всю жизнь я защищал вас. Теперь пришло время вести вас.'],
               ['hl', 'Больше никаких лжецов в костюмах. Только я. И правда…', 2.4]], () => { v.ev = 1; v.T = 0; });
@@ -729,11 +730,11 @@ HL.Missions = (function () {
               const b = g.spawn('butcherBoss', cor.x, cor.z, {}); v.b = b;
               b._think = b.think; b.invuln = true; b.noPhysics = true;
               b.c.tentacles.forEach((t) => (t.root.visible = false));
-              b.think = v.walk(V(O.center.x + 7, 0, O.center.z), 2.0);
+              b.think = v.walk(V(O.center.x + 9, 0, O.center.z), 4.4);
               v.cam = { pos: V(O.center.x + 1, 2.0, O.center.z + 4), look: V(O.center.x + 11, 1.6, O.center.z) };
               v.ev = 3; v.T = 0;
             } else if (v.ev === 3 && v.T > 3.4) {
-              v.cam = { pos: V(O.center.x + 3.5, 1.8, O.center.z + 2.6), look: V(O.center.x + 7, 1.7, O.center.z) };
+              v.cam = { pos: V(O.center.x + 5, 1.8, O.center.z + 2.8), look: V(O.center.x + 9, 1.7, O.center.z) };
               g.ui.statcard('БИЛЛИ БУТЧЕР', [['СИЛА', 'ТЕМП-V'], ['ЛОМ', 'ДА'], ['НЕНАВИСТЬ', 'MAX'], ['УРОВЕНЬ', '99']], 'Щупальца пока спрятаны…', 4);
               g.ui.say([['but', 'Батя дома.', 2.0], ['hl', 'Я уж думал, ты забыл про наш уговор.', 2.6], ['but', 'Выжженная земля.', 2.4]], () => { v.ev = 5; v.T = 0; });
               v.ev = 4;
@@ -742,7 +743,7 @@ HL.Missions = (function () {
               const cor = O.corridor();
               const k = g.spawn('kimiko', cor.x, cor.z - 1.2, {}); const r = g.spawn('ryan', cor.x, cor.z + 1.2, {});
               for (const a of [k, r]) { a._think = a.think; a.invuln = true; a.noPhysics = true; a.keepBody = true; }
-              k.think = v.walk(V(O.center.x + 8.6, 0, O.center.z - 2.2), 2.6); r.think = v.walk(V(O.center.x + 8.6, 0, O.center.z + 2.2), 2.6);
+              k.think = v.walk(V(O.center.x + 10.6, 0, O.center.z - 2.2), 5.5); r.think = v.walk(V(O.center.x + 10.6, 0, O.center.z + 2.2), 5.5);
               v.k = k; v.r = r;
               v.cam = { pos: V(O.center.x + 1.5, 2.1, O.center.z + 5), look: V(O.center.x + 9, 1.5, O.center.z) };
               v.ev = 6; v.T = 0;

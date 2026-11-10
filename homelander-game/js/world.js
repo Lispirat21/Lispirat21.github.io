@@ -555,7 +555,7 @@ HL.World = (function () {
     };
     // ---------- Овальный кабинет (интерьер для финала) ----------
     W.buildOval = function (cx, cz) {
-      const RX = 16, RZ = 11, H = 7.5, N = 44;
+      const RX = 23, RZ = 16, H = 9, N = 64; // просторный Овальный кабинет
       const O = { center: new T.Vector3(cx, 0, cz), RX, RZ, H, segs: [] };
       const grp = new T.Group(); grp.position.set(cx, 0, cz); add(grp);
       const mk = (geo, mat, x, y, z, ry = 0) => { const m = new T.Mesh(geo, mat); m.position.set(x, y, z); m.rotation.y = ry; m.castShadow = m.receiveShadow = true; grp.add(m); return m; };
@@ -568,7 +568,7 @@ HL.World = (function () {
       const seal2 = new T.Mesh(new T.CircleGeometry(1.7, 32), new T.MeshBasicMaterial({ color: 0x1c2c58 })); seal2.rotation.x = -Math.PI / 2; seal2.position.y = 0.08; grp.add(seal2);
       const eagle = new T.Mesh(M.star(1.1), new T.MeshBasicMaterial({ color: 0xe8d08a })); eagle.rotation.x = -Math.PI / 2; eagle.position.y = 0.085; grp.add(eagle);
       const ceil = new T.Mesh(new T.CircleGeometry(1, 48), M.toonX(0xfaf6ea, { side: T.DoubleSide })); ceil.rotation.x = Math.PI / 2; ceil.scale.set(RX, RZ, 1); ceil.position.y = H; grp.add(ceil);
-      const lamp = new T.Mesh(new T.CircleGeometry(1, 32), new T.MeshBasicMaterial({ color: 0xfff6dc })); lamp.rotation.x = Math.PI / 2; lamp.scale.set(5, 3.4, 1); lamp.position.y = H - 0.02; grp.add(lamp);
+      const lamp = new T.Mesh(new T.CircleGeometry(1, 32), new T.MeshBasicMaterial({ color: 0xfff6dc })); lamp.rotation.x = Math.PI / 2; lamp.scale.set(7, 4.8, 1); lamp.position.y = H - 0.02; grp.add(lamp);
       // стены: гладкий овал + плинтус
       const wallGeo = (gapC, gapW) => {
         const g2 = gapW ? new T.CylinderGeometry(1, 1, H, 64, 1, true, gapC + gapW / 2, Math.PI * 2 - gapW) : new T.CylinderGeometry(1, 1, H, 64, 1, true);
@@ -630,8 +630,10 @@ HL.World = (function () {
         mk(M.box(1.6, 2.1, 0.08), gold, x, 3.8, z, a); mk(M.box(1.3, 1.8, 0.1), M.toon(0x4a3a30), x, 3.8, z + Math.cos(a) * 0.02, a);
       }
       // свет внутри
-      const l1 = new T.PointLight(0xfff0d4, 1.4, 40, 1.4); l1.position.set(cx, H - 1, cz - 3); add(l1);
-      const l2 = new T.PointLight(0xffe4c0, 1.1, 34, 1.4); l2.position.set(cx, H - 1, cz + 5); add(l2);
+      const l1 = new T.PointLight(0xfff0d4, 1.5, 55, 1.3); l1.position.set(cx, H - 1, cz - 5); add(l1);
+      const l2 = new T.PointLight(0xffe4c0, 1.2, 50, 1.3); l2.position.set(cx, H - 1, cz + 7); add(l2);
+      // тёплый «ключевой» свет на стол президента — Хоумлендера хорошо видно
+      const l3 = new T.PointLight(0xfff2dc, 1.3, 12, 1.6); l3.position.set(cx, 3.2, cz - RZ + 6.5); add(l3);
       O.desk = new T.Vector3(cx, 0, cz + dz); O.chair = new T.Vector3(cx, 0, cz + dz - 1.3);
       // пролом в стене со стороны angle
       // пролом: стена разрушена, за ней коридор Белого дома (выйти наружу нельзя)
@@ -663,6 +665,61 @@ HL.World = (function () {
       };
       W.oval = O;
       return O;
+    };
+
+    // ---------- особняк (интерьер для кат-сцены) ----------
+    W.buildHouse = function (cx, cz) {
+      const RW = 16, RD = 12, H = 4.4;
+      const grp = new T.Group(); grp.position.set(cx, 0, cz); add(grp);
+      const mk = (geo, mat, x, y, z, ry = 0) => { const m = new T.Mesh(geo, mat); m.position.set(x, y, z); m.rotation.y = ry; m.castShadow = m.receiveShadow = true; grp.add(m); return m; };
+      // комната изнутри
+      const room = new T.Mesh(new T.BoxGeometry(RW, H, RD), [M.toonX(0x8a5a4a, { side: T.BackSide }), M.toonX(0x8a5a4a, { side: T.BackSide }), M.toonX(0xf2ead8, { side: T.BackSide }), M.toonX(0x6a4a2a, { side: T.BackSide }), M.toonX(0x9a6a52, { side: T.BackSide }), M.toonX(0x9a6a52, { side: T.BackSide })]);
+      room.position.y = H / 2; room.receiveShadow = true; grp.add(room);
+      // снаружи: особняк с крышей и окнами
+      const shell = mk(M.box(RW + 0.6, H + 0.4, RD + 0.6), M.toon(0xd8ccb0), 0, H / 2 + 0.2, 0); shell.castShadow = false; // не затеняет комнату
+      const roof = new T.Mesh(new T.ConeGeometry((RW + 2) * 0.72, 4.2, 4, 1), M.toon(0x5a3a32)); roof.rotation.y = Math.PI / 4; roof.scale.set(1, 1, (RD + 2) / (RW + 2)); roof.position.set(0, H + 2.5, 0); grp.add(roof);
+      // пол, ковёр, мебель
+      mk(M.box(RW - 0.1, 0.06, RD - 0.1), M.toon(0x7a5232), 0, 0.03, 0);
+      mk(M.box(7, 0.04, 5), M.toon(0x7a1e24), 0, 0.07, 0);
+      const sofa = M.toon(0x2e4a6a), wood = M.toon(0x4a2e1a);
+      mk(M.box(4.2, 0.6, 1.2), sofa, 0, 0.3, -RD / 2 + 1.1); mk(M.box(4.2, 1.1, 0.35), sofa, 0, 0.55, -RD / 2 + 0.55);
+      mk(M.box(1.3, 0.6, 1.3), sofa, -4.2, 0.3, -2.8); mk(M.box(1.3, 1.1, 0.3), sofa, -4.2, 0.55, -3.4);
+      mk(M.box(1.8, 0.45, 1.0), wood, 0, 0.23, -2.4);
+      mk(M.box(0.6, 3.4, 3.2), wood, RW / 2 - 0.4, 1.7, 2.6); // книжный шкаф
+      for (let i = 0; i < 4; i++) mk(M.box(0.3, 0.5, 2.8), M.toon([0xb03a2a, 0x2a5aa0, 0xd8b04a, 0x3a7a3a][i]), RW / 2 - 0.55, 0.6 + i * 0.8, 2.6);
+      mk(M.box(2.6, 1.5, 0.12), M.toon(0x111111), -RW / 2 + 0.1, 2.0, 1.5, Math.PI / 2); // телевизор
+      mk(M.cyl(0.05, 0.05, 1.6, 6), M.toon(0x333333), 5, 0.8, -4.6); const shade = mk(M.cyl(0.25, 0.45, 0.5, 10), M.toon(0xf4e2b0), 5, 1.75, -4.6); shade.castShadow = false;
+      // окна (ночь за стеклом) и дверь
+      for (const x of [-4.5, 0, 4.5]) mk(M.box(2.2, 2.0, 0.08), new T.MeshBasicMaterial({ color: 0x14203a }), x, 2.3, RD / 2 - 0.05);
+      mk(M.box(1.6, 2.8, 0.1), wood, -RW / 2 + 0.06, 1.4, -3.5, Math.PI / 2);
+      // люстра и свет
+      mk(M.sph(0.35), new T.MeshBasicMaterial({ color: 0xfff2c8 }), 0, H - 0.5, 0);
+      const l1 = new T.PointLight(0xffe2b0, 1.4, 24, 1.4); l1.position.set(0, H - 0.8, 0); add(l1); l1.position.add(grp.position);
+      const l2 = new T.PointLight(0xffd8a0, 0.7, 10, 1.6); l2.position.set(cx + 5, 1.8, cz - 4.6); add(l2);
+      // стены и потолок — коллайдеры
+      const th = 0.6;
+      addBox(cx - RW / 2 - th, cz - RD / 2 - th, cx + RW / 2 + th, cz - RD / 2, H + 0.4, 'housewall');
+      addBox(cx - RW / 2 - th, cz + RD / 2, cx + RW / 2 + th, cz + RD / 2 + th, H + 0.4, 'housewall');
+      addBox(cx - RW / 2 - th, cz - RD / 2, cx - RW / 2, cz + RD / 2, H + 0.4, 'housewall');
+      addBox(cx + RW / 2, cz - RD / 2, cx + RW / 2 + th, cz + RD / 2, H + 0.4, 'housewall');
+      const ceil = addBox(cx - RW / 2, cz - RD / 2, cx + RW / 2, cz + RD / 2, H + 0.6, 'ceiling'); ceil.y0 = H;
+      const Hs = { center: new T.Vector3(cx, 0, cz), RW, RD, H, grp };
+      Hs.clampInside = (p) => { let hit = false; const mx = RW / 2 - 0.7, mz = RD / 2 - 0.7;
+        if (p.x < cx - mx) { p.x = cx - mx; hit = true; } if (p.x > cx + mx) { p.x = cx + mx; hit = true; }
+        if (p.z < cz - mz) { p.z = cz - mz; hit = true; } if (p.z > cz + mz) { p.z = cz + mz; hit = true; }
+        if (p.y > H - 0.6) { p.y = H - 0.6; hit = true; } return hit; };
+      // ночные облака над домом (Хоумлендер уходит сквозь них)
+      Hs.clouds = new T.Group(); add(Hs.clouds);
+      const cm = M.toon(0x9aa4c8); // облака в лунном свете
+      for (let i = 0; i < 9; i++) {
+        const cg = new T.Group();
+        for (let k = 0; k < 5; k++) { const sp = new T.Mesh(M.sph(1), cm); sp.scale.set(9 + Math.random() * 8, 4 + Math.random() * 3, 7 + Math.random() * 6); sp.position.set((k - 2) * 9 + Math.random() * 4, Math.random() * 3, Math.random() * 7); cg.add(sp); }
+        cg.position.set(cx + (Math.random() - 0.5) * 120, 110 + Math.random() * 40, cz + (Math.random() - 0.5) * 120);
+        if (i < 2) cg.position.set(cx + (i ? 8 : -10), 125 + i * 14, cz + (i ? -6 : 5));
+        Hs.clouds.add(cg);
+      }
+      W.house = Hs;
+      return Hs;
     };
     W.randomSidewalk = () => U.pick(W.sidewalkPts).clone();
     W.update = function (dt, t, focus) {

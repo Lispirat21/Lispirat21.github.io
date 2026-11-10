@@ -221,6 +221,10 @@ HL.Audio = (function () {
       burst({ dur: 0.4, f: 4000, f2: 200, vol: 0.9, delay: 0.12 }); tone({ type: 'sine', f: 70, f2: 22, dur: 0.6, vol: 0.9, delay: 0.12 });
       burst({ dur: 2.6, type: 'lowpass', f: 900, f2: 60, vol: 0.6, a: 0.05, delay: 0.25 }); tone({ type: 'sawtooth', f: 45, f2: 25, dur: 2.2, vol: 0.25, delay: 0.25 });
     },
+    roar() { // рык Хоумлендера
+      tone({ type: 'sawtooth', f: 95, f2: 48, dur: 2.2, vol: 0.55, a: 0.08 }); tone({ type: 'square', f: 140, f2: 70, dur: 1.9, vol: 0.18, a: 0.1 });
+      burst({ dur: 2.0, type: 'lowpass', f: 900, f2: 140, vol: 0.7, a: 0.1 }); burst({ dur: 1.4, type: 'bandpass', f: 400, f2: 1600, q: 1.5, vol: 0.35, a: 0.2 });
+    },
     static() { burst({ dur: 1.4, type: 'highpass', f: 2500, vol: 0.35, a: 0.01 }); tone({ type: 'square', f: 1000, dur: 0.9, vol: 0.05, delay: 0.1 }); },
     beep() { tone({ type: 'square', f: 880, dur: 0.12, vol: 0.08 }); },
     go() { tone({ type: 'square', f: 1320, dur: 0.35, vol: 0.1 }); },

@@ -51,6 +51,7 @@ HL.Player = (function () {
         if (o.knock > 10) this.g.fx.addShake(0.35);
         if (o.down && this.rageT <= 0) { const dir = this.center.sub(from); dir.y = 0; this.knockdown(dir.normalize(), o.knock, 1.3); }
       }
+      if (this.g.noDeath && this.hp < 1) this.hp = 1; // в сюжетной схватке умереть нельзя
       if (this.hp <= 0) { this.hp = 0; this.die(); }
     }
     // сбит: падает с неба, кувыркается и лежит пару секунд
@@ -240,7 +241,7 @@ HL.Player = (function () {
       // анимация
       let mode = 'idle', sp = hs, opt = {};
       if (hs > 0.5 || Math.abs(this.vel.y) > 1 || this.lasering) this.idleT = 0; else this.idleT += dt;
-      if (this.scriptPose) { mode = this.scriptPose; opt = { p: 0.35 }; }
+      if (this.scriptPose) { mode = this.scriptPose; opt = this.scriptOpt || { p: 0.35 }; }
       else if (this.carry) { mode = 'carry'; opt = { fly: this.flying }; }
       else if (this.punchT > 0) { mode = 'punch'; opt = { p: 1 - this.punchT / 0.35, air: this.flying }; }
       else if (this.flying) {
