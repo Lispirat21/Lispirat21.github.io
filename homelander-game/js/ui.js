@@ -344,7 +344,7 @@ HL.UI = (function () {
       wrap.appendChild(b);
     });
     const r = document.createElement('button'); r.className = 'tab'; r.style.marginTop = '14px'; r.textContent = 'Сбросить прогресс';
-    r.onclick = () => { if (confirm('Сбросить весь прогресс сюжета?')) { HL.Progress.reset(); closePanel(); openMissions(onPick); } };
+    r.onclick = () => { if (r.dataset.arm) { HL.Progress.reset(); closePanel(); openMissions(onPick); } else { r.dataset.arm = '1'; r.textContent = 'Точно сбросить? Нажмите ещё раз'; } };
     wrap.appendChild(r);
     openPanel('Миссии', wrap);
   }
