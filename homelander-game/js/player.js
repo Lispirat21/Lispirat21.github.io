@@ -48,8 +48,23 @@ HL.Player = (function () {
         const k = this.center.sub(from); k.y = Math.max(0.2, k.y); k.normalize().multiplyScalar(o.knock);
         this.vel.add(k);
         if (o.knock > 10) this.g.fx.addShake(0.35);
+        if (o.down && this.rageT <= 0) { const dir = this.center.sub(from); dir.y = 0; this.knockdown(dir.normalize(), o.knock, 1.3); }
       }
       if (this.hp <= 0) { this.hp = 0; this.die(); }
+    }
+    // сбит: падает с неба, кувыркается и лежит пару секунд
+    knockdown(dir, force = 22, t = 1.3) {
+      if (this.dead || this.godMode) return;
+      const wasFlying = this.flying;
+      this.flying = false;
+      if (this.carry) this.drop();
+      const v = dir.clone(); if (v.lengthSq() < 1e-4) v.set(0, 0, 1);
+      v.normalize().multiplyScalar(force); v.y = Math.max(v.y, wasFlying ? -4 : 7);
+      this.vel.copy(v);
+      this.downT = Math.max(this.downT || 0, t); this.spin = (Math.random() < 0.5 ? -1 : 1) * 9;
+      this.c.cur.pitch = 0;
+      this.g.ui.tag('СБИТ!', '#ff8a5a', 1); this.g.fx.addShake(0.6);
+      if (this.lasering) { this.lasering = false; A().setLaser(false); this.g.fx.setBeam(0, null); this.g.fx.setBeam(1, null); }
     }
     die() {
       this.dead = true; this.flying = false; this.lasering = false;
@@ -77,6 +92,27 @@ HL.Player = (function () {
       if (this.poseT > 0) this.poseT -= dt;
       const depow = this.depowerT > 0;
 
+      if (!this.dead && this.downT > 0) {
+        // кувырок и лежание
+        this.vel.y -= 32 * dt;
+        const w = g.world; let roof = null;
+        const nSub = Math.min(10, Math.max(1, Math.ceil((this.vel.length() * dt) / 1.5)));
+        for (let k = 0; k < nSub; k++) { const py = this.pos.y; this.pos.addScaledVector(this.vel, dt / nSub); const r = w.collide(this.pos, this.radius, this.height, py); if (r != null) roof = r; }
+        const gY = roof != null ? roof : 0;
+        const air = this.pos.y > gY + 0.05;
+        if (!air) {
+          if (this.vel.y < -18) { g.fx.dust(this.pos, 12); A().slam(); g.fx.addShake(0.5); }
+          this.pos.y = gY; this.vel.y = 0; this.vel.x *= Math.exp(-7 * dt); this.vel.z *= Math.exp(-7 * dt);
+          this.downT -= dt;
+        } else this.downT = Math.max(this.downT, 0.6);
+        if (air) M.animate(this.c, dt, 'tumble', 0, { spin: (this.c.cur.pitch || 0) + this.spin * dt });
+        else M.animate(this.c, dt, this.downT < 0.35 ? 'idle' : 'knocked', 0);
+        this.c.capeAng = 0.4; this.c.capeAmp = 0.2;
+        M.setGlow(this.c, false); A().setWind(0);
+        this.grounded = !air;
+        if (this.downT <= 0) { this.downT = 0; this.c.cur.pitch = 0; }
+        this.sync(); return;
+      }
       if (this.dead) {
         this.vel.y -= 30 * dt; this.pos.addScaledVector(this.vel, dt);
         if (this.pos.y < 0) { this.pos.y = 0; this.vel.set(0, 0, 0); }

@@ -54,7 +54,9 @@ HL.Game = (function () {
     if ((all || k === 'drawDist') && scene && scene.fog) { scene.fog.near = S.drawDistance * 0.35; scene.fog.far = S.drawDistance; camera.far = S.drawDistance + 900; camera.updateProjectionMatrix(); }
     if (all || k === 'music' || k === 'sfx') A.applyVolumes();
     if (all || k === 'controls') applyControls();
+    if (all || k === 'uiScale') applyUiScale();
   };
+  function applyUiScale() { document.documentElement.style.setProperty('--ui', String(S.data.uiScale || 1)); }
   function applyControls() {
     document.body.classList.toggle('touch', S.useTouch);
     $('touch').classList.toggle('hidden', !(S.useTouch && g.state === 'play'));
@@ -73,12 +75,13 @@ HL.Game = (function () {
       case 'frenchie': a = new AC.Grenadier(g, D.frenchie, o); a.name = 'Френчи'; break;
       case 'mm': a = new AC.Gunman(g, D.mm, Object.assign({ weapon: 'heavy', hp: 620, showHp: true, prefDist: 20, speed: 3.5 }, o)); a.knockMul = 0.5; break;
       case 'kimiko': a = new AC.Brawler(g, D.kimiko, o); a.keepBody = true; break;
+      case 'ryan': a = new AC.Ryan(g, o); break;
       case 'starlight': a = new AC.Starlight(g, o); break;
       case 'soldierboy': a = new AC.SoldierBoy(g, o); break;
       case 'butcherBoss': a = new AC.ButcherBoss(g, o); break;
       case 'butcher': a = new AC.Actor(g, D.butcher, Object.assign({ faction: 'ally', hp: 1e9 }, o)); break;
       case 'atrain': a = new AC.Runner(g, o.path, o); break;
-      case 'van': case 'police': case 'ambulance': case 'car':
+      case 'van': case 'police': case 'ambulance': case 'car': case 'taxi':
         a = new AC.Vehicle(g, kind, Object.assign({ hp: kind === 'van' ? 900 : kind === 'ambulance' ? 1e9 : 140, faction: 'vehicle' }, o));
         if (kind === 'ambulance') a.invuln = true;
         break;
@@ -136,7 +139,7 @@ HL.Game = (function () {
       const p = axis === 'x' ? V(along, 0, line) : V(line, 0, along);
       p.addScaledVector(R, 3.5);
       if (p.distanceTo(g.player.pos) < 12) continue;
-      g.spawn(Math.random() < 0.1 ? 'police' : 'car', p.x, p.z, { yaw, lane: { axis }, hp: 140 });
+      g.spawn(Math.random() < 0.1 ? 'police' : Math.random() < 0.4 ? 'taxi' : 'car', p.x, p.z, { yaw, lane: { axis }, hp: 140 });
     }
   };
   g.spawnProj = function (type, from, vel, o) { g.projectiles.push(new AC.Proj(g, type, from, vel, o)); };
@@ -153,7 +156,7 @@ HL.Game = (function () {
         a.damage(dmg * (0.4 + 0.6 * k), src, a.faction === 'vehicle' ? null : a.center.sub(pos).normalize().multiplyScalar(14 * k + 6).setY(8 * k + 4));
       }
     }
-    if (src !== g.player && g.player.center.distanceTo(pos) < r) g.hurtPlayer(dmg * (1 - g.player.center.distanceTo(pos) / r * 0.6), pos, { knock: 14 });
+    if (src !== g.player && g.player.center.distanceTo(pos) < r) g.hurtPlayer(dmg * (1 - g.player.center.distanceTo(pos) / r * 0.6), pos, { knock: 16, down: dmg >= 100 });
     g.alarm(pos, 45);
   };
   g.onDeath = function (a, src) {
@@ -301,7 +304,7 @@ HL.Game = (function () {
     camera = new T.PerspectiveCamera(S.data.fov, innerWidth / innerHeight, 0.1, S.drawDistance + 900); g.camera = camera;
     g.time = 0; g.approval = 70; g.waypoint = null; g.hitStop = 0; deathT = -1; g.ending = null;
     g.world = HL.World.build(scene, { time: def.time });
-    g.fx = HL.FX.create(scene);
+    g.fx = HL.FX.create(scene); g.world.fx = g.fx;
     g.player = new HL.Player(g);
     const st = def.start;
     g.player.place(st[0], st[1], st[2], st[3]);
@@ -530,6 +533,7 @@ HL.Game = (function () {
     In.init($('c'));
     makeRenderer();
     M.setOutlines(S.data.outlines);
+    applyUiScale();
     stepL(45, 'Хоумлендер…');
     HL.Menu.build();
     sizeRenderer();

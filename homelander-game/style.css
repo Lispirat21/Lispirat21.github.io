@@ -220,3 +220,27 @@ body.touch #bossbar{bottom:auto;top:max(70px,calc(env(safe-area-inset-top) + 64p
 }
 
 #hud.cine #cross,#hud.cine #hudTL,#hud.cine #approval,#hud.cine #objective{opacity:0;transition:opacity .3s}
+
+/* ---------- размер интерфейса (настройка) и компактные субтитры ---------- */
+:root{--ui:1}
+#statcard{transform:translateX(-50%) scale(var(--ui));transform-origin:top center}
+@keyframes popin{from{transform:translateX(-50%) scale(calc(var(--ui) * .6));opacity:0}}
+#location{transform:translateX(-50%) scale(var(--ui));transform-origin:top center}
+#caption{transform:scale(var(--ui));transform-origin:center}
+#caption span{font-size:clamp(22px,4.6vw,48px);-webkit-text-stroke:2px #111}
+#dialog{transform:translateX(-50%) scale(var(--ui));transform-origin:bottom center;width:min(86vw,600px);padding:7px 14px 9px}
+#dialog .who{font-size:12px;margin-bottom:2px}
+#dialog .txt{font-size:clamp(13px,1.8vw,15px)}
+body.touch #dialog{transform:scale(var(--ui));transform-origin:top left}
+body.touch #dialog .txt{font-size:12px}
+#hint{transform:translateX(-50%) scale(var(--ui));transform-origin:bottom center;font-size:clamp(12px,2vw,16px)}
+#hudTL{transform:scale(var(--ui));transform-origin:top left}
+#approval{transform:translateX(-50%) scale(var(--ui));transform-origin:top center}
+#objective{transform:scale(var(--ui));transform-origin:top right}
+#bossbar{transform:translateX(-50%) scale(var(--ui));transform-origin:top center}
+#tags{transform:translateX(-50%) scale(var(--ui));transform-origin:top center}
+#pauseBtn{transform:scale(var(--ui));transform-origin:top right}
+#joy{transform:scale(var(--ui));transform-origin:bottom left}
+#tbtns{transform:scale(var(--ui));transform-origin:bottom right}
+#statcard{left:max(12px,env(safe-area-inset-left));top:max(96px,calc(env(safe-area-inset-top) + 86px));transform:scale(var(--ui));transform-origin:top left;width:min(44vw,380px)}
+@keyframes popin{from{transform:scale(calc(var(--ui) * .6));opacity:0}}

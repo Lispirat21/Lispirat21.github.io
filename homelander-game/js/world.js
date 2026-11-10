@@ -1,4 +1,4 @@
-// Город: кварталы, здания (склеенная геометрия), красная стена с башней, башня Vought, порт, парки
+// Город: кварталы, здания (склеенная геометрия), Белый дом, башня Vought, порт, парки
 HL.World = (function () {
   const T = THREE, U = HL.U, M = HL.Models;
   const PITCH = 70, ROAD = 14, HALF = 280; // дороги по x,z = 0, ±70, ±140, ±210, ±280
@@ -190,12 +190,12 @@ HL.World = (function () {
       const bx0 = cx - (PITCH - ROAD) / 2, bx1 = cx + (PITCH - ROAD) / 2, bz0 = cz - (PITCH - ROAD) / 2, bz1 = cz + (PITCH - ROAD) / 2;
       const key = cx + ',' + cz;
       // особые кварталы
-      const kremlin = cz < -210 && Math.abs(cx) < 220;
+      const kremlin = cz < -210 && Math.abs(cx) <= 105; // лужайка Белого дома
       const plaza = cz === -175 && Math.abs(cx) <= 35;
       const port = cx === 245;
       const isVought = cx === 105 && cz === 35;
       const park = !kremlin && !plaza && !port && !isVought && (key === '-105,-35' || key === '175,-105' || key === '-175,175' || key === '35,175' || rnd() < 0.06);
-      const pavCol = park ? (night ? 0x22401f : 0x6aaa4e) : plaza || kremlin ? (night ? 0x4a3a3a : 0x9a8a84) : (night ? 0x50535c : 0xa9adb4);
+      const pavCol = park || kremlin ? (night ? 0x22401f : 0x6aaa4e) : plaza ? (night ? 0x4a4a52 : 0xb6b2aa) : (night ? 0x50535c : 0xa9adb4);
       pave.push([cx, cz, PITCH - ROAD, PITCH - ROAD, pavCol]);
       // фонари по периметру квартала
       for (let s = -1; s <= 1; s += 2) for (let t = -20; t <= 20; t += 20) { lamps.push([cx + s * ((PITCH - ROAD) / 2 - 1), cz + t]); }
@@ -204,9 +204,7 @@ HL.World = (function () {
         W.sidewalkPts.push(new T.Vector3(bx0 + 1.5, 0, cz + t), new T.Vector3(bx1 - 1.5, 0, cz + t), new T.Vector3(cx + t, 0, bz0 + 1.5), new T.Vector3(cx + t, 0, bz1 - 1.5));
       }
       if (kremlin) {
-        // дворец за стеной
-        if (Math.abs(cx) < 40) { boxSides(pal[4].b, cx - 22, 0, cz - 10, cx + 22, 18, cz + 12, 30, 28, null, pal[4].top); addBox(cx - 22, cz - 10, cx + 22, cz + 12, 18, 'building'); }
-        else for (let k = 0; k < 4; k++) trees.push([cx + (rnd() - 0.5) * 40, cz + (rnd() - 0.5) * 40, 1 + rnd() * 0.5]);
+        if (Math.abs(cx) > 40) for (let k = 0; k < 6; k++) trees.push([cx + (rnd() - 0.5) * 44, cz + (rnd() - 0.5) * 44, 1 + rnd() * 0.5]);
         continue;
       }
       if (plaza) { W.parks.push([cx, cz]); continue; }
@@ -286,45 +284,65 @@ HL.World = (function () {
       W.parks.push([cx, cz]);
     }
 
-    // ---------- Красная стена и башня с часами ----------
+    // ---------- Белый дом ----------
     {
-      const zW = -213, x0 = -200, x1 = 200;
-      const red = M.toon(night ? 0x7a1e1a : 0xb8352c), roofM = M.toon(night ? 0x183a2a : 0x2e6a48);
-      const wall1 = new T.Mesh(new T.BoxGeometry(x1 - x0, 14, 5), red); wall1.position.set(0, 7, zW); wall1.castShadow = wall1.receiveShadow = true; add(wall1);
-      addBox(x0, zW - 2.5, -9, zW + 2.5, 14, 'wall'); addBox(9, zW - 2.5, x1, zW + 2.5, 14, 'wall');
-      // зубцы
-      const n = Math.floor((x1 - x0) / 3.4);
-      const merl = new T.InstancedMesh(new T.BoxGeometry(1.8, 2.4, 1.2), red, n * 2);
-      let k = 0;
-      for (let i = 0; i < n; i++) for (const dz of [-1.9, 1.9]) { mtx.makeTranslation(x0 + 1.7 + i * 3.4, 15.2, zW + dz); merl.setMatrixAt(k++, mtx); }
-      merl.castShadow = true; add(merl);
-      // боковые башни
-      for (const tx of [-200, -120, 120, 200]) {
-        const tw = new T.Mesh(new T.BoxGeometry(9, 26, 9), red); tw.position.set(tx, 13, zW); tw.castShadow = true; add(tw);
-        const rf = new T.Mesh(new T.ConeGeometry(7, 12, 4), roofM); rf.position.set(tx, 32, zW); rf.rotation.y = Math.PI / 4; add(rf);
-        addBox(tx - 4.5, zW - 4.5, tx + 4.5, zW + 4.5, 26, 'tower');
+      const zc = -254, wM = M.toon(night ? 0xc8ccd8 : 0xf4f2ec), dark = M.toon(night ? 0x2a3450 : 0x3a4250), roofM = M.toon(night ? 0x8a8e98 : 0xb8bcc4);
+      const g = new T.Group(); g.position.set(0, 0, zc);
+      const mk = (geo, mat, x, y, z) => { const m = new T.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; g.add(m); return m; };
+      // главный корпус и крылья
+      mk(new T.BoxGeometry(56, 18, 24), wM, 0, 9, 0);
+      mk(new T.BoxGeometry(57, 1.2, 25), wM, 0, 18.6, 0);
+      mk(new T.BoxGeometry(54, 2.6, 22), roofM, 0, 20.2, 0);
+      for (const sx of [-1, 1]) { mk(new T.BoxGeometry(34, 9, 10), wM, sx * 44, 4.5, 4); mk(new T.BoxGeometry(35, 0.8, 10.6), wM, sx * 44, 9.2, 4); }
+      // балюстрада
+      const posts = new T.InstancedMesh(M.box(0.35, 1.3, 0.35), wM, 120); let pk = 0;
+      for (let x = -27.5; x <= 27.5 && pk < 120; x += 1.1) { mtx.makeTranslation(x, 19.8 + 0, 12.1 + zc); posts.setMatrixAt(pk++, mtx); }
+      posts.count = pk; add(posts);
+      // окна южного фасада
+      const wins = new T.InstancedMesh(M.box(1.8, 3.2, 0.3), dark, 80); let wk = 0;
+      for (const y of [4, 12.5]) for (let x = -24; x <= 24; x += 4.6) { if (Math.abs(x) < 8) continue; mtx.makeTranslation(x, y, 12.05 + zc); wins.setMatrixAt(wk++, mtx); }
+      for (const sx of [-1, 1]) for (let x = 30; x <= 58; x += 4) { mtx.makeTranslation(sx * x, 4.5, 9.05 + zc); wins.setMatrixAt(wk++, mtx); }
+      wins.count = wk; add(wins);
+      // полукруглый южный портик с колоннами
+      const colG = new T.CylinderGeometry(0.55, 0.65, 16, 12);
+      for (let i = 0; i <= 6; i++) {
+        const a = Math.PI * (i / 6);
+        mk(colG, wM, Math.cos(a) * 7.5, 8, 12 + Math.sin(a) * 7.5);
       }
-      // главная башня (ворота над дорогой)
-      const g = new T.Group(); g.position.set(0, 0, zW);
-      const base = new T.Mesh(new T.BoxGeometry(18, 34, 14), red); base.position.y = 17; base.castShadow = true; g.add(base);
-      const gate = new T.Mesh(new T.BoxGeometry(8, 11, 14.4), M.toon(0x2a2224)); gate.position.y = 5.5; g.add(gate);
-      const mid = new T.Mesh(new T.BoxGeometry(14, 14, 11), red); mid.position.y = 41; g.add(mid);
-      const wh = new T.Mesh(new T.BoxGeometry(14.4, 1.2, 11.4), M.toon(0xf0ece2)); wh.position.y = 34.5; g.add(wh);
-      for (const s of [1, -1]) {
-        const cl = new T.Mesh(new T.CylinderGeometry(4.2, 4.2, 0.6, 28), M.toon(0xf2f0e8)); cl.rotation.x = Math.PI / 2; cl.position.set(0, 41, 5.6 * s); g.add(cl);
-        const rim = new T.Mesh(new T.TorusGeometry(4.3, 0.35, 6, 28), M.toon(0xe6b23c)); rim.position.set(0, 41, 5.9 * s); g.add(rim);
-        const hh = new T.Mesh(M.box(0.35, 3.0, 0.2), M.toon(0x111111)); hh.position.set(0, 42.2, 6.05 * s); g.add(hh);
-        const mh = new T.Mesh(M.box(0.3, 2.2, 0.2), M.toon(0x111111)); mh.position.set(1.0, 40.6, 6.1 * s); mh.rotation.z = 1.1; g.add(mh);
-      }
-      const t2 = new T.Mesh(new T.BoxGeometry(9, 10, 9), red); t2.position.y = 53; g.add(t2);
-      const sp = new T.Mesh(new T.ConeGeometry(6.5, 26, 8), roofM); sp.position.y = 71; g.add(sp);
-      const st = new T.Mesh(M.star(2.4), new T.MeshBasicMaterial({ color: 0xff2a2a, side: T.DoubleSide })); st.position.y = 87; g.add(st);
-      const stg = M.glowSprite(0xff3030, 10); stg.position.y = 87; g.add(stg);
-      W.updaters.push((dt, t) => { st.rotation.y = t * 0.4; });
+      mk(new T.CylinderGeometry(8.6, 8.6, 1.6, 24, 1, false, Math.PI / 2, Math.PI), wM, 0, 16.6, 12);
+      mk(new T.CylinderGeometry(8.0, 8.0, 0.5, 24, 1, false, Math.PI / 2, Math.PI), wM, 0, 0.25, 12);
+      mk(new T.BoxGeometry(5, 7, 0.4), dark, 0, 3.5, 12.1);
+      // флагшток и флаг США
+      mk(new T.CylinderGeometry(0.12, 0.15, 12, 8), M.toon(0xdddddd), 0, 27, 0);
+      const flagTex = M.canvasTex(192, 100, (x, w, h) => {
+        for (let i = 0; i < 13; i++) { x.fillStyle = i % 2 ? '#ffffff' : '#c22a33'; x.fillRect(0, (i * h) / 13, w, h / 13 + 1); }
+        x.fillStyle = '#2a3a7a'; x.fillRect(0, 0, w * 0.42, h * (7 / 13));
+        x.fillStyle = '#fff'; for (let r = 0; r < 5; r++) for (let c = 0; c < 6; c++) x.fillRect(6 + c * 13, 5 + r * 10, 3, 3);
+      });
+      flagTex.wrapS = flagTex.wrapT = T.ClampToEdgeWrapping;
+      const flagGeo = new T.PlaneGeometry(6, 3.2, 12, 1); flagGeo.translate(3, 0, 0);
+      const flag = new T.Mesh(flagGeo, new T.MeshBasicMaterial({ map: flagTex, side: T.DoubleSide })); flag.position.set(0.1, 31, 0); g.add(flag);
+      const fb = flagGeo.attributes.position.array.slice();
+      W.updaters.push((dt, t) => {
+        const a = flagGeo.attributes.position.array;
+        for (let i = 0; i < a.length; i += 3) a[i + 2] = Math.sin(fb[i] * 1.3 - t * 5) * 0.25 * (fb[i] / 6);
+        flagGeo.attributes.position.needsUpdate = true;
+      });
       add(g);
-      addBox(-9, zW - 7, 9, zW + 7, 48, 'tower'); addBox(-4.5, zW - 4.5, 4.5, zW + 4.5, 80, 'spire');
-      W.special.tower = new T.Vector3(0, 0, zW);
+      addBox(-28, zc - 12, 28, zc + 12, 21.5, 'whitehouse');
+      addBox(-61, zc - 1, -27, zc + 9, 9.6, 'whitehouse'); addBox(27, zc - 1, 61, zc + 9, 9.6, 'whitehouse');
+      addBox(-8.6, zc + 12, 8.6, zc + 20.1, 17.4, 'whitehouse');
+      // фонтан на лужайке
+      const fz = -228;
+      const basin = new T.Mesh(new T.CylinderGeometry(6, 6.4, 1, 28), wM); basin.position.set(0, 0.5, fz); basin.castShadow = true; add(basin);
+      const water = new T.Mesh(new T.CylinderGeometry(5.5, 5.5, 0.2, 28), new T.MeshBasicMaterial({ color: night ? 0x2a4a7a : 0x6ab0e8 })); water.position.set(0, 0.95, fz); add(water);
+      addBox(-5, fz - 5, 5, fz + 5, 1, 'fountain');
+      W.special.fountain = new T.Vector3(0, 0, fz);
+      if (night) { const fl = new T.PointLight(0xfff0d0, 1.6, 70, 1.5); fl.position.set(0, 14, -212); add(fl); }
+      W.special.whiteHouse = new T.Vector3(0, 0, zc);
       W.special.plaza = new T.Vector3(0, 0, -175);
+      // кусты вдоль лужайки
+      for (let x = -60; x <= 60; x += 10) if (Math.abs(x) > 12) trees.push([x, -238, 0.55]);
     }
 
     // ---------- материалы зданий ----------
@@ -446,6 +464,7 @@ HL.World = (function () {
     };
     W.randomSidewalk = () => U.pick(W.sidewalkPts).clone();
     W.update = function (dt, t, focus) {
+      if (W.special.fountain && W.fx && Math.random() < dt * 25) W.fx.burst(W.special.fountain.clone().setY(1.2), 1, { color: [0xbfe4ff, 0xffffff], speed: 3, size: 0.18, life: 0.9, g: -12, drag: 0.2, up: true, dir: new T.Vector3(0, 2.2, 0), spread: 0.3 });
       for (const c of W.clouds) { c.position.x += dt * 3; if (c.position.x > 650) c.position.x -= 1300; }
       for (const f of W.updaters) f(dt, t);
       if (focus) {

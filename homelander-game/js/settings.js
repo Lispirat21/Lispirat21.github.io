@@ -13,7 +13,7 @@
   const DEFAULTS = Object.assign({
     preset: basePreset,
     fov: 70, showFps: false, sens: 1, invertY: false, camDist: 7,
-    music: 0.55, sfx: 0.85, shake: true, captions: true,
+    music: 0.55, sfx: 0.85, shake: true, captions: true, uiScale: isMobile ? 0.85 : 1,
     controls: 'auto', // auto | pc | touch
     maxPixelRatio: isMobile ? 2 : 2,
   }, PRESETS[basePreset]);

@@ -131,8 +131,8 @@ HL.Missions = (function () {
   const LIST = [
     // ---------------- 1 ----------------
     {
-      id: 'day1', title: 'Обычный день', desc: 'Москва, полдень. Vought открывает филиал — улыбайтесь в камеры.',
-      time: 'day', location: 'МОСКВА · 12:04', start: [0, 0, -40, Math.PI], music: 'calm',
+      id: 'day1', title: 'Обычный день', desc: 'Нью-Йорк, полдень. Vought открывает новый офис — улыбайтесь в камеры.',
+      time: 'day', location: 'НЬЮ-ЙОРК · 12:04', start: [0, 0, -40, Math.PI], music: 'calm',
       setup(g) { g.spawnCrowd(); g.spawnTraffic(); },
       steps: [
         {
@@ -140,11 +140,11 @@ HL.Missions = (function () {
             g.ui.caption('ОБЫЧНЫЙ ДЕНЬ. САМЫЙ СИЛЬНЫЙ ГЕРОЙ ПЛАНЕТЫ.');
             setTimeout(() => g.ui.statcard(HL_CARD[0], HL_CARD[1], 'Лицо Vought International.'), 1600);
             v._t = false;
-            g.ui.say([['ash', 'Хоумлендер, ты в эфире через пять минут. Vought открывает офис в Москве — пожалуйста, улыбайся.'], ['hl', 'Я всегда улыбаюсь, Эшли.'], ['ash', 'Вот именно это меня и пугает.']], () => (v._t = true));
+            g.ui.say([['ash', 'Хоумлендер, ты в эфире через пять минут. Vought открывает новый офис в Нью-Йорке — пожалуйста, улыбайся.'], ['hl', 'Я всегда улыбаюсь, Эшли.'], ['ash', 'Вот именно это меня и пугает.']], () => (v._t = true));
           },
           update: (g, dt, v) => v._t, text: 'Слушайте Эшли',
         },
-        goto(V(0, 0, -150), 9, 'Пройдите к площади у красной стены'),
+        goto(V(0, 0, -150), 9, 'Пройдите к площади'),
         {
           text: 'Взлетите: Пробел в прыжке или F (кнопка ПОЛЁТ)',
           enter(g) { g.ui.hint(HL.Settings.useTouch ? '▲ — прыжок, ещё раз ▲ в воздухе — полёт' : 'Пробел — прыжок, Пробел в воздухе — полёт', 4); },
@@ -187,7 +187,7 @@ HL.Missions = (function () {
     // ---------------- 2 ----------------
     {
       id: 'fire', title: 'Горячая точка', desc: 'Пожар в жилом доме. Прямой эфир. Спасите всех — на камеру.',
-      time: 'dusk', location: 'МОСКВА · 18:40', start: [-35, 0, 40, Math.PI * 0.75], music: 'combat',
+      time: 'dusk', location: 'НЬЮ-ЙОРК · 18:40', start: [-35, 0, 40, Math.PI * 0.75], music: 'combat',
       setup(g, v) {
         g.spawnCrowd(); g.spawnTraffic();
         // три горящих дома рядом с точкой
@@ -254,7 +254,7 @@ HL.Missions = (function () {
     // ---------------- 3 ----------------
     {
       id: 'scam', title: 'Продавец Уильям', desc: 'Кто-то обокрал самого Хоумлендера по телефону. Найдите звонящего.',
-      time: 'night', location: 'МОСКВА · 23:15', start: [0, 0, 0, Math.PI], music: 'calm',
+      time: 'night', location: 'НЬЮ-ЙОРК · 23:15', start: [0, 0, 0, Math.PI], music: 'calm',
       setup(g, v) {
         g.spawnCrowd(); g.spawnTraffic();
         const pick = (x, z) => g.world.lots.filter((b) => b.y1 > 12).sort((a, b) => Math.hypot((a.x0 + a.x1) / 2 - x, (a.z0 + a.z1) / 2 - z) - Math.hypot((b.x0 + b.x1) / 2 - x, (b.z0 + b.z1) / 2 - z))[0];
@@ -355,7 +355,7 @@ HL.Missions = (function () {
     // ---------------- 4 ----------------
     {
       id: 'race', title: 'Гонка с Эй-Трейном', desc: 'Самый быстрый человек на планете бросает вызов. Пролетите все кольца первым.',
-      time: 'day', location: 'МОСКВА · 10:30', start: [0, 0, 20, Math.PI], music: 'combat', noApproval: false,
+      time: 'day', location: 'НЬЮ-ЙОРК · 10:30', start: [0, 0, 20, Math.PI], music: 'combat', noApproval: false,
       setup(g, v) {
         g.spawnCrowd();
         const path = [V(0, 0, -70), V(140, 0, -70), V(140, 0, 70), V(70, 0, 70), V(70, 0, 210), V(-140, 0, 210), V(-140, 0, 0), V(-210, 0, 0), V(-210, 0, -140), V(0, 0, -140), V(0, 0, -175)];
@@ -415,7 +415,7 @@ HL.Missions = (function () {
     // ---------------- 5 ----------------
     {
       id: 'raid', title: 'Логово Пацанов', desc: 'Ночной порт. Наёмники с оружием против суперов, Френчи, М.М., Кимико… и Старлайт.',
-      time: 'night', location: 'ПОРТ · 23:50', start: [140, 0, 0, Math.PI / 2], music: 'combat',
+      time: 'night', location: 'ПОРТ НЬЮ-ЙОРКА · 23:50', start: [140, 0, 0, Math.PI / 2], music: 'combat',
       setup(g, v) {
         g.spawnCrowd(0.4);
         v.port = V(245, 0, 0);
@@ -482,14 +482,14 @@ HL.Missions = (function () {
           update(g, dt, v) { return g.player.pos.distanceTo(v.h.pos) < 5; },
           wp: (g, v) => (g.player.hearT > 0 ? v.h.center : null),
         },
-        talk([['hu', 'Н-не убивай! Пожалуйста! Я… я всё скажу!'], ['hu', 'Бутчер хочет разбудить Солдатика! Его тело держат в лаборатории под красной стеной!'],
+        talk([['hu', 'Н-не убивай! Пожалуйста! Я… я всё скажу!'], ['hu', 'Бутчер хочет разбудить Солдатика! Его тело держат в лаборатории Vought!'],
           ['hl', 'Солдатик мёртв уже сорок лет.'], ['hu', 'Н-не совсем…']], { text: 'Допрос' }),
       ],
     },
     // ---------------- 6 ----------------
     {
       id: 'soldier', title: 'Солдатик', desc: 'Легенда вернулась. Его взрыв из груди подавляет силы — прячьтесь за зданиями.',
-      time: 'dawn', location: 'ПЛОЩАДЬ · 06:10', start: [0, 0, -100, Math.PI], music: 'boss',
+      time: 'dawn', location: 'ТАЙМС-СКВЕР · 06:10', start: [0, 0, -100, Math.PI], music: 'boss',
       setup(g, v) { g.spawnCrowd(0.6); },
       steps: [
         {
@@ -514,31 +514,56 @@ HL.Missions = (function () {
           exit(g) { g.ui.boss(null); g.music(null); },
         },
         talk([['sb', 'Кх… Погоди. Эти глаза…'], ['sb', 'Ты… ты мой сын?'], ['hl', '…'], ['but', '*по рации* Спасибо за помощь, приятель. Его кровь — всё, что мне было нужно.'],
-          ['but', 'Темп-V. Сутки силы, как у вас, уродов. Встретимся у твоей драгоценной башни.']], { text: 'Правда' }),
+          ['but', 'Темп-V. Сутки силы, как у вас, уродов. Встретимся в Белом доме. Приводи камеры.']], { text: 'Правда' }),
       ],
     },
     // ---------------- 7 ----------------
     {
-      id: 'final', title: 'Финал: Бутчер', desc: 'Ночь, дождь, башня Vought. Бутчер на Темп-V. Только один уйдёт отсюда.',
-      time: 'night', rain: true, location: 'БАШНЯ VOUGHT · 00:00', start: [40, 0, 70, -Math.PI / 2], music: 'boss',
-      setup(g, v) { g.spawnCrowd(0.4); },
+      id: 'final', title: 'Финал: Белый дом', desc: 'Вашингтон, ночь, дождь. Кимико, Райан и Бутчер на Темп-V. Только один уйдёт отсюда.',
+      time: 'night', rain: true, location: 'БЕЛЫЙ ДОМ · ВАШИНГТОН · 00:00', start: [0, 0, -150, Math.PI], music: 'boss',
+      setup(g, v) { g.spawnCrowd(0.3); },
       steps: [
         {
           enter(g, v) {
-            const b = g.spawn('butcherBoss', 120, 70, {}); b.yaw = -Math.PI / 2; v.b = b; v.summon = [false, false];
-            b._think = b.think; b.think = function (dt) { this.anim = 'idle'; this.animOpt = { lash: false }; this.stop(dt); this.face(g.player.pos, dt, 3); };
-            g.cinema(V(110, 3, 76), V(120, 2, 70));
-            g.ui.caption('ТЕМП-V. ОДНИ СУТКИ.', 0.45);
+            const idle = function (dt) { this.anim = 'idle'; this.animOpt = { lash: false }; this.vel.set(0, this.vel.y, 0); this.face(g.player.pos, dt, 3); };
+            const k = g.spawn('kimiko', -3.5, -205, {}); const r = g.spawn('ryan', 3.5, -206, { y: 0.3 }); const b = g.spawn('butcherBoss', 0, -212, {});
+            for (const a of [k, r, b]) { a._think = a.think; a.think = idle; a.invuln = true; }
+            v.k = k; v.r = r; v.b = b; v.summon = [false, false];
+            g.cinema(V(3, 2.3, -197), V(0, 1.4, -208));
+            g.ui.caption('БЕЛЫЙ ДОМ. ПОСЛЕДНИЙ БОЙ.', 0.45);
             HL.Audio.stinger();
-            setTimeout(() => g.ui.statcard('БИЛЛИ БУТЧЕР', [['СИЛА', 'ТЕМП-V'], ['ЩУПАЛЬЦА', 'ДА'], ['НЕНАВИСТЬ', 'MAX'], ['УРОВЕНЬ', '99']], 'Щупальца, прыжки и… машины.', 5), 1200);
+            setTimeout(() => g.ui.statcard('БИЛЛИ БУТЧЕР', [['СИЛА', 'ТЕМП-V'], ['ЩУПАЛЬЦА', 'ДА'], ['НЕНАВИСТЬ', 'MAX'], ['УРОВЕНЬ', '99']], 'С ним Кимико и… Райан.', 5), 1200);
             v._t = false;
-            setTimeout(() => g.ui.say([['but', 'Ну что, дорогуша. Теперь мы на равных.'], ['hl', 'Ты всего лишь человек, Билли.'], ['but', 'Сегодня — нет.']], () => (v._t = true)), 1500);
+            setTimeout(() => g.ui.say([['but', 'Ну что, дорогуша. Вот и финал. Прямо на лужайке у президента.'], ['hl', 'Райан. Отойди от них. Сейчас же.'],
+              ['ki', '*встаёт перед Райаном и разминает шею*'], ['but', 'Сначала — через неё. Потом — через него. А потом я.']], () => (v._t = true)), 1500);
           },
           update: (g, dt, v) => v._t, text: '…',
-          exit(g, v) { g.cinema(null); v.b.think = v.b._think; },
+          exit(g, v) { g.cinema(null); },
+        },
+        {
+          text: 'Победите Кимико',
+          enter(g, v) { const k = v.k; k.think = k._think; k.invuln = false; g.spawnGroup('f1', 'agent', V(0, 0, -200), 4, { spread: 24, weapon: 'rifle', hp: 80 }); },
+          update(g, dt, v) { g.ui.boss('Кимико', v.k.hp / v.k.maxHp); return !v.k.alive; },
+          wp: (g, v) => v.k.alive && v.k.center,
+          exit(g) { g.ui.boss(null); },
+        },
+        {
+          text: 'Райан',
+          enter(g, v) {
+            const r = v.r; r.think = r._think; r.invuln = false;
+            g.ui.statcard('РАЙАН', [['СИЛА', 'MAX'], ['ПОЛЁТ', 'ДА'], ['ВОЗРАСТ', '12'], ['УРОВЕНЬ', '90']], 'Сын Хоумлендера. Сбивает с ног рывками.', 4);
+            g.ui.say([['ki', '*падает на колени, смотрит на Райана*'], ['hl', 'Райан. Ты же мой сын. Встань рядом со мной.'], ['ry', 'Нет, пап. Хватит!']]);
+          },
+          update(g, dt, v) { g.ui.boss('Райан', v.r.hp / v.r.maxHp); return !v.r.alive; },
+          wp: (g, v) => v.r.alive && v.r.center,
+          exit(g) { g.ui.boss(null); },
         },
         {
           text: 'Победите Бутчера',
+          enter(g, v) {
+            const b = v.b; b.think = b._think; b.invuln = false;
+            g.ui.say([['ry', 'Прости… я просто хотел, чтобы ты остановился…'], ['but', 'Ты сделал больно собственному сыну. Вот кто ты, дорогуша.'], ['hl', 'Билли. Хватит болтать.']]);
+          },
           update(g, dt, v) {
             const b = v.b, f = b.hp / b.maxHp;
             g.ui.boss('Билли Бутчер (Темп-V)', f);
@@ -546,16 +571,17 @@ HL.Missions = (function () {
             if (f < 0.33 && !v.summon[1]) { v.summon[1] = true; g.spawnGroup('adds', 'agent', b.pos, 4, { spread: 20, weapon: 'rifle', hp: 80 }); g.ui.say([['but', 'Я тебя не отпущу, слышишь?! Никогда!']]); }
             return !b.alive;
           },
+          wp: (g, v) => v.b.alive && v.b.center,
           exit(g) { g.ui.boss(null); g.music(null); },
         },
-        talk([['but', 'Кх-х… Ну давай. Чего ждёшь?'], ['hl', '…'], ['ash', '*в наушнике* Хоумлендер, на тебя смотрят все камеры страны. Решай.']], { text: 'Решение' }),
+        talk([['but', 'Кх-х… Ну давай. Чего ждёшь?'], ['hl', '…'], ['ash', '*в наушнике* Хоумлендер, на тебя смотрят все камеры страны. И Райан тоже. Решай.']], { text: 'Решение' }),
         {
           text: 'Сделайте выбор',
           enter(g, v) {
             v.done = false;
             g.controlsEnabled = false; HL.Input.unlock();
             g.ui.choice('Что сделает Хоумлендер?', [
-              { text: 'Пощадить', sub: 'Толпа увидит милосердие бога', fn: () => { v.ending = 'mercy'; v.done = true; } },
+              { text: 'Пощадить', sub: 'Райан увидит, что отец может остановиться', fn: () => { v.ending = 'mercy'; v.done = true; } },
               { text: 'Покончить с этим', sub: 'Билли больше никогда не позвонит', fn: () => { v.ending = 'kill'; v.done = true; } },
             ]);
           },
@@ -570,17 +596,17 @@ HL.Missions = (function () {
   function endingText(kind, approval) {
     if (kind === 'mercy') {
       return approval >= 60
-        ? 'Хоумлендер опустил руку и улыбнулся в камеры. «Даже он заслуживает второго шанса». Рейтинг одобрения взлетел до небес. Где-то в тюремной камере Билли Бутчер смеялся: Темп-V ещё не закончился…'
-        : 'Хоумлендер ушёл, не обернувшись. Люди не поверили в его милосердие — слишком многое они видели раньше. Бутчер исчез этой же ночью.';
+        ? 'Хоумлендер опустил руку и улыбнулся в камеры на лужайке Белого дома. «Даже он заслуживает второго шанса». Райан впервые за долгое время посмотрел на отца без страха. Где-то в камере Билли Бутчер смеялся: Темп-V ещё не закончился…'
+        : 'Хоумлендер ушёл, не обернувшись. Люди не поверили в его милосердие — слишком многое они видели раньше. Райан улетел вслед за Кимико, а Бутчер исчез этой же ночью.';
     }
     return approval >= 60
-      ? 'Вспышка красного света. Тишина. Vought уже пишет пресс-релиз: «Террорист нейтрализован». Толпа аплодирует… но никто не смотрит Хоумлендеру в глаза.'
+      ? 'Вспышка красного света. Тишина. Vought уже пишет пресс-релиз: «Террорист нейтрализован». Толпа аплодирует… но Райан больше не смотрит отцу в глаза.'
       : 'Вспышка красного света. Камеры всё засняли. Акции Vought рухнули, а Хоумлендер впервые понял: бога можно бояться — и при этом ненавидеть.';
   }
 
   // ---------- свободный полёт ----------
   const FREE = {
-    id: 'free', title: 'Свободный полёт', desc: 'Город ваш. Останавливайте преступления, позируйте, летайте.', time: 'day', location: 'МОСКВА · СВОБОДНЫЙ ПОЛЁТ', start: [0, 0, -40, Math.PI], music: 'calm', free: true,
+    id: 'free', title: 'Свободный полёт', desc: 'Город ваш. Останавливайте преступления, позируйте, летайте.', time: 'day', location: 'НЬЮ-ЙОРК · СВОБОДНЫЙ ПОЛЁТ', start: [0, 0, -40, Math.PI], music: 'calm', free: true,
     setup(g, v) { g.spawnCrowd(); g.spawnTraffic(); v.next = 20; v.count = 0; },
     steps: [{
       text: 'Летайте по городу. Скоро где-то случится преступление…',

@@ -384,7 +384,7 @@ HL.Actors = (function () {
         }
         case 'melee':
           this.face(P.pos, dt, 10); this.stop(dt); this.anim = 'punch'; this.animOpt = { p: 1 - this.stT / 0.45 };
-          if (!this.hit && this.stT < 0.25) { this.hit = true; A().punch(); if (d < 3.6 && Math.abs(dy) < 2.5) g.hurtPlayer(55, this.pos, { knock: 18 }); }
+          if (!this.hit && this.stT < 0.25) { this.hit = true; A().punch(); if (d < 3.6 && Math.abs(dy) < 2.5) g.hurtPlayer(phase2 ? 150 : 120, this.pos, { knock: 22, down: Math.random() < 0.6 }); }
           if (this.stT <= 0) { this.meleeCd = phase2 ? 0.6 : 1.0; this.setSt('chase'); }
           break;
         case 'throw':
@@ -393,12 +393,13 @@ HL.Actors = (function () {
             this.thrown = true; this.hasShield = false; this.c.shield.visible = false;
             const from = this.center.clone().add(V(0, 0.4, 0));
             const dir = pc.clone().add(P.vel.clone().multiplyScalar(0.4)).sub(from).normalize();
-            g.spawnProj('shield', from, dir.multiplyScalar(phase2 ? 48 : 40), { dmg: 60, owner: this, maxDist: 70 });
+            g.spawnProj('shield', from, dir.multiplyScalar(phase2 ? 48 : 40), { dmg: phase2 ? 140 : 115, owner: this, maxDist: 70 });
             A().shield();
           }
           if (this.stT <= 0) { this.throwCd = phase2 ? 3 : 4.5; this.setSt('chase'); }
           break;
         case 'charge': {
+          this.blastHit = false;
           this.stop(dt); this.anim = 'charge';
           const k = 1 - Math.max(0, this.stT) / 1.9;
           this.chestGlow.scale.setScalar(0.5 + k * 3.5);
@@ -422,7 +423,7 @@ HL.Actors = (function () {
           const rel = pc.clone().sub(from); const t = rel.dot(this.aim);
           if (t > 0 && t < L) {
             const dist = rel.sub(this.aim.clone().multiplyScalar(t)).length();
-            if (dist < 2.4) { g.hurtPlayer(200 * dt, from, { knock: 0, silent: true }); P.depower(4); }
+            if (dist < 2.4) { g.hurtPlayer(330 * dt, from, { knock: 0, silent: true }); P.depower(4); if (!this.blastHit) { this.blastHit = true; P.knockdown(this.aim.clone(), 24, 1.5); } }
           }
           // и по прохожим
           for (const a of g.actors) if (a.faction === 'civ' && a.alive) {
@@ -474,7 +475,7 @@ HL.Actors = (function () {
           g.fx.warn(0, this.pos, 9, Math.sin(g.time * 30) * 0.5 + 0.5);
           if (this.stT <= 0) {
             g.fx.warn(0, null); A().slam(); g.fx.ring(this.pos, 0xff4040, 10, 0.4); g.fx.addShake(0.5);
-            if (this.dist2D(P.pos) < 9 && Math.abs(P.pos.y - this.pos.y) < 6) g.hurtPlayer(enraged ? 110 : 85, this.pos, { knock: 26 });
+            if (this.dist2D(P.pos) < 9 && Math.abs(P.pos.y - this.pos.y) < 6) g.hurtPlayer(enraged ? 220 : 170, this.pos, { knock: 26, down: true });
             for (const a of g.actors) if (a !== this && a.alive && a.dist2D(this.pos) < 9) a.damage(150, this, a.pos.clone().sub(this.pos).setY(0).normalize().multiplyScalar(20).setY(8));
             this.cd.sweep = enraged ? 2.5 : 3.5; this.setSt('chase', 0);
           }
@@ -489,8 +490,8 @@ HL.Actors = (function () {
           if (!this.grabbed && k >= 1) {
             this.grabbed = true;
             if (this.distTo(pc) < 26 && g.world.los(from, pc)) {
-              g.hurtPlayer(enraged ? 70 : 55, this.pos, { knock: 0 });
-              P.vel.copy(from.clone().sub(pc).normalize().multiplyScalar(26)); P.stun(0.5);
+              g.hurtPlayer(enraged ? 150 : 120, this.pos, { knock: 0 });
+              P.knockdown(from.clone().sub(pc).normalize(), 28, 1.4); // притянул и сбил на землю
               g.ui.tag('СХВАЧЕН!', '#ff6a6a', 1); A().punch();
             }
           }
@@ -506,7 +507,7 @@ HL.Actors = (function () {
           if (this.stT <= 0) {
             this.noPhysics = false; this.pos.y = 0; g.fx.warn(1, null);
             A().slam(); g.fx.dust(this.pos, 24); g.fx.ring(this.pos, 0xffffff, 12, 0.5); g.fx.addShake(1);
-            if (this.dist2D(P.pos) < 8 && P.pos.y < 6) g.hurtPlayer(enraged ? 120 : 90, this.pos, { knock: 24 });
+            if (this.dist2D(P.pos) < 8 && P.pos.y < 6) g.hurtPlayer(enraged ? 240 : 190, this.pos, { knock: 24, down: true });
             for (const a of g.actors) if (a !== this && a.alive && a.dist2D(this.pos) < 8) a.damage(200, this, V(0, 12, 0));
             this.cd.leap = enraged ? 5 : 7; this.setSt('chase', 0);
           }
@@ -519,7 +520,7 @@ HL.Actors = (function () {
             this.thrown = true; this.obj.remove(this.carMesh);
             const from = this.pos.clone().add(V(0, 4.5, 0));
             const dir = pc.clone().add(P.vel.clone().multiplyScalar(0.5)).sub(from).normalize();
-            g.spawnProj('car', from, dir.multiplyScalar(42), { dmg: 120, owner: this, mesh: this.carMesh, radius: 7 });
+            g.spawnProj('car', from, dir.multiplyScalar(42), { dmg: 220, owner: this, mesh: this.carMesh, radius: 7 });
             this.carMesh = null; A().whoosh();
           }
           if (this.stT <= 0) { this.cd.car = enraged ? 3 : 4.5; this.setSt('chase', 0); }
@@ -528,6 +529,47 @@ HL.Actors = (function () {
       }
     }
     die(src) { super.die(src); this.g.fx.setBeam(5, null); this.g.fx.warn(0, null); this.g.fx.warn(1, null); this.keepBody = true; }
+  }
+
+  // ================= Райан (летает, рывки-удары) =================
+  class Ryan extends Actor {
+    constructor(g, o = {}) {
+      super(g, M.DEFS.ryan, Object.assign({ hp: 1700, faction: 'enemy', name: 'Райан', height: 1.6 }, o));
+      this.boss = true; this.noPhysics = true; this.st = 'orbit'; this.stT = 2.5; this.knockMul = 0.25; this.keepBody = true; this.orb = Math.random() * 6;
+      this.aim = V(0, 0, 1);
+    }
+    think(dt) {
+      const g = this.g, P = g.player, pc = P.center;
+      this.stT -= dt; this.orb += dt * 0.8;
+      const phase2 = this.hp < this.maxHp * 0.5;
+      if (this.st === 'orbit') {
+        const r = 9, tgt = pc.clone().add(V(Math.cos(this.orb) * r, 1.5 + Math.sin(this.orb * 1.7), Math.sin(this.orb) * r));
+        tgt.y = Math.max(1.2, tgt.y);
+        const want = tgt.sub(this.pos); const L = want.length();
+        want.multiplyScalar(Math.min(22, L * 2) / Math.max(L, 0.01));
+        this.vel.lerp(want, 1 - Math.exp(-4 * dt));
+        this.face(P.pos, dt, 8); this.anim = 'hover'; this.animOpt = {};
+        if (this.stT <= 0) { this.st = 'wind'; this.stT = 0.45; g.ui.tag('РАЙАН АТАКУЕТ!', '#9ac0ff', 0.6); }
+      } else if (this.st === 'wind') {
+        this.vel.multiplyScalar(Math.exp(-6 * dt)); this.face(P.pos, dt, 12); this.anim = 'punch'; this.animOpt = { p: 0.1 };
+        if (this.stT <= 0) { this.st = 'dash'; this.stT = 0.85; this.hit = false; this.aim.copy(pc).sub(this.center).normalize(); A().whoosh(); }
+      } else if (this.st === 'dash') {
+        this.vel.copy(this.aim).multiplyScalar(phase2 ? 46 : 38);
+        this.anim = 'fly'; this.animOpt = { pitch: 1.4 };
+        if (Math.random() < 0.8) g.fx.burst(this.center, 1, { color: [0x9ac0ff, 0xffffff], speed: 1, size: 0.25, life: 0.3, g: 0 });
+        if (!this.hit && this.center.distanceTo(pc) < 1.9) {
+          this.hit = true; A().punch(); g.fx.addShake(0.5);
+          g.hurtPlayer(phase2 ? 110 : 85, this.pos, { knock: 0 });
+          P.knockdown(this.aim.clone(), 26, 1.2);
+          this.vel.multiplyScalar(-0.3); this.stT = Math.min(this.stT, 0.2);
+        }
+        if (this.stT <= 0) { this.st = 'orbit'; this.stT = U.rand(phase2 ? 1.4 : 2.2, phase2 ? 2.4 : 3.5); }
+      }
+      if (this.pos.y < 0.3) { this.pos.y = 0.3; if (this.vel.y < 0) this.vel.y = 0; }
+      // не влетать в здания
+      const b = g.world.inside(this.pos.x, this.pos.y + 0.5, this.pos.z); if (b) { this.pos.y = b.y1 + 0.5; this.vel.y = Math.max(0, this.vel.y); }
+    }
+    die(src) { this.noPhysics = false; super.die(src); }
   }
 
   // ================= транспорт =================
@@ -617,7 +659,7 @@ HL.Actors = (function () {
           if (L < 1.5) { ow.catchShield && ow.catchShield(); this.kill(); return; }
           this.vel.lerp(to.normalize().multiplyScalar(45), 1 - Math.exp(-5 * dt));
         }
-        this.mesh.rotation.x = Math.PI / 2; this.mesh.rotation.z += dt * 25;
+        this.mesh.rotation.x = -Math.PI / 2; this.mesh.rotation.z += dt * 25;
       }
       const step = this.vel.length() * dt;
       this.pos.addScaledVector(this.vel, dt); this.travel += step;
@@ -630,7 +672,7 @@ HL.Actors = (function () {
         if (this.pos.distanceTo(pc) < r) {
           if (this.type === 'grenade') { this.boom(); return; }
           if (this.type === 'car') { this.boom(); return; }
-          g.hurtPlayer(this.dmg, this.pos, { knock: this.type === 'shield' ? 14 : this.type === 'antisupe' ? 3 : 0, type: this.type });
+          g.hurtPlayer(this.dmg, this.pos, { knock: this.type === 'shield' ? 20 : this.type === 'antisupe' ? 3 : 0, type: this.type, down: this.type === 'shield' });
           if (this.type === 'shield') { this.back = true; A().clang(); g.fx.sparks(this.pos, 0xffffff, 10); return; }
           if (this.type === 'light') g.fx.burst(this.pos, 8, { color: [0xffffff, 0xfff0a0], speed: 8, size: 0.2, life: 0.4 });
           this.kill(); return;
@@ -654,5 +696,5 @@ HL.Actors = (function () {
     kill() { this.alive = false; this.g.scene.remove(this.mesh); }
   }
 
-  return { Actor, Civilian, Victim, Gunman, Grenadier, Brawler, Starlight, Runner, SoldierBoy, ButcherBoss, Vehicle, Proj, WEAPONS };
+  return { Ryan, Actor, Civilian, Victim, Gunman, Grenadier, Brawler, Starlight, Runner, SoldierBoy, ButcherBoss, Vehicle, Proj, WEAPONS };
 })();
