@@ -21,8 +21,39 @@ HL.Audio = (function () {
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     resume();
   }
-  function resume() { if (ctx && ctx.state !== 'running') ctx.resume(); }
-  function applyVolumes() { if (!ctx) return; sfx.gain.value = S().sfx; music.gain.value = S().music * 0.6; }
+  function resume() { if (ctx && ctx.state !== 'running') { try { ctx.resume(); } catch (e) {} } }
+
+  // --- iPhone: без этого Web Audio молчит при беззвучном режиме и в некоторых WebView ---
+  let silentEl = null, unlocked = false;
+  function silentWav() {
+    const n = 4000, b = new Uint8Array(44 + n), v = new DataView(b.buffer);
+    const w = (o, str) => { for (let i = 0; i < str.length; i++) b[o + i] = str.charCodeAt(i); };
+    w(0, 'RIFF'); v.setUint32(4, 36 + n, true); w(8, 'WAVEfmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+    v.setUint32(24, 8000, true); v.setUint32(28, 8000, true); v.setUint16(32, 1, true); v.setUint16(34, 8, true); w(36, 'data'); v.setUint32(40, n, true);
+    for (let i = 0; i < n; i++) b[44 + i] = 128;
+    let bin = ''; for (let i = 0; i < b.length; i++) bin += String.fromCharCode(b[i]);
+    return 'data:audio/wav;base64,' + btoa(bin);
+  }
+  function unlock() {
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+    init();
+    if (!ctx) return;
+    resume();
+    if (!unlocked) {
+      // короткий пустой буфер внутри жеста пользователя
+      try { const s = ctx.createBufferSource(); s.buffer = ctx.createBuffer(1, 1, 22050); s.connect(ctx.destination); s.start(0); } catch (e) {}
+      try {
+        silentEl = document.createElement('audio');
+        silentEl.setAttribute('playsinline', ''); silentEl.setAttribute('x-webkit-airplay', 'deny');
+        silentEl.loop = true; silentEl.preload = 'auto'; silentEl.src = silentWav();
+        const p = silentEl.play(); if (p && p.catch) p.catch(() => {});
+      } catch (e) {}
+    } else if (silentEl && silentEl.paused) { const p = silentEl.play(); if (p && p.catch) p.catch(() => {}); }
+    if (ctx.state === 'running') unlocked = true;
+  }
+  ['pointerdown', 'touchstart', 'touchend', 'mousedown', 'click', 'keydown'].forEach((ev) => addEventListener(ev, unlock, { capture: true, passive: true }));
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && unlocked) { resume(); if (silentEl && silentEl.paused) silentEl.play().catch(() => {}); } });
+  function applyVolumes() { if (!ctx) return; sfx.gain.value = S().sfx; music.gain.value = S().music * 0.95; }
   function noiseSrc() { const s = ctx.createBufferSource(); s.buffer = noiseBuf; s.loop = true; return s; }
 
   function burst(o) {
@@ -102,9 +133,9 @@ HL.Audio = (function () {
     if (!ctx) return;
     stopMusic();
     const g = ctx.createGain(); g.gain.value = 0; g.connect(music);
-    const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 420; f.connect(g);
+    const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 900; f.connect(g);
     const nodes = [];
-    [[55, 'sawtooth', 0.18], [55.4, 'sawtooth', 0.18], [82.4, 'triangle', 0.25], [27.5, 'sine', 0.5]].forEach(([fr, ty, v]) => {
+    [[55, 'sawtooth', 0.2], [55.4, 'sawtooth', 0.2], [82.4, 'triangle', 0.25], [110, 'triangle', 0.22], [164.8, 'sine', 0.1], [220.5, 'sine', 0.05]].forEach(([fr, ty, v]) => {
       const o = ctx.createOscillator(); o.type = ty; o.frequency.value = fr;
       const og = ctx.createGain(); og.gain.value = v; o.connect(og); og.connect(f); o.start(); nodes.push(o);
     });
@@ -147,12 +178,14 @@ HL.Audio = (function () {
   }
 
   function heartbeat(v = 0.4) {
+    burst({ type: 'lowpass', f: 500, f2: 120, dur: 0.14, vol: v * 0.7 });
+    burst({ type: 'lowpass', f: 450, f2: 110, dur: 0.15, vol: v * 0.55, delay: 0.22 });
     tone({ type: 'sine', f: 62, f2: 38, dur: 0.16, vol: v });
     tone({ type: 'sine', f: 58, f2: 36, dur: 0.18, vol: v * 0.8, delay: 0.22 });
   }
 
   return {
-    init, resume, applyVolumes, setLaser, setWind, menuMusic, gameMusic, stopMusic,
+    init, resume, unlock, applyVolumes, setLaser, setWind, menuMusic, gameMusic, stopMusic,
     get ready() { return !!ctx; },
     click() { tone({ type: 'square', f: 520, f2: 760, dur: 0.05, vol: 0.06 }); },
     punch() { burst({ dur: 0.2, f: 1200, f2: 120, vol: 0.9 }); tone({ type: 'sine', f: 150, f2: 40, dur: 0.22, vol: 0.8 }); },

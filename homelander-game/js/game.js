@@ -544,8 +544,14 @@ HL.Game = (function () {
         $('loading').classList.add('hidden'); $('menu').classList.remove('hidden');
         g.state = 'menu'; refreshMenu(); applyControls();
         $('menuTap').classList.remove('hidden');
-        const unlockAudio = () => { A.init(); A.menuMusic(); $('menuTap').classList.add('hidden'); removeEventListener('pointerdown', unlockAudio); removeEventListener('keydown', unlockAudio); };
-        addEventListener('pointerdown', unlockAudio); addEventListener('keydown', unlockAudio);
+        const evs = ['pointerdown', 'touchend', 'click', 'keydown'];
+        const unlockAudio = () => {
+          A.unlock();
+          if (g.state === 'menu') A.menuMusic();
+          $('menuTap').classList.add('hidden');
+          evs.forEach((e) => removeEventListener(e, unlockAudio, true));
+        };
+        evs.forEach((e) => addEventListener(e, unlockAudio, true));
       }, 250);
     });
   }
