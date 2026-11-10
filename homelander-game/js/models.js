@@ -99,9 +99,9 @@ HL.Models = (function () {
     homelander: { name: 'Хоумлендер', ribbed: true, muscles: true, eagle: 0xe6b23c, cuffs: 0xe6b23c, skin: 0xf2c4a0, hair: 0xf2d35e, hairStyle: 'slick', torso: 0x1d2c68, stripe: 0xc9232c, collar: 0xc9232c,
       arms: 0x1d2c68, forearms: 0xc9232c, gloves: 0xc9232c, legs: 0x1d2c68, boots: 0xc9232c, kneeDots: 0xe6b23c, belt: 0xe6b23c,
       epaulettes: 0xe6b23c, cape: 0xb41c24, eye: 0x3a7be0, brows: 0x9a7a30, angry: true, bulk: 1.08 },
-    butcher: { name: 'Бутчер', skin: 0xd9a27a, hair: 0x17120e, hairStyle: 'short', beard: 0x16110d, torsoTex: 'camo', torso: 0xffffff,
+    butcher: { name: 'Бутчер', crowbar: true, skin: 0xd9a27a, hair: 0x17120e, hairStyle: 'short', beard: 0x16110d, torsoTex: 'camo', torso: 0xffffff,
       coat: 0x2e2f2a, arms: 0x2e2f2a, forearms: 0x2e2f2a, gloves: 0xd9a27a, legs: 0x26272a, boots: 0x161616, eye: 0x4a3420, brows: 0x111111, angry: true, bulk: 1.05 },
-    butcherV: { name: 'Бутчер (Темп-V)', skin: 0xcf9670, hair: 0x17120e, hairStyle: 'short', beard: 0x16110d, torsoTex: 'camo', torso: 0xffffff,
+    butcherV: { name: 'Бутчер (Темп-V)', crowbar: true, skin: 0xcf9670, hair: 0x17120e, hairStyle: 'short', beard: 0x16110d, torsoTex: 'camo', torso: 0xffffff,
       coat: 0x2e2f2a, arms: 0x2e2f2a, forearms: 0x2e2f2a, gloves: 0xcf9670, legs: 0x26272a, boots: 0x161616, eye: 0xff3a1a, brows: 0x111111, angry: true, bulk: 1.15, scale: 1.12, tentacles: true },
     soldierboy: { name: 'Солдатик', muscles: true, cuffs: 0x3a2716, pads: 0x4a3018, skin: 0xe2b08a, hair: 0x3d2818, hairStyle: 'short', stubble: 0x3d2818, torso: 0x56603a, emblem: 0xe9e4d4, straps: 0x5e3d22,
       arms: 0x56603a, forearms: 0x5e3d22, gloves: 0x5e3d22, legs: 0x4c5534, boots: 0x3a2716, belt: 0x5e3d22, shield: true, eye: 0x5a7a9a, brows: 0x2a1a10, angry: true, bulk: 1.15, scale: 1.05 },
@@ -111,8 +111,8 @@ HL.Models = (function () {
       gloves: 0xf2f2f2, legs: 0x2050c4, boots: 0xf2f2f2, eye: 0x2a1a10, brows: 0x111111, bulk: 0.95 },
     hughie: { name: 'Хьюи', skin: 0xf1c6a3, hair: 0x6a4a2a, hairStyle: 'curly', torso: 0x8a7656, arms: 0x8a7656, forearms: 0x8a7656, gloves: 0xf1c6a3,
       legs: 0x3d4e6e, boots: 0x5a3622, eye: 0x4a6a8a, brows: 0x5a3a1a, bulk: 0.85, scale: 0.9 },
-    ryan: { name: 'Райан', skin: 0xf2c8a8, hair: 0xe8d070, hairStyle: 'curly', torso: 0x24366e, stripe: 0xc9232c, collar: 0xc9232c, arms: 0x24366e, forearms: 0xc9232c,
-      gloves: 0xc9232c, legs: 0x24366e, boots: 0xc9232c, belt: 0xe6b23c, eye: 0x3a7be0, brows: 0x9a7a30, angry: true, bulk: 0.78, scale: 0.74, ribbed: true },
+    ryan: { name: 'Райан', skin: 0xf2c8a8, hair: 0xe0c468, hairStyle: 'curly', torso: 0x5d6470, hood: 0x4d5460, arms: 0x5d6470, forearms: 0x5d6470, gloves: 0xf2c8a8,
+      legs: 0x3a4e78, boots: 0xeeeeee, eye: 0x3a7be0, brows: 0x9a7a30, bulk: 0.86, scale: 0.93 },
     kimiko: { name: 'Кимико', skin: 0xeac6a2, hair: 0x101010, hairStyle: 'long', torso: 0x2a2a2e, arms: 0x2a2a2e, forearms: 0x2a2a2e, gloves: 0xeac6a2,
       legs: 0x1e1e22, boots: 0x111111, eye: 0x221a14, brows: 0x101010, angry: true, bulk: 0.8, scale: 0.88 },
     frenchie: { name: 'Френчи', skin: 0xe6b690, hair: 0x2a1a10, hairStyle: 'curly', stubble: 0x2a1a10, torso: 0x6a4a32, arms: 0x6a4a32, forearms: 0x6a4a32,
@@ -216,6 +216,21 @@ HL.Models = (function () {
       arms.push(sh); elbows.push(el);
     }
     c.armL = arms[0]; c.armR = arms[1]; c.elbowL = elbows[0]; c.elbowR = elbows[1];
+    if (def.crowbar) {
+      const cb = new T.Group(); cb.position.set(0, -0.4, 0.05); cb.rotation.x = -0.25; c.elbowR.add(cb);
+      const barM = toon(0x34363c);
+      part(cb, cyl(0.022, 0.022, 1.0, 8), barM, 0, -0.28, 0);
+      const hk = part(cb, cyl(0.022, 0.022, 0.2, 8), barM, 0, -0.82, 0.07); hk.rotation.x = 1.1;
+      part(cb, box(0.06, 0.03, 0.08), barM, 0, 0.23, 0.03);
+      c.crowbar = cb;
+    }
+    if (def.camera) {
+      const cam = new T.Group(); cam.position.set(0, -0.38, 0.12); c.elbowR.add(cam);
+      part(cam, box(0.22, 0.26, 0.5), toon(0x1e1e22), 0, 0, 0);
+      const lens = part(cam, cyl(0.07, 0.08, 0.14, 12), toon(0x111111), 0, 0, 0.3); lens.rotation.x = Math.PI / 2;
+      const red = new T.Mesh(sph(0.025), new T.MeshBasicMaterial({ color: 0xff2020 })); red.position.set(0.08, 0.12, 0.2); cam.add(red);
+    }
+    if (def.hood) { const hd = part(spine, G('hood', () => new T.TorusGeometry(0.17, 0.07, 8, 16)), toon(def.hood), 0, 0.78, -0.05); hd.rotation.x = Math.PI / 2 + 0.3; hd.scale.set(1.2, 1, 1); }
     if (def.gun) {
       const g = part(c.elbowR, box(0.07, 0.42, 0.13), toon(0x1c1c1c), 0, -0.52, 0.04);
       c.gun = g;

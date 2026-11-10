@@ -519,30 +519,80 @@ HL.Missions = (function () {
     },
     // ---------------- 7 ----------------
     {
-      id: 'final', title: 'Финал: Белый дом', desc: 'Вашингтон, ночь, дождь. Кимико, Райан и Бутчер на Темп-V. Только один уйдёт отсюда.',
-      time: 'night', rain: true, location: 'БЕЛЫЙ ДОМ · ВАШИНГТОН · 00:00', start: [0, 0, -150, Math.PI], music: 'boss',
-      setup(g, v) { g.spawnCrowd(0.3); },
+      id: 'final', title: 'Финал: Белый дом', desc: 'Овальный кабинет. Прямой эфир. Стена взрывается — входят Бутчер с ломом, Кимико и Райан.',
+      time: 'night', location: 'БЕЛЫЙ ДОМ · ОВАЛЬНЫЙ КАБИНЕТ · 21:00', start: [0, 0, 376, 0], music: null,
+      setup(g, v) {
+        const O = g.world.buildOval(0, 380); v.O = O; g.indoor = true;
+        g.player.place(O.chair.x, 0, O.chair.z, 0);
+        g.player.scriptPose = 'sit';
+        // два репортёра с камерами
+        v.rep = [];
+        for (const sd of [-1, 1]) {
+          const def = Object.assign(HL.Models.randomCivDef(), { camera: true, simple: false });
+          const r = g.spawn('civ', sd * 1.6, O.desk.z + 5.5, { def, mood: 'watch' }); r.yaw = Math.PI; v.rep.push(r);
+        }
+        g.missionUpdate = () => { if (Math.random() < 0.5) g.fx.fire(O.fire.clone().add(V(U.rand(-0.5, 0.5), 0, 0)), 1); };
+      },
       steps: [
         {
+          text: 'Прямой эфир',
           enter(g, v) {
-            const idle = function (dt) { this.anim = 'idle'; this.animOpt = { lash: false }; this.vel.set(0, this.vel.y, 0); this.face(g.player.pos, dt, 3); };
-            const k = g.spawn('kimiko', -3.5, -205, {}); const r = g.spawn('ryan', 3.5, -206, { y: 0.3 }); const b = g.spawn('butcherBoss', 0, -212, {});
-            for (const a of [k, r, b]) { a._think = a.think; a.think = idle; a.invuln = true; }
-            v.k = k; v.r = r; v.b = b; v.summon = [false, false];
-            g.cinema(V(3, 2.3, -197), V(0, 1.4, -208));
-            g.ui.caption('БЕЛЫЙ ДОМ. ПОСЛЕДНИЙ БОЙ.', 0.45);
-            HL.Audio.stinger();
-            setTimeout(() => g.ui.statcard('БИЛЛИ БУТЧЕР', [['СИЛА', 'ТЕМП-V'], ['ЩУПАЛЬЦА', 'ДА'], ['НЕНАВИСТЬ', 'MAX'], ['УРОВЕНЬ', '99']], 'С ним Кимико и… Райан.', 5), 1200);
-            v._t = false;
-            setTimeout(() => g.ui.say([['but', 'Ну что, дорогуша. Вот и финал. Прямо на лужайке у президента.'], ['hl', 'Райан. Отойди от них. Сейчас же.'],
-              ['ki', '*встаёт перед Райаном и разминает шею*'], ['but', 'Сначала — через неё. Потом — через него. А потом я.']], () => (v._t = true)), 1500);
+            const O = v.O;
+            g.controlsEnabled = false; g.cinematic = true;
+            v.ev = 0; v.T = 0; v.done = false;
+            v.cam = { pos: V(0.4, 1.6, O.desk.z + 7.2), look: V(0, 1.5, O.desk.z) };
+            g.ui.caption('ОВАЛЬНЫЙ КАБИНЕТ. ПРЯМОЙ ЭФИР.', 0.42);
+            g.ui.say([['hl', 'Американцы. Я обращаюсь к вам из Овального кабинета.'], ['hl', 'Всю жизнь я защищал вас. Теперь пришло время вести вас.'],
+              ['hl', 'Больше никаких лжецов в костюмах. Только я. И правда…', 2.4]], () => { v.ev = 1; v.T = 0; });
           },
-          update: (g, dt, v) => v._t, text: '…',
-          exit(g, v) { g.cinema(null); },
+          update(g, dt, v) {
+            const O = v.O, P = g.player;
+            v.T += dt;
+            if (v.ev === 1) {
+              // взрыв стены
+              const bp = O.breach(Math.PI / 2, 0.5); v.bp = bp;
+              const ep = bp.clone().setY(3);
+              g.fx.explosion(ep, 2.2); g.fx.dust(bp, 40); HL.Audio.explosion(1.6); g.fx.addShake(1.4); g.ui.flash(0.6);
+              for (let i = 0; i < 25; i++) g.fx.burst(ep, 1, { color: [0xf1e7c6, 0xd8ccb0, 0x8a7a60], speed: 18, size: 0.5, life: 1.6, g: -22, drag: 0.5, dir: V(-1, 0.3, 0), spread: 0.8 });
+              g.alarm(bp, 60);
+              g.ui.caption('БУМ.', 0.6);
+              P.scriptPose = null; P.scriptFace = Math.PI / 2;
+              v.cam = { pos: V(-6, 2.2, O.center.z + 3), look: bp.clone().setY(1.6) };
+              v.ev = 2; v.T = 0;
+            } else if (v.ev === 2 && v.T > 1.6) {
+              // входят Бутчер, Кимико, Райан
+              const out = V(1, 0, 0);
+              const walk = function (tgt) { return function (dt) { const d = this.moveToward(tgt, 2.2, dt, 6); this.face(d > 0.3 ? tgt : g.player.pos, dt, 6); this.anim = d > 0.3 ? 'walk' : 'idle'; this.moveSpeed = 2.2; this.animOpt = { lash: false }; if (this.noPhysics) this.pos.y = 0; }; };
+              const mkA = (kind, dz, tgt) => { const a = g.spawn(kind, v.bp.x + 4 + Math.abs(dz) * 0.6, v.bp.z + dz, {}); a._think = a.think; a.think = walk(tgt); a.invuln = true; return a; };
+              v.b = mkA('butcherBoss', 0, V(O.center.x + 8, 0, O.center.z));
+              v.k = mkA('kimiko', -1.6, V(O.center.x + 9.5, 0, O.center.z - 2));
+              v.r = mkA('ryan', 1.6, V(O.center.x + 9.5, 0, O.center.z + 2));
+              v.ev = 3; v.T = 0;
+            } else if (v.ev === 3 && v.T > 2.4) {
+              g.ui.statcard('БИЛЛИ БУТЧЕР', [['СИЛА', 'ТЕМП-V'], ['ЛОМ', 'ДА'], ['НЕНАВИСТЬ', 'MAX'], ['УРОВЕНЬ', '99']], 'С ним Кимико и Райан.', 4.5);
+              v.cam = { pos: V(O.center.x + 2, 1.9, O.center.z + 3.5), look: V(O.center.x + 8.5, 1.6, O.center.z) };
+              g.ui.say([['but', 'Извини, что прерываю, дорогуша. Эфир окончен.'], ['hl', 'Билли. Ты вломился в Белый дом.'], ['but', 'Ага. С ломом. По-старинке.'],
+                ['ry', 'Пап… хватит. Пожалуйста.'], ['hl', 'Райан? Ты… с НИМИ?']], () => { v.ev = 5; v.T = 0; });
+              v.ev = 4;
+            } else if (v.ev === 5) {
+              g.ui.statcard('РАЙАН', [['ВОЗРАСТ', '16'], ['СИЛА', 'MAX'], ['ОПЫТ', 'МАЛО'], ['УРОВЕНЬ', '70']], 'Сильный, но неопытный: промахивается и врезается в стены.', 4.5);
+              g.ui.say([['ki', '*молча встаёт перед Райаном*'], ['but', 'Кимико. Начинай.']], () => { v.done = true; });
+              v.ev = 6;
+            }
+            // камера
+            if (v.cam) g.camOverride = { pos: v.cam.pos, look: v.cam.look };
+            return v.done;
+          },
+          exit(g, v) {
+            const P = g.player; P.scriptPose = null; P.scriptFace = null;
+            P.place(v.O.center.x - 3, 0, v.O.center.z + 1, Math.PI / 2); g.camYaw = Math.PI / 2; g.camPitch = 0.12;
+            for (const a of [v.k, v.r, v.b]) a.think = function (dt) { this.anim = 'idle'; this.animOpt = { lash: false }; this.vel.set(0, this.vel.y, 0); this.face(g.player.pos, dt, 3); if (this.noPhysics) this.vel.y = 0; };
+            g.cinema(null); g.music('boss');
+          },
         },
         {
           text: 'Победите Кимико',
-          enter(g, v) { const k = v.k; k.think = k._think; k.invuln = false; g.spawnGroup('f1', 'agent', V(0, 0, -200), 4, { spread: 24, weapon: 'rifle', hp: 80 }); },
+          enter(g, v) { const k = v.k; k.think = k._think; k.invuln = false; g.spawnGroup('f1', 'agent', V(v.O.center.x + 11, 0, v.O.center.z), 3, { spread: 4, weapon: 'rifle', hp: 80 }); },
           update(g, dt, v) { g.ui.boss('Кимико', v.k.hp / v.k.maxHp); return !v.k.alive; },
           wp: (g, v) => v.k.alive && v.k.center,
           exit(g) { g.ui.boss(null); },
@@ -551,8 +601,8 @@ HL.Missions = (function () {
           text: 'Райан',
           enter(g, v) {
             const r = v.r; r.think = r._think; r.invuln = false;
-            g.ui.statcard('РАЙАН', [['СИЛА', 'MAX'], ['ПОЛЁТ', 'ДА'], ['ВОЗРАСТ', '12'], ['УРОВЕНЬ', '90']], 'Сын Хоумлендера. Сбивает с ног рывками.', 4);
-            g.ui.say([['ki', '*падает на колени, смотрит на Райана*'], ['hl', 'Райан. Ты же мой сын. Встань рядом со мной.'], ['ry', 'Нет, пап. Хватит!']]);
+            g.ui.hint('Райан неопытен: когда он врезается в стену — бейте!', 4);
+            g.ui.say([['ki', '*падает на колени, смотрит на Райана*'], ['hl', 'Райан. Ты же мой сын. Встань рядом со мной.'], ['ry', 'Нет, пап. Хватит! Я… я не хочу драться, но придётся!']]);
           },
           update(g, dt, v) { g.ui.boss('Райан', v.r.hp / v.r.maxHp); return !v.r.alive; },
           wp: (g, v) => v.r.alive && v.r.center,
@@ -567,8 +617,8 @@ HL.Missions = (function () {
           update(g, dt, v) {
             const b = v.b, f = b.hp / b.maxHp;
             g.ui.boss('Билли Бутчер (Темп-V)', f);
-            if (f < 0.66 && !v.summon[0]) { v.summon[0] = true; g.spawnGroup('adds', 'agent', b.pos, 4, { spread: 20, weapon: 'antisupe', hp: 80 }); g.ui.say([['but', 'Парни! Огонь по нему!']]); }
-            if (f < 0.33 && !v.summon[1]) { v.summon[1] = true; g.spawnGroup('adds', 'agent', b.pos, 4, { spread: 20, weapon: 'rifle', hp: 80 }); g.ui.say([['but', 'Я тебя не отпущу, слышишь?! Никогда!']]); }
+            if (f < 0.66 && !v.summon[0]) { v.summon[0] = true; g.spawnGroup('adds', 'agent', b.pos, 4, { spread: 5, weapon: 'antisupe', hp: 80 }); g.ui.say([['but', 'Парни! Через пролом! Огонь по нему!']]); }
+            if (f < 0.33 && !v.summon[1]) { v.summon[1] = true; g.spawnGroup('adds', 'agent', b.pos, 4, { spread: 5, weapon: 'rifle', hp: 80 }); g.ui.say([['but', 'Я тебя не отпущу, слышишь?! Никогда!']]); }
             return !b.alive;
           },
           wp: (g, v) => v.b.alive && v.b.center,
@@ -596,7 +646,7 @@ HL.Missions = (function () {
   function endingText(kind, approval) {
     if (kind === 'mercy') {
       return approval >= 60
-        ? 'Хоумлендер опустил руку и улыбнулся в камеры на лужайке Белого дома. «Даже он заслуживает второго шанса». Райан впервые за долгое время посмотрел на отца без страха. Где-то в камере Билли Бутчер смеялся: Темп-V ещё не закончился…'
+        ? 'Хоумлендер опустил руку и улыбнулся в камеры в разгромленном Овальном кабинете. «Даже он заслуживает второго шанса». Райан впервые за долгое время посмотрел на отца без страха. Где-то в камере Билли Бутчер смеялся: Темп-V ещё не закончился…'
         : 'Хоумлендер ушёл, не обернувшись. Люди не поверили в его милосердие — слишком многое они видели раньше. Райан улетел вслед за Кимико, а Бутчер исчез этой же ночью.';
     }
     return approval >= 60

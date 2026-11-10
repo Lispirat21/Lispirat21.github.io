@@ -501,7 +501,7 @@ HL.Actors = (function () {
         case 'leap': {
           const k = 1 - Math.max(0, this.stT) / 1.3;
           this.noPhysics = true; this.vel.set(0, 0, 0);
-          this.pos.lerpVectors(this.leapFrom, this.leapTo, k); this.pos.y = Math.sin(k * Math.PI) * 18;
+          this.pos.lerpVectors(this.leapFrom, this.leapTo, k); this.pos.y = Math.sin(k * Math.PI) * (g.world.oval ? 3.5 : 18);
           g.fx.warn(1, this.leapTo, 8, k);
           this.anim = 'jump';
           if (this.stT <= 0) {
@@ -515,7 +515,7 @@ HL.Actors = (function () {
         }
         case 'car': {
           this.face(P.pos, dt, 8); this.stop(dt); this.anim = 'throw'; this.animOpt = { p: 1 - this.stT / 1.1, lash: true };
-          if (!this.carMesh) { this.carMesh = M.buildCar('car'); this.carMesh.position.set(0, 4.2, 0); this.carMesh.rotation.z = 0.3; this.obj.add(this.carMesh); }
+          if (!this.carMesh) { this.carMesh = g.world.oval ? M.part(new T.Group(), M.box(2.2, 0.9, 1.0), M.toon(0xece0c2), 0, 0, 0).parent : M.buildCar('car'); this.carMesh.position.set(0, 4.2, 0); this.carMesh.rotation.z = 0.3; this.obj.add(this.carMesh); }
           if (!this.thrown && this.stT < 0.35) {
             this.thrown = true; this.obj.remove(this.carMesh);
             const from = this.pos.clone().add(V(0, 4.5, 0));
@@ -542,7 +542,10 @@ HL.Actors = (function () {
       const g = this.g, P = g.player, pc = P.center;
       this.stT -= dt; this.orb += dt * 0.8;
       const phase2 = this.hp < this.maxHp * 0.5;
-      if (this.st === 'orbit') {
+      if (this.st === 'crash') {
+        this.vel.multiplyScalar(Math.exp(-8 * dt)); this.vel.y -= 20 * dt; this.anim = 'knocked'; this.dmgMul = 2;
+        if (this.stT <= 0) { this.st = 'orbit'; this.stT = U.rand(1.5, 2.5); this.dmgMul = 1; }
+      } else if (this.st === 'orbit') {
         const r = 9, tgt = pc.clone().add(V(Math.cos(this.orb) * r, 1.5 + Math.sin(this.orb * 1.7), Math.sin(this.orb) * r));
         tgt.y = Math.max(1.2, tgt.y);
         const want = tgt.sub(this.pos); const L = want.length();
@@ -552,7 +555,13 @@ HL.Actors = (function () {
         if (this.stT <= 0) { this.st = 'wind'; this.stT = 0.45; g.ui.tag('РАЙАН АТАКУЕТ!', '#9ac0ff', 0.6); }
       } else if (this.st === 'wind') {
         this.vel.multiplyScalar(Math.exp(-6 * dt)); this.face(P.pos, dt, 12); this.anim = 'punch'; this.animOpt = { p: 0.1 };
-        if (this.stT <= 0) { this.st = 'dash'; this.stT = 0.85; this.hit = false; this.aim.copy(pc).sub(this.center).normalize(); A().whoosh(); }
+        if (this.stT <= 0) {
+          this.st = 'dash'; this.stT = 0.85; this.hit = false;
+          // неопытный: часто целится мимо
+          const miss = Math.random() < 0.45 ? V(U.rand(-3, 3), U.rand(-1, 1.5), U.rand(-3, 3)) : V();
+          this.aim.copy(pc).add(miss).sub(this.center).normalize(); A().whoosh();
+          if (Math.random() < 0.3) g.ui.tag('Райан: «Ой… не туда!»', '#9ac0ff', 1);
+        }
       } else if (this.st === 'dash') {
         this.vel.copy(this.aim).multiplyScalar(phase2 ? 46 : 38);
         this.anim = 'fly'; this.animOpt = { pitch: 1.4 };
@@ -566,6 +575,14 @@ HL.Actors = (function () {
         if (this.stT <= 0) { this.st = 'orbit'; this.stT = U.rand(phase2 ? 1.4 : 2.2, phase2 ? 2.4 : 3.5); }
       }
       if (this.pos.y < 0.3) { this.pos.y = 0.3; if (this.vel.y < 0) this.vel.y = 0; }
+      // в помещении: стены и потолок
+      const O = g.world.oval;
+      if (O && O.clampInside(this.pos) && this.st === 'dash') {
+        this.st = 'crash'; this.stT = 1.6; this.vel.set(0, 0, 0); A().slam(); g.fx.dust(this.pos, 10); g.fx.addShake(0.4);
+        g.ui.tag('РАЙАН ВРЕЗАЛСЯ — БЕЙ!', '#7cff7c', 1.4);
+        return;
+      }
+      if (O) return;
       // не влетать в здания
       const b = g.world.inside(this.pos.x, this.pos.y + 0.5, this.pos.z); if (b) { this.pos.y = b.y1 + 0.5; this.vel.y = Math.max(0, this.vel.y); }
     }

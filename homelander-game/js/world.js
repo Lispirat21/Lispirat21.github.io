@@ -68,6 +68,16 @@ HL.World = (function () {
     return g;
   }
 
+  function usFlagTex() {
+    const t = HL.Models.canvasTex(192, 100, (x, w, h) => {
+      for (let i = 0; i < 13; i++) { x.fillStyle = i % 2 ? '#ffffff' : '#c22a33'; x.fillRect(0, (i * h) / 13, w, h / 13 + 1); }
+      x.fillStyle = '#2a3a7a'; x.fillRect(0, 0, w * 0.42, h * (7 / 13));
+      x.fillStyle = '#fff'; for (let r = 0; r < 5; r++) for (let c = 0; c < 6; c++) x.fillRect(6 + c * 13, 5 + r * 10, 3, 3);
+    });
+    t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
+    return t;
+  }
+
   function build(scene, opts = {}) {
     const time = opts.time || 'day';
     const night = time === 'night';
@@ -170,6 +180,10 @@ HL.World = (function () {
       return b;
     };
     W.addBox = addBox;
+    W.removeBox = (b) => {
+      const i = W.boxes.indexOf(b); if (i >= 0) W.boxes.splice(i, 1);
+      for (const L of W.grid.values()) { const j = L.indexOf(b); if (j >= 0) L.splice(j, 1); }
+    };
 
     const building = (x0, z0, x1, z1, h, pi, opt = {}) => {
       const P = pal[pi % pal.length];
@@ -314,11 +328,10 @@ HL.World = (function () {
       mk(new T.BoxGeometry(5, 7, 0.4), dark, 0, 3.5, 12.1);
       // флагшток и флаг США
       mk(new T.CylinderGeometry(0.12, 0.15, 12, 8), M.toon(0xdddddd), 0, 27, 0);
-      const flagTex = M.canvasTex(192, 100, (x, w, h) => {
+      const flagTex = usFlagTex(); /* (x, w, h) => {
         for (let i = 0; i < 13; i++) { x.fillStyle = i % 2 ? '#ffffff' : '#c22a33'; x.fillRect(0, (i * h) / 13, w, h / 13 + 1); }
         x.fillStyle = '#2a3a7a'; x.fillRect(0, 0, w * 0.42, h * (7 / 13));
-        x.fillStyle = '#fff'; for (let r = 0; r < 5; r++) for (let c = 0; c < 6; c++) x.fillRect(6 + c * 13, 5 + r * 10, 3, 3);
-      });
+      */
       flagTex.wrapS = flagTex.wrapT = T.ClampToEdgeWrapping;
       const flagGeo = new T.PlaneGeometry(6, 3.2, 12, 1); flagGeo.translate(3, 0, 0);
       const flag = new T.Mesh(flagGeo, new T.MeshBasicMaterial({ map: flagTex, side: T.DoubleSide })); flag.position.set(0.1, 31, 0); g.add(flag);
@@ -409,6 +422,9 @@ HL.World = (function () {
     W.collide = function (pos, r, h, prevY) {
       let ground = null;
       for (const b of W.query(pos.x, pos.z, r + 1)) {
+        if (b.y0 > 0.5 && prevY != null && prevY + h <= b.y0 + 0.4 && pos.y + h > b.y0 && pos.x > b.x0 && pos.x < b.x1 && pos.z > b.z0 && pos.z < b.z1) {
+          pos.y = b.y0 - h; continue; // упёрся головой в потолок
+        }
         if (pos.y >= b.y1 - 0.05 || pos.y + h <= b.y0) {
           if (pos.x > b.x0 - r * 0.5 && pos.x < b.x1 + r * 0.5 && pos.z > b.z0 - r * 0.5 && pos.z < b.z1 + r * 0.5 && pos.y >= b.y1 - 0.6 && pos.y <= b.y1 + 0.05) {
             ground = Math.max(ground == null ? -1 : ground, b.y1);
@@ -461,6 +477,103 @@ HL.World = (function () {
     W.inside = function (x, y, z) {
       for (const b of W.query(x, z, 0.5)) if (x > b.x0 && x < b.x1 && z > b.z0 && z < b.z1 && y > b.y0 && y < b.y1) return b;
       return null;
+    };
+    // ---------- Овальный кабинет (интерьер для финала) ----------
+    W.buildOval = function (cx, cz) {
+      const RX = 16, RZ = 11, H = 7.5, N = 44;
+      const O = { center: new T.Vector3(cx, 0, cz), RX, RZ, H, segs: [] };
+      const grp = new T.Group(); grp.position.set(cx, 0, cz); add(grp);
+      const mk = (geo, mat, x, y, z, ry = 0) => { const m = new T.Mesh(geo, mat); m.position.set(x, y, z); m.rotation.y = ry; m.castShadow = m.receiveShadow = true; grp.add(m); return m; };
+      const wallM = M.toonX(0xf1e7c6, { side: T.DoubleSide }), trimM = M.toon(0xffffff), wood = M.toon(0x5a3418), gold = M.toon(0xd8b04a);
+      // пол, ковёр с печатью, потолок
+      const floor = new T.Mesh(new T.CircleGeometry(1, 48), M.toon(0xa8804e)); floor.rotation.x = -Math.PI / 2; floor.scale.set(RX + 0.5, RZ + 0.5, 1); floor.position.y = 0.04; floor.receiveShadow = true; grp.add(floor);
+      const rug = new T.Mesh(new T.CircleGeometry(1, 48), M.toon(0x22346a)); rug.rotation.x = -Math.PI / 2; rug.scale.set(RX - 2.5, RZ - 2.5, 1); rug.position.y = 0.06; rug.receiveShadow = true; grp.add(rug);
+      const ring = new T.Mesh(new T.RingGeometry(0.93, 1, 48), new T.MeshBasicMaterial({ color: 0xd8b04a })); ring.rotation.x = -Math.PI / 2; ring.scale.set(RX - 2.5, RZ - 2.5, 1); ring.position.y = 0.07; grp.add(ring);
+      const seal = new T.Mesh(new T.CircleGeometry(2.2, 32), new T.MeshBasicMaterial({ color: 0xc9a84a })); seal.rotation.x = -Math.PI / 2; seal.position.y = 0.075; grp.add(seal);
+      const seal2 = new T.Mesh(new T.CircleGeometry(1.7, 32), new T.MeshBasicMaterial({ color: 0x1c2c58 })); seal2.rotation.x = -Math.PI / 2; seal2.position.y = 0.08; grp.add(seal2);
+      const eagle = new T.Mesh(M.star(1.1), new T.MeshBasicMaterial({ color: 0xe8d08a })); eagle.rotation.x = -Math.PI / 2; eagle.position.y = 0.085; grp.add(eagle);
+      const ceil = new T.Mesh(new T.CircleGeometry(1, 48), M.toonX(0xfaf6ea, { side: T.DoubleSide })); ceil.rotation.x = Math.PI / 2; ceil.scale.set(RX, RZ, 1); ceil.position.y = H; grp.add(ceil);
+      const lamp = new T.Mesh(new T.CircleGeometry(1, 32), new T.MeshBasicMaterial({ color: 0xfff6dc })); lamp.rotation.x = Math.PI / 2; lamp.scale.set(5, 3.4, 1); lamp.position.y = H - 0.02; grp.add(lamp);
+      // стены: гладкий овал + плинтус
+      const wallGeo = (gapC, gapW) => {
+        const g2 = gapW ? new T.CylinderGeometry(1, 1, H, 64, 1, true, gapC + gapW / 2, Math.PI * 2 - gapW) : new T.CylinderGeometry(1, 1, H, 64, 1, true);
+        g2.translate(0, H / 2, 0); return g2;
+      };
+      O.wall = new T.Mesh(wallGeo(), wallM); O.wall.scale.set(RX, 1, RZ); O.wall.receiveShadow = true; grp.add(O.wall);
+      const base = new T.Mesh(new T.CylinderGeometry(1, 1, 0.5, 64, 1, true), M.toonX(0xffffff, { side: T.DoubleSide })); base.scale.set(RX - 0.05, 1, RZ - 0.05); base.position.y = 0.25; grp.add(base);
+      const crown = new T.Mesh(new T.CylinderGeometry(1, 1, 0.4, 64, 1, true), M.toonX(0xffffff, { side: T.DoubleSide })); crown.scale.set(RX - 0.05, 1, RZ - 0.05); crown.position.y = H - 0.3; grp.add(crown);
+      // коллайдеры стен (короткие хорды)
+      for (let i = 0; i < N; i++) {
+        const a0 = (i / N) * Math.PI * 2, a1 = ((i + 1) / N) * Math.PI * 2;
+        const x0 = cx + Math.sin(a0) * RX, z0 = cz + Math.cos(a0) * RZ, x1 = cx + Math.sin(a1) * RX, z1 = cz + Math.cos(a1) * RZ;
+        const b = addBox(Math.min(x0, x1) - 0.35, Math.min(z0, z1) - 0.35, Math.max(x0, x1) + 0.35, Math.max(z0, z1) + 0.35, H + 0.6, 'ovalwall');
+        b.ang = (a0 + a1) / 2; O.segs.push(b);
+      }
+      const ceilBox = addBox(cx - RX - 1, cz - RZ - 1, cx + RX + 1, cz + RZ + 1, H + 1.2, 'ceiling'); ceilBox.y0 = H;
+      // окна за столом + шторы
+      for (const ax of [-0.32, 0, 0.32]) {
+        const a = Math.PI + ax, x = Math.sin(a) * (RX - 0.15), z = Math.cos(a) * (RZ - 0.15);
+        const w = mk(M.box(1.8, 4, 0.1), new T.MeshBasicMaterial({ color: 0x1c2a48 }), x, 3.4, z, a); w.castShadow = false;
+        for (const sd of [-1, 1]) mk(M.box(0.6, 5, 0.2), gold, x + Math.cos(a) * sd * 1.25, 3.3, z - Math.sin(a) * sd * 1.25, a);
+      }
+      // стол президента (Resolute desk) и кресло
+      const dz = -RZ + 3.4;
+      mk(M.box(3.6, 1.05, 1.6), wood, 0, 0.53, dz);
+      mk(M.box(3.8, 0.08, 1.75), M.toon(0x3a200c), 0, 1.09, dz);
+      mk(M.box(1.3, 0.75, 0.05), M.toon(0x7a4a24), 0, 0.55, dz + 0.81);
+      const deskSeal = mk(M.cyl(0.25, 0.25, 0.03, 16), gold, 0, 0.6, dz + 0.84); deskSeal.rotation.x = Math.PI / 2;
+      mk(M.box(0.5, 0.04, 0.35), M.toon(0xf4f0e0), -0.8, 1.15, dz); // бумаги
+      mk(M.box(0.3, 0.25, 0.3), M.toon(0x222222), 1.2, 1.24, dz); // телефон
+      const chair = new T.Group(); chair.position.set(0, 0, dz - 1.3); grp.add(chair);
+      const cm = M.toon(0x2a1a14);
+      const seat = new T.Mesh(M.box(1, 0.2, 0.9), cm); seat.position.y = 0.36; chair.add(seat);
+      const back = new T.Mesh(M.box(1, 1.5, 0.2), cm); back.position.set(0, 1.05, -0.45); chair.add(back);
+      const leg = new T.Mesh(M.cyl(0.08, 0.08, 0.5, 8), M.toon(0x777777)); leg.position.y = 0.25; chair.add(leg);
+      addBox(cx - 1.9, cz + dz - 0.85, cx + 1.9, cz + dz + 0.85, 1.12, 'desk');
+      // флаги за столом
+      const ft = usFlagTex();
+      for (const [fx, col] of [[-2.6, null], [2.6, 0x1c2c6a]]) {
+        mk(M.cyl(0.05, 0.05, 4.2, 8), gold, fx, 2.1, -RZ + 1.4);
+        const fl = mk(new T.BoxGeometry(0.9, 1.9, 0.6), col ? M.toon(col) : new T.MeshBasicMaterial({ map: ft }), fx, 2.9, -RZ + 1.4); fl.castShadow = false;
+        mk(M.sph(0.1), gold, fx, 4.3, -RZ + 1.4);
+      }
+      // диваны, столик, камин
+      const sofaM = M.toon(0xece0c2);
+      for (const sd of [-1, 1]) {
+        const sx = sd * 3.4;
+        mk(M.box(1.1, 0.55, 3.6), sofaM, sx, 0.28, 2.2); mk(M.box(0.3, 1.1, 3.6), sofaM, sx + sd * 0.55, 0.55, 2.2);
+        addBox(cx + sx - 0.7, cz + 0.4, cx + sx + 0.7, cz + 4, 0.85, 'sofa');
+      }
+      mk(M.box(1.8, 0.45, 1.2), wood, 0, 0.23, 2.2); addBox(cx - 0.9, cz + 1.6, cx + 0.9, cz + 2.8, 0.45, 'table');
+      mk(M.box(3.2, 2.4, 0.6), trimM, 0, 1.2, RZ - 0.5);
+      mk(M.box(1.6, 1.2, 0.3), M.toon(0x1a1210), 0, 0.7, RZ - 0.85);
+      mk(M.box(3.6, 0.15, 0.9), trimM, 0, 2.45, RZ - 0.6);
+      O.fire = new T.Vector3(cx, 0.4, cz + RZ - 0.9);
+      // портреты
+      for (const a of [Math.PI / 2 + 0.6, -Math.PI / 2 - 0.6]) {
+        const x = Math.sin(a) * (RX - 0.2), z = Math.cos(a) * (RZ - 0.2);
+        mk(M.box(1.6, 2.1, 0.08), gold, x, 3.8, z, a); mk(M.box(1.3, 1.8, 0.1), M.toon(0x4a3a30), x, 3.8, z + Math.cos(a) * 0.02, a);
+      }
+      // свет внутри
+      const l1 = new T.PointLight(0xfff0d4, 1.4, 40, 1.4); l1.position.set(cx, H - 1, cz - 3); add(l1);
+      const l2 = new T.PointLight(0xffe4c0, 1.1, 34, 1.4); l2.position.set(cx, H - 1, cz + 5); add(l2);
+      O.desk = new T.Vector3(cx, 0, cz + dz); O.chair = new T.Vector3(cx, 0, cz + dz - 1.3);
+      // пролом в стене со стороны angle
+      O.breach = function (ang = Math.PI / 2, w = 0.5) {
+        O.wall.geometry.dispose(); O.wall.geometry = wallGeo(ang, w);
+        for (const b of O.segs) { let d = Math.abs(((b.ang - ang + Math.PI * 3) % (Math.PI * 2)) - Math.PI); if (d < w / 2 + 0.03) W.removeBox(b); }
+        return new T.Vector3(cx + Math.sin(ang) * RX, 0, cz + Math.cos(ang) * RZ);
+      };
+      O.inside = (p) => ((p.x - cx) / (RX - 1)) ** 2 + ((p.z - cz) / (RZ - 1)) ** 2 < 1;
+      O.clampInside = (p) => {
+        const k = ((p.x - cx) / (RX - 1.2)) ** 2 + ((p.z - cz) / (RZ - 1.2)) ** 2;
+        let hit = false;
+        if (k > 1) { const f = 1 / Math.sqrt(k); p.x = cx + (p.x - cx) * f; p.z = cz + (p.z - cz) * f; hit = true; }
+        if (p.y > H - 2) { p.y = H - 2; hit = true; }
+        return hit;
+      };
+      W.oval = O;
+      return O;
     };
     W.randomSidewalk = () => U.pick(W.sidewalkPts).clone();
     W.update = function (dt, t, focus) {
