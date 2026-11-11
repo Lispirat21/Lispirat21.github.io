@@ -250,7 +250,8 @@ HL.Player = (function () {
         else { mode = 'hover'; opt = { pitch: U.clamp(hs * 0.04, 0, 0.3), roll: U.clamp(-turn * 0.1, -0.3, 0.3) }; }
       } else if (!this.grounded && this.airT > 0.15) mode = 'jump';
       else if (hs > 0.6) mode = hs > 6 ? 'run' : 'walk';
-      else if (this.poseT > 0 || this.idleT > 4) mode = 'akimbo';
+      else if (this.poseT > 0) mode = this.poseKind || 'akimbo';
+      else if (this.idleT > 4) mode = 'akimbo';
       if (this.lasering) opt.headPitch = (this.flying && mode === 'fly' ? 0 : U.clamp(pitch - 0.2, -0.6, 0.8));
       if (this.scriptHead != null) opt.headPitch = this.scriptHead;
       // плащ
@@ -361,6 +362,7 @@ HL.Player = (function () {
     }
     pose() {
       const g = this.g;
+      if (this.poseT <= 0) this.poseKind = this.poseKind === 'spread' ? 'akimbo' : 'spread'; // позы по очереди: руки в стороны / руки в боки
       this.poseT = 2.2;
       if (this.poseCd > 0) return;
       let n = 0;

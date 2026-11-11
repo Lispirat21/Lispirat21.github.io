@@ -123,8 +123,8 @@ HL.Models = (function () {
       legs: 0x1b1b20, boots: 0x101012, belt: 0x2a2a30, eye: 0x18181c, noFace: true, bulk: 1.1 },
     agent: { name: 'Наёмник', skin: 0xd8a882, hair: 0x2a2a2a, hairStyle: 'cap', capColor: 0x2b3038, torso: 0x2b3038, vest: 0x40452e, arms: 0x2b3038, forearms: 0x2b3038,
       gloves: 0x1a1a1a, legs: 0x30343c, boots: 0x161616, eye: 0x2a2a2a, brows: 0x1a1a1a, angry: true, gun: true, bulk: 1 },
-    maeve: { name: 'Королева Мейв', skin: 0xf0c8a8, hair: 0x6a3020, hairStyle: 'long', torso: 0x2c3448, emblem: 0xc0c4cc, arms: 0x2c3448, forearms: 0xa8acb6, gloves: 0x2c3448,
-      legs: 0x2c3448, boots: 0xa8acb6, belt: 0xb08a3a, tiara: 0xd8b860, eye: 0x4a6a3a, brows: 0x5a2a1a, angry: true, bulk: 0.92, scale: 0.97 },
+    maeve: { name: 'Королева Мейв', skin: 0xf0c8a8, hair: 0x7a3a22, hairStyle: 'long', hairVolume: true, torso: 0x262c3a, arms: 0x262c3a, forearms: 0xa8aeb8, gloves: 0x262c3a, cuffs: 0xc8a050,
+      legs: 0x262c3a, boots: 0x7c8290, bootRim: 0xc8a050, belt: 0xc8a050, tiara: 0xd8b860, maeveArmor: true, lips: 0xa0303c, eye: 0x4a6a3a, brows: 0x5a2a1a, angry: true, bulk: 0.92, scale: 0.97 },
     thug: { name: 'Грабитель', skin: 0x3a3a3e, hair: 0x3a3a3e, hairStyle: 'mask', torso: 0x4a4a52, arms: 0x4a4a52, forearms: 0x4a4a52, gloves: 0x111111,
       legs: 0x22252c, boots: 0x111111, eye: 0xffffff, brows: 0x222222, gun: true, bulk: 1, balaclava: true },
   };
@@ -158,6 +158,7 @@ HL.Models = (function () {
       part(p, cap(0.125 * bulk, 0.16), def.ribbed ? ribbed(def.boots) : toon(def.boots), 0, -0.78, 0.03);
       const toe = part(p, cap(0.1 * bulk, 0.12), toon(def.boots), 0, -0.9, 0.12, !def.simple); toe.rotation.x = Math.PI / 2; toe.scale.set(1, 1, 0.75);
       if (def.kneeDots) part(p, sph(0.065), toon(def.kneeDots), 0, -0.6, 0.12, false);
+      if (def.bootRim) { part(p, cyl(0.135 * bulk, 0.13 * bulk, 0.04, 14), toon(def.bootRim), 0, -0.64, 0.01, false); const kp = part(p, sph(0.085), toon(def.boots), 0, -0.6, 0.1); kp.scale.set(1.1, 1.2, 0.7); }
       legs.push(p);
     }
     c.legL = legs[0]; c.legR = legs[1];
@@ -193,6 +194,23 @@ HL.Models = (function () {
       const eg = new T.Mesh(G('eagle', () => new T.ExtrudeGeometry(sh, { depth: 0.015, bevelEnabled: true, bevelThickness: 0.006, bevelSize: 0.006, bevelSegments: 1 })), toon(def.eagle));
       eg.position.set(0, 0.66, 0.155 * bulk); eg.rotation.x = -0.25; spine.add(eg);
     }
+    if (def.maeveArmor) {
+      const metal = toon(0x6c7382), gold = toon(0xc8a050), dark = toon(0x3a4252);
+      const bp = part(spine, sph(0.21), metal, 0, 0.5, 0.075 * bulk); bp.scale.set(1.2 * bulk, 0.8, 0.55 * bulk);          // нагрудник
+      for (const sd of [1, -1]) { const v = part(spine, box(0.028, 0.27, 0.02), gold, 0.065 * sd, 0.5, 0.188 * bulk, false); v.rotation.z = 0.42 * sd; v.rotation.x = -0.12; } // золотое «V»
+      const gm = part(spine, sph(0.03), gold, 0, 0.39, 0.185 * bulk, false); gm.scale.z = 0.5;
+      for (const sd of [1, -1]) { const ln = part(spine, box(0.022, 0.2, 0.015), dark, 0.13 * sd, 0.5, 0.17 * bulk, false); ln.rotation.z = -0.15 * sd; }
+      part(spine, cyl(0.1, 0.125, 0.09, 14), metal, 0, 0.75, 0, false);                                                        // ворот
+      for (const sd of [1, -1]) {                                                                                                 // наплечники
+        const pd = part(spine, sph(0.13), metal, 0.34 * sd * bulk, 0.68, 0); pd.scale.set(1.25, 0.6, 1.1);
+        const rim = part(spine, G('mvrim', () => new T.TorusGeometry(0.135, 0.018, 6, 18)), gold, 0.34 * sd * bulk, 0.645, 0, false); rim.rotation.x = Math.PI / 2; rim.scale.set(1.2, 1.05, 1);
+      }
+      for (let i = 0; i < 5; i++) {                                                                                               // пластины на бёдрах
+        const a = (i - 2) * 0.42, r = 0.27 * bulk;
+        const pl = part(spine, box(0.11, 0.2, 0.025), metal, Math.sin(a) * r, -0.06, Math.cos(a) * r * 0.78, false); pl.rotation.y = a; pl.rotation.x = 0.18;
+        const ed = part(spine, box(0.11, 0.022, 0.03), gold, Math.sin(a) * (r + 0.01), -0.16, Math.cos(a) * (r + 0.01) * 0.78, false); ed.rotation.y = a;
+      }
+    }
     if (def.pads) for (const side of [1, -1]) { const pd = part(spine, sph(0.14), toon(def.pads), 0.33 * side * bulk, 0.68, 0); pd.scale.set(1.2, 0.55, 1.1); }
     if (def.pads) for (const side of [1, -1]) { const pu = part(spine, box(0.1, 0.12, 0.08), toon(def.pads), 0.16 * side, 0.08, 0.2 * bulk, false); }
     if (def.coat) {
@@ -214,6 +232,7 @@ HL.Models = (function () {
       const el = new T.Group(); el.position.y = -0.36; sh.add(el);
       part(el, cap(0.08 * bulk, 0.19), def.ribbed ? ribbed(def.forearms || def.arms) : toon(def.forearms || def.arms), 0, -0.15, 0);
       if (def.cuffs) { const cf = part(el, cyl(0.1 * bulk, 0.09 * bulk, 0.06), toon(def.cuffs), 0, -0.02, 0, false); }
+      if (def.maeveArmor) { part(el, cyl(0.095 * bulk, 0.088 * bulk, 0.04), toon(0xc8a050), 0, -0.27, 0, false); const rg = part(el, box(0.03, 0.2, 0.05), toon(0x8a909c), 0, -0.15, 0.085, false); }
       part(el, sph(0.085), toon(def.gloves || def.skin), 0, -0.36, 0);
       arms.push(sh); elbows.push(el);
     }
@@ -259,12 +278,24 @@ HL.Models = (function () {
       }
       if (!def.balaclava) {
         const n = part(head, cap(0.035, 0.04), toon(def.skin), 0, -0.03, 0.2, false); n.rotation.x = 0.3;
-        part(head, box(0.09, 0.015, 0.02), toon(0x3a1a14), 0, -0.11, 0.18, false);
+        part(head, box(def.lips ? 0.085 : 0.09, def.lips ? 0.022 : 0.015, 0.02), toon(def.lips || 0x3a1a14), 0, -0.11, 0.18, false);
       }
     }
     if (def.noFace) { const v = part(head, box(0.22, 0.06, 0.05), new T.MeshBasicMaterial({ color: 0x050505 }), 0, 0.02, 0.18, false); }
     hairFor(head, def);
-    if (def.tiara) { const tr = part(head, cyl(0.205, 0.215, 0.05, 18), toon(def.tiara), 0, 0.12, -0.01, false); tr.rotation.x = -0.18; const gem = part(head, box(0.05, 0.09, 0.03), toon(def.tiara), 0, 0.18, 0.2, false); gem.rotation.x = -0.2; }
+    if (def.tiara) {
+      const tm = toon(def.tiara);
+      const tr = part(head, cyl(0.207, 0.217, 0.045, 20), tm, 0, 0.12, -0.01, false); tr.rotation.x = -0.18;
+      for (const sd of [1, -1]) { const v = part(head, box(0.026, 0.13, 0.025), tm, 0.034 * sd, 0.2, 0.19, false); v.rotation.z = -0.38 * sd; v.rotation.x = -0.25; } // центральный зубец «V»
+      for (const sd of [1, -1]) { const sp = part(head, box(0.02, 0.07, 0.02), tm, 0.12 * sd, 0.17, 0.15, false); sp.rotation.z = -0.25 * sd; sp.rotation.y = 0.6 * sd; }
+      const gem = part(head, sph(0.025), new T.MeshBasicMaterial({ color: 0x9ad0ff }), 0, 0.15, 0.205, false); gem.scale.z = 0.5;
+    }
+    if (def.hairVolume) { // длинные волнистые волосы до лопаток
+      const hm = toon(def.hair);
+      for (let i = 0; i < 9; i++) { const a = (i - 4) * 0.33, y = -0.06 - Math.abs(i - 4) * 0.02;
+        const h = part(head, sph(0.08), hm, Math.sin(a) * 0.17, y - 0.08, -0.1 - Math.cos(a) * 0.08, false); h.scale.set(1, 2.1, 0.9); }
+      for (const sd of [1, -1]) for (let k = 0; k < 3; k++) { const h = part(head, sph(0.065), hm, 0.17 * sd, -0.12 - k * 0.11, -0.02 - k * 0.03, false); h.scale.set(0.9, 1.4, 0.9); }
+    }
     if (def.beard) {
       const b = part(head, sph(0.165), toon(def.beard), 0, -0.1, 0.06); b.scale.set(1.17, 0.95, 0.98);
       part(head, box(0.15, 0.04, 0.04), toon(def.beard), 0, -0.06, 0.2, false);
@@ -344,6 +375,7 @@ HL.Models = (function () {
       case 'long': {
         const h = part(head, hemi(0.217, 0.52), hm, 0, 0.02, -0.01); h.scale.set(1.04, 1.15, 1.08);
         const b = part(head, cap(0.17, 0.25), hm, 0, -0.14, -0.08); b.scale.set(1.15, 1, 0.65);
+        if (def.hairVolume) { h.rotation.x = -0.42; h.position.set(0, 0.05, -0.03); } // открытый лоб: волосы зачёсаны назад
         break;
       }
       case 'cap': {
@@ -500,6 +532,10 @@ HL.Models = (function () {
       case 'akimbo':
         tg.aLz = 0.62; tg.eLz = -1.55; tg.aRz = -0.62; tg.eRz = 1.55; tg.aLx = 0.12; tg.aRx = 0.12;
         tg.spineX = -0.06 + Math.sin(t * 1.4) * 0.015; tg.headX = -0.08; tg.lLz = 0.07; tg.lRz = -0.07;
+        break;
+      case 'spread': // «встречайте!» — руки в стороны ладонями вверх, грудь вперёд
+        tg.aLz = 1.02; tg.aRz = -1.02; tg.aLx = -0.32; tg.aRx = -0.32; tg.eLx = -0.3; tg.eRx = -0.3;
+        tg.spineX = -0.12 + Math.sin(t * 1.3) * 0.012; tg.headX = -0.14; tg.headY = Math.sin(t * 0.7) * 0.08; tg.lLz = 0.1; tg.lRz = -0.1;
         break;
       case 'walk': case 'run': case 'flee': {
         const run = mode !== 'walk';

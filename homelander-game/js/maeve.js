@@ -88,7 +88,7 @@ HL.MaeveFight = (function () {
       setMaeveAI(v.mv, true); v.mv.minHp = v.mv.maxHp * 0.65;
       g.camYaw = Math.atan2(v.mv.pos.x - P.pos.x, v.mv.pos.z - P.pos.z); g.camPitch = 0.15;
       g.cinema(null); g.music('boss');
-      g.ui.hint('Мейв закрывается наручами от лазера. Деритесь врукопашную!', 4);
+      g.ui.hint('Наручи держат лазер, но если не отпускать луч — Мейв собьёт с ног. И бейте врукопашную!', 4.5);
     },
   };
 

@@ -645,6 +645,16 @@ HL.Actors = (function () {
       if (!this.ally && src === g.player && this.alive) {
         const toP = g.player.pos.clone().sub(this.pos).setY(0).normalize(), fwd = V(Math.sin(this.yaw), 0, Math.cos(this.yaw));
         const facing = toP.dot(fwd) > 0.3;
+        if (amount < 25) { // лазер: если держать луч на ней, наручи не выдерживают — сбивает с ног
+          this.laserHeat = (this.laserHeat || 0) + amount;
+          if (this.laserHeat > 110 && (this.kdCd || 0) <= 0 && this.downT <= 0 && !this.noPhysics) {
+            this.laserHeat = 0; this.kdCd = 2.5;
+            const out = this.pos.clone().sub(g.player.pos).setY(0); if (out.lengthSq() < 0.01) out.set(1, 0, 0); out.normalize();
+            this.vel.copy(out.multiplyScalar(13)).setY(7); this.airborne = true; this.spin = 7; this.downT = 1.7; this.setSt('approach', 0);
+            A().punch(); g.fx.addShake(0.4); g.fx.burst(this.center, 14, { color: [0xffd0a0, 0xff6030, 0xffffff], speed: 9, size: 0.2, life: 0.4 });
+            g.ui.tag('МЕЙВ СБИТА ЛАЗЕРОМ!', '#ff8a5a', 1.1);
+          }
+        }
         if (amount < 25 && facing) { amount *= 0.35; if (Math.random() < 0.3) g.fx.sparks(this.center.add(fwd.clone().multiplyScalar(0.4)), 0xffffff, 2); } // лазер в наручи
         else if (this.st === 'block' && facing) { amount *= 0.25; A().clang(); g.fx.sparks(this.center.add(fwd.clone().multiplyScalar(0.5)), 0xffffff, 6); }
         if (amount >= 25) { this.hitsTaken.push(g.time); this.hitsTaken = this.hitsTaken.filter((t) => g.time - t < 2.2); if (this.hitsTaken.length >= 3 && this.st !== 'block') { this.setSt('block', 1.1); this.hitsTaken = []; } }
@@ -661,6 +671,7 @@ HL.Actors = (function () {
     think(dt) {
       const g = this.g, tg = this.target(); this.stT -= dt;
       for (const k in this.cd) this.cd[k] -= dt;
+      this.laserHeat = Math.max(0, (this.laserHeat || 0) - 70 * dt); this.kdCd = (this.kdCd || 0) - dt;
       this.animOpt = {};
       if (!tg) { this.anim = 'idle'; this.stop(dt); return; }
       const P = g.player, isP = tg === P, tc = tg.center, d = this.dist2D(tg.pos), dy = tg.pos.y - this.pos.y;
