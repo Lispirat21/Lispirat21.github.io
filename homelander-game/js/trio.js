@@ -513,7 +513,7 @@ HL.Trio = (function () {
       const barrel = new T.Mesh(M.cyl(0.4, 0.4, 1, 12), M.toon(0x3a3d44)); barrel.position.set(MEET.x + 1.5, 0.5, MEET.z + 1.1); barrel.castShadow = true; g.scene.add(barrel);
       const fl = new T.PointLight(0xffa050, 2.2, 16, 1.4); fl.position.set(MEET.x + 1.5, 1.8, MEET.z + 1.1); g.scene.add(fl);
       v.fire = V(MEET.x + 1.5, 1.05, MEET.z + 1.1);
-      g.missionUpdate = () => { if (Math.random() < 0.6) g.fx.burst(v.fire.clone().add(V(U.rand(-0.2, 0.2), 0, U.rand(-0.2, 0.2))), 1, { color: [0xffd040, 0xff8020, 0xff4010], speed: 1, size: 0.3, life: 0.6, g: 4, drag: 0.8, grow: -0.6, up: true }); fl.intensity = 2 + Math.random() * 0.5; };
+      g.missionUpdate = () => { g.fx.heat(v.fire, 0.5); if (Math.random() < 0.6) g.fx.burst(v.fire.clone().add(V(U.rand(-0.2, 0.2), 0, U.rand(-0.2, 0.2))), 1, { color: [0xffd040, 0xff8020, 0xff4010], speed: 1, size: 0.3, life: 0.6, g: 4, drag: 0.8, grow: -0.6, up: true }); fl.intensity = 2 + Math.random() * 0.5; };
     },
     steps: [meetStep, flyStep, sbStep, butStep, trioStep, houseStep, findHughieStep, slowStep, chaseStep],
   };

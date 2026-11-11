@@ -157,8 +157,8 @@ HL.Game = (function () {
   g.hurtPlayer = function (dmg, from, o) { g.player.hurt(dmg, from, o); };
   g.alarm = function (pos, r) { for (const a of g.actors) if (a.faction === 'civ' && a.alive && a.scare && a.pos.distanceTo(pos) < r) a.scare(pos, U.rand(5, 9)); };
   g.explode = function (pos, r, dmg, src, scale = 1) {
-    g.fx.explosion(pos, scale); A.explosion(scale);
-    const d = pos.distanceTo(camera.position); g.fx.addShake(U.clamp(1.2 - d / 80, 0, 1) * scale);
+    const d = pos.distanceTo(camera.position);
+    g.fx.explosion(pos, scale); A.explosion(scale, d); g.fx.addShake(U.clamp(1.2 - d / 80, 0, 1) * scale);
     for (const a of g.actors) {
       if (!a.alive || a === src || a.pickable) continue;
       const dd = a.center.distanceTo(pos);
@@ -389,7 +389,7 @@ HL.Game = (function () {
   g.fail = function (reason) {
     if (g.state !== 'play') return;
     g.state = 'result';
-    A.fail(); A.setLaser(false); A.setWind(0); g.music(null);
+    A.fail(); A.setLaser(false); A.setWind(0); A.setFire(0, 1); g.music(null);
     endPlayUI();
     ui.result({
       win: false, title: 'МИССИЯ ПРОВАЛЕНА', sub: reason,
@@ -407,7 +407,7 @@ HL.Game = (function () {
   function complete() {
     const m = mission;
     g.state = 'result';
-    A.success(); A.setLaser(false); A.setWind(0); g.music(null);
+    A.success(); A.setLaser(false); A.setWind(0); A.setFire(0, 1); g.music(null);
     endPlayUI();
     const ap = Math.round(g.approval);
     if (!m.def.free && m.idx != null) HL.Progress.complete(m.idx, { approval: ap });
@@ -439,7 +439,7 @@ HL.Game = (function () {
   function pause() {
     if (g.state !== 'play') return;
     g.state = 'paused'; In.enabled = false; In.unlock();
-    A.setLaser(false); A.setWind(0);
+    A.setLaser(false); A.setWind(0); A.setFire(0, 1);
     $('pause').classList.remove('hidden'); $('touch').classList.add('hidden');
   }
   function resume() {
@@ -533,6 +533,7 @@ HL.Game = (function () {
     }
     g.world.update(dt, g.time, g.camOverride ? g.camOverride.pos : P.pos);
     g.fx.update(dt, camera);
+    A.setFire(g.fx.fireLevel, dt);
     if (rain) updateRain(dt);
     if (deathT > 0) { deathT -= dt; if (deathT <= 0) g.fail('Даже боги падают. Хоумлендер повержен.'); }
     missionUpdate(dt);

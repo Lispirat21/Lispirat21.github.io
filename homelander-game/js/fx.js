@@ -41,7 +41,9 @@ HL.FX = (function () {
     }
     function sparks(pos, color = 0xffe0a0, n = 6) { burst(pos, n, { color: [color, 0xffffff], speed: 10, size: 0.12, life: 0.35, g: -18, drag: 0.5 }); }
     function smoke(pos, n = 1, col) { burst(pos, n, { color: col || [0x333333, 0x444444, 0x2a2a2a], speed: 1.5, size: 0.9, life: 2.2, g: 3.5, drag: 0.6, grow: 0.8, up: true }); }
+    let fireAcc = 0, camP = null;
     function fire(pos, n = 1) {
+      if (camP) { const dx = pos.x - camP.x, dy = pos.y - camP.y, dz = pos.z - camP.z; fireAcc += n / (1 + (dx * dx + dy * dy + dz * dz) / 220); }
       burst(pos, n, { color: [0xffd040, 0xff8020, 0xff4010], speed: 2, size: 0.8, life: 0.9, g: 7, drag: 0.8, grow: -0.6, up: true });
       if (Math.random() < 0.4) smoke(new T.Vector3(pos.x, pos.y + 2, pos.z), 1);
     }
@@ -132,6 +134,9 @@ HL.FX = (function () {
 
     function update(dt, camera) {
       let n = 0; const cp = camera ? camera.position : null;
+      if (cp) camP = cp;
+      // громкость огня: сколько пламени «вылетело» за кадр рядом с камерой
+      if (dt > 0) { const rate = fireAcc / dt; fireAcc = 0; api.fireLevel += ((1 - Math.exp(-rate / 9)) - api.fireLevel) * Math.min(1, dt * 4); }
       for (let i = 0; i < MAX; i++) {
         const p = P[i];
         if (p.life <= 0) continue;
@@ -169,8 +174,11 @@ HL.FX = (function () {
     function clearScorch(b) {
       for (const s of scorches) { const p = s.m.position; if (s.m.visible && p.x > b.x0 - 0.6 && p.x < b.x1 + 0.6 && p.z > b.z0 - 0.6 && p.z < b.z1 + 0.6) { s.m.visible = false; s.g.visible = false; s.t = 0; } }
     }
-    return { burst, explosion, sparks, smoke, fire, dust, flashLight, setBeam, scorch, clearScorch, ring, warn, update, clear, addShake, laserLight,
+    // источник огня только для звука (костёр в бочке и т.п.)
+    function heat(pos, n = 1) { if (camP) { const dx = pos.x - camP.x, dy = pos.y - camP.y, dz = pos.z - camP.z; fireAcc += n / (1 + (dx * dx + dy * dy + dz * dz) / 220); } }
+    const api = { burst, explosion, sparks, smoke, fire, heat, dust, flashLight, setBeam, scorch, clearScorch, ring, warn, update, clear, addShake, laserLight, fireLevel: 0,
       get shake() { return shake; } };
+    return api;
   }
   return { create };
 })();

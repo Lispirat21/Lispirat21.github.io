@@ -1,7 +1,7 @@
 // Синтезированный звук (никаких внешних файлов): эффекты, лазер, ветер, музыка
 HL.Audio = (function () {
   let ctx = null, master, sfx, music, noiseBuf;
-  let laser = null, wind = null, drone = null, seq = null;
+  let laser = null, wind = null, drone = null, seq = null, fireL = null;
   const S = () => HL.Settings.data;
 
   function init() {
@@ -124,6 +124,55 @@ HL.Audio = (function () {
     wind.f.frequency.setTargetAtTime(350 + v * 18, t, 0.2);
   }
 
+  // --- горение: гул пламени + шипение + треск; v = 0..1 (сколько огня рядом) ---
+  function setFire(v, dt = 0.016) {
+    if (!ctx) return;
+    if (!fireL) {
+      const mk = (type, f, q) => { const n = noiseSrc(), fl = ctx.createBiquadFilter(), g = ctx.createGain(); fl.type = type; fl.frequency.value = f; fl.Q.value = q; g.gain.value = 0; n.connect(fl); fl.connect(g); g.connect(sfx); n.start(0, Math.random() * 1.5); return { g, fl }; };
+      fireL = { roar: mk('lowpass', 320, 0.7), body: mk('bandpass', 900, 0.6), hiss: mk('highpass', 3800, 0.5), lv: 0, flick: 1 };
+    }
+    const F = fireL, t = ctx.currentTime;
+    F.lv += (v - F.lv) * Math.min(1, dt * 3);
+    const lv = F.lv;
+    if (Math.random() < dt * 6) F.flick = 0.65 + Math.random() * 0.6;      // пламя «дышит»
+    F.roar.g.gain.setTargetAtTime(lv * 0.55 * F.flick, t, 0.12);
+    F.roar.fl.frequency.setTargetAtTime(220 + 260 * F.flick, t, 0.2);
+    F.body.g.gain.setTargetAtTime(lv * 0.09 * F.flick, t, 0.1);
+    F.hiss.g.gain.setTargetAtTime(lv * 0.025, t, 0.2);
+    if (lv < 0.02) return;
+    // треск: щелчки древесины и лопающиеся угли
+    const n = lv * dt * 34;
+    for (let i = 0; i < 3; i++) if (Math.random() < n / 3) {
+      const d = Math.random() * dt;
+      burst({ dur: 0.012 + Math.random() * 0.03, type: 'bandpass', f: 1800 + Math.random() * 4500, q: 1.5 + Math.random() * 3, vol: (0.06 + Math.random() * 0.22) * Math.min(1, lv * 1.6), a: 0.001, delay: d });
+      if (Math.random() < 0.25) burst({ dur: 0.008, type: 'highpass', f: 6000, vol: 0.12 * lv, a: 0.001, delay: d + 0.01 + Math.random() * 0.03 });
+    }
+    if (Math.random() < lv * dt * 1.2) burst({ dur: 0.6 + Math.random() * 0.5, type: 'lowpass', f: 500, f2: 150, vol: 0.35 * lv, a: 0.08 }); // «вздох» пламени
+  }
+  // --- взрыв: хлопок, удар, рокот, огненный выдох, падающие обломки; dist — расстояние до камеры ---
+  function explosion(big = 1, dist = 0) {
+    if (!ctx) return;
+    const k = 1 / (1 + (dist / 70) ** 2), far = U01(dist / 160);
+    const v = (x) => Math.max(0.0002, Math.min(1, x * k));
+    const dl = Math.min(0.5, dist / 343);                                   // звук приходит позже вспышки
+    const hf = 9000 * (1 - far * 0.85);                                     // издалека — глухо
+    burst({ dur: 0.12, type: 'lowpass', f: hf, f2: 700, vol: v(1.0), a: 0.001, delay: dl });                         // хлопок
+    burst({ dur: 1.0 * big + 0.3, type: 'lowpass', f: Math.min(hf, 2600), f2: 70, vol: v(0.95), a: 0.004, delay: dl }); // тело
+    tone({ type: 'sine', f: 85, f2: 24, dur: 1.0 * big + 0.2, vol: v(1.0), a: 0.003, delay: dl });                    // удар в грудь
+    tone({ type: 'triangle', f: 48, f2: 19, dur: 1.6 * big, vol: v(0.55), a: 0.01, delay: dl + 0.02 });
+    burst({ dur: 2.4 * big + 0.8, type: 'lowpass', f: 420, f2: 35, vol: v(0.55), a: 0.18, delay: dl + 0.08 });        // раскатистый рокот
+    burst({ dur: 1.1, type: 'bandpass', f: 280, f2: 950, q: 0.7, vol: v(0.3), a: 0.06, delay: dl + 0.04 });          // огненный выдох
+    burst({ dur: 3.2 * big + 1, type: 'lowpass', f: 260, f2: 45, vol: v(0.4), a: 0.9, delay: dl + 0.3 });               // долгое эхо между домами
+    tone({ type: 'sine', f: 38, f2: 26, dur: 2.6 * big, vol: v(0.3), a: 0.7, delay: dl + 0.3 });
+    const deb = Math.round(5 + 6 * Math.min(2, big));
+    for (let i = 0; i < deb; i++) {                                         // осыпающиеся обломки и стекло
+      const d = dl + 0.25 + Math.random() * (0.9 + big * 0.6);
+      burst({ dur: 0.03 + Math.random() * 0.09, type: 'bandpass', f: 900 + Math.random() * (far > 0.5 ? 1500 : 5000), q: 1 + Math.random() * 4, vol: v(0.08 + Math.random() * 0.2), a: 0.001, delay: d });
+      if (Math.random() < 0.3 && far < 0.5) tone({ type: 'triangle', f: 2400 + Math.random() * 2500, dur: 0.08, vol: v(0.03), delay: d });
+    }
+  }
+  function U01(x) { return Math.max(0, Math.min(1, x)); }
+
   // --- музыка ---
   function stopMusic() {
     if (drone) { const t = ctx.currentTime; drone.g.gain.setTargetAtTime(0, t, 0.4); const d = drone; setTimeout(() => d.nodes.forEach((n) => { try { n.stop(); } catch (e) {} }), 2000); drone = null; }
@@ -185,14 +234,13 @@ HL.Audio = (function () {
   }
 
   return {
-    init, resume, unlock, applyVolumes, setLaser, setWind, menuMusic, gameMusic, stopMusic,
+    init, resume, unlock, applyVolumes, setLaser, setWind, setFire, explosion, menuMusic, gameMusic, stopMusic,
     get ready() { return !!ctx; },
     click() { tone({ type: 'square', f: 520, f2: 760, dur: 0.05, vol: 0.06 }); },
     punch() { burst({ dur: 0.2, f: 1200, f2: 120, vol: 0.9 }); tone({ type: 'sine', f: 150, f2: 40, dur: 0.22, vol: 0.8 }); },
     whiff() { burst({ dur: 0.18, type: 'bandpass', f: 600, f2: 2000, q: 2, vol: 0.25, a: 0.05 }); },
     shot() { burst({ dur: 0.09, type: 'bandpass', f: 2200, q: 0.8, vol: 0.32 }); },
     heavyShot() { burst({ dur: 0.18, type: 'bandpass', f: 1100, q: 0.7, vol: 0.5 }); tone({ type: 'square', f: 170, f2: 60, dur: 0.12, vol: 0.12 }); },
-    explosion(big = 1) { burst({ dur: 1.1 * big, f: 1600, f2: 50, vol: Math.min(1, 0.7 * big) }); tone({ type: 'sine', f: 95, f2: 25, dur: 0.9 * big, vol: 0.9 }); },
     slam() { burst({ dur: 0.7, f: 900, f2: 40, vol: 1 }); tone({ type: 'sine', f: 70, f2: 22, dur: 0.8, vol: 1 }); },
     hurt() { tone({ type: 'sawtooth', f: 200, f2: 80, dur: 0.14, vol: 0.18 }); },
     whoosh() { burst({ dur: 0.55, type: 'bandpass', f: 250, f2: 2200, q: 1.4, vol: 0.4, a: 0.15 }); },
