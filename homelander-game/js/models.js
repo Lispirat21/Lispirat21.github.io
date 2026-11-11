@@ -14,6 +14,21 @@ HL.Models = (function () {
   function toon(color) {
     return mats[color] || (mats[color] = new T.MeshToonMaterial({ color, gradientMap: grad }));
   }
+  // контурный свет (rim light): персонаж отделяется от фона, как в кино
+  const rimCache = new Map();
+  function rimOf(mat) {
+    if (!mat || !mat.isMeshToonMaterial) return mat;
+    let r = rimCache.get(mat); if (r) return r;
+    r = mat.clone();
+    r.onBeforeCompile = (sh) => {
+      sh.fragmentShader = sh.fragmentShader.replace('#include <output_fragment>', `
+        { float rf = 1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0);
+          outgoingLight += diffuseColor.rgb * pow(rf, 2.6) * 0.38 + vec3(1.0, 0.96, 0.88) * pow(rf, 5.0) * 0.2; }
+        #include <output_fragment>`);
+    };
+    r.customProgramCacheKey = () => 'rim1';
+    rimCache.set(mat, r); return r;
+  }
   function toonX(color, extra) { return new T.MeshToonMaterial(Object.assign({ color, gradientMap: grad }, extra)); }
 
   // Контур методом "вывернутой оболочки"
@@ -355,6 +370,7 @@ HL.Models = (function () {
         const g = glowSprite(0xff2a1a, 0.32); g.position.set(0.075 * side, 0.03, 0.22); g.visible = false; head.add(g); c.glow.push(g);
       }
     }
+    root.traverse((o) => { if (o.isMesh && o.material && o.material.isMeshToonMaterial) o.material = rimOf(o.material); });
     return c;
   }
 

@@ -4,10 +4,10 @@
   const isMobile = (window.matchMedia && matchMedia('(pointer:coarse)').matches) || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
   const PRESETS = {
-    low:    { renderScale: 0.6, shadows: 0, antialias: false, drawDist: 0, crowd: 0, outlines: false, particles: 0, details: 0 },
-    medium: { renderScale: 0.8, shadows: 1, antialias: false, drawDist: 1, crowd: 1, outlines: true,  particles: 1, details: 1 },
-    high:   { renderScale: 1.0, shadows: 2, antialias: true,  drawDist: 2, crowd: 2, outlines: true,  particles: 2, details: 2 },
-    ultra:  { renderScale: 1.0, shadows: 3, antialias: true,  drawDist: 3, crowd: 3, outlines: true,  particles: 3, details: 2 },
+    low:    { renderScale: 0.6, shadows: 0, antialias: false, drawDist: 0, crowd: 0, outlines: false, particles: 0, details: 0, post: 0 },
+    medium: { renderScale: 0.8, shadows: 1, antialias: false, drawDist: 1, crowd: 1, outlines: true,  particles: 1, details: 1, post: 1 },
+    high:   { renderScale: 1.0, shadows: 2, antialias: true,  drawDist: 2, crowd: 2, outlines: true,  particles: 2, details: 2, post: 2 },
+    ultra:  { renderScale: 1.0, shadows: 3, antialias: true,  drawDist: 3, crowd: 3, outlines: true,  particles: 3, details: 2, post: 2 },
   };
   const basePreset = isMobile ? 'medium' : 'high';
   const DEFAULTS = Object.assign({

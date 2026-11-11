@@ -20,6 +20,7 @@ HL.Game = (function () {
       renderer.dispose(); try { renderer.forceContextLoss(); } catch (e) {}
       const n = document.createElement('canvas'); n.id = 'c'; cv.replaceWith(n); cv = n;
     }
+    if (HL.Post) HL.Post.dispose();
     renderer = new T.WebGLRenderer({ canvas: cv, antialias: !!S.data.antialias, powerPreference: 'high-performance' });
     g.renderer = renderer;
     renderer.shadowMap.enabled = S.data.shadows > 0;
@@ -562,7 +563,8 @@ HL.Game = (function () {
     camera.layers.set(0); scene.overrideMaterial = null; scene.background = bg; scene.fog = fog; renderer.autoClear = true;
   }
   function renderAll() {
-    renderer.render(scene, camera);
+    if (S.data.post > 0 && HL.Post && g.world) HL.Post.render(renderer, scene, camera, S.data.post, g.world.time, g.time);
+    else renderer.render(scene, camera);
     const on = !!(g.player && g.player.xrayT > 0 && g.state === 'play');
     document.body.classList.toggle('xray', on);
     if (on) renderXray();
