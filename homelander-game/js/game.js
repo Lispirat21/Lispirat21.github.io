@@ -339,7 +339,7 @@ HL.Game = (function () {
     const st = def.start;
     g.player.place(st[0], st[1], st[2], st[3]);
     g.camYaw = st[3]; g.camPitch = 0.18;
-    g.cinema(null); g.noDeath = false; g.slowmo = false; g.camRoll = 0;
+    g.cinema(null); g.noDeath = false; g.slowmo = false; g.camRoll = 0; g.fin = null; g.xrayItems = []; g.useLock = false; g.onXray = null;
     if (def.rain) rain = makeRain();
     mission = { def, idx, si: -1, v: {}, timer: null, t0: 0 };
     def.setup && def.setup(g, mission.v);
@@ -537,6 +537,47 @@ HL.Game = (function () {
     missionUpdate(dt);
   }
 
+
+  // ================= рентген: силуэты сквозь стены =================
+  const XR = [
+    [1, new T.MeshBasicMaterial({ color: 0xff3a3a, transparent: true, opacity: 0.55, depthTest: false, depthWrite: false, blending: T.AdditiveBlending, fog: false })],
+    [2, new T.MeshBasicMaterial({ color: 0x5ab0ff, transparent: true, opacity: 0.4, depthTest: false, depthWrite: false, blending: T.AdditiveBlending, fog: false })],
+    [3, new T.MeshBasicMaterial({ color: 0x8aa0b8, transparent: true, opacity: 0.25, depthTest: false, depthWrite: false, blending: T.AdditiveBlending, fog: false })],
+    [4, new T.MeshBasicMaterial({ color: 0xffd23a, transparent: true, opacity: 0.85, depthTest: false, depthWrite: false, blending: T.AdditiveBlending, fog: false })],
+  ];
+  g.xrayItems = [];
+  const xrLayer = (obj, layer, on) => obj.traverse((o) => { if (o.isMesh) { if (on) o.layers.enable(layer); else o.layers.disable(layer); } });
+  function renderXray() {
+    for (const a of g.actors) {
+      const want = a.removed || !a.alive || a === g.player ? 0 : a.faction === 'enemy' ? 1 : a.faction === 'vehicle' ? 3 : 2;
+      if (a._xl !== want) { if (a._xl) xrLayer(a.obj, a._xl, false); if (want) xrLayer(a.obj, want, true); a._xl = want; }
+    }
+    for (const it of g.xrayItems) if (!it.userData.xl) { xrLayer(it, 4, true); it.userData.xl = 1; }
+    const bg = scene.background, fog = scene.fog;
+    scene.background = null; scene.fog = null; renderer.autoClear = false;
+    for (const [layer, mat] of XR) { camera.layers.set(layer); scene.overrideMaterial = mat; renderer.render(scene, camera); }
+    camera.layers.set(0); scene.overrideMaterial = null; scene.background = bg; scene.fog = fog; renderer.autoClear = true;
+  }
+  function renderAll() {
+    renderer.render(scene, camera);
+    const on = !!(g.player && g.player.xrayT > 0 && g.state === 'play');
+    document.body.classList.toggle('xray', on);
+    if (on) renderXray();
+  }
+  // ================= кинематографичное добивание =================
+  g.finisher = function (a, kind) {
+    if (g.cinematic || g.fin || g.camOverride) return;
+    g.fin = { t: kind === 'slam' ? 0.9 : 0.7, a, kind, side: Math.random() < 0.5 ? 1 : -1 };
+    g.slowmo = true; A.whoosh();
+  };
+  function finisherUpdate(rdt) {
+    const f = g.fin; if (!f) return;
+    f.t -= rdt;
+    const P = g.player, tc = f.a.center, mid = P.center.lerp(tc, 0.5), d = tc.clone().sub(P.center).setY(0).normalize();
+    const side = V(-d.z, 0, d.x).multiplyScalar(f.side * 3.2);
+    g.camOverride = { pos: mid.clone().add(side).add(V(0, f.kind === 'slam' ? 2.2 : 0.4, 0)), look: mid, rate: 10 };
+    if (f.t <= 0) { g.fin = null; g.slowmo = false; g.camOverride = null; }
+  }
   // ================= главный цикл =================
   function frame(now) {
     requestAnimationFrame(frame);
@@ -548,6 +589,7 @@ HL.Game = (function () {
     } else if (scene) {
       let dt = rdt;
       if (g.hitStop > 0) { g.hitStop -= rdt; dt *= 0.2; }
+      finisherUpdate(rdt);
       if (g.slowmo) dt *= 0.14; // замедленная съёмка
       document.body.classList.toggle('slowmo', !!g.slowmo);
       if (g.state === 'play') step(dt);
@@ -557,7 +599,7 @@ HL.Game = (function () {
       }
       if (g.player) updateCamera(rdt);
       ui.update(g.state === 'play' ? dt : 0, rdt);
-      renderer.render(scene, camera);
+      renderAll();
     }
     In.endFrame();
   }
@@ -605,11 +647,12 @@ HL.Game = (function () {
     if (g.state === 'menu' || g.state === 'loading') { HL.Menu.update(rdt); HL.Menu.render(renderer); return; }
     let dt = rdt;
     if (g.hitStop > 0) { g.hitStop -= rdt; dt *= 0.2; }
+    finisherUpdate(rdt);
     if (g.slowmo) dt *= 0.14;
     if (g.state === 'play') step(dt);
     if (g.player) updateCamera(rdt);
     ui.update(dt, rdt);
-    renderer.render(scene, camera);
+    renderAll();
   };
   g._step = (n, dt = 0.05) => { for (let i = 0; i < n && g.state === 'play'; i++) { step(dt); ui.update(dt, dt); if (g.player) updateCamera(dt); camera.updateMatrixWorld(); } }; // отладка: прокрутка без рендера
   g._toMenu = () => toMenu();

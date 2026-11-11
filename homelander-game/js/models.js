@@ -567,9 +567,19 @@ HL.Models = (function () {
       case 'punch': {
         const p = opt.p || 0; // 0..1
         const k = p < 0.35 ? p / 0.35 : 1 - (p - 0.35) / 0.65;
-        tg.aRx = -1.55 * k - 0.2; tg.aRz = -0.15; tg.eRx = -0.6 * (1 - k);
-        tg.aLx = 0.5 * k; tg.eLx = -1.2; tg.spineX = 0.15 * k; tg.headX = -0.05;
-        tg.lLx = -0.4; tg.lRx = 0.4;
+        if (opt.up) { // апперкот
+          tg.aRx = -0.3 - 2.5 * k; tg.aRz = -0.1; tg.eRx = -1.5 * (1 - k); tg.aLx = 0.4; tg.eLx = -1.2; tg.spineX = -0.25 * k; tg.headX = -0.15 * k; tg.lLx = -0.5; tg.lRx = 0.5; tg.bodyY = 1 + 0.12 * k;
+        } else if (opt.down) { // удар сверху двумя руками
+          const s2 = p < 0.4 ? 0 : Math.min(1, (p - 0.4) / 0.3);
+          tg.aLx = tg.aRx = -2.9 + 2.5 * s2; tg.eLx = tg.eRx = -0.3; tg.aLz = 0.2; tg.aRz = -0.2; tg.spineX = -0.2 + 0.65 * s2; tg.headX = 0.15 * s2; tg.lLx = -0.3; tg.lRx = 0.3;
+        } else if (opt.left) { // удар левой
+          tg.aLx = -1.55 * k - 0.2; tg.aLz = 0.15; tg.eLx = -0.6 * (1 - k);
+          tg.aRx = 0.5 * k; tg.eRx = -1.2; tg.spineX = 0.15 * k; tg.headX = -0.05; tg.lLx = 0.4; tg.lRx = -0.4;
+        } else {
+          tg.aRx = -1.55 * k - 0.2; tg.aRz = -0.15; tg.eRx = -0.6 * (1 - k);
+          tg.aLx = 0.5 * k; tg.eLx = -1.2; tg.spineX = 0.15 * k; tg.headX = -0.05;
+          tg.lLx = -0.4; tg.lRx = 0.4;
+        }
         if (opt.air) { tg.pitch = 0.5; }
         rate = 30;
         break;
@@ -605,6 +615,7 @@ HL.Models = (function () {
       case 'carry':
         tg.aLx = -1.3; tg.aRx = -1.3; tg.eLx = -0.6; tg.eRx = -0.6; tg.aLz = 0.15; tg.aRz = -0.15;
         if (opt.fly) { tg.pitch = 0.5; tg.lLx = 0.2; tg.lRx = -0.1; }
+        if (opt.over) { tg.aLx = -2.95; tg.aRx = -2.95; tg.eLx = -0.25; tg.eRx = -0.25; tg.aLz = 0.35; tg.aRz = -0.35; tg.spineX = -0.08; tg.pitch = opt.fly ? 0.15 : 0; }
         break;
       case 'dead':
         tg.pitch = -1.52; tg.bodyY = 0.24; tg.aLz = 1.2; tg.aRz = -0.9; tg.lLz = 0.25; tg.lRz = -0.15; tg.headX = 0.2;

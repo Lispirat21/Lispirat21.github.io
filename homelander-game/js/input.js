@@ -8,7 +8,7 @@ HL.Input = (function () {
   // привязки действий
   const BIND = {
     up: ['Space'], down: ['KeyC', 'ControlLeft', 'ControlRight'], boost: ['ShiftLeft', 'ShiftRight'],
-    fly: ['KeyF'], hear: ['KeyQ'], use: ['KeyE'], pose: ['KeyH'], rage: ['KeyR'], punch: ['KeyV'],
+    fly: ['KeyF'], hear: ['KeyQ'], xray: ['KeyX'], use: ['KeyE'], pose: ['KeyH'], rage: ['KeyR'], punch: ['KeyV'],
     pause: ['Escape', 'KeyP'], skip: ['Enter'],
   };
 

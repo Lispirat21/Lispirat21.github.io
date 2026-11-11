@@ -77,7 +77,26 @@ HL.Actors = (function () {
       const L = HL.World.HALF + 120;
       this.pos.x = U.clamp(this.pos.x, -L, L); this.pos.z = U.clamp(this.pos.z, -L, L);
     }
+    holdOverhead(dt) { // поднят Хоумлендером над головой
+      const P = this.g.player;
+      this.pos.copy(P.pos).add(V(Math.sin(P.yaw) * 0.15, P.flying ? 2.0 : 2.25, Math.cos(P.yaw) * 0.15)); this.vel.set(0, 0, 0);
+      this.yaw = P.yaw + Math.PI / 2;
+      if (this.c) { M.animate(this.c, dt, 'carried', 0); this.obj.position.copy(this.pos); this.obj.position.y -= 1.0; this.obj.rotation.y = this.yaw; }
+      else { this.obj.position.copy(this.pos); this.obj.rotation.set(0, this.yaw, Math.sin(this.g.time * 3) * 0.05); }
+    }
+    thrownUpdate(dt) { // летит, брошенный Хоумлендером: сбивает других врагов и разбивается о землю
+      const g = this.g, P = g.player, th = this.thrown; th.t += dt;
+      for (const b of g.actors) {
+        if (b === this || !b.alive || b.carried || th.hit.has(b) || (b.faction !== 'enemy' && b.faction !== 'vehicle')) continue;
+        if (b.center.distanceTo(this.center) < 2.3) { th.hit.add(b); b.damage(b.boss ? 160 : 260, P, this.vel.clone().setY(0).normalize().multiplyScalar(22).setY(9)); HL.Audio.punch(); g.fx.burst(b.center, 10, { color: [0xffffff, 0xffe0a0], speed: 9, size: 0.2, life: 0.3 }); g.fx.addShake(0.4); }
+      }
+      if (th.t > 0.15 && !this.airborne) {
+        this.thrown = null; this.damage(this.boss ? 240 : 180, P); HL.Audio.slam(); g.fx.dust(this.pos, 16); g.fx.ring(this.pos.clone().setY(0.3), 0xffffff, 5, 0.3); g.fx.addShake(0.5);
+      }
+    }
     update(dt) {
+      if (this.carried && this.throwable) { this.holdOverhead(dt); return; }
+      if (this.thrown && this.alive) this.thrownUpdate(dt);
       if (this.puppet) { this.puppet(dt); this.sync(); return; } // управляется кат-сценой
       if (!this.alive) {
         this.deadT += dt;
@@ -889,6 +908,7 @@ HL.Actors = (function () {
       this.g.onDeath(this, src);
     }
     update(dt) {
+      if (this.carried && this.throwable) { this.holdOverhead(dt); return; }
       if (!this.alive) {
         this.deadT += dt;
         if (Math.random() < dt * 6) this.g.fx.smoke(this.center.clone().add(V(0, 0.8, 0)), 1);
@@ -1134,6 +1154,9 @@ HL.Actors = (function () {
           if (this.type === 'light') g.fx.burst(this.pos, 8, { color: [0xffffff, 0xfff0a0], speed: 8, size: 0.2, life: 0.4 });
           this.kill(); return;
         }
+      }
+      if (this.owner === P && this.type === 'car') { // машина, брошенная Хоумлендером
+        for (const b of g.actors) if (b.alive && !b.carried && b.faction === 'enemy' && b.center.distanceTo(this.pos) < 3.4) { this.boom(); return; }
       }
       // попадание в мир
       if (this.pos.y < 0.1 || g.world.inside(this.pos.x, this.pos.y, this.pos.z)) {

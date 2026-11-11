@@ -16,6 +16,7 @@ HL.Player = (function () {
       this.rage = 0; this.rageT = 0;
       this.hearT = 0; this.hearCd = 0;
       this.punchT = 0; this.punchCd = 0; this.punchTarget = null; this.punchHit = false;
+      this.combo = 0; this.comboTgt = null; this.comboLast = -9; this.punchKind = 1; this.carryT = 0; this.throwT = 0; this.xrayT = 0; this.xrayCd = 0;
       this.poseT = 0; this.poseCd = 0; this.idleT = 0;
       this.carry = null; this.depowerT = 0; this.stunT = 0;
       this.lastHurt = -10; this.dead = false; this.hurtSnd = 0;
@@ -77,6 +78,7 @@ HL.Player = (function () {
     drop() {
       const v = this.carry; if (!v) return;
       v.carried = false; this.carry = null;
+      if (v.throwable) { v.throwable = false; v.noPhysics = !!v.noPhysicsPrev; v.pos.set(this.pos.x + Math.sin(this.yaw) * 1.4, this.pos.y + 0.3, this.pos.z + Math.cos(this.yaw) * 1.4); v.vel.set(0, 0, 0); return; }
       v.pos.set(this.pos.x + Math.sin(this.yaw) * 1.2, this.pos.y + 0.2, this.pos.z + Math.cos(this.yaw) * 1.2);
       v.vel.set(0, 0, 0);
       this.g.onDrop && this.g.onDrop(v);
@@ -86,7 +88,7 @@ HL.Player = (function () {
       const g = this.g, inp = g.controlsEnabled && this.stunT <= 0 && !this.dead;
       const In = I();
       this.prevPos.copy(this.pos);
-      this.hurtSnd -= dt; this.punchCd -= dt; this.poseCd -= dt; this.hearCd -= dt;
+      this.hurtSnd -= dt; this.punchCd -= dt; if (this.throwT > 0) this.throwT -= dt; this.poseCd -= dt; this.hearCd -= dt;
       if (this.stunT > 0) this.stunT -= dt;
       if (this.depowerT > 0) this.depowerT -= dt;
       if (this.rageT > 0) { this.rageT -= dt; if (this.rageT <= 0) g.ui.tag('Ярость прошла', '#ff8080', 1); }
@@ -145,14 +147,35 @@ HL.Player = (function () {
       if (depow) this.flying = false;
 
       // способности
-      if (inp && In.hit('use')) {
-        if (this.carry) this.drop();
+      if (inp && In.hit('use') && !g.useLock) {
+        if (this.carry) { if (this.carry.throwable) this.throwCarry(); else this.drop(); }
         else {
           let best = null, bd = 4;
           for (const a of g.actors) if (a.pickable && !a.carried && !a.rescued && a.alive) { const d = a.pos.distanceTo(this.pos); if (d < bd) { bd = d; best = a; } }
           if (best && !depow) { this.carry = best; best.carried = true; A().pickup(); g.onPickup && g.onPickup(best); }
+          else if (!depow) this.tryGrab();
         }
       }
+      // держать босса долго нельзя — вырывается
+      if (this.carry && this.carry.throwable) {
+        this.carryT += dt;
+        const c = this.carry;
+        if (!c.alive || c.removed) { this.carry = null; }
+        else if (c.boss && this.carryT > 1.8) {
+          this.carry = null; c.carried = false; c.throwable = false; c.noPhysics = !!c.noPhysicsPrev;
+          c.pos.copy(this.pos).add(V(Math.sin(this.yaw), 0, Math.cos(this.yaw)).multiplyScalar(1.4));
+          g.ui.tag((c.name || 'Враг').toUpperCase() + ' ВЫРВАЛСЯ!', '#ff8a5a', 1.2); A().punch();
+          this.knockdown(V(-Math.sin(this.yaw), 0, -Math.cos(this.yaw)), 10, 0.7);
+        }
+      }
+      // рентген
+      if (this.xrayCd > 0) this.xrayCd -= dt;
+      if (inp && In.hit('xray')) {
+        if (this.xrayT > 0) { this.xrayT = 0; this.xrayCd = 1.5; A().beep(); }
+        else if (this.xrayCd <= 0) { this.xrayT = 12; A().charge(0.3); g.ui.tag('РЕНТГЕН', '#7ab8ff', 0.9); g.onXray && g.onXray(); }
+        else g.ui.hint('Рентген перезаряжается', 1);
+      }
+      if (this.xrayT > 0) { this.xrayT -= dt; if (this.xrayT <= 0) this.xrayCd = 3; }
       if (inp && In.hit('pose') && !this.carry) this.pose();
       if (inp && In.hit('hear')) {
         if (this.hearCd <= 0) { this.hearT = 6; this.hearCd = 12; A().heartbeat(0.6); g.onHear && g.onHear(); }
@@ -180,6 +203,7 @@ HL.Player = (function () {
       }
       // удар: рывок к цели
       if (inp && In.hit('punch') && this.punchCd <= 0 && !this.carry) this.startPunch(F);
+      else if (inp && In.hit('punch') && this.carry && this.carry.throwable) this.throwCarry();
       if (this.punchT > 0) {
         this.punchT -= dt;
         const tg = this.punchTarget;
@@ -242,8 +266,9 @@ HL.Player = (function () {
       let mode = 'idle', sp = hs, opt = {};
       if (hs > 0.5 || Math.abs(this.vel.y) > 1 || this.lasering) this.idleT = 0; else this.idleT += dt;
       if (this.scriptPose) { mode = this.scriptPose; opt = this.scriptOpt || { p: 0.35 }; }
-      else if (this.carry) { mode = 'carry'; opt = { fly: this.flying }; }
-      else if (this.punchT > 0) { mode = 'punch'; opt = { p: 1 - this.punchT / 0.35, air: this.flying }; }
+      else if (this.throwT > 0) { mode = 'throw'; opt = { p: 1 - this.throwT / 0.4 }; }
+      else if (this.carry) { mode = 'carry'; opt = { fly: this.flying, over: !!this.carry.throwable }; }
+      else if (this.punchT > 0) { const k = this.punchKind || 1; mode = 'punch'; opt = { p: 1 - this.punchT / 0.35, air: this.flying, left: k === 2, up: k === 3, down: k >= 4 }; }
       else if (this.flying) {
         const sp3 = this.vel.length();
         if (sp3 > 7) { mode = 'fly'; opt = { pitch: U.clamp(Math.atan2(hs, this.vel.y), 0.25, 2.3), roll: U.clamp(-turn * 0.25, -0.7, 0.7) }; }
@@ -304,7 +329,7 @@ HL.Player = (function () {
 
     startPunch(F) {
       const g = this.g;
-      this.punchT = 0.35; this.punchCd = 0.42; this.punchHit = false; this.punchTarget = null;
+      this.punchT = 0.35; this.punchCd = 0.38; this.punchHit = false; this.punchTarget = null;
       const camF = V(); g.camera.getWorldDirection(camF);
       let best = null, bs = -1;
       for (const a of g.actors) {
@@ -316,6 +341,7 @@ HL.Player = (function () {
         if (s > bs) { bs = s; best = a; }
       }
       this.punchTarget = best; this.punchWall = null;
+      this.punchKind = best && best === this.comboTgt && g.time - this.comboLast < 1.0 ? Math.min(4, this.combo + 1) : 1;
       if (!best) {
         this.vel.addScaledVector(camF, 6);
         const h = g.world.raycast(this.center, camF, 4.5);
@@ -327,14 +353,62 @@ HL.Player = (function () {
       this.punchHit = true;
       const dir = a.center.sub(this.center).normalize();
       const rage = this.rageT > 0;
-      const dmg = (a.boss ? 135 : 220) * (rage ? 2.2 : 1);
-      a.damage(dmg, this, dir.clone().multiplyScalar(rage ? 48 : 32).add(V(0, rage ? 16 : 11, 0)));
+      // комбо: удар — удар — апперкот — удар сверху
+      this.combo = a === this.comboTgt && g.time - this.comboLast < 1.0 ? this.combo + 1 : 1;
+      this.comboTgt = a; this.comboLast = g.time;
+      const n = Math.min(4, this.combo);
+      const mul = [1, 1, 1.15, 1.6, 2.3][n];
+      const dmg = (a.boss ? 135 : 220) * (rage ? 2.2 : 1) * mul;
+      let knock = dir.clone().multiplyScalar(rage ? 48 : 32).add(V(0, rage ? 16 : 11, 0));
+      if (n <= 2) knock = dir.clone().multiplyScalar(a.boss ? 2 : 4).setY(1.5); // первые удары держат врага рядом — серию можно продолжить
+      if (n === 3) { knock = dir.clone().multiplyScalar(4).setY(a.boss ? 12 : 20); g.ui.tag('АППЕРКОТ!', '#ffd24a', 0.7); }
+      if (n >= 4) { knock = V(0, -24, 0); g.ui.tag('ДОБИВАНИЕ!', '#ff5a3a', 0.9); }
+      if (n >= 3 && a.boss) { a.vel.y = n === 3 ? 13 : -24; a.airborne = true; a.downT = Math.max(a.downT || 0, n === 3 ? 1.3 : 1.8); }
+      a.damage(dmg, this, knock);
+      if (n >= 4) { // ударная волна при добивании
+        this.combo = 0; g.fx.ring(a.pos.clone().setY(Math.max(0.3, a.pos.y)), 0xffffff, 7, 0.4); g.fx.dust(a.pos, 14); A().slam();
+        for (const b of g.actors) if (b !== a && b.alive && b.faction === 'enemy' && b.pos.distanceTo(a.pos) < 6) b.damage(70, this, b.pos.clone().sub(a.pos).setY(0).normalize().multiplyScalar(18).setY(8));
+        g.finisher && g.finisher(a, 'slam');
+      } else if (n === 3 && (!a.alive || Math.random() < 0.3)) g.finisher && g.finisher(a, 'upper');
       this.vel.multiplyScalar(0.1);
       A().punch(); g.fx.addShake(0.55);
       g.fx.burst(a.center, 6, { color: [0xb01818, 0x7a0e0e], speed: 7, size: 0.16, life: 0.5, g: -16 });
       g.fx.burst(a.center, 10, { color: [0xffffff, 0xffe0a0], speed: 10, size: 0.2, life: 0.3 });
       g.fx.ring(a.center, 0xffffff, 3, 0.25);
       g.hitStop = 0.05;
+    }
+    // схватить врага, босса или машину
+    tryGrab() {
+      const g = this.g; let best = null, bd = 1e9;
+      for (const a of g.actors) {
+        if (!a.alive || a.removed || a.carried || a.invuln || a.pickable || a.noGrab) continue;
+        const isCar = a.faction === 'vehicle';
+        if (a.faction !== 'enemy' && !isCar) continue;
+        const d = a.dist2D(this.pos), dy = Math.abs(a.pos.y - this.pos.y);
+        if (d < (isCar ? 4.6 : 3.4) && dy < 3 && d < bd) { bd = d; best = a; }
+      }
+      if (!best) { g.ui.hint('Рядом нечего схватить', 1); return; }
+      const a = best;
+      this.carry = a; this.carryT = 0; a.carried = true; a.throwable = true; a.noPhysicsPrev = a.noPhysics; a.noPhysics = true; a.vel.set(0, 0, 0); a.downT = 0; a.airborne = false;
+      if (a.stopEyes) a.stopEyes(); if (a.chestGlow) a.chestGlow.visible = false;
+      for (const i of [2, 3, 4, 5]) g.fx.setBeam(i, null);
+      if (a.setSt) a.setSt(a.constructor.name === 'Maeve' ? 'approach' : 'chase', 0);
+      A().pickup(); A().punch(); g.fx.addShake(0.25);
+      g.ui.tag(a.faction === 'vehicle' ? 'МАШИНА ПОДНЯТА — БРОСАЙ!' : (a.boss ? (a.name || '').toUpperCase() + ' СХВАЧЕН — БРОСАЙ!' : 'СХВАЧЕН — БРОСАЙ!'), '#ffd24a', 1.2);
+    }
+    throwCarry() {
+      const g = this.g, a = this.carry; if (!a) return;
+      this.carry = null; a.carried = false; a.throwable = false; this.throwT = 0.4;
+      const dir = V(); g.camera.getWorldDirection(dir); dir.y = Math.max(dir.y, -0.35); dir.normalize();
+      const from = this.center.add(V(0, 1.1, 0)).addScaledVector(dir, 1.6);
+      A().whoosh(); g.fx.addShake(0.3);
+      if (a.faction === 'vehicle') {
+        const mesh = a.obj; a.remove(); g.scene.add(mesh); mesh.position.copy(from);
+        g.spawnProj('car', from, dir.clone().multiplyScalar(62).add(V(0, 4, 0)), { dmg: 260, owner: this, mesh, radius: 7 });
+      } else {
+        a.noPhysics = false; a.pos.copy(from).add(V(0, -1, 0)); a.vel.copy(dir).multiplyScalar(44).add(V(0, 6, 0));
+        a.airborne = true; a.spin = 12; a.downT = 2.2; a.thrown = { t: 0, hit: new Set() };
+      }
     }
     punchWallHit(h) {
       const g = this.g, rage = this.rageT > 0;

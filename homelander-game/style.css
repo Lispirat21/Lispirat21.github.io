@@ -247,3 +247,9 @@ body.touch #dialog .txt{font-size:12px}
 
 /* замедленная съёмка */
 body.slowmo #c{filter:saturate(.4) contrast(1.18) brightness(.92) sepia(.15)}
+
+/* рентгеновское зрение */
+#fxXray{position:fixed;inset:0;pointer-events:none;opacity:0;z-index:9;transition:opacity .3s;
+  background:repeating-linear-gradient(0deg,rgba(120,190,255,.07) 0 2px,transparent 2px 5px),radial-gradient(ellipse at center,rgba(20,80,200,.05) 35%,rgba(10,40,140,.55));}
+body.xray #fxXray{opacity:1}
+body.xray #c{filter:saturate(.35) brightness(.8) contrast(1.1)}
