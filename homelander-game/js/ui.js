@@ -357,13 +357,18 @@ HL.UI = (function () {
     const L = HL.Missions.LIST, P = HL.Progress.data;
     const wrap = document.createElement('div'); wrap.className = 'mlist';
     L.forEach((m, i) => {
-      const locked = i + 1 > P.unlocked;
+      const locked = !P.testAll && i + 1 > P.unlocked;
       const b = document.createElement('button'); b.className = 'mitem' + (locked ? ' locked' : '');
       const done = P.done[i];
       b.innerHTML = `<div class="num">${String(i + 1).padStart(2, '0')}</div><div><div class="mt">${locked ? '???' : m.title}</div><div class="md">${locked ? 'Пройдите предыдущую миссию' : m.desc}</div></div>${done ? `<div class="done">✔ ${done.approval != null ? 'рейтинг ' + done.approval + '%' : 'пройдено'}</div>` : ''}`;
       b.onclick = () => { HL.Audio.click(); closePanel(); onPick(i); };
       wrap.appendChild(b);
     });
+    // ВРЕМЕННО: тестовая кнопка — открыть любую миссию
+    const t = document.createElement('button'); t.className = 'tab'; t.style.cssText = 'margin-top:14px;margin-right:8px;border-color:#e8b53c;color:#e8b53c';
+    t.textContent = P.testAll ? '🔒 Вернуть замки на миссии' : '🔓 Открыть все миссии (тест)';
+    t.onclick = () => { HL.Audio.click(); P.testAll = !P.testAll; HL.Progress.save(); closePanel(); openMissions(onPick); };
+    wrap.appendChild(t);
     const r = document.createElement('button'); r.className = 'tab'; r.style.marginTop = '14px'; r.textContent = 'Сбросить прогресс';
     r.onclick = () => { if (r.dataset.arm) { HL.Progress.reset(); closePanel(); openMissions(onPick); } else { r.dataset.arm = '1'; r.textContent = 'Точно сбросить? Нажмите ещё раз'; } };
     wrap.appendChild(r);
