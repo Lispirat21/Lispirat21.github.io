@@ -81,7 +81,8 @@ HL.Xray = (function () {
     },
     update(g, dt, v) {
       const e = v.e, P = g.player; e.T += dt;
-      P.scriptVel = V(0, 0, 0); P.pos.y = FL;
+      if (e.ev !== 2 && e.ev !== 5) P.scriptVel = V(0, 0, 0);
+      if (e.ev < 5) { P.pos.y = FL; P.vel.y = 0; }
       if (e.ev === 0) { // общий план: один во главе пустого стола
         const k = Math.min(1, e.T / 4);
         cam(g, V(TC.x - 8 + k * 6, FL + 2.6 - k * 0.6, TC.z + 7 - k * 3.4), V(TC.x + 5, FL + 1.1, TC.z), 1.5);
@@ -89,18 +90,18 @@ HL.Xray = (function () {
       } else if (e.ev === 1) { // крупно — встаёт
         cam(g, P.center.add(V(-2.2, 0.35, 1.0)), P.center.add(V(0, 0.45, 0)), 3);
         if (e.T > 1.6 && P.scriptPose) { P.scriptPose = null; A().whoosh(); }
-        if (e.T > 2.4) { e.ev = 2; e.T = 0; P.scriptMove = V(TC.x - 10.2, FL, TC.z); P.scriptSpeed = 2.6; P.flying = false; }
+        if (e.T > 2.4) { e.ev = 2; e.T = 0; P.scriptMove = V(TC.x - 10.2, FL, TC.z); P.scriptSpeed = 3.2; P.flying = false; P.scriptVel = null; P.scriptFace = null; }
       } else if (e.ev === 2) { // идёт к окну
         P.pos.y = FL; P.vel.y = 0;
         cam(g, V(P.pos.x + 1.5, FL + 1.8, TC.z + 5.5), P.center, 3);
         if (P.pos.x < TC.x - 9.9 || e.T > 7) {
           e.ev = 3; e.T = 0; P.scriptMove = null; P.scriptPose = 'akimbo'; P.scriptFace = -Math.PI / 2;
-          cut(g, P.center.add(V(3.2, 0.6, 0.8)), V(TC.x - 60, FL - 25, TC.z - 8));
+          cut(g, P.center.add(V(3.2, 0.6, 0.8)), V(TC.x - 70, FL - 10, TC.z - 8));
           chain(g, v, [
             ['hl', 'Посмотри на них. Миллионы. И каждый думает, что он в безопасности.', 3.2],
             ['ash', '*по рации* Хоумлендер! «Фронт освобождения» заложил бомбы в трёх зданиях Мидтауна. Мы не знаем, в каких!', 3.6],
             ['hl', 'Мне не нужно знать. Я их увижу.', 2.2],
-          ], [() => ({ pos: P.center.add(V(3.2, 0.6, 0.8)), look: V(TC.x - 60, FL - 25, TC.z - 8) }), () => ({ pos: P.center.add(V(-1.6, 0.4, 2.0)), look: P.center.add(V(0, 0.5, 0)) }), () => ({ pos: P.center.add(V(-1.2, 0.5, 0.25)), look: P.center.add(V(0, 0.55, 0)) })],
+          ], [() => ({ pos: P.center.add(V(3.2, 0.6, 0.8)), look: V(TC.x - 70, FL - 10, TC.z - 8) }), () => ({ pos: P.center.add(V(-1.6, 0.4, 2.0)), look: P.center.add(V(0, 0.5, 0)) }), () => ({ pos: P.center.add(V(-1.2, 0.5, 0.25)), look: P.center.add(V(0, 0.55, 0)) })],
             () => { e.ev = 4; e.T = 0; });
         }
       } else if (e.ev === 3) {

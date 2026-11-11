@@ -540,12 +540,14 @@ HL.Game = (function () {
 
   // ================= рентген: силуэты сквозь стены =================
   const XR = [
-    [1, new T.MeshBasicMaterial({ color: 0xff3a3a, transparent: true, opacity: 0.55, depthTest: false, depthWrite: false, blending: T.AdditiveBlending, fog: false })],
-    [2, new T.MeshBasicMaterial({ color: 0x5ab0ff, transparent: true, opacity: 0.4, depthTest: false, depthWrite: false, blending: T.AdditiveBlending, fog: false })],
-    [3, new T.MeshBasicMaterial({ color: 0x8aa0b8, transparent: true, opacity: 0.25, depthTest: false, depthWrite: false, blending: T.AdditiveBlending, fog: false })],
-    [4, new T.MeshBasicMaterial({ color: 0xffd23a, transparent: true, opacity: 0.85, depthTest: false, depthWrite: false, blending: T.AdditiveBlending, fog: false })],
+    [3, new T.MeshBasicMaterial({ color: 0x7a90b0, transparent: true, opacity: 0.45, depthTest: false, depthWrite: false, fog: false })],
+    [2, new T.MeshBasicMaterial({ color: 0x8ad0ff, transparent: true, opacity: 0.9, depthTest: false, depthWrite: false, fog: false })],
+    [1, new T.MeshBasicMaterial({ color: 0xff4a3a, transparent: true, opacity: 0.95, depthTest: false, depthWrite: false, fog: false })],
+    [4, new T.MeshBasicMaterial({ color: 0xffe040, transparent: true, opacity: 1, depthTest: false, depthWrite: false, fog: false })],
   ];
   g.xrayItems = [];
+  const xrDark = (() => { const sc = new T.Scene(), cam = new T.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    sc.add(new T.Mesh(new T.PlaneGeometry(2, 2), new T.MeshBasicMaterial({ color: 0x061430, transparent: true, opacity: 0.6, depthTest: false, depthWrite: false }))); return { scene: sc, cam }; })();
   const xrLayer = (obj, layer, on) => obj.traverse((o) => { if (o.isMesh) { if (on) o.layers.enable(layer); else o.layers.disable(layer); } });
   function renderXray() {
     for (const a of g.actors) {
@@ -555,6 +557,7 @@ HL.Game = (function () {
     for (const it of g.xrayItems) if (!it.userData.xl) { xrLayer(it, 4, true); it.userData.xl = 1; }
     const bg = scene.background, fog = scene.fog;
     scene.background = null; scene.fog = null; renderer.autoClear = false;
+    renderer.render(xrDark.scene, xrDark.cam); // мир темнеет и синеет
     for (const [layer, mat] of XR) { camera.layers.set(layer); scene.overrideMaterial = mat; renderer.render(scene, camera); }
     camera.layers.set(0); scene.overrideMaterial = null; scene.background = bg; scene.fog = fog; renderer.autoClear = true;
   }
