@@ -540,6 +540,7 @@ HL.Game = (function () {
   // ================= главный цикл =================
   function frame(now) {
     requestAnimationFrame(frame);
+    if (g.manual) { last = now; return; } // кадры рисуются вручную (запись ролика)
     let rdt = Math.min(0.05, (now - last) / 1000); last = now;
     if (rdt <= 0) rdt = 0.001;
     if (g.state === 'menu' || g.state === 'loading') {
@@ -599,6 +600,17 @@ HL.Game = (function () {
   g._start = (i) => startMission(i === 'free' ? HL.Missions.FREE : HL.Missions.LIST[i], i === 'free' ? null : i);
   g._next = () => nextStep();
   g._m = () => mission;
+  // отладка/запись ролика: один кадр с заданным шагом
+  g._frame = (rdt) => {
+    if (g.state === 'menu' || g.state === 'loading') { HL.Menu.update(rdt); HL.Menu.render(renderer); return; }
+    let dt = rdt;
+    if (g.hitStop > 0) { g.hitStop -= rdt; dt *= 0.2; }
+    if (g.slowmo) dt *= 0.14;
+    if (g.state === 'play') step(dt);
+    if (g.player) updateCamera(rdt);
+    ui.update(dt, rdt);
+    renderer.render(scene, camera);
+  };
   g._step = (n, dt = 0.05) => { for (let i = 0; i < n && g.state === 'play'; i++) { step(dt); ui.update(dt, dt); if (g.player) updateCamera(dt); camera.updateMatrixWorld(); } }; // отладка: прокрутка без рендера
   g._toMenu = () => toMenu();
   Object.defineProperty(g, 'mission', { get: () => mission });
