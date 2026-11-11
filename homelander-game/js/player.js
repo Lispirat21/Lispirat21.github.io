@@ -330,7 +330,7 @@ HL.Player = (function () {
     startPunch(F) {
       const g = this.g;
       this.punchT = 0.35; this.punchCd = 0.38; this.punchHit = false; this.punchTarget = null;
-      const camF = V(); g.camera.getWorldDirection(camF);
+      const camF = V(); g.camera.getWorldDirection(camF); if (g.aimForce) camF.copy(g.aimForce.at).sub(g.aimForce.from).normalize();
       let best = null, bs = -1;
       for (const a of g.actors) {
         if (!a.alive || a.faction === 'ally' || a.pickable || a.carried) continue;
