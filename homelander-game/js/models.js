@@ -29,6 +29,26 @@ HL.Models = (function () {
     r.customProgramCacheKey = () => 'rim1';
     rimCache.set(mat, r); return r;
   }
+  // металл (золото, сталь): «небо» отражается сверху, яркий блик по краю
+  const METAL = new Set([0xe6b23c, 0xc9952c, 0xd8a838, 0xf2c650, 0xc8a050, 0xd8b860, 0x6c7382, 0x8a909c, 0xa8aeb8, 0x7c8290]);
+  const metalCache = new Map();
+  function metalOf(mat) {
+    let r = metalCache.get(mat); if (r) return r;
+    r = mat.clone();
+    r.onBeforeCompile = (sh) => {
+      sh.fragmentShader = sh.fragmentShader.replace('#include <output_fragment>', `
+        { vec3 vn = normalize(normal); float rf = 1.0 - clamp(dot(vn, normalize(vViewPosition)), 0.0, 1.0);
+          outgoingLight *= 0.78 + 0.42 * smoothstep(-0.3, 0.7, vn.y);
+          outgoingLight += diffuseColor.rgb * pow(rf, 2.0) * 0.45 + vec3(1.0, 0.97, 0.9) * smoothstep(0.62, 0.74, rf) * 0.32;
+          outgoingLight += vec3(1.0) * smoothstep(0.93, 0.985, vn.y * 0.6 + vn.x * 0.25 + 0.4) * 0.35; }
+        #include <output_fragment>`);
+    };
+    r.customProgramCacheKey = () => 'metal1';
+    metalCache.set(mat, r); return r;
+  }
+  // кожа чуть теплее и плотнее, чтобы на солнце не выгорала в белое
+  function skinCol(c) { const k = new T.Color(c), h = {}; k.getHSL(h); k.setHSL(h.h, Math.min(1, h.s * 1.04), h.l * 0.94); return k.getHex(); }
+  function shade(c, m) { return new T.Color(c).multiplyScalar(m).getHex(); }
   function toonX(color, extra) { return new T.MeshToonMaterial(Object.assign({ color, gradientMap: grad }, extra)); }
 
   // Контур методом "вывернутой оболочки"
@@ -40,8 +60,15 @@ HL.Models = (function () {
 
   const gc = {};
   const G = (k, fn) => gc[k] || (gc[k] = fn());
-  const cap = (r, l) => G('c' + r + '_' + l, () => new T.CapsuleGeometry(r, l, 4, 12));
-  const sph = (r) => G('s' + r, () => new T.SphereGeometry(r, 16, 12));
+  let HI = false; // гладкая геометрия — только для героев (толпа и предметы остаются лёгкими)
+  const cap = (r, l) => HI ? G('C' + r + '_' + l, () => new T.CapsuleGeometry(r, l, 6, 16)) : G('c' + r + '_' + l, () => new T.CapsuleGeometry(r, l, 4, 12));
+  const sph = (r) => HI ? G('S' + r, () => new T.SphereGeometry(r, 20, 14)) : G('s' + r, () => new T.SphereGeometry(r, 16, 12));
+  // торс-«вазa»: широкие плечи, грудь, талия, таз
+  const TORSO = {
+    m: [[0.001, -0.04], [0.19, -0.035], [0.232, 0.03], [0.228, 0.16], [0.238, 0.3], [0.268, 0.46], [0.282, 0.58], [0.262, 0.68], [0.2, 0.76], [0.1, 0.8], [0.001, 0.806]],
+    f: [[0.001, -0.04], [0.2, -0.035], [0.245, 0.04], [0.205, 0.2], [0.215, 0.32], [0.252, 0.46], [0.258, 0.57], [0.238, 0.68], [0.18, 0.76], [0.09, 0.8], [0.001, 0.806]],
+  };
+  const torsoGeo = (k) => G('torso' + k + HI, () => new T.LatheGeometry(TORSO[k].map(([x, y]) => new T.Vector2(x, y)), HI ? 22 : 14));
   const hemi = (r, k = 0.55) => G('h' + r + '_' + k, () => new T.SphereGeometry(r, 16, 8, 0, Math.PI * 2, 0, Math.PI * k));
   const box = (x, y, z) => G('b' + x + '_' + y + '_' + z, () => new T.BoxGeometry(x, y, z));
   const cyl = (a, b, h, s = 16) => G('y' + a + '_' + b + '_' + h + '_' + s, () => new T.CylinderGeometry(a, b, h, s));
@@ -111,7 +138,7 @@ HL.Models = (function () {
 
   // ---------- персонажи ----------
   const DEFS = {
-    homelander: { name: 'Хоумлендер', ribbed: true, muscles: true, eagle: 0xe6b23c, cuffs: 0xe6b23c, skin: 0xf2c4a0, hair: 0xf2d35e, hairStyle: 'slick', torso: 0x1d2c68, stripe: 0xc9232c, collar: 0xc9232c,
+    homelander: { name: 'Хоумлендер', smirk: true, ribbed: true, muscles: true, eagle: 0xe6b23c, cuffs: 0xe6b23c, skin: 0xf2c4a0, hair: 0xf2d35e, hairStyle: 'slick', torso: 0x1d2c68, stripe: 0xc9232c, collar: 0xc9232c,
       arms: 0x1d2c68, forearms: 0xc9232c, gloves: 0xc9232c, legs: 0x1d2c68, boots: 0xc9232c, kneeDots: 0xe6b23c, belt: 0xe6b23c,
       epaulettes: 0xe6b23c, cape: 0xb41c24, capeFlag: true, eye: 0x3a7be0, brows: 0x9a7a30, angry: true, bulk: 1.08 },
     butcher: { name: 'Бутчер', crowbar: true, skin: 0xd9a27a, hair: 0x17120e, hairStyle: 'short', beard: 0x16110d, torsoTex: 'camo', torso: 0xffffff,
@@ -120,7 +147,7 @@ HL.Models = (function () {
       coat: 0x2e2f2a, arms: 0x2e2f2a, forearms: 0x2e2f2a, gloves: 0xcf9670, legs: 0x26272a, boots: 0x161616, eye: 0xff3a1a, brows: 0x111111, angry: true, bulk: 1.15, scale: 1.12, tentacles: true },
     soldierboy: { name: 'Солдатик', muscles: true, cuffs: 0x3a2716, pads: 0x4a3018, skin: 0xe2b08a, hair: 0x3d2818, hairStyle: 'short', stubble: 0x3d2818, torso: 0x56603a, emblem: 0xe9e4d4, straps: 0x5e3d22,
       arms: 0x56603a, forearms: 0x5e3d22, gloves: 0x5e3d22, legs: 0x4c5534, boots: 0x3a2716, belt: 0x5e3d22, shield: true, eye: 0x5a7a9a, brows: 0x2a1a10, angry: true, bulk: 1.15, scale: 1.05 },
-    starlight: { name: 'Старлайт', skin: 0xf3c9a9, hair: 0xf6df8e, hairStyle: 'long', torso: 0xeef2fb, emblem: 0x2f62e0, arms: 0xeef2fb, forearms: 0x2f62e0,
+    starlight: { name: 'Старлайт', fem: true, skin: 0xf3c9a9, hair: 0xf6df8e, hairStyle: 'long', torso: 0xeef2fb, emblem: 0x2f62e0, arms: 0xeef2fb, forearms: 0x2f62e0,
       gloves: 0xeef2fb, legs: 0xeef2fb, boots: 0x2f62e0, belt: 0xc8cedc, eye: 0x4a7a3a, brows: 0xb09a50, bulk: 0.86, scale: 0.94 },
     atrain: { name: 'Эй-Трейн', atrain: true, belt: 0xc8ccd6, collar: 0xf2f2f2, skin: 0x6e4630, hair: 0x111111, hairStyle: 'short', torso: 0x2050c4, stripe: 0xf2f2f2, arms: 0x2050c4, forearms: 0xf2f2f2,
       gloves: 0xf2f2f2, legs: 0x2050c4, boots: 0xf2f2f2, eye: 0x2a1a10, brows: 0x111111, bulk: 0.95 },
@@ -128,7 +155,7 @@ HL.Models = (function () {
       legs: 0x3d4e6e, boots: 0x5a3622, eye: 0x4a6a8a, brows: 0x5a3a1a, bulk: 0.85, scale: 0.9 },
     ryan: { name: 'Райан', skin: 0xf2c8a8, hair: 0xe0c468, hairStyle: 'curly', torso: 0x5d6470, hood: 0x4d5460, arms: 0x5d6470, forearms: 0x5d6470, gloves: 0xf2c8a8,
       legs: 0x3a4e78, boots: 0xeeeeee, eye: 0x3a7be0, brows: 0x9a7a30, bulk: 0.86, scale: 0.93 },
-    kimiko: { name: 'Кимико', skin: 0xeac6a2, hair: 0x101010, hairStyle: 'long', torso: 0x2a2a2e, arms: 0x2a2a2e, forearms: 0x2a2a2e, gloves: 0xeac6a2,
+    kimiko: { name: 'Кимико', fem: true, skin: 0xeac6a2, hair: 0x101010, hairStyle: 'long', torso: 0x2a2a2e, arms: 0x2a2a2e, forearms: 0x2a2a2e, gloves: 0xeac6a2,
       legs: 0x1e1e22, boots: 0x111111, eye: 0x221a14, brows: 0x101010, angry: true, bulk: 0.8, scale: 0.88 },
     frenchie: { name: 'Френчи', skin: 0xe6b690, hair: 0x2a1a10, hairStyle: 'curly', stubble: 0x2a1a10, torso: 0x6a4a32, arms: 0x6a4a32, forearms: 0x6a4a32,
       gloves: 0xe6b690, legs: 0x333338, boots: 0x222222, eye: 0x3a2a1a, brows: 0x2a1a10, gun: true, bulk: 0.92 },
@@ -138,22 +165,29 @@ HL.Models = (function () {
       legs: 0x1b1b20, boots: 0x101012, belt: 0x2a2a30, eye: 0x18181c, noFace: true, bulk: 1.1 },
     agent: { name: 'Наёмник', skin: 0xd8a882, hair: 0x2a2a2a, hairStyle: 'cap', capColor: 0x2b3038, torso: 0x2b3038, vest: 0x40452e, arms: 0x2b3038, forearms: 0x2b3038,
       gloves: 0x1a1a1a, legs: 0x30343c, boots: 0x161616, eye: 0x2a2a2a, brows: 0x1a1a1a, angry: true, gun: true, bulk: 1 },
-    maeve: { name: 'Королева Мейв', skin: 0xf0c8a8, hair: 0x7a3a22, hairStyle: 'long', hairVolume: true, torso: 0x262c3a, arms: 0x262c3a, forearms: 0xa8aeb8, gloves: 0x262c3a, cuffs: 0xc8a050,
+    maeve: { name: 'Королева Мейв', fem: true, skin: 0xf0c8a8, hair: 0x7a3a22, hairStyle: 'long', hairVolume: true, torso: 0x262c3a, arms: 0x262c3a, forearms: 0xa8aeb8, gloves: 0x262c3a, cuffs: 0xc8a050,
       legs: 0x262c3a, boots: 0x7c8290, bootRim: 0xc8a050, belt: 0xc8a050, tiara: 0xd8b860, maeveArmor: true, lips: 0xa0303c, eye: 0x4a6a3a, brows: 0x5a2a1a, angry: true, bulk: 0.92, scale: 0.97 },
     thug: { name: 'Грабитель', skin: 0x3a3a3e, hair: 0x3a3a3e, hairStyle: 'mask', torso: 0x4a4a52, arms: 0x4a4a52, forearms: 0x4a4a52, gloves: 0x111111,
       legs: 0x22252c, boots: 0x111111, eye: 0xffffff, brows: 0x222222, gun: true, bulk: 1, balaclava: true },
   };
 
-  const CIV_SHIRTS = [0xd8312c, 0xf2c522, 0x2f62c8, 0x3aa04a, 0xf07a22, 0xf2f2f2, 0xd8a77a, 0x8a3ac8, 0x222222];
+  const CIV_SHIRTS = [0xd8312c, 0xf2c522, 0x2f62c8, 0x3aa04a, 0xf07a22, 0xf2f2f2, 0xd8a77a, 0x8a3ac8, 0x222222, 0x6a8ab8, 0xe89aa8, 0x4ab0a8, 0x9a9a9a];
   const CIV_PANTS = [0x2a3e7a, 0x1d2a52, 0x111111, 0xcab48a, 0x3a3a3a];
   const CIV_SKIN = [0xf2c8a8, 0xe0ac86, 0xc58a62, 0x8a5a3a, 0xf6d6bc];
   const CIV_HAIR = [0x1a1410, 0x5a3a1a, 0xe8cf7a, 0x9a9a9a, 0xb04a1a, 0x222222];
+  const CIV_COATS = [0x2e2f2a, 0x6a4a32, 0x2a3450, 0x8a7a5a, 0x4a1e22, 0x3a4a3a, 0xb8a888];
   function randomCivDef() {
     const r = Math.random;
     const shirt = U.pick(CIV_SHIRTS);
-    return { name: 'Гражданин', skin: U.pick(CIV_SKIN), hair: U.pick(CIV_HAIR), hairStyle: U.pick(['short', 'short', 'long', 'curly', 'bald', 'cap']),
-      capColor: U.pick(CIV_SHIRTS), torso: shirt, arms: shirt, forearms: r() < 0.5 ? shirt : U.pick(CIV_SKIN), gloves: null, legs: U.pick(CIV_PANTS), boots: 0x222222,
-      eye: 0x222222, brows: 0x222222, simple: true, bulk: U.rand(0.85, 1.05), scale: U.rand(0.86, 1.0) };
+    const fem = r() < 0.45, skin = U.pick(CIV_SKIN), kind = r();
+    const d = { name: 'Гражданин', fem, skin, hair: U.pick(CIV_HAIR), hairStyle: fem ? U.pick(['long', 'long', 'curly', 'short']) : U.pick(['short', 'short', 'curly', 'bald', 'cap']),
+      capColor: U.pick(CIV_SHIRTS), torso: shirt, arms: shirt, forearms: r() < 0.5 ? shirt : skin, gloves: null, legs: U.pick(CIV_PANTS), boots: U.pick([0x222222, 0x5a3622, 0xeeeeee, 0x7a2a2a]),
+      eye: 0x222222, brows: 0x222222, simple: true, bulk: fem ? U.rand(0.8, 0.92) : U.rand(0.9, 1.08), scale: fem ? U.rand(0.84, 0.95) : U.rand(0.9, 1.02) };
+    if (kind < 0.2) { d.coat = U.pick(CIV_COATS); d.arms = d.forearms = d.coat; }               // пальто/плащ
+    else if (kind < 0.35) { d.vest = U.pick(CIV_COATS); }                                        // жилет/куртка без рукавов
+    else if (kind < 0.5) { d.arms = d.forearms = U.pick(CIV_COATS); d.collar = d.arms; }        // куртка поверх футболки
+    if (r() < 0.12) { d.belt = 0x2a1a10; }
+    return d;
   }
 
   function buildChar(def) {
@@ -162,14 +196,15 @@ HL.Models = (function () {
     const hips = new T.Group(); hips.position.y = -0.05; body.add(hips);
     const bulk = def.bulk || 1, sc = def.scale || 1;
     root.scale.setScalar(sc);
-    const simple = !!def.simple;
+    const simple = !!def.simple; HI = !simple;
     const c = { root, body, hips, def, eyes: [], glow: [], cur: {}, tg: {}, phase: Math.random() * 6, t: Math.random() * 10 };
 
     // ноги
     const legs = [];
     for (const side of [1, -1]) {
       const p = new T.Group(); p.position.set(0.14 * side * bulk, 0, 0); hips.add(p);
-      part(p, cap(0.11 * bulk, 0.48), toon(def.legs), 0, -0.36, 0);
+      if (simple) part(p, cap(0.11 * bulk, 0.48), toon(def.legs), 0, -0.36, 0);
+      else { part(p, cap(0.122 * bulk, 0.26), toon(def.legs), 0, -0.2, 0); part(p, cap(0.096 * bulk, 0.3), toon(def.legs), 0, -0.55, -0.005); }
       part(p, cap(0.125 * bulk, 0.16), def.ribbed ? ribbed(def.boots) : toon(def.boots), 0, -0.78, 0.03);
       const toe = part(p, cap(0.1 * bulk, 0.12), toon(def.boots), 0, -0.9, 0.12, !def.simple); toe.rotation.x = Math.PI / 2; toe.scale.set(1, 1, 0.75);
       if (def.kneeDots) part(p, sph(0.065), toon(def.kneeDots), 0, -0.6, 0.12, false);
@@ -177,12 +212,15 @@ HL.Models = (function () {
       legs.push(p);
     }
     c.legL = legs[0]; c.legR = legs[1];
+    if (!simple) { const pv = part(hips, sph(0.2), toon(def.legs), 0, 0.0, 0, false); pv.scale.set(1.22 * bulk, 0.62, 0.86 * bulk); }
 
     // торс
     const spine = new T.Group(); hips.add(spine); c.spine = spine;
     const tmat = def.torsoTex === 'camo' ? toonX(0xffffff, { map: camoTex() }) : toon(def.torso);
-    const torso = part(spine, cap(0.26, 0.3), tmat, 0, 0.38, 0);
+    const torso = part(spine, torsoGeo(def.fem ? 'f' : 'm'), tmat, 0, 0, 0);
     torso.scale.set(1.12 * bulk, 1, 0.74 * bulk);
+    // трапеции и шея плавно переходят в плечи
+    if (!simple) for (const side of [1, -1]) { const tp = part(spine, sph(0.11), tmat, 0.13 * side * bulk, 0.71, -0.02, false); tp.scale.set(1.5, 0.62, 1.0); tp.rotation.z = -0.35 * side; }
     if (def.vest) { const v = part(spine, cap(0.27, 0.2), toon(def.vest), 0, 0.42, 0); v.scale.set(1.16 * bulk, 1, 0.8 * bulk); }
     if (def.stripe) { const s = part(spine, cap(0.035, 0.55), toon(def.stripe), 0, 0.4, 0.19 * bulk, false); s.scale.z = 0.6; }
     if (def.collar) part(spine, cyl(0.12, 0.14, 0.12), toon(def.collar), 0, 0.76, 0);
@@ -193,13 +231,14 @@ HL.Models = (function () {
       const s1 = part(spine, box(0.06, 0.62, 0.43 * bulk), toon(def.straps), 0, 0.42, 0, false); s1.rotation.z = 0.55;
     }
     if (def.epaulettes) for (const side of [1, -1]) {
-      const e = part(spine, sph(0.16), toon(def.epaulettes), 0.34 * side * bulk, 0.7, 0); e.scale.set(1.4, 0.62, 1.2);
-      const fr = part(spine, G('fringe', () => new T.TorusGeometry(0.17, 0.035, 8, 20)), toon(0xc9952c), 0.34 * side * bulk, 0.66, 0, false); fr.rotation.x = Math.PI / 2; fr.scale.set(1.25, 1.1, 1);
-      for (let i = 0; i < 7; i++) { const a = (i / 7) * Math.PI * 2; const d = part(spine, cap(0.022, 0.06), toon(0xd8a838), 0.34 * side * bulk + Math.cos(a) * 0.2, 0.6, Math.sin(a) * 0.17, false); }
+      const e = part(spine, sph(0.15), toon(def.epaulettes), 0.33 * side * bulk, 0.7, 0); e.scale.set(1.25, 0.5, 1.1); e.rotation.z = -0.22 * side;
+      const fr = part(spine, G('fringe', () => new T.TorusGeometry(0.17, 0.028, 8, 24)), toon(0xc9952c), 0.33 * side * bulk, 0.665, 0, false); fr.rotation.x = Math.PI / 2; fr.rotation.y = 0.22 * side; fr.scale.set(1.1, 1.0, 1);
+      for (let i = 0; i < 9; i++) { const a = (i / 9) * Math.PI * 2; if (Math.cos(a) * side < -0.55) continue; part(spine, cap(0.017, 0.05), toon(0xd8a838), 0.33 * side * bulk + Math.cos(a) * 0.185, 0.61 + Math.cos(a) * side * 0.04, Math.sin(a) * 0.17, false); }
     }
     if (def.muscles) {
-      for (const side of [1, -1]) { const pc = part(spine, sph(0.13), toon(def.torso), 0.115 * side * bulk, 0.53, 0.12 * bulk, false); pc.scale.set(1.15, 0.78, 0.62); }
-      for (let i = 0; i < 2; i++) for (const side of [1, -1]) { const ab = part(spine, sph(0.06), toon(def.torso), 0.06 * side, 0.3 - i * 0.12, 0.16 * bulk, false); ab.scale.set(1, 0.8, 0.5); }
+      const mm = def.ribbed ? tmat : toon(def.torso);
+      for (const side of [1, -1]) { const pc = part(spine, sph(0.13), mm, 0.115 * side * bulk, 0.52, 0.135 * bulk, false); pc.scale.set(1.18, 0.74, 0.6); pc.rotation.z = 0.12 * side; }
+      for (let i = 0; i < 3; i++) for (const side of [1, -1]) { const ab = part(spine, sph(0.055), mm, 0.052 * side, 0.34 - i * 0.1, 0.152 * bulk, false); ab.scale.set(1.05, 0.78, 0.5); }
     }
     if (def.eagle) {
       // золотой орёл на груди (крылья под воротником)
@@ -243,12 +282,21 @@ HL.Models = (function () {
     const arms = [], elbows = [];
     for (const side of [1, -1]) {
       const sh = new T.Group(); sh.position.set(0.36 * side * bulk, 0.62, 0); spine.add(sh);
-      part(sh, cap(0.085 * bulk, 0.2), toon(def.arms), 0, -0.17, 0);
+      const amat = def.ribbed ? ribbed(def.arms) : toon(def.arms);
+      part(sh, cap(0.085 * bulk, 0.2), amat, 0, -0.17, 0);
+      if (!simple) { const dl = part(sh, sph(0.105 * bulk), amat, 0.01 * side, -0.02, 0, false); dl.scale.set(1.05, 0.95, 1.0);
+        if (def.muscles) { const bc = part(sh, sph(0.075 * bulk), amat, 0, -0.2, 0.035, false); bc.scale.set(0.95, 1.5, 0.9); } }
       const el = new T.Group(); el.position.y = -0.36; sh.add(el);
       part(el, cap(0.08 * bulk, 0.19), def.ribbed ? ribbed(def.forearms || def.arms) : toon(def.forearms || def.arms), 0, -0.15, 0);
       if (def.cuffs) { const cf = part(el, cyl(0.1 * bulk, 0.09 * bulk, 0.06), toon(def.cuffs), 0, -0.02, 0, false); }
       if (def.maeveArmor) { part(el, cyl(0.095 * bulk, 0.088 * bulk, 0.04), toon(0xc8a050), 0, -0.27, 0, false); const rg = part(el, box(0.03, 0.2, 0.05), toon(0x8a909c), 0, -0.15, 0.085, false); }
-      part(el, sph(0.085), toon(def.gloves || def.skin), 0, -0.36, 0);
+      const hm = toon(def.gloves ? def.gloves : skinCol(def.skin));
+      if (simple) part(el, sph(0.085), hm, 0, -0.36, 0);
+      else { // кулак: ладонь, согнутые пальцы, большой палец
+        const palm = part(el, sph(0.072), hm, 0, -0.35, 0); palm.scale.set(0.9, 1.05, 1.15);
+        const fg = part(el, cap(0.034, 0.075), hm, 0, -0.415, 0.035, false); fg.rotation.z = Math.PI / 2; fg.scale.set(1, 1, 1.05);
+        const th = part(el, cap(0.022, 0.05), hm, -0.05 * side, -0.37, 0.055, false); th.rotation.set(0.5, 0, 0.6 * side);
+      }
       arms.push(sh); elbows.push(el);
     }
     c.armL = arms[0]; c.armR = arms[1]; c.elbowL = elbows[0]; c.elbowR = elbows[1];
@@ -273,27 +321,49 @@ HL.Models = (function () {
     }
 
     // голова
-    part(spine, cyl(0.075, 0.09, 0.16), toon(def.skin), 0, 0.8, 0, false);
+    const skin = skinCol(def.skin), skinM = toon(skin);
+    part(spine, cyl(0.075, 0.095, 0.17), def.noFace ? toon(def.skin) : skinM, 0, 0.8, 0, false);
     const head = new T.Group(); head.position.y = 1.0; spine.add(head); c.head = head;
-    const skull = part(head, sph(0.2), toon(def.skin)); skull.scale.set(0.95, 1.14, 1);
+    const skull = part(head, sph(0.2), def.noFace ? toon(def.skin) : skinM); skull.scale.set(0.95, 1.14, 1);
+    if (!simple && !def.noFace) { // челюсть и подбородок
+      const jw = part(head, sph(0.16), skinM, 0, -0.085, 0.03, false); jw.scale.set(def.fem ? 0.86 : 0.97, 0.85, 1);
+      if (!def.beard) { const ch = part(head, sph(0.045), skinM, 0, -0.178, 0.118, false); ch.scale.set(def.fem ? 0.9 : 1.25, 0.8, 0.85); }
+    }
     if (!def.noFace) {
-      const whites = toon(0xffffff), iris = new T.MeshBasicMaterial({ color: def.eye || 0x222222 });
+      const whites = toon(0xf4f1ec), iris = new T.MeshBasicMaterial({ color: def.eye || 0x222222 });
+      const pupil = G('pupilM', () => new T.MeshBasicMaterial({ color: 0x0a0808 })), spec = G('specM', () => new T.MeshBasicMaterial({ color: 0xffffff }));
       c.irisMat = iris; c.irisColor = def.eye || 0x222222;
       for (const side of [1, -1]) {
-        if (!def.balaclava || true) {
-          const w = part(head, sph(0.045), whites, 0.075 * side, 0.03, 0.165, false); w.scale.set(1, 1.1, 0.55);
+        {
+          const w = part(head, sph(0.045), whites, 0.075 * side, 0.03, 0.165, false); w.scale.set(1.05, simple ? 1.1 : 0.92, 0.55);
           const ir = new T.Mesh(sph(0.026), iris); ir.position.set(0.075 * side, 0.03, 0.188); ir.scale.z = 0.5; head.add(ir);
           c.eyes.push(ir);
+          if (!simple) {
+            const pu = new T.Mesh(sph(0.012), pupil); pu.position.set(0.075 * side, 0.03, 0.2); pu.scale.z = 0.4; head.add(pu); (c.pupils || (c.pupils = [])).push(pu);
+            const hl = new T.Mesh(sph(0.0075), spec); hl.position.set(0.075 * side + 0.009, 0.041, 0.203); head.add(hl); c.pupils.push(hl);
+            // верхнее веко: прищур — фирменный взгляд
+            const lid = part(head, sph(0.05), toon(shade(skin, 0.86)), 0.075 * side, 0.052 + (def.angry ? -0.004 : 0.006), 0.158, false);
+            lid.scale.set(0.98, 0.5, 0.6); lid.rotation.z = (def.angry ? 0.16 : -0.05) * side;
+          }
         }
         if (!simple || def.angry) {
           const b = part(head, box(0.1, 0.024, 0.03), toon(def.brows || 0x222222), 0.075 * side, 0.1, 0.175, false);
           b.rotation.z = (def.angry ? 0.3 : -0.08) * side;
         }
-        if (!simple) part(head, sph(0.045), toon(def.skin), 0.19 * side, 0, 0, false);
+        if (!simple) { const ear = part(head, sph(0.045), skinM, 0.188 * side, -0.01, -0.01, false); ear.scale.set(0.55, 1.15, 0.85); }
       }
       if (!def.balaclava) {
-        const n = part(head, cap(0.035, 0.04), toon(def.skin), 0, -0.03, 0.2, false); n.rotation.x = 0.3;
-        part(head, box(def.lips ? 0.085 : 0.09, def.lips ? 0.022 : 0.015, 0.02), toon(def.lips || 0x3a1a14), 0, -0.11, 0.18, false);
+        const n = part(head, cap(0.035, 0.04), skinM, 0, -0.03, 0.2, false); n.rotation.x = 0.3;
+        if (simple) part(head, box(def.lips ? 0.085 : 0.09, def.lips ? 0.022 : 0.015, 0.02), toon(def.lips || 0x3a1a14), 0, -0.11, 0.18, false);
+        else if (!def.beard) {
+          const nt = part(head, sph(0.03), skinM, 0, -0.065, 0.214, false); nt.scale.set(1.15, 0.85, 0.9);       // кончик носа
+          const mo = new T.Group(); mo.position.set(def.smirk ? 0.008 : 0, -0.118, 0.187); mo.rotation.z = def.smirk ? 0.13 : 0; head.add(mo);
+          const lipC = def.lips || shade(skin, 0.78);
+          part(mo, box(0.078, 0.008, 0.014), toon(0x4a2018), 0, 0, 0.004, false);                                     // линия рта
+          const ll = part(mo, cap(0.012, 0.05), toon(lipC), 0, -0.012, -0.002, false); ll.rotation.z = Math.PI / 2;    // нижняя губа
+          if (def.lips) { const ul = part(mo, cap(0.009, 0.05), toon(lipC), 0, 0.01, -0.002, false); ul.rotation.z = Math.PI / 2; }
+          if (def.smirk) { const cr = part(head, box(0.006, 0.03, 0.01), toon(shade(skin, 0.72)), 0.052, -0.098, 0.178, false); cr.rotation.z = -0.35; } // ухмылка: складка у уголка
+        }
       }
     }
     if (def.noFace) { const v = part(head, box(0.22, 0.06, 0.05), new T.MeshBasicMaterial({ color: 0x050505 }), 0, 0.02, 0.18, false); }
@@ -370,7 +440,8 @@ HL.Models = (function () {
         const g = glowSprite(0xff2a1a, 0.32); g.position.set(0.075 * side, 0.03, 0.22); g.visible = false; head.add(g); c.glow.push(g);
       }
     }
-    root.traverse((o) => { if (o.isMesh && o.material && o.material.isMeshToonMaterial) o.material = rimOf(o.material); });
+    HI = false;
+    root.traverse((o) => { if (o.isMesh && o.material && o.material.isMeshToonMaterial) o.material = !simple && METAL.has(o.material.color.getHex()) ? metalOf(o.material) : rimOf(o.material); });
     return c;
   }
 
@@ -380,6 +451,15 @@ HL.Models = (function () {
       case 'slick': {
         const h = part(head, hemi(0.215, 0.5), hm, 0, 0.02, -0.01); h.scale.set(1.0, 1.15, 1.06);
         const q = part(head, sph(0.1), hm, 0.05, 0.19, 0.11); q.scale.set(1.6, 0.6, 1.0); q.rotation.z = -0.25;
+        if (!def.simple) { // зачёсанные пряди с пробором и волной надо лбом
+          const hd = toon(shade(def.hair, 0.8)), hl = toon(Math.min(0xffffff, shade(def.hair, 1.08)));
+          for (let i = 0; i < 5; i++) {
+            const x = -0.11 + i * 0.05, st = part(head, cap(0.035, 0.2), i % 2 ? hd : hl, x, 0.2 - Math.abs(x - 0.03) * 0.35, 0.0, false);
+            st.rotation.set(Math.PI / 2 - 0.25, 0, -0.22 + i * 0.05); st.scale.set(1, 1, 0.55);
+          }
+          const sw = part(head, cap(0.045, 0.1), hl, -0.02, 0.215, 0.13, false); sw.rotation.set(0.3, 0, 1.35); sw.scale.set(1, 1, 0.7);
+          const pt = part(head, box(0.012, 0.012, 0.2), hd, 0.07, 0.235, 0.0, false); pt.rotation.x = -0.15;
+        }
         break;
       }
       case 'short': { const h = part(head, hemi(0.212, 0.45), hm, 0, 0.03, -0.012); h.scale.set(1.0, 1.1, 1.04); break; }
@@ -678,6 +758,7 @@ HL.Models = (function () {
     if (!c.irisMat) return;
     c.irisMat.color.setHex(on ? color : c.irisColor);
     for (const g of c.glow) { g.visible = on; g.material.color.setHex(color); }
+    if (c.pupils) for (const p of c.pupils) p.visible = !on;
   }
 
   // ---------- транспорт и предметы ----------
@@ -695,9 +776,23 @@ HL.Models = (function () {
         const l = new T.Mesh(box(1.2, 0.2, 0.3), new T.MeshBasicMaterial({ color: 0x3a6aff })); l.position.set(0, 2.9, 1.6); g.add(l); g.userData.siren = l;
       }
     } else {
-      part(g, box(2.0, 0.8, 4.4), toon(col), 0, 0.8, 0);
-      part(g, box(1.7, 0.7, 2.2), toon(col), 0, 1.5, -0.2);
-      part(g, box(1.72, 0.5, 2.0), toon(0x2a3a50), 0, 1.5, -0.2, false);
+      const suv = kind === 'car' && Math.random() < 0.3;
+      const bh = suv ? 1.0 : 0.8, cy = suv ? 1.75 : 1.5;
+      part(g, box(2.0, bh, 4.4), toon(col), 0, 0.4 + bh / 2, 0);
+      const cab = part(g, box(1.72, 0.7, suv ? 2.9 : 2.2), toon(col), 0, cy, suv ? -0.45 : -0.2);
+      const glass = toon(0x22324a);
+      part(g, box(1.74, 0.46, suv ? 2.7 : 2.0), glass, 0, cy + 0.02, suv ? -0.45 : -0.2, false);                 // боковые стёкла
+      part(g, box(1.6, 0.5, 0.06), glass, 0, cy + 0.02, (suv ? 0.95 : 0.88), false);                                 // лобовое
+      part(g, box(0.06, 0.62, 0.06), toon(col), 0, cy, suv ? -0.45 : -0.2, false);                                    // средняя стойка
+      const hl = G('carHL', () => new T.MeshBasicMaterial({ color: 0xfff6dc })), tl = G('carTL', () => new T.MeshBasicMaterial({ color: 0xd01818 }));
+      for (const sd of [1, -1]) {
+        const f = new T.Mesh(box(0.42, 0.18, 0.06), hl); f.position.set(0.7 * sd, 0.4 + bh * 0.72, 2.21); g.add(f);
+        const r = new T.Mesh(box(0.4, 0.16, 0.06), tl); r.position.set(0.72 * sd, 0.4 + bh * 0.72, -2.21); g.add(r);
+        const mi = part(g, box(0.18, 0.12, 0.1), toon(col), 1.0 * sd, cy - 0.15, 0.75, false);
+      }
+      part(g, box(2.06, 0.22, 0.22), toon(0x2a2a2e), 0, 0.5, 2.2, false);                                              // бамперы
+      part(g, box(2.06, 0.22, 0.22), toon(0x2a2a2e), 0, 0.5, -2.2, false);
+      part(g, box(1.0, 0.2, 0.05), toon(0x18181a), 0, 0.4 + bh * 0.5, 2.22, false);                                   // решётка
       if (kind === 'taxi') {
         const sg = part(g, box(0.9, 0.3, 0.35), toon(0xffffff), 0, 2.0, -0.2, false);
         part(g, box(2.02, 0.12, 4.42), toon(0x222222), 0, 1.0, 0, false);
@@ -706,11 +801,12 @@ HL.Models = (function () {
         const l = new T.Mesh(box(1.0, 0.2, 0.3), new T.MeshBasicMaterial({ color: 0xff2020 })); l.position.set(0, 1.95, -0.2); g.add(l); g.userData.siren = l;
       }
     }
-    const wg = cyl(0.42, 0.42, 0.3, 14);
+    const wg = cyl(0.42, 0.42, 0.3, 14), hub = cyl(0.22, 0.22, 0.32, 10), hubM = toon(0xb8bcc4);
     const wm = toon(0x151515);
     const L = kind === 'van' || kind === 'ambulance' ? 1.8 : 1.4;
     for (const sx of [1, -1]) for (const sz of [1, -1]) {
       const w = new T.Mesh(wg, wm); w.rotation.z = Math.PI / 2; w.position.set(1.0 * sx * (kind === 'car' || kind === 'police' || kind === 'taxi' ? 1 : 1.12), 0.42, L * sz); g.add(w);
+      const hb = new T.Mesh(hub, hubM); w.add(hb);
     }
     g.traverse((o) => { if (o.isMesh) o.castShadow = true; });
     return g;

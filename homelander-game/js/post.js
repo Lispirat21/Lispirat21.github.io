@@ -10,7 +10,7 @@ HL.Post = (function () {
   const bright = new T.ShaderMaterial({
     uniforms: { tColor: { value: null }, threshold: { value: 0.72 } }, vertexShader: VS, depthTest: false, depthWrite: false,
     fragmentShader: `uniform sampler2D tColor; uniform float threshold; varying vec2 vUv;
-      void main(){ vec3 c = texture2D(tColor, vUv).rgb; float mx = max(c.r, max(c.g, c.b)), mn = min(c.r, min(c.g, c.b));
+      void main(){ vec3 c = min(texture2D(tColor, vUv).rgb, vec3(1.3)); float mx = max(c.r, max(c.g, c.b)), mn = min(c.r, min(c.g, c.b));
         float sat = mx > 0.001 ? (mx - mn) / mx : 0.0;
         // светятся яркие и насыщенные источники (лазеры, глаза, огни, экраны); белые стены — почти нет
         float k = smoothstep(threshold, 1.0, mx) * (0.15 + 0.85 * sat);
@@ -36,6 +36,7 @@ HL.Post = (function () {
       float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233)) + time) * 43758.5453); }
       void main(){
         vec3 c = texture2D(tColor, vUv).rgb;
+        { float m0 = max(c.r, max(c.g, c.b)); if (m0 > 1.6) c *= 1.6 / m0; }   // аддитивные эффекты не выжигаются в белое
         // мягкие тени в углах и стыках: соседние пиксели ближе к камере — значит здесь «щель»
         if (ao > 0.0) {
           float z = lin(vUv);
@@ -58,7 +59,9 @@ HL.Post = (function () {
         float l = dot(c, vec3(0.299, 0.587, 0.114));
         c = mix(vec3(l), c, sat);
         c = (c - 0.5) * contrast + 0.5;
-        c = c / (1.0 + max(c - 1.0, 0.0) * 0.6);         // мягкий потолок для пересветов
+        // мягкое «плечо» для пересветов: яркое солнце на коже/стенах не выгорает в жёлто-белое, оттенок сохраняется
+        float m = max(c.r, max(c.g, c.b));
+        if (m > 0.8) { float sm = 0.8 + 0.2 * (1.0 - exp(-(m - 0.8) / 0.2)); vec3 hp = c * (sm / m); c = mix(hp, min(c, vec3(sm)), 0.15); }
         vec2 q = vUv - 0.5; c *= 1.0 - vign * dot(q, q) * 1.6;
         c += (hash(vUv * 1.7) - 0.5) / 255.0;             // дизеринг против полос
         gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);
@@ -78,7 +81,7 @@ HL.Post = (function () {
     w = v.x; h = v.y; level = lv;
     for (const r of [rtMain, rtA, rtB, rtC, rtD]) if (r) r.dispose();
     const dt = new T.DepthTexture(w, h); dt.type = T.UnsignedIntType;
-    rtMain = new T.WebGLRenderTarget(w, h, { depthTexture: dt, depthBuffer: true, samples: HL.Settings.data.antialias && renderer.capabilities.isWebGL2 ? 4 : 0 });
+    rtMain = new T.WebGLRenderTarget(w, h, { depthTexture: dt, depthBuffer: true, type: renderer.capabilities.isWebGL2 ? T.HalfFloatType : T.UnsignedByteType, samples: HL.Settings.data.antialias && renderer.capabilities.isWebGL2 ? 4 : 0 });
     const opt = { depthBuffer: false };
     rtA = new T.WebGLRenderTarget(Math.max(1, w >> 1), Math.max(1, h >> 1), opt); rtB = rtA.clone();
     rtC = new T.WebGLRenderTarget(Math.max(1, w >> 3), Math.max(1, h >> 3), opt); rtD = rtC.clone();

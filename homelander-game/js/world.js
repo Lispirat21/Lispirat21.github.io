@@ -10,6 +10,10 @@ HL.World = (function () {
     { wall: '#b9bdc6', glass: '#3e5f9a' },
     { wall: '#e6ad4c', glass: '#3f6cc0' },
     { wall: '#f0e6d8', glass: '#4a82d0' },
+    { wall: '#a24a36', glass: '#3a5a96', style: 'brick' },
+    { wall: '#7e4c3c', glass: '#34528a', style: 'brick' },
+    { wall: '#2e4260', glass: '#5a8ad0', style: 'glass' },
+    { wall: '#3a4a52', glass: '#6aa0c8', style: 'glass' },
   ];
 
   function facadeTex(p, night, seed) {
@@ -18,10 +22,30 @@ HL.World = (function () {
     const mk = (emissive) => M.canvasTex(N * S, N * S, (x) => {
       x.fillStyle = emissive ? '#000' : p.wall; x.fillRect(0, 0, N * S, N * S);
       const rr = U.seeded(seed + 99);
+      if (!emissive && p.style === 'brick') { // кирпичная кладка
+        x.fillStyle = 'rgba(0,0,0,0.16)';
+        for (let y = 0; y < N * S; y += 6) { x.fillRect(0, y, N * S, 1); for (let xx = (y / 6) % 2 ? 0 : 7; xx < N * S; xx += 14) x.fillRect(xx, y, 1, 6); }
+        x.fillStyle = 'rgba(255,255,255,0.05)'; for (let k = 0; k < 400; k++) x.fillRect(r() * N * S, r() * N * S, 12, 5);
+      }
+      if (p.style === 'glass') { // стеклянный офис: сплошное остекление, тонкие импосты
+        for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+          const ox = i * S, oy = j * S, lit = night && rr() < 0.45;
+          if (!emissive) {
+            const g = x.createLinearGradient(ox, oy, ox + S, oy + S);
+            g.addColorStop(0, night ? '#18243c' : '#a8c8ec'); g.addColorStop(0.55, night ? '#0e1628' : p.glass); g.addColorStop(1, night ? '#141e34' : '#7aa4d8');
+            x.fillStyle = g; x.fillRect(ox + 2, oy + 4, S - 4, S - 8);
+            x.fillStyle = '#c8d2dc'; x.fillRect(ox, oy + S - 5, S, 5); x.fillRect(ox + S / 2 - 1, oy, 2, S);
+          } else if (lit) { x.fillStyle = rr() < 0.5 ? '#cfe4ff' : '#ffeccc'; x.fillRect(ox + 2, oy + 4, S - 4, S - 8); }
+        }
+        return;
+      }
       for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
         const ox = i * S, oy = j * S;
         const lit = night && rr() < 0.35;
         if (!emissive) {
+          x.fillStyle = 'rgba(0,0,0,0.12)'; x.fillRect(ox, oy + S - 4, S, 4);                 // межэтажный карниз
+          x.fillStyle = 'rgba(255,255,255,0.18)'; x.fillRect(ox, oy + S - 5, S, 1);
+          x.fillStyle = 'rgba(0,0,0,0.18)'; x.fillRect(ox + 10, oy + 54, 44, 4);                // подоконник с тенью
           x.fillStyle = '#fbfbf6'; x.fillRect(ox + 12, oy + 8, 40, 46);
           const g = x.createLinearGradient(0, oy + 12, 0, oy + 50);
           g.addColorStop(0, night ? '#1a2440' : '#7fa6ec'); g.addColorStop(1, night ? '#0d1428' : p.glass);
@@ -37,6 +61,41 @@ HL.World = (function () {
     map.anisotropy = 4;
     const emap = night ? mk(true) : null;
     return { map, emap };
+  }
+
+  // витрины первого этажа: вывеска (окрашивается цветом магазина), стекло, дверь, цоколь
+  function shopTex(night) {
+    const mk = (em) => M.canvasTex(128, 128, (x, w, h) => {
+      x.fillStyle = em ? '#000' : '#f2f2f2'; x.fillRect(0, 0, w, h);
+      if (!em) { x.fillStyle = '#ffffff'; x.fillRect(0, 0, w, 26); x.fillStyle = 'rgba(0,0,0,.35)'; x.fillRect(0, 26, w, 3); x.fillStyle = 'rgba(0,0,0,.25)'; for (let i = 0; i < 5; i++) x.fillRect(14 + i * 20, 9, 12, 8); }
+      const gl = (x0, x1) => {
+        if (em) { x.fillStyle = night ? '#ffc880' : '#000'; x.fillRect(x0, 36, x1 - x0, 80); return; }
+        const g = x.createLinearGradient(x0, 36, x1, 116); g.addColorStop(0, '#2a3a52'); g.addColorStop(0.45, '#6a86a8'); g.addColorStop(0.5, '#1c2838'); g.addColorStop(1, '#30425c');
+        x.fillStyle = g; x.fillRect(x0, 36, x1 - x0, 80);
+      };
+      gl(6, 82); gl(92, 122);
+      if (!em) { x.fillStyle = '#d8d8d8'; x.fillRect(43, 36, 3, 80); x.fillStyle = '#c0a050'; x.fillRect(114, 76, 3, 12); x.fillStyle = '#555'; x.fillRect(0, 118, w, 10); }
+    });
+    const map = mk(false); map.wrapT = T.ClampToEdgeWrapping; map.anisotropy = 4;
+    return { map, emap: night ? (() => { const e = mk(true); e.wrapT = T.ClampToEdgeWrapping; return e; })() : null };
+  }
+  // рекламные щиты Vought
+  function adTex(i) {
+    return M.canvasTex(512, 256, (x, w, h) => {
+      const A = [
+        ['#0c1a4a', '#c9232c', 'VOUGHT', 'Герои, которым можно доверять'],
+        ['#c9232c', '#ffffff', 'СЕМЁРКА', 'Новый сезон — только на Vought+'],
+        ['#1d2c68', '#e6b23c', 'ХОУМЛЕНДЕР', 'Он всегда рядом. Всегда.'],
+        ['#f2f2f2', '#2f62e0', 'СТАРЛАЙТ', 'Свет надежды · Vought Studios'],
+        ['#111111', '#f2c522', 'ВОУТ-ЛЕНД', 'Парк развлечений · открыт круглый год'],
+        ['#2a4a2a', '#f4f1ea', 'SOLDIER BOY', 'Легенда возвращается · в кино'],
+      ][i % 6];
+      const g = x.createLinearGradient(0, 0, w, h); g.addColorStop(0, A[0]); g.addColorStop(1, '#000'); x.fillStyle = g; x.fillRect(0, 0, w, h);
+      x.fillStyle = A[1]; x.globalAlpha = 0.18; for (let k = 0; k < 6; k++) { x.beginPath(); x.arc(w * 0.82, h * 0.5, 30 + k * 34, 0, Math.PI * 2); x.lineWidth = 10; x.strokeStyle = A[1]; x.stroke(); } x.globalAlpha = 1;
+      x.font = 'bold 84px Arial Black, Arial, sans-serif'; x.textBaseline = 'middle'; x.fillText(A[2], 28, h * 0.42, w - 56);
+      x.font = 'bold 26px Arial, sans-serif'; x.fillStyle = '#ffffff'; x.fillText(A[3], 30, h * 0.78, w - 60);
+      x.fillStyle = A[1]; x.fillRect(28, h * 0.62, 120, 6);
+    });
   }
 
   // Геометрия-сборщик: много коробок в один буфер
@@ -163,11 +222,11 @@ HL.World = (function () {
 
     // ---------- здания ----------
     const pal = PALETTES.map((p, i) => ({ p, tex: facadeTex(p, night, 50 + i), b: Builder(), top: Builder() }));
-    const shops = Builder();
+    const shops = Builder(), awn = Builder(), roofs = [];
     const pave = [];
     const trees = [];
     const lamps = [];
-    const SHOPC = [0xc8302a, 0x2a52b0, 0xe6b23c, 0x2f8a4a, 0x222222, 0xf2f2f2].map((c) => new T.Color(c));
+    const SHOPC = [0xd8463c, 0x4a72d0, 0xf0c050, 0x48a862, 0x8a8e98, 0xf2f2f2, 0xe07a3a, 0x8a5ac0, 0x3aa8a8].map((c) => new T.Color(c));
 
     const addBox = (x0, z0, x1, z1, h, kind, ref) => {
       const b = { x0, x1, z0, z1, y0: 0, y1: h, kind, ref, id: W.boxes.length };
@@ -189,7 +248,18 @@ HL.World = (function () {
       const P = pal[pi % pal.length];
       const mark = [P.b, P.top, shops].map((bl) => [bl, bl.pos.length / 3]);
       boxSides(P.b, x0, 0, z0, x1, h, z1, 30, 28, null, P.top);
-      if (opt.shop !== false && h > 10) boxSides(shops, x0 - 0.35, 0, z0 - 0.35, x1 + 0.35, 4.2, z1 + 0.35, 1, 1, U.pick(SHOPC), shops);
+      if (opt.shop !== false && h > 10) {
+        const sc = U.pick(SHOPC);
+        boxSides(shops, x0 - 0.35, 0, z0 - 0.35, x1 + 0.35, 4.2, z1 + 0.35, 6, 4.2, sc, awn);
+        if (S.data.details > 0 && rnd() < 0.55) { // маркиза над витринами
+          const ac = sc.clone().multiplyScalar(0.8), sd = (rnd() * 4) | 0, y0 = 3.05, y1 = 3.3;
+          if (sd === 0) boxSides(awn, x0 + 2, y0, z1 + 0.35, x1 - 2, y1, z1 + 2.0, 8, 8, ac, awn);
+          else if (sd === 1) boxSides(awn, x0 + 2, y0, z0 - 2.0, x1 - 2, y1, z0 - 0.35, 8, 8, ac, awn);
+          else if (sd === 2) boxSides(awn, x1 + 0.35, y0, z0 + 2, x1 + 2.0, y1, z1 - 2, 8, 8, ac, awn);
+          else boxSides(awn, x0 - 2.0, y0, z0 + 2, x0 - 0.35, y1, z1 - 2, 8, 8, ac, awn);
+        }
+      }
+      roofs.push([x0, z0, x1, z1, h]);
       if (S.data.details > 1 && rnd() < 0.6) { // крыши: вентиляция
         const cx = U.lerp(x0 + 3, x1 - 3, rnd()), cz = U.lerp(z0 + 3, z1 - 3, rnd());
         boxSides(P.top, cx - 1.5, h, cz - 1.5, cx + 1.5, h + 2, cz + 1.5, 8, 8, null, P.top);
@@ -317,7 +387,8 @@ HL.World = (function () {
       else { const sx = (ix0 + ix1) / 2, sz = (iz0 + iz1) / 2; lots = [[ix0, iz0, sx - 2, sz - 2], [sx + 2, iz0, ix1, sz - 2], [ix0, sz + 2, sx - 2, iz1], [sx + 2, sz + 2, ix1, iz1]]; }
       for (const l of lots) {
         const h = Math.round(hh() / 3.5) * 3.5;
-        const b = building(l[0], l[1], l[2], l[3], h, pi + ((rnd() * 2) | 0));
+        const pick = h > 40 && rnd() < 0.55 ? 8 + ((rnd() * 2) | 0) : pi + ((rnd() * 2) | 0);
+        const b = building(l[0], l[1], l[2], l[3], h, pick);
         W.lots.push(b);
       }
       // деревья вдоль тротуара
@@ -442,9 +513,11 @@ HL.World = (function () {
       const roof = new T.Mesh(toGeo(P.top), M.toon(night ? 0x3a3c44 : 0x8a8d96)); roof.castShadow = roof.receiveShadow = true; add(roof); P.top.mesh = roof;
     }
     if (shops.pos.length) {
-      const sm = new T.MeshToonMaterial({ vertexColors: true, gradientMap: M.grad });
-      if (night) { sm.emissive = new T.Color(0x3a2a10); }
-      { const shm = new T.Mesh(toGeo(shops), sm); add(shm); shops.mesh = shm; }
+      const st = shopTex(night);
+      const sm = new T.MeshToonMaterial({ vertexColors: true, gradientMap: M.grad, map: st.map });
+      if (night) { sm.emissive = new T.Color(0xffffff); sm.emissiveMap = st.emap; sm.emissiveIntensity = 0.75; }
+      { const shm = new T.Mesh(toGeo(shops), sm); shm.receiveShadow = true; add(shm); shops.mesh = shm; }
+      if (awn.pos.length) { const am = new T.Mesh(toGeo(awn), new T.MeshToonMaterial({ vertexColors: true, gradientMap: M.grad })); am.castShadow = am.receiveShadow = true; add(am); }
     }
     // тротуары/кварталы
     {
@@ -478,6 +551,106 @@ HL.World = (function () {
         const gl = new T.InstancedMesh(new T.PlaneGeometry(1, 1), new T.MeshBasicMaterial({ map: M.glowTex(), color: 0xffcf80, transparent: true, opacity: 0.55, depthWrite: false, blending: T.AdditiveBlending }), lamps.length);
         lamps.forEach((l, i) => { mtx.makeRotationX(-Math.PI / 2); mtx.scale(new T.Vector3(9, 9, 9)); mtx.setPosition(l[0], 0.3, l[1]); gl.setMatrixAt(i, mtx); });
         add(gl);
+      }
+    }
+
+    // ---------- городские детали ----------
+    if (S.data.details > 0) {
+      const dmy = new T.Object3D();
+      const inst = (geo, mat, list, shadow = true) => {
+        if (!list.length) return null;
+        const im = new T.InstancedMesh(geo, mat, list.length);
+        list.forEach((q, i) => { dmy.position.set(q[0], q[1], q[2]); dmy.rotation.set(0, q[3] || 0, 0); dmy.scale.set(q[4] || 1, q[5] || 1, q[6] || 1); dmy.updateMatrix(); im.setMatrixAt(i, dmy.matrix); });
+        im.castShadow = shadow; im.receiveShadow = true; return add(im);
+      };
+      const dark = M.toon(0x2a2d33), r2 = U.seeded(4242);
+      // зебры на перекрёстках
+      const zebra = [];
+      for (let i = -4; i <= 4; i++) for (let j = -4; j <= 4; j++) {
+        const cx = i * PITCH, cz = j * PITCH;
+        if (cz < -230 && Math.abs(cx) <= 105) continue;
+        for (let k = -2.5; k <= 2.5; k++) {
+          zebra.push([cx + k * 1.9, 0.035, cz + ROAD / 2 + 1.6, 0, 0.9, 1, 2.6], [cx + k * 1.9, 0.035, cz - ROAD / 2 - 1.6, 0, 0.9, 1, 2.6]);
+          zebra.push([cx + ROAD / 2 + 1.6, 0.035, cz + k * 1.9, 0, 2.6, 1, 0.9], [cx - ROAD / 2 - 1.6, 0.035, cz + k * 1.9, 0, 2.6, 1, 0.9]);
+        }
+      }
+      inst(new T.BoxGeometry(1, 0.05, 1), markM, zebra, false);
+      // светофоры: столб, консоль над дорогой, корпус, сигналы
+      const tl = { pole: [], arm: [], head: [], red: [], amb: [], grn: [] };
+      for (let i = -3; i <= 3; i++) for (let j = -3; j <= 3; j++) {
+        const cx = i * PITCH, cz = j * PITCH;
+        if (cz < -200 && Math.abs(cx) <= 105) continue;
+        for (const [sx, sz, ry] of [[1, 1, 0], [-1, -1, Math.PI]]) {
+          const px = cx + sx * (ROAD / 2 + 1.2), pz = cz + sz * (ROAD / 2 + 1.2);
+          tl.pole.push([px, 3, pz]);
+          tl.arm.push([px - sx * 3, 5.8, pz, ry]);
+          const hx = px - sx * 5.2;
+          tl.head.push([hx, 5.0, pz, ry]);
+          const f = sz * 0.33;
+          tl.red.push([hx, 5.55, pz + f, ry]); tl.amb.push([hx, 5.0, pz + f, ry]); tl.grn.push([hx, 4.45, pz + f, ry]);
+        }
+      }
+      inst(new T.CylinderGeometry(0.13, 0.16, 6, 8), dark, tl.pole);
+      inst(new T.BoxGeometry(6, 0.16, 0.16), dark, tl.arm);
+      inst(new T.BoxGeometry(0.55, 1.75, 0.55), M.toon(0x1c1e22), tl.head);
+      const lg = new T.BoxGeometry(0.34, 0.34, 0.06);
+      const on = (c) => new T.MeshBasicMaterial({ color: c });
+      inst(lg, on(0xff3424), tl.red, false); inst(lg, on(0x4a3a10), tl.amb, false); inst(lg, on(0x1a3a22), tl.grn, false);
+      // гидранты, урны, скамейки, газетные автоматы — вдоль тротуаров
+      const hyd = [], bin = [], bench = [], news = [];
+      for (const [cx, cz] of blockCenters) {
+        if ((cz < -210 && Math.abs(cx) <= 105) || cx === 245) continue;
+        const e = (PITCH - ROAD) / 2 - 1.1;
+        for (const [ax, az, ry] of [[1, 0, Math.PI / 2], [-1, 0, -Math.PI / 2], [0, 1, 0], [0, -1, Math.PI]]) {
+          const along = (t) => [cx + ax * e + (ax ? 0 : t), cz + az * e + (az ? 0 : t)];
+          let p = along(-10 + r2() * 4); hyd.push([p[0], 0.25, p[1], ry]);
+          p = along(10 + r2() * 3); bin.push([p[0], 0.25, p[1], ry]);
+          if (r2() < 0.5) { p = along(-r2() * 4); bench.push([p[0], 0.25, p[1], ry + Math.PI]); }
+          if (r2() < 0.3) { p = along(15); news.push([p[0], 0.25, p[1], ry]); }
+        }
+      }
+      const hydG = new T.CylinderGeometry(0.18, 0.22, 0.75, 8); hydG.translate(0, 0.37, 0);
+      inst(hydG, M.toon(0xc8302a), hyd);
+      const hcap = new T.SphereGeometry(0.2, 8, 6); hcap.translate(0, 0.78, 0); inst(hcap, M.toon(0xc8302a), hyd, false);
+      const binG = new T.CylinderGeometry(0.32, 0.27, 0.95, 10); binG.translate(0, 0.47, 0); inst(binG, M.toon(0x3a5a3a), bin);
+      const seat = new T.BoxGeometry(1.9, 0.1, 0.5); seat.translate(0, 0.48, 0); inst(seat, M.toon(0x8a5a32), bench);
+      const back = new T.BoxGeometry(1.9, 0.45, 0.08); back.translate(0, 0.8, -0.23); inst(back, M.toon(0x8a5a32), bench, false);
+      const legs = new T.BoxGeometry(1.7, 0.45, 0.4); legs.translate(0, 0.22, 0); inst(legs, dark, bench, false);
+      const nb = new T.BoxGeometry(0.55, 1.1, 0.5); nb.translate(0, 0.55, 0); inst(nb, M.toon(0x2a52b0), news);
+      // крыши: водонапорные бочки (Нью-Йорк!), кондиционеры, антенны
+      if (S.data.details > 1) {
+        const tank = [], tRoof = [], tLeg = [], ac = [], ant = [];
+        for (const [x0, z0, x1, z1, h] of roofs) {
+          if (x1 - x0 < 10 || z1 - z0 < 10) continue;
+          const q = r2();
+          const tx = U.lerp(x0 + 4, x1 - 4, r2()), tz = U.lerp(z0 + 4, z1 - 4, r2());
+          if (q < 0.42 && h < 50) {
+            tank.push([tx, h + 4.6, tz]); tRoof.push([tx, h + 7.1, tz]);
+            for (const [lx, lz] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) tLeg.push([tx + lx * 1.3, h + 1.5, tz + lz * 1.3]);
+          } else if (q < 0.7) ant.push([tx, h + 5, tz]);
+          for (let k = 0; k < 2; k++) ac.push([U.lerp(x0 + 2, x1 - 2, r2()), h + 0.6, U.lerp(z0 + 2, z1 - 2, r2()), r2() * 3]);
+        }
+        inst(new T.CylinderGeometry(2.0, 2.0, 3.6, 14), M.toon(0x8a6040), tank);
+        inst(new T.ConeGeometry(2.2, 1.6, 14), M.toon(0x4a3a2e), tRoof);
+        inst(new T.BoxGeometry(0.2, 3, 0.2), dark, tLeg);
+        inst(new T.BoxGeometry(2.2, 1.2, 1.6), M.toon(0xb8bcc4), ac);
+        inst(new T.CylinderGeometry(0.06, 0.12, 10, 5), dark, ant);
+        // рекламные щиты на крышах невысоких домов
+        let n = 0;
+        for (const [x0, z0, x1, z1, h] of roofs) {
+          if (h > 34 || r2() > 0.22 || n > 14) continue;
+          const sd = (r2() * 4) | 0, w = Math.min(14, (sd < 2 ? x1 - x0 : z1 - z0) - 2);
+          if (w < 8) continue;
+          const g = new T.Group();
+          const face = new T.Mesh(new T.PlaneGeometry(w, w / 2), new T.MeshBasicMaterial({ map: adTex(n), color: night ? 0xd8d8d8 : 0xffffff }));
+          face.position.set(0, 4.2 + w / 4, 0.12); g.add(face);
+          const fr = new T.Mesh(new T.BoxGeometry(w + 0.5, w / 2 + 0.5, 0.2), M.toon(0x22242a)); fr.position.set(0, 4.2 + w / 4, 0); fr.castShadow = true; g.add(fr);
+          for (const lx of [-w / 3, w / 3]) { const pl = new T.Mesh(new T.BoxGeometry(0.3, 4.2, 0.3), dark); pl.position.set(lx, 2.1, -0.2); g.add(pl); }
+          const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+          if (sd === 0) g.position.set(cx, h, z1 - 1); else if (sd === 1) { g.position.set(cx, h, z0 + 1); g.rotation.y = Math.PI; }
+          else if (sd === 2) { g.position.set(x1 - 1, h, cz); g.rotation.y = Math.PI / 2; } else { g.position.set(x0 + 1, h, cz); g.rotation.y = -Math.PI / 2; }
+          add(g); n++;
+        }
       }
     }
 
