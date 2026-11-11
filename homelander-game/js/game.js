@@ -220,6 +220,7 @@ HL.Game = (function () {
   function computeAim() {
     const P = g.player;
     const o = camera.position.clone(), d = V(); camera.getWorldDirection(d);
+    if (g.aimForce) { o.copy(g.aimForce.from); d.copy(g.aimForce.at).sub(g.aimForce.from).normalize(); } // запись роликов: прицел отдельно от камеры
     o.addScaledVector(d, Math.max(0, o.distanceTo(P.center) - 0.5));
     const wh = g.world.raycast(o, d, 320);
     let tBest = wh ? wh.t : 320, actor = null;
@@ -255,6 +256,13 @@ HL.Game = (function () {
   // ================= камера =================
   function updateCamera(dt) {
     const P = g.player;
+    if (g.camForce) { // запись роликов: жёсткая камера (позиция, цель, объектив, крен)
+      const f = g.camForce; camPos.copy(f.pos); camLook.copy(f.look);
+      camera.position.copy(f.pos); camera.lookAt(f.look); if (f.roll) camera.rotateZ(f.roll);
+      const sh = f.shake ? g.fx.shake : 0; if (sh > 0) camera.position.add(V((Math.random() - 0.5) * sh * 0.4, (Math.random() - 0.5) * sh * 0.4, 0));
+      if (f.fov && camera.fov !== f.fov) { camera.fov = f.fov; camera.updateProjectionMatrix(); }
+      return;
+    }
     if (g.camOverride) {
       if (g.camOverride.snap) { camPos.copy(g.camOverride.pos); camLook.copy(g.camOverride.look); g.camOverride.snap = false; }
       const cr = g.camOverride.rate || 3; camPos.lerp(g.camOverride.pos, 1 - Math.exp(-cr * dt)); camLook.lerp(g.camOverride.look, 1 - Math.exp(-cr * dt));

@@ -399,7 +399,7 @@ HL.Player = (function () {
     throwCarry() {
       const g = this.g, a = this.carry; if (!a) return;
       this.carry = null; a.carried = false; a.throwable = false; this.throwT = 0.4;
-      const dir = V(); g.camera.getWorldDirection(dir); dir.y = Math.max(dir.y, -0.35); dir.normalize();
+      const dir = V(); g.camera.getWorldDirection(dir); if (g.aimForce) dir.copy(g.aimForce.at).sub(g.aimForce.from).normalize(); dir.y = Math.max(dir.y, -0.35); dir.normalize();
       const from = this.center.add(V(0, 1.1, 0)).addScaledVector(dir, 1.6);
       A().whoosh(); g.fx.addShake(0.3);
       if (a.faction === 'vehicle') {
