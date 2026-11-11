@@ -27,6 +27,22 @@ HL.UI = (function () {
     const markerPool = [];
     let fpsAcc = 0, fpsN = 0;
 
+    // ---------- озвучка: если для реплики есть запись voice/audio/<id>.mp3 — проигрываем её ----------
+    const VOICE = { map: null, cur: null };
+    try { fetch('voice/lines.json').then((r) => (r.ok ? r.json() : [])).then((list) => { VOICE.map = {}; for (const l of list) if (l.audio) VOICE.map[l.who + '|' + l.say] = l.id; }).catch(() => {}); } catch (e) {}
+    const cleanLine = (t) => String(t).replace(/\*[^*]+\*/g, '').trim();
+    function stopVoice() { if (VOICE.cur) { try { VOICE.cur.pause(); } catch (e) {} VOICE.cur = null; } }
+    function playVoice(line) {
+      stopVoice();
+      if (!VOICE.map) return;
+      const id = VOICE.map[line.who + '|' + cleanLine(line.text)]; if (!id) return;
+      const a = new Audio('voice/audio/' + id + '.mp3'); a.volume = Math.min(1, 0.4 + S().data.sfx * 0.7);
+      a.onloadedmetadata = () => { if (dCur === line && isFinite(a.duration)) dT = Math.max(dT, a.duration - a.currentTime + 0.3); };
+      const p = a.play(); if (p && p.catch) p.catch(() => {});
+      VOICE.cur = a;
+    }
+    ui.stopVoice = stopVoice;
+
     // ---------- диалоги ----------
     ui.say = function (lines, done) {
       dq = lines.map((l) => (Array.isArray(l) ? { who: l[0], text: l[1], dur: l[2] } : l));
@@ -34,7 +50,7 @@ HL.UI = (function () {
     };
     function nextLine() {
       dCur = dq.shift() || null;
-      if (!dCur) { el.dialog.classList.add('hidden'); const f = dDone; dDone = null; f && f(); return; }
+      if (!dCur) { stopVoice(); el.dialog.classList.add('hidden'); const f = dDone; dDone = null; f && f(); return; }
       const sp = SPEAKERS[dCur.who] || [dCur.who, '#ddd'];
       el.dWho.textContent = sp[0]; el.dWho.style.color = sp[1];
       el.dTxt.textContent = dCur.text;
@@ -42,10 +58,11 @@ HL.UI = (function () {
       el.dialog.classList.remove('hidden');
       dT = dCur.dur || Math.max(2.2, 1.2 + dCur.text.length * 0.052);
       if (dCur.who === 'scam') HL.Audio.phone();
+      playVoice(dCur);
     }
     ui.skipLine = function () { if (dCur) { dT = 0; } };
     Object.defineProperty(ui, 'talking', { get: () => !!dCur });
-    ui.clearDialog = function () { dq = []; dCur = null; dDone = null; el.dialog.classList.add('hidden'); };
+    ui.clearDialog = function () { stopVoice(); dq = []; dCur = null; dDone = null; el.dialog.classList.add('hidden'); };
 
     // ---------- субтитры как в ролике (по словам) ----------
     ui.caption = function (text, per = 0.36) {
