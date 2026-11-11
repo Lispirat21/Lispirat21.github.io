@@ -123,6 +123,8 @@ HL.Models = (function () {
       legs: 0x1b1b20, boots: 0x101012, belt: 0x2a2a30, eye: 0x18181c, noFace: true, bulk: 1.1 },
     agent: { name: 'Наёмник', skin: 0xd8a882, hair: 0x2a2a2a, hairStyle: 'cap', capColor: 0x2b3038, torso: 0x2b3038, vest: 0x40452e, arms: 0x2b3038, forearms: 0x2b3038,
       gloves: 0x1a1a1a, legs: 0x30343c, boots: 0x161616, eye: 0x2a2a2a, brows: 0x1a1a1a, angry: true, gun: true, bulk: 1 },
+    maeve: { name: 'Королева Мейв', skin: 0xf0c8a8, hair: 0x6a3020, hairStyle: 'long', torso: 0x2c3448, emblem: 0xc0c4cc, arms: 0x2c3448, forearms: 0xa8acb6, gloves: 0x2c3448,
+      legs: 0x2c3448, boots: 0xa8acb6, belt: 0xb08a3a, tiara: 0xd8b860, eye: 0x4a6a3a, brows: 0x5a2a1a, angry: true, bulk: 0.92, scale: 0.97 },
     thug: { name: 'Грабитель', skin: 0x3a3a3e, hair: 0x3a3a3e, hairStyle: 'mask', torso: 0x4a4a52, arms: 0x4a4a52, forearms: 0x4a4a52, gloves: 0x111111,
       legs: 0x22252c, boots: 0x111111, eye: 0xffffff, brows: 0x222222, gun: true, bulk: 1, balaclava: true },
   };
@@ -262,6 +264,7 @@ HL.Models = (function () {
     }
     if (def.noFace) { const v = part(head, box(0.22, 0.06, 0.05), new T.MeshBasicMaterial({ color: 0x050505 }), 0, 0.02, 0.18, false); }
     hairFor(head, def);
+    if (def.tiara) { const tr = part(head, cyl(0.205, 0.215, 0.05, 18), toon(def.tiara), 0, 0.12, -0.01, false); tr.rotation.x = -0.18; const gem = part(head, box(0.05, 0.09, 0.03), toon(def.tiara), 0, 0.18, 0.2, false); gem.rotation.x = -0.2; }
     if (def.beard) {
       const b = part(head, sph(0.165), toon(def.beard), 0, -0.1, 0.06); b.scale.set(1.17, 0.95, 0.98);
       part(head, box(0.15, 0.04, 0.04), toon(def.beard), 0, -0.06, 0.2, false);

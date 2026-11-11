@@ -86,8 +86,10 @@ HL.Game = (function () {
       case 'soldierboy': a = new AC.SoldierBoy(g, o); break;
       case 'butcherBoss': a = new AC.ButcherBoss(g, o); break;
       case 'hughieV': a = new AC.HughieV(g, o); break;
+      case 'maeve': a = new AC.Maeve(g, o); break;
       case 'butcher': a = new AC.Actor(g, D.butcher, Object.assign({ faction: 'ally', hp: 1e9 }, o)); break;
       case 'atrain': a = new AC.Runner(g, o.path, o); break;
+      case 'custom': a = o.make(g, o); break; // особые персонажи из модулей миссий
       case 'atrainNPC': a = new AC.Actor(g, D.atrain, Object.assign({ faction: 'prop', hp: 1e9, name: 'Эй-Трейн' }, o)); break;
       case 'van': case 'police': case 'ambulance': case 'car': case 'taxi':
         a = new AC.Vehicle(g, kind, Object.assign({ hp: kind === 'van' ? 900 : kind === 'ambulance' ? 1e9 : 140, faction: 'vehicle' }, o));
@@ -255,7 +257,7 @@ HL.Game = (function () {
     if (g.camOverride) {
       if (g.camOverride.snap) { camPos.copy(g.camOverride.pos); camLook.copy(g.camOverride.look); g.camOverride.snap = false; }
       const cr = g.camOverride.rate || 3; camPos.lerp(g.camOverride.pos, 1 - Math.exp(-cr * dt)); camLook.lerp(g.camOverride.look, 1 - Math.exp(-cr * dt));
-      camera.position.copy(camPos); camera.lookAt(camLook);
+      camera.position.copy(camPos); camera.lookAt(camLook); if (g.camRoll) camera.rotateZ(g.camRoll);
       return;
     }
     const yaw = g.camYaw, pitch = g.camPitch;
@@ -275,7 +277,7 @@ HL.Game = (function () {
     if (sh > 0) pos.add(V((Math.random() - 0.5) * sh * 0.5, (Math.random() - 0.5) * sh * 0.5, (Math.random() - 0.5) * sh * 0.5));
     camera.position.copy(pos); camPos.copy(pos);
     camLook.copy(tgt).addScaledVector(dir, 30);
-    camera.lookAt(camLook);
+    camera.lookAt(camLook); if (g.camRoll) camera.rotateZ(g.camRoll);
     const fov = S.data.fov + (P.flying ? Math.min(14, Math.max(0, speed - 25) * 0.3) : 0);
     if (Math.abs(camera.fov - fov) > 0.1) { camera.fov = U.damp(camera.fov, fov, 4, dt); camera.updateProjectionMatrix(); }
   }
@@ -337,7 +339,7 @@ HL.Game = (function () {
     const st = def.start;
     g.player.place(st[0], st[1], st[2], st[3]);
     g.camYaw = st[3]; g.camPitch = 0.18;
-    g.cinema(null); g.noDeath = false; g.slowmo = false;
+    g.cinema(null); g.noDeath = false; g.slowmo = false; g.camRoll = 0;
     if (def.rain) rain = makeRain();
     mission = { def, idx, si: -1, v: {}, timer: null, t0: 0 };
     def.setup && def.setup(g, mission.v);

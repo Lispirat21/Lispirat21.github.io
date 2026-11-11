@@ -630,6 +630,102 @@ HL.Actors = (function () {
     }
   }
 
+
+  // ================= Королева Мейв: рукопашный бой (босс) или союзница (рейс 37) =================
+  class Maeve extends Actor {
+    constructor(g, o = {}) {
+      super(g, M.DEFS.maeve, Object.assign({ hp: 4200, faction: o.ally ? 'ally' : 'enemy', name: 'Королева Мейв', radius: 0.5 }, o));
+      this.ally = !!o.ally; this.boss = !this.ally; this.keepBody = true; this.knockMul = 0.3;
+      this.st = 'approach'; this.stT = 0; this.cd = { tackle: 3, leap: 4, throw: 3 }; this.hitsTaken = []; this.combo = 0;
+      if (this.ally) { this.invuln = true; }
+    }
+    setSt(s, t) { this.st = s; this.stT = t; this.hit = false; }
+    damage(amount, src, knock) {
+      const g = this.g;
+      if (!this.ally && src === g.player && this.alive) {
+        const toP = g.player.pos.clone().sub(this.pos).setY(0).normalize(), fwd = V(Math.sin(this.yaw), 0, Math.cos(this.yaw));
+        const facing = toP.dot(fwd) > 0.3;
+        if (amount < 25 && facing) { amount *= 0.35; if (Math.random() < 0.3) g.fx.sparks(this.center.add(fwd.clone().multiplyScalar(0.4)), 0xffffff, 2); } // лазер в наручи
+        else if (this.st === 'block' && facing) { amount *= 0.25; A().clang(); g.fx.sparks(this.center.add(fwd.clone().multiplyScalar(0.5)), 0xffffff, 6); }
+        if (amount >= 25) { this.hitsTaken.push(g.time); this.hitsTaken = this.hitsTaken.filter((t) => g.time - t < 2.2); if (this.hitsTaken.length >= 3 && this.st !== 'block') { this.setSt('block', 1.1); this.hitsTaken = []; } }
+      }
+      return super.damage(amount, src, knock);
+    }
+    target() {
+      const g = this.g;
+      if (!this.ally) return g.player;
+      let best = null, bd = 1e9;
+      for (const a of g.actors) if (a.alive && a.faction === 'enemy') { const d = a.pos.distanceTo(this.pos); if (d < bd) { bd = d; best = a; } }
+      return best;
+    }
+    think(dt) {
+      const g = this.g, tg = this.target(); this.stT -= dt;
+      for (const k in this.cd) this.cd[k] -= dt;
+      this.animOpt = {};
+      if (!tg) { this.anim = 'idle'; this.stop(dt); return; }
+      const P = g.player, isP = tg === P, tc = tg.center, d = this.dist2D(tg.pos), dy = tg.pos.y - this.pos.y;
+      const hurt = (dmg, knock, down) => {
+        if (isP) g.hurtPlayer(dmg, this.pos, { knock, down });
+        else tg.damage(dmg * 0.6, this, tc.clone().sub(this.center).setY(0).normalize().multiplyScalar(knock).setY(4));
+        A().punch(); g.fx.addShake(isP ? 0.45 : 0.2); g.fx.burst(tc, 6, { color: [0xffffff, 0xffe0a0], speed: 7, size: 0.15, life: 0.25 });
+      };
+      switch (this.st) {
+        case 'approach': {
+          this.face(tg.pos, dt, 10);
+          if (d > 1.7) { this.moveToward(tg.pos, this.ally ? 8 : 9.5, dt, 8); this.anim = 'run'; this.moveSpeed = 9; } else { this.stop(dt); this.anim = 'idle'; }
+          if (d < 2.2 && Math.abs(dy) < 2) { this.setSt('combo', 1.25); this.combo = 0; break; }
+          if (this.ally) break;
+          if (dy > 3 && dy < 11 && d < 10 && this.cd.leap <= 0 && !this.inAir) { this.setSt('leap', 0.9); this.vel.y = 17; A().whoosh(); break; }
+          if (dy >= 11 && this.cd.throw <= 0) { this.setSt('throw', 0.8); break; }
+          if (d > 6 && d < 22 && Math.abs(dy) < 2 && this.cd.tackle <= 0) { this.setSt('tackle', 1.25); g.ui.tag('МЕЙВ ИДЁТ НА ТАРАН!', '#c8d0e8', 0.8); }
+          break;
+        }
+        case 'combo': { // серия из трёх ударов
+          this.stop(dt); this.face(tg.pos, dt, 14);
+          const t = 1.25 - this.stT, i = Math.min(2, Math.floor(t / 0.42)), ph = (t % 0.42) / 0.42;
+          this.anim = 'punch'; this.animOpt = { p: ph };
+          if (i !== this.combo - 1 && ph > 0.45 && this.combo <= i) {
+            this.combo = i + 1;
+            if (this.center.distanceTo(tc) < 2.6) hurt([30, 35, 55][i], i === 2 ? 20 : 6, i === 2 && Math.random() < 0.4); else A().whiff();
+          }
+          if (this.stT <= 0) this.setSt('approach', 0);
+          break;
+        }
+        case 'block': {
+          this.stop(dt); this.face(tg.pos, dt, 14); this.anim = 'charge';
+          if (this.stT <= 0) { this.setSt('combo', 1.25); this.combo = 0; g.ui.tag('КОНТРАТАКА!', '#c8d0e8', 0.6); }
+          break;
+        }
+        case 'tackle': {
+          if (this.stT > 0.7) { this.stop(dt); this.face(tg.pos, dt, 10); this.anim = 'charge'; this.aimDir = tg.pos.clone().sub(this.pos).setY(0).normalize(); }
+          else {
+            this.vel.x = this.aimDir.x * 24; this.vel.z = this.aimDir.z * 24; this.anim = 'run'; this.moveSpeed = 14;
+            if (Math.random() < 0.6) g.fx.dust(this.pos, 1);
+            if (!this.hit && this.center.distanceTo(tc) < 2.2) { this.hit = true; hurt(90, 26, true); this.stT = 0; }
+          }
+          if (this.stT <= 0) { this.cd.tackle = U.rand(4, 6); this.setSt('approach', 0); }
+          break;
+        }
+        case 'leap': {
+          this.face(tg.pos, dt, 10); this.anim = 'jump';
+          const to = tg.pos.clone().sub(this.pos).setY(0); if (to.length() > 0.5) { to.normalize().multiplyScalar(14); this.vel.x = to.x; this.vel.z = to.z; }
+          if (!this.hit && this.center.distanceTo(tc) < 2.4) { this.hit = true; hurt(70, 18, true); }
+          if (this.stT <= 0) { this.cd.leap = 4; this.setSt('approach', 0); }
+          break;
+        }
+        case 'throw': {
+          this.stop(dt); this.face(tg.pos, dt, 10); this.anim = 'throw'; this.animOpt = { p: 1 - this.stT / 0.8 };
+          if (!this.hit && this.stT < 0.35) {
+            this.hit = true; const from = this.center.add(V(0, 0.8, 0)), dir = tc.clone().sub(from).normalize();
+            g.spawnProj('rock', from, dir.multiplyScalar(48).add(V(0, 3, 0)), { dmg: 45, owner: this, radius: 3 }); A().whoosh();
+          }
+          if (this.stT <= 0) { this.cd.throw = 2.5; this.setSt('approach', 0); }
+          break;
+        }
+      }
+    }
+  }
+
   // ================= Райан (летает, рывки-удары) =================
   class Ryan extends Actor {
     constructor(g, o = {}) {
@@ -1048,5 +1144,5 @@ HL.Actors = (function () {
     kill() { this.alive = false; this.g.scene.remove(this.mesh); }
   }
 
-  return { HughieV, Supe, SUPE_INFO, Ryan, Actor, Civilian, Victim, Gunman, Grenadier, Brawler, Starlight, Runner, SoldierBoy, ButcherBoss, Vehicle, Proj, WEAPONS };
+  return { Maeve, HughieV, Supe, SUPE_INFO, Ryan, Actor, Civilian, Victim, Gunman, Grenadier, Brawler, Starlight, Runner, SoldierBoy, ButcherBoss, Vehicle, Proj, WEAPONS };
 })();
