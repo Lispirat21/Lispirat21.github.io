@@ -31,6 +31,7 @@ HL.Rally = (function () {
     const flag = M.canvasTex(192, 100, (x, w, h) => { for (let i = 0; i < 13; i++) { x.fillStyle = i % 2 ? '#fff' : '#c22a33'; x.fillRect(0, (i * h) / 13, w, h / 13 + 1); } x.fillStyle = '#2a3a7a'; x.fillRect(0, 0, w * 0.42, h * 0.54); });
     for (const x of [-16, -13, 13, 16]) { mk(M.cyl(0.06, 0.06, 7, 6), M.toon(0xd8d8d8), x, 3.5, -196); const f = new T.Mesh(new T.PlaneGeometry(2.4, 1.3), new T.MeshBasicMaterial({ map: flag, side: T.DoubleSide })); f.position.set(x + 1.25, 6.2, -196); grp.add(f); }
     g.world.addBox(-9, -201, 9, -193, 1.4, 'stage');
+    g.world.addBox(-10.6, -202, 10.6, -201.1, 11.6, 'stagewall'); // задник: камера не залезает внутрь
     return grp;
   }
   const SIGNS = ['МЫ ЛЮБИМ ТЕБЯ, ХОУМЛЕНДЕР', 'АМЕРИКА — ЭТО ОН', 'ТОЛЬКО ХОУМЛЕНДЕР', 'ВЕРНЫЕ ДО КОНЦА', 'СПАСИБО, ГЕРОЙ!', 'ХОУМЛЕНДЕР 2028'];
@@ -89,10 +90,10 @@ HL.Rally = (function () {
       } else if (e.ev === 1) { // Хоумлендер спускается на сцену
         cam(g, V(6, 2.2, -184), P.center, 4);
         if (P.pos.y <= 1.5 || e.T > 2.5) {
-          P.scriptVel = null; P.flying = false; P.place(0, 1.4, -195.8, 0); P.scriptPose = 'akimbo';
+          P.scriptVel = null; P.flying = false; P.place(0, 1.4, -194.2, 0); P.scriptPose = 'akimbo';
           g.fx.dust(P.pos, 16); g.fx.ring(P.pos.clone().setY(1.5), 0xffffff, 8, 0.4); A().slam(); A().cheer(); confetti(g, 40);
           e.ev = 2; e.T = 0;
-          const hero = () => ({ pos: V(1.4, 1.0, -191.5), look: P.center.add(V(0, 0.6, 0)) }), crowdShot = () => ({ pos: V(-4, 3.2, -194), look: V(4, 1.2, -176) });
+          const hero = () => ({ pos: V(1.7, 1.3, -189.6), look: P.center.add(V(0, 0.55, 0)) }), crowdShot = () => ({ pos: V(-4, 3.2, -194), look: V(4, 1.2, -176) });
           chain(g, v, [
             ['hl', 'Они говорят, что я опасен.', 2.2],
             ['hl', 'Что я угроза. Что меня нужно остановить.', 2.6],
@@ -158,7 +159,7 @@ HL.Rally = (function () {
     text: '…',
     enter(g, v) {
       const P = g.player;
-      g.cinema(P.center, STAGE); P.scriptVel = null; P.flying = false; P.place(0, 1.4, -195.8, 0); P.scriptFace = 0;
+      g.cinema(P.center, STAGE); P.scriptVel = null; P.flying = false; P.place(0, 1.4, -194.2, 0); P.scriptFace = 0;
       v.e = { ev: 0, T: 0, beat: 0 };
       if (v.killed) {
         v.mood = 'shock';
@@ -222,7 +223,7 @@ HL.Rally = (function () {
       const P = g.player;
       for (const a of v.crowd) if (!a.removed) a.remove();
       v.mood = 'cheer'; spawnCrowd(g, v); if (v.prot && !v.prot.removed) v.prot.remove();
-      P.scriptVel = null; P.flying = false; P.place(0, 1.4, -195.8, 0); P.scriptPose = 'akimbo'; P.scriptFace = 0;
+      P.scriptVel = null; P.flying = false; P.place(0, 1.4, -194.2, 0); P.scriptPose = 'akimbo'; P.scriptFace = 0;
       g.cinema(P.center, STAGE); g.music('calm');
       cut(g, V(-12, 9, -172), V(0, 3, -194));
       v.e = { T: 0, beat: 0 };

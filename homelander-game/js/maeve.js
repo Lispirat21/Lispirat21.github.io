@@ -3,7 +3,7 @@ HL.MaeveFight = (function () {
   const T = THREE, U = HL.U, M = HL.Models, A = () => HL.Audio;
   const V = (x = 0, y = 0, z = 0) => new T.Vector3(x, y, z);
   const C = V(105, 164, 35);          // крыша башни Vought
-  const LAND = V(134, 0, 35);         // улица, куда они падают
+  const LAND = V(140, 0, 35);         // улица, куда они падают
   const cut = (g, pos, look) => { g.camOverride = { pos: pos.clone(), look: look.clone(), snap: true }; };
   const cam = (g, pos, look, rate = 4) => { g.camOverride = { pos: pos.clone(), look: look.clone(), rate }; };
   function chain(g, v, lines, shots, done) {
