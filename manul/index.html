@@ -65,15 +65,35 @@ button { font-family:inherit; cursor:pointer; touch-action:manipulation; }
 #vignette { position:absolute; inset:0; background:radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(30,20,10,.45) 100%); }
 #hurt { position:absolute; inset:0; background:radial-gradient(ellipse at center, transparent 40%, rgba(200,0,0,.6)); opacity:0; }
 #fade { position:fixed; inset:0; background:#000; opacity:0; pointer-events:none; z-index:25; transition:opacity .8s; }
-#viewBtn { position:absolute; top:max(10px, env(safe-area-inset-top)); left:max(10px, env(safe-area-inset-left)); pointer-events:auto; z-index:13;
+#viewBtn, #sbBtn { position:absolute; top:max(10px, env(safe-area-inset-top)); left:max(10px, env(safe-area-inset-left)); pointer-events:auto; z-index:13;
   width:68px; height:68px; border-radius:50%; border:2px solid rgba(255,230,170,.6); background:rgba(40,30,15,.55); color:#fff;
   font-size:26px; line-height:1; padding:0; box-shadow:0 3px 10px rgba(0,0,0,.4); }
-#viewBtn small { display:block; font-size:11px; font-weight:700; margin-top:2px; color:#ffe2a0; }
-#viewBtn:active { transform:scale(.94); }
+#viewBtn small, #sbBtn small { display:block; font-size:11px; font-weight:700; margin-top:2px; color:#ffe2a0; }
+#viewBtn:active, #sbBtn:active { transform:scale(.94); }
+#sbBtn { top:calc(max(10px, env(safe-area-inset-top)) + 78px); }
 body.third #cross, body.third #whiskers { display:none; }
 #pauseBtn { position:absolute; top:max(10px, env(safe-area-inset-top)); right:max(10px, env(safe-area-inset-right)); pointer-events:auto;
   background:rgba(0,0,0,.4); color:#fff; border:1px solid rgba(255,255,255,.3); border-radius:10px; width:42px; height:42px; font-size:18px; }
 
+.menuBtns { display:flex; flex-wrap:wrap; justify-content:center; gap:4px; }
+.big.alt { background:linear-gradient(#8fd6ea,#3a8fb0); color:#062030; box-shadow:0 4px 0 #1d5266, 0 8px 22px rgba(0,0,0,.4); }
+.setgrid { display:grid; grid-template-columns:1fr auto; gap:12px 18px; align-items:center; text-align:left; background:rgba(0,0,0,.28);
+  padding:14px 18px; border-radius:12px; width:min(520px, 100%); font-size:15px; color:#eadfc8; }
+.setgrid input[type=range] { width:min(190px, 38vw); accent-color:#e9b949; vertical-align:middle; }
+.setgrid select { background:#2a2216; color:#f3e7cc; border:1px solid rgba(255,255,255,.3); border-radius:8px; padding:6px; font-family:inherit; font-size:14px; }
+.setgrid input[type=checkbox] { width:22px; height:22px; accent-color:#e9b949; }
+.setgrid output { display:inline-block; min-width:44px; color:#ffd77a; margin-left:6px; font-variant-numeric:tabular-nums; }
+#sbPanel { position:fixed; right:max(10px, env(safe-area-inset-right)); top:calc(max(10px, env(safe-area-inset-top)) + 58px); width:min(340px, calc(100vw - 20px));
+  max-height:calc(100% - 150px); overflow-y:auto; z-index:16; background:rgba(28,22,12,.93); border:1px solid rgba(255,220,150,.35); border-radius:14px; padding:12px; }
+.sbTitle { display:flex; justify-content:space-between; align-items:center; font-weight:800; color:#ffd77a; font-size:18px; }
+.sbTitle button { background:none; border:none; color:#fff; font-size:22px; padding:0 4px; }
+.sbSec { font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:#c9b894; margin:10px 0 6px; }
+.sbRow { display:flex; flex-wrap:wrap; gap:6px; }
+.sbRow button { flex:1 1 auto; background:rgba(255,255,255,.08); color:#f3e7cc; border:1px solid rgba(255,255,255,.2); border-radius:10px; padding:9px 10px; font-size:14px; }
+.sbRow button.on { background:rgba(230,180,70,.5); border-color:#ffd77a; color:#fff; }
+#fatF { background:linear-gradient(90deg,#d98ab0,#ffc0d8); }
+#fatLv { font-size:13px; font-weight:800; color:#ffc0d8; min-width:34px; }
+body.second #cross, body.second #whiskers { display:none; }
 /* ---------- сенсорное управление ---------- */
 #touch { position:fixed; inset:0; z-index:12; pointer-events:none; }
 #lookArea { position:absolute; right:0; top:0; width:60%; height:100%; pointer-events:auto; }
@@ -112,10 +132,12 @@ body.touch #cross { display:none; }
     <div class="bar">❤️<div class="track"><div class="fill" id="hpF"></div></div></div>
     <div class="bar">🍖<div class="track"><div class="fill" id="foodF"></div></div></div>
     <div class="bar">🔥<div class="track"><div class="fill" id="warmF"></div></div></div>
+    <div class="bar" title="Ожирение">🍔<div class="track"><div class="fill" id="fatF"></div></div><span id="fatLv">ур.1</span></div>
   </div>
-  <div id="status"><div id="stealth"></div><div id="cover"></div><div id="sniffSt"></div></div>
+  <div id="status"><div id="stealth"></div><div id="cover"></div><div id="sniffSt"></div><div id="sbSt"></div></div>
   <button id="pauseBtn" class="hidden">⏸</button>
-  <button id="viewBtn" title="Вид от 1-го / 3-го лица (T)">🎥<small id="viewLbl">3-е лицо</small></button>
+  <button id="viewBtn" title="Сменить вид (T)">🎥<small id="viewLbl">3-е лицо</small></button>
+  <button id="sbBtn" class="hidden" title="Панель песочницы (B)">🧰<small>Панель</small></button>
 </div>
 
 <div id="touch" class="hidden">
@@ -129,6 +151,19 @@ body.touch #cross { display:none; }
     <button data-act="crouch" id="tCrouch"><span>🐈</span>Красться</button>
     <button data-act="jump"><span>⤒</span>Прыжок</button>
   </div>
+</div>
+
+<div id="sbPanel" class="hidden">
+  <div class="sbTitle">🧰 Песочница <button id="sbClose" aria-label="Закрыть">✕</button></div>
+  <div class="sbSec">Оружие (1 / 2 / 3)</div>
+  <div class="sbRow"><button data-w="paws">🐾 Лапы</button><button data-w="laser">🔴 Лазеры из глаз</button><button data-w="lom">🔧 Лом</button></div>
+  <div class="sbSec">Способности</div>
+  <div class="sbRow"><button data-sb="fly">🕊 Полёт (G)</button><button data-sb="god">❤ Бессмертие</button><button data-sb="view">🎥 Вид (1/3/2 лицо)</button></div>
+  <div class="sbSec">Ожирение</div>
+  <div class="sbRow"><button data-sb="fatUp">🍔 Потолстеть</button><button data-sb="fatDown">🥗 Похудеть</button></div>
+  <div class="sbSec">Мир</div>
+  <div class="sbRow"><button data-sb="wolf">🐺 Позвать волка</button><button data-sb="eagle">🦅 Беркут атакует</button><button data-sb="prey">🐭 +10 добычи</button>
+    <button data-sb="daynight">🌗 День / ночь</button><button data-sb="freeze">⏸ Остановить время</button></div>
 </div>
 
 <div id="menu" class="screen">
@@ -168,6 +203,7 @@ body.touch #cross { display:none; }
     <b>V</b><span>нюх — показывает добычу на компасе</span>
     <b>F</b><span>спать в норе (вечером)</span>
     <b>T / 🎥</b><span>вид от 1-го или 3-го лица</span>
+    <b>Песочница</b><span>1/2/3 — лапы, лазеры, лом · G — полёт · B — панель · T — ещё и 2-е лицо</span>
   </div>
   <div class="controls hidden" id="ctrlTouch">
     <b>Джойстик слева</b><span>ходить (до упора — бег)</span>
@@ -175,7 +211,11 @@ body.touch #cross { display:none; }
     <b>Кнопки</b><span>бросок, фыр, нюх, мур, красться, прыжок</span>
     <b>🎥 в углу</b><span>вид от 1-го или 3-го лица</span>
   </div>
-  <button class="big" id="startBtn">Играть 🐾</button>
+  <div class="menuBtns">
+    <button class="big" id="startBtn">Выживание 🐾</button>
+    <button class="big alt" id="sandBtn">Песочница 🧰</button>
+  </div>
+  <button class="ghost" id="setBtnMenu">⚙ Настройки</button>
   <div id="best"></div>
   <p style="margin-top:14px"><button class="ghost" onclick="location.href='../'">← На главную</button></p>
 </div>
@@ -184,7 +224,24 @@ body.touch #cross { display:none; }
   <h2>Пауза</h2>
   <p>Тимофей присел и щурится на солнце.</p>
   <button class="big" id="resumeBtn">Продолжить</button>
+  <button class="ghost" id="setBtnPause">⚙ Настройки</button>
   <button class="ghost" id="quitBtn">В меню</button>
+</div>
+
+<div id="settings" class="screen hidden">
+  <h2>Настройки</h2>
+  <div class="setgrid">
+    <label for="sSens">Чувствительность мыши / пальца</label><span><input type="range" id="sSens" min="0.3" max="3" step="0.1"><output id="oSens"></output></span>
+    <label for="sVol">Громкость</label><span><input type="range" id="sVol" min="0" max="100" step="5"><output id="oVol"></output></span>
+    <label for="sFov">Угол обзора</label><span><input type="range" id="sFov" min="60" max="100" step="1"><output id="oFov"></output></span>
+    <label for="sQ">Графика</label><select id="sQ"><option value="low">Низкая (быстрее)</option><option value="mid">Средняя</option><option value="high">Высокая</option></select>
+    <label for="sDay">Длина дня</label><select id="sDay"><option value="0.6">Короткий</option><option value="1">Обычный</option><option value="1.8">Длинный</option></select>
+    <label for="sDiff">Сложность выживания</label><select id="sDiff"><option value="0.6">Лёгкая</option><option value="1">Обычная</option><option value="1.5">Сложная</option></select>
+    <label for="sInv">Инвертировать взгляд по вертикали</label><input type="checkbox" id="sInv">
+    <label for="sShake">Тряска камеры</label><input type="checkbox" id="sShake">
+    <label for="sWh">Усы на экране</label><input type="checkbox" id="sWh">
+  </div>
+  <button class="big" id="setDone">Готово</button>
 </div>
 
 <div id="over" class="screen hidden">
@@ -209,6 +266,9 @@ let seed = 777;
 function rnd() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
 function wrapA(a) { while (a > Math.PI) a -= Math.PI * 2; while (a < -Math.PI) a += Math.PI * 2; return a; }
 const isTouch = ('ontouchstart' in window) || matchMedia('(pointer: coarse)').matches;
+const SET = { sens: 1, vol: 70, fov: 75, quality: 'mid', dayLen: 1, diff: 1, invertY: false, shake: true, whiskers: true };
+try { Object.assign(SET, JSON.parse(localStorage.getItem('manul_settings') || '{}')); } catch (e) {}
+function saveSettings() { try { localStorage.setItem('manul_settings', JSON.stringify(SET)); } catch (e) {} }
 if (isTouch) { document.body.classList.add('touch'); $('ctrlDesk').classList.add('hidden'); $('ctrlTouch').classList.remove('hidden'); }
 
 /* =====================  АУДИО  ===================== */
@@ -217,7 +277,7 @@ function audioInit() {
   if (A.ctx) { if (A.ctx.state === 'suspended') A.ctx.resume(); return; }
   try {
     A.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    A.master = A.ctx.createGain(); A.master.gain.value = 0.7; A.master.connect(A.ctx.destination);
+    A.master = A.ctx.createGain(); A.master.gain.value = SET.vol / 100; A.master.connect(A.ctx.destination);
     const len = A.ctx.sampleRate * 2, buf = A.ctx.createBuffer(1, len, A.ctx.sampleRate), d = buf.getChannelData(0);
     for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
     A.noise = buf;
@@ -261,6 +321,21 @@ const snd = {
   hurt() { tone('triangle', 620, 980, 0.18, 0.18); tone('triangle', 980, 480, 0.18, 0.4, 0.17); },
   meow() { tone('triangle', 520, 760, 0.12, 0.15); tone('triangle', 760, 430, 0.12, 0.35, 0.14, 6); },
   good() { tone('sine', 660, 0, 0.1, 0.12); tone('sine', 880, 0, 0.1, 0.12, 0.1); tone('sine', 1320, 0, 0.1, 0.25, 0.2); },
+  clang() { for (const [f, g] of [[1250, 0.12], [1890, 0.08], [2730, 0.06], [620, 0.08]]) tone('sine', f, f * 0.98, g, 0.7); noiseHit('bandpass', 3000, 2, 0.12, 0.08); },
+  laserOn() {
+    if (!A.ctx || A.laser) return; const t = A.ctx.currentTime;
+    const o1 = A.ctx.createOscillator(); o1.type = 'sawtooth'; o1.frequency.value = 150;
+    const o2 = A.ctx.createOscillator(); o2.type = 'square'; o2.frequency.value = 1150;
+    const l = A.ctx.createOscillator(); l.frequency.value = 13; const lg = A.ctx.createGain(); lg.gain.value = 60; l.connect(lg); lg.connect(o2.frequency);
+    const f = A.ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 2500;
+    const g = A.ctx.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.07, t + 0.05);
+    o1.connect(f); o2.connect(f); f.connect(g); g.connect(A.master); o1.start(); o2.start(); l.start(); A.laser = { o1, o2, l, g };
+  },
+  laserOff() {
+    if (!A.laser) return; const p = A.laser; A.laser = null; const t = A.ctx.currentTime;
+    p.g.gain.cancelScheduledValues(t); p.g.gain.setValueAtTime(p.g.gain.value, t); p.g.gain.linearRampToValueAtTime(0, t + 0.08);
+    for (const o of [p.o1, p.o2, p.l]) o.stop(t + 0.1);
+  },
   purrOn() {
     if (!A.ctx || A.purr) return;
     const s = A.ctx.createBufferSource(); s.buffer = A.noise; s.loop = true;
@@ -667,12 +742,13 @@ function makeWolf() {
   return g;
 }
 const wolves = [];
-function spawnWolf() {
+function spawnWolf(near) {
   for (let t = 0; t < 20; t++) {
-    const a = Math.random() * Math.PI * 2, r = R(45, 70), x = P.x + Math.cos(a) * r, z = P.z + Math.sin(a) * r;
+    const a = Math.random() * Math.PI * 2, r = near ? R(16, 24) : R(45, 70), x = P.x + Math.cos(a) * r, z = P.z + Math.sin(a) * r;
     if (Math.hypot(x, z) > LIMIT - 5 || Math.hypot(x - HOME.x, z - HOME.z) < 20) continue;
     const mesh = makeWolf(); scene.add(mesh);
-    wolves.push({ mesh, x, z, vx: 0, vz: 0, state: 'roam', timer: 0, tx: P.x, tz: P.z, leg: 0, biteCd: 0, alive: true });
+    wolves.push({ mesh, x, z, vx: 0, vz: 0, state: near ? 'chase' : 'roam', timer: 4, tx: P.x, tz: P.z, leg: 0, biteCd: 0, alive: true, hp: 100, forced: !!near });
+    if (near) { snd.howl(); msg('🐺 Волк идёт!', 1.5); }
     return;
   }
 }
@@ -682,10 +758,17 @@ function updateWolves(dt) {
   S.wolfT -= dt;
   if (night && wolves.length < want && S.wolfT <= 0) { spawnWolf(); S.wolfT = R(8, 20); if (wolves.length === 1) snd.howl(); }
   for (const w of wolves) {
+    if (w.dead !== undefined) {
+      w.dead -= dt; w.mesh.rotation.z = lerp(w.mesh.rotation.z, Math.PI / 2, Math.min(1, dt * 6));
+      w.mesh.position.y = H(w.x, w.z) + 0.2 * Math.min(1, w.mesh.rotation.z);
+      if (w.dead <= 0) { w.alive = false; scene.remove(w.mesh); }
+      continue;
+    }
+    if (w.kx || w.kz) { w.x += w.kx * dt; w.z += w.kz * dt; w.kx *= 1 - Math.min(1, dt * 3); w.kz *= 1 - Math.min(1, dt * 3); if (Math.abs(w.kx) + Math.abs(w.kz) < 0.1) w.kx = w.kz = 0; }
     const dx = P.x - w.x, dz = P.z - w.z, d = Math.hypot(dx, dz);
     w.biteCd -= dt; w.timer -= dt;
     let sp = 0;
-    if (!night && w.state !== 'leave') w.state = 'leave';
+    if (!night && w.state !== 'leave' && !w.forced) w.state = 'leave';
     if (w.state === 'roam') {
       if (w.timer <= 0) { w.timer = R(3, 7); w.tx = P.x + R(-25, 25); w.tz = P.z + R(-25, 25); }
       sp = 2.4;
@@ -810,16 +893,18 @@ const manul = new THREE.Group(); manul.visible = false; scene.add(manul);
 {
   const fur = lm(0xa69786), pale = lm(0xe8e0d2), darkF = lm(0x3b2f26), eyeY = lm(0xe3b93c);
   const body = new THREE.Group(); manul.add(body); manul.userData.body = body;
-  body.add(ball(fur, 0.21, 0.19, 0.29, 0, 0.23, 0));            // круглое пузико-бочонок
-  body.add(ball(pale, 0.17, 0.12, 0.24, 0, 0.15, 0.02));         // светлый живот
-  body.add(ball(fur, 0.17, 0.15, 0.14, 0, 0.3, 0.18));           // пушистая грудь
+  const torso = new THREE.Group(); body.add(torso); manul.userData.torso = torso;
+  torso.add(ball(fur, 0.21, 0.19, 0.29, 0, 0.23, 0));            // круглое пузико-бочонок
+  torso.add(ball(pale, 0.17, 0.12, 0.24, 0, 0.15, 0.02));        // светлый живот
+  torso.add(ball(fur, 0.17, 0.15, 0.14, 0, 0.3, 0.18));          // пушистая грудь
   const head = new THREE.Group(); head.position.set(0, 0.34, 0.3); body.add(head); manul.userData.head = head;
   head.add(ball(fur, 0.15, 0.125, 0.13, 0, 0, 0));               // широкая голова
   head.add(ball(fur, 0.07, 0.07, 0.05, -0.12, -0.04, 0.0), ball(fur, 0.07, 0.07, 0.05, 0.12, -0.04, 0.0)); // бакенбарды
   head.add(ball(fur, 0.05, 0.032, 0.025, -0.13, 0.05, -0.02), ball(fur, 0.05, 0.032, 0.025, 0.13, 0.05, -0.02)); // низкие уши
   head.add(ball(darkF, 0.03, 0.018, 0.01, -0.13, 0.05, 0.005), ball(darkF, 0.03, 0.018, 0.01, 0.13, 0.05, 0.005));
   head.add(ball(pale, 0.045, 0.04, 0.02, -0.05, 0.02, 0.11), ball(pale, 0.045, 0.04, 0.02, 0.05, 0.02, 0.11));
-  head.add(ball(eyeY, 0.026, 0.026, 0.012, -0.05, 0.025, 0.125), ball(eyeY, 0.026, 0.026, 0.012, 0.05, 0.025, 0.125));
+  const eyes = [ball(eyeY, 0.026, 0.026, 0.012, -0.05, 0.025, 0.125), ball(eyeY, 0.026, 0.026, 0.012, 0.05, 0.025, 0.125)];
+  head.add(eyes[0], eyes[1]); manul.userData.eyes = eyes; manul.userData.eyeMat = eyeY;
   head.add(ball(M.dark, 0.012, 0.012, 0.006, -0.05, 0.025, 0.136), ball(M.dark, 0.012, 0.012, 0.006, 0.05, 0.025, 0.136));
   head.add(ball(pale, 0.06, 0.04, 0.035, 0, -0.045, 0.11));      // мордочка
   head.add(ball(lm(0x6b4a42), 0.015, 0.01, 0.008, 0, -0.025, 0.145));
@@ -840,13 +925,17 @@ const manul = new THREE.Group(); manul.visible = false; scene.add(manul);
   }
   tail.rotation.x = 0.35;
 }
-let thirdPerson = false;
+let view = 0; // 0 — 1-е лицо, 1 — 3-е лицо, 2 — 2-е лицо (камера спереди, только в песочнице)
+const VIEW_NAMES = ['1-е лицо', '3-е лицо', '2-е лицо'];
+function setView(v) {
+  view = v; manul.visible = view > 0;
+  document.body.classList.toggle('third', view === 1); document.body.classList.toggle('second', view === 2);
+  $('viewLbl').textContent = VIEW_NAMES[(view + 1) % (S.sandbox ? 3 : 2)];
+}
 function toggleView() {
-  thirdPerson = !thirdPerson;
-  manul.visible = thirdPerson;
-  document.body.classList.toggle('third', thirdPerson);
-  $('viewLbl').textContent = thirdPerson ? '1-е лицо' : '3-е лицо';
-  msg(thirdPerson ? 'Вот он какой, толстенький Тимофей 😺' : 'Снова глазами Тимофея', 1.6);
+  setView((view + 1) % (S.sandbox ? 3 : 2));
+  msg(view === 1 ? 'Вот он какой, толстенький Тимофей 😺' : view === 2 ? 'Второе лицо: Тимофей смотрит прямо на тебя 😾' : 'Снова глазами Тимофея', 1.6);
+  if (S.panel) sbSync();
 }
 $('viewBtn').addEventListener('click', e => { e.stopPropagation(); toggleView(); });
 $('viewBtn').addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); toggleView(); }, { passive: false });
@@ -869,13 +958,239 @@ function updateManulModel(dt, spd) {
   u.head.rotation.z = P.purring ? Math.sin(t * 2) * 0.12 : 0;
   u.tail.rotation.y = Math.sin(t * (P.purring ? 2 : 1.3)) * 0.35;
   u.tail.rotation.x = P.hissT > 0 ? -0.5 : P.crouch ? 0.6 : 0.35;
+  // ожирение: чем выше уровень, тем шире бочонок
+  const fat = S.fatShow;
+  u.torso.scale.set(fat, 1 + (fat - 1) * 0.75, 1 + (fat - 1) * 0.45);
+  u.torso.position.y = -(fat - 1) * 0.06;
+  u.head.position.set(0, 0.34 + (fat - 1) * 0.07, 0.3 + (fat - 1) * 0.12);
+  u.legs.forEach((L, i) => { L.position.x = (i % 2 ? 1 : -1) * 0.11 * (1 + (fat - 1) * 0.7); L.scale.set(1 + (fat - 1) * 0.6, 1, 1 + (fat - 1) * 0.6); });
+  u.tail.position.z = -0.26 - (fat - 1) * 0.12;
+  if (P.flying) {
+    b.rotation.x = clamp(P.pitch, -0.8, 0.8) * 0.7;
+    u.legs.forEach((L, i) => L.rotation.x = i < 2 ? -1.3 : 1.3); u.tail.rotation.x = -0.1;
+  }
+  if (P.swingT > 0) u.head.rotation.x += Math.sin((1 - P.swingT / 0.4) * Math.PI) * 0.7;
+  const em = P.lasering ? beamCore : u.eyeMat; u.eyes[0].material = em; u.eyes[1].material = em;
+  lomTP.visible = S.sandbox && P.weapon === 'lom';
+}
+
+
+/* =====================  ПЕСОЧНИЦА  ===================== */
+let mouseDown = false;
+addEventListener('mouseup', e => { if (e.button === 0) mouseDown = false; });
+const V3 = THREE.Vector3;
+const beamGeo = new THREE.CylinderGeometry(1, 1, 1, 8, 1, true); beamGeo.rotateX(Math.PI / 2); beamGeo.translate(0, 0, 0.5);
+const beamOuter = new THREE.MeshBasicMaterial({ color: 0xff2a14, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
+const beamCore = new THREE.MeshBasicMaterial({ color: 0xffe6d0, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
+const beams = [0, 1].map(() => {
+  const g = new THREE.Group();
+  const o = new THREE.Mesh(beamGeo, beamOuter); o.scale.set(0.022, 0.022, 1);
+  const c = new THREE.Mesh(beamGeo, beamCore); c.scale.set(0.007, 0.007, 1);
+  g.add(o, c); g.visible = false; scene.add(g); return g;
+});
+// искры и подпалины
+const sparkGeo = new THREE.BoxGeometry(0.035, 0.035, 0.035);
+const sparkMat = new THREE.MeshBasicMaterial({ color: 0xffb347, fog: false });
+const sparks = [];
+for (let i = 0; i < 90; i++) { const m = new THREE.Mesh(sparkGeo, sparkMat); m.visible = false; scene.add(m); sparks.push({ m, vx: 0, vy: 0, vz: 0, life: 0 }); }
+let sparkI = 0;
+function spark(x, y, z, n) {
+  for (let i = 0; i < n; i++) {
+    const s = sparks[sparkI]; sparkI = (sparkI + 1) % sparks.length;
+    s.m.position.set(x, y, z); s.vx = R(-2, 2); s.vy = R(1, 4); s.vz = R(-2, 2); s.life = R(0.25, 0.6); s.m.visible = true;
+  }
+}
+function updateSparks(dt) {
+  for (const s of sparks) {
+    if (s.life <= 0) continue;
+    s.life -= dt; s.vy -= 9 * dt;
+    s.m.position.x += s.vx * dt; s.m.position.y += s.vy * dt; s.m.position.z += s.vz * dt;
+    s.m.scale.setScalar(Math.max(0.01, s.life * 2));
+    if (s.life <= 0) s.m.visible = false;
+  }
+}
+const scorchGeo = new THREE.CircleGeometry(0.14, 10); scorchGeo.rotateX(-Math.PI / 2);
+const scorchMat = new THREE.MeshBasicMaterial({ color: 0x140a04, transparent: true, opacity: 0.7, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3 });
+const scorches = []; let scorchI = 0, scorchT = 0;
+function scorch(x, z) {
+  let m = scorches[scorchI];
+  if (!m) { m = new THREE.Mesh(scorchGeo, scorchMat); scene.add(m); scorches[scorchI] = m; }
+  m.position.set(x, H(x, z) + 0.04, z); m.scale.setScalar(R(0.7, 1.4)); scorchI = (scorchI + 1) % 160;
+}
+function clearScorches() { for (const m of scorches) if (m) m.position.y = -999; }
+// лом
+function makeLom() {
+  const g = new THREE.Group(), red = lm(0x9a2219), steel = lm(0x5a5f66);
+  g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.8, 8), red));
+  const hook = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.014, 6, 12, Math.PI), steel); hook.position.set(0.05, 0.4, 0); g.add(hook);
+  const tip = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.07, 0.012), steel); tip.position.set(0, -0.43, 0); g.add(tip);
+  return g;
+}
+const lomFP = makeLom(); lomFP.visible = false; pawScene.add(lomFP);
+const lomTP = makeLom(); lomTP.scale.setScalar(0.6); lomTP.position.set(0, -0.06, 0.13); lomTP.rotation.z = Math.PI / 2; lomTP.visible = false;
+manul.userData.head.add(lomTP);
+
+const WEAPON_NAMES = { paws: '🐾 Лапы', laser: '🔴 Лазеры', lom: '🔧 Лом' };
+function setWeapon(w) {
+  P.weapon = w; sbSync(); updatePounceLabel();
+  msg({ paws: '🐾 Лапы — обычная охота', laser: '🔴 Лазеры из глаз! Держи кнопку', lom: '🔧 Лом! Бей кнопкой атаки' }[w], 1.6);
+}
+function updatePounceLabel() {
+  const b = document.querySelector('[data-act="pounce"]'); if (!b) return;
+  b.innerHTML = P.weapon === 'laser' ? '<span>🔴</span>Лазер' : P.weapon === 'lom' ? '<span>🔧</span>Лом' : '<span>🐾</span>Бросок';
+}
+function actPrimary() {
+  if (!S.running || S.paused) return;
+  if (!S.sandbox || P.weapon === 'paws') { actPounce(); return; }
+  if (P.weapon === 'lom' && P.swingT <= 0) { P.swingT = 0.4; P.lomHit = 0.12; snd.swipe(); }
+}
+function killWolf(w) { w.dead = 2.5; w.hp = 0; msg('Волк повержен! 🐺💫', 1.8); snd.growl(); }
+function hitWolf(w, dmg, kx, kz) {
+  w.hp -= dmg; if (kx !== undefined) { w.kx = kx; w.kz = kz; }
+  if (w.hp <= 0) killWolf(w); else { w.state = 'flee'; w.timer = 5; }
+}
+function lomHit() {
+  const fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw); let hit = false;
+  for (const p of prey) {
+    if (!p.alive) continue; const dx = p.x - P.x, dz = p.z - P.z, d = Math.hypot(dx, dz);
+    if (d < 1.7 && (dx * fx + dz * fz) / (d || 1) > 0.3 && Math.abs(p.y - P.y) < 1.2) { catchPrey(p, 'Сбил ломом'); hit = true; break; }
+  }
+  for (const w of wolves) {
+    if (w.dead !== undefined) continue; const dx = w.x - P.x, dz = w.z - P.z, d = Math.hypot(dx, dz);
+    if (d < 2.0 && (dx * fx + dz * fz) / (d || 1) > 0.2) { hitWolf(w, 55, dx / d * 9, dz / d * 9); spark(w.x, H(w.x, w.z) + 0.8, w.z, 10); hit = true; }
+  }
+  if (Math.hypot(eagle.x - P.x, eagle.y - P.y, eagle.z - P.z) < 2.6 && (eagle.state === 'dive' || eagle.state === 'warn')) { repelEagle('Бац! Беркут улетел, потирая клюв'); hit = true; }
+  for (const r of rocks) {
+    const dx = r.x - P.x, dz = r.z - P.z, d = Math.hypot(dx, dz);
+    if (d < r.r + 0.8 && (dx * fx + dz * fz) / (d || 1) > 0.5) { spark(P.x + fx * 0.8, P.y + 0.3, P.z + fz * 0.8, 8); hit = true; break; }
+  }
+  if (hit) { snd.clang(); P.shake = SET.shake ? 0.15 : 0; }
+}
+const _o = new V3(), _d = new V3(), _p = new V3(), _hp = new V3(), _e = [new V3(), new V3()];
+function laserTrace(o, d) {
+  for (let t = 0.25; t < 90; t += 0.2) {
+    _p.copy(o).addScaledVector(d, t); const px = _p.x, py = _p.y, pz = _p.z;
+    if (py < H(px, pz)) return { kind: 'ground', t };
+    for (const p of prey) if (p.alive && Math.hypot(p.x - px, p.y + 0.08 - py, p.z - pz) < p.T.size + 0.14) return { kind: 'prey', t, obj: p };
+    for (const w of wolves) if (w.dead === undefined && Math.hypot(w.x - px, w.z - pz) < 0.45) { const gy = H(w.x, w.z); if (py > gy + 0.25 && py < gy + 1.15) return { kind: 'wolf', t, obj: w }; }
+    if (Math.hypot(eagle.x - px, eagle.y - py, eagle.z - pz) < 1.1) return { kind: 'eagle', t };
+    for (const r of rocks) if (py < r.top && Math.abs(r.x - px) < r.r && Math.abs(r.z - pz) < r.r && Math.hypot(r.x - px, r.z - pz) < r.r * 0.85) return { kind: 'rock', t };
+  }
+  return { kind: 'none', t: 90 };
+}
+function stopLaser() { if (beams[0].visible) beams.forEach(b => b.visible = false); P.lasering = false; snd.laserOff(); }
+function updateLaser(dt) {
+  const firing = P.weapon === 'laser' && (mouseDown || touch.fire);
+  if (!firing) { stopLaser(); return; }
+  P.lasering = true; snd.laserOn();
+  if (view === 0) {
+    _o.copy(camera.position); camera.getWorldDirection(_d);
+    _e[0].set(-0.08, -0.08, -0.32); _e[1].set(0.08, -0.08, -0.32); camera.localToWorld(_e[0]); camera.localToWorld(_e[1]);
+  } else {
+    manul.updateMatrixWorld(true);
+    manul.userData.eyes[0].getWorldPosition(_e[0]); manul.userData.eyes[1].getWorldPosition(_e[1]);
+    _o.copy(_e[0]).add(_e[1]).multiplyScalar(0.5);
+    const p = clamp(P.pitch + (view === 1 ? 0.15 : 0), -1.2, 1.2);
+    _d.set(-Math.sin(P.yaw) * Math.cos(p), Math.sin(p), -Math.cos(P.yaw) * Math.cos(p));
+  }
+  const res = laserTrace(_o, _d);
+  _hp.copy(_o).addScaledVector(_d, res.t);
+  const fl = (1 + Math.random() * 0.4) * (view === 0 ? 0.3 : 1);
+  for (let i = 0; i < 2; i++) { const b = beams[i]; b.visible = true; b.position.copy(_e[i]); b.lookAt(_hp); b.scale.set(fl, fl, Math.max(0.01, _e[i].distanceTo(_hp))); }
+  if (res.kind === 'none') return;
+  spark(_hp.x, _hp.y, _hp.z, 2);
+  if (res.kind === 'prey') catchPrey(res.obj, 'Поджарил лазером');
+  else if (res.kind === 'wolf') { hitWolf(res.obj, 170 * dt); }
+  else if (res.kind === 'eagle') { if (eagle.state !== 'climb') repelEagle('Беркут получил лазером и сбежал!'); }
+  else if (res.kind === 'ground') { scorchT -= dt; if (scorchT <= 0) { scorchT = 0.04; scorch(_hp.x, _hp.z); } }
+}
+function toggleFly() {
+  P.flying = !P.flying;
+  if (P.flying) { P.vy = 4; P.onGround = false; P.pounceT = 0; msg('🕊 Тимофей летит! Смотри, куда лететь. Пробел — вверх, X — вниз', 2.5); }
+  else msg('Приземляемся…', 1.5);
+  sbSync();
+}
+function updateFlight(dt, mf, ms) {
+  const cp = Math.cos(P.pitch), sp = Math.sin(P.pitch);
+  const fast = keys.ShiftLeft || keys.ShiftRight;
+  const v = fast ? 18 : 9;
+  const up = (keys.Space || touch.up ? 1 : 0) - (keys.KeyX ? 1 : 0);
+  const fx = -Math.sin(P.yaw) * cp, fz = -Math.cos(P.yaw) * cp, rx = Math.cos(P.yaw), rz = -Math.sin(P.yaw);
+  const tx = (fx * mf + rx * ms) * v, ty = sp * mf * v + up * v * 0.7, tz = (fz * mf + rz * ms) * v;
+  const k = Math.min(1, dt * 4);
+  P.vx += (tx - P.vx) * k; P.vy += (ty - P.vy) * k; P.vz += (tz - P.vz) * k;
+  P.x += P.vx * dt; P.y += P.vy * dt; P.z += P.vz * dt;
+  const r = Math.hypot(P.x, P.z), lim = LIMIT + 55; if (r > lim) { P.x *= lim / r; P.z *= lim / r; }
+  const g = H(P.x, P.z);
+  if (P.y < g + 2) pushOutRocks(P, 0.22);
+  if (P.y < g) { P.y = g; if (P.vy < 0) P.vy = 0; }
+  if (P.y > 150) P.y = 150;
+  P.onGround = false; P.purring = false; P.run = fast; snd.purrOff();
+  P.pounceT = 0; P.pounceCd -= dt; P.hissT -= dt; P.hissCd -= dt; P.swipeT -= dt; P.sniffT -= dt; P.sniffCd -= dt;
+  return Math.hypot(P.vx, P.vz);
+}
+function forceEagle() {
+  if (eagle.state === 'warn' || eagle.state === 'dive') return;
+  eagle.x = P.x + 20; eagle.z = P.z; eagle.y = 25; eagle.ang = 0;
+  eagle.state = 'warn'; eagle.timer = 2.6; snd.screech(); warn('⚠ Беркут! Прячься, фыркни (E) или бей!', 2.6);
+}
+function updateSandbox(dt) {
+  if (P.swingT > 0) P.swingT -= dt;
+  if (P.lomHit > 0) { P.lomHit -= dt; if (P.lomHit <= 0) lomHit(); }
+  updateLaser(dt);
+}
+// панель
+function sbSync() {
+  document.querySelectorAll('[data-w]').forEach(b => b.classList.toggle('on', b.dataset.w === P.weapon));
+  const set = (k, v) => { const b = document.querySelector(`[data-sb="${k}"]`); if (b) b.classList.toggle('on', !!v); };
+  set('fly', P.flying); set('god', S.god); set('freeze', S.freeze); set('view', view === 2);
+}
+function togglePanel(force) {
+  const open = force !== undefined ? force : $('sbPanel').classList.contains('hidden');
+  S.panel = open; $('sbPanel').classList.toggle('hidden', !open);
+  if (open) { sbSync(); mouseDown = false; if (document.pointerLockElement) document.exitPointerLock(); }
+  else if (!isTouch && !noLock && S.running) lockPointer();
+}
+$('sbBtn').addEventListener('click', e => { e.stopPropagation(); togglePanel(); });
+$('sbClose').addEventListener('click', () => togglePanel(false));
+document.querySelectorAll('[data-w]').forEach(b => b.addEventListener('click', () => setWeapon(b.dataset.w)));
+document.querySelectorAll('[data-sb]').forEach(b => b.addEventListener('click', () => {
+  audioInit();
+  switch (b.dataset.sb) {
+    case 'fly': toggleFly(); break;
+    case 'god': S.god = !S.god; msg(S.god ? '❤ Бессмертие включено' : 'Бессмертие выключено — осторожно!', 1.6); break;
+    case 'view': toggleView(); break;
+    case 'fatUp': addFat(FAT_XP[Math.min(4, S.fatLv)] - S.fatXP + 1); break;
+    case 'fatDown': S.fatXP = S.fatLv >= 2 ? FAT_XP[S.fatLv - 2] : 0; S.fatLv = fatLevel(S.fatXP); msg(`🥗 Тимофей похудел до уровня ${S.fatLv}`, 1.6); break;
+    case 'wolf': spawnWolf(true); break;
+    case 'eagle': forceEagle(); break;
+    case 'prey': for (let i = 0; i < 10; i++) spawnPrey(['pika', 'mouse', 'lark'][i % 3]); msg('🐭 Добыча разбежалась по степи', 1.5); break;
+    case 'daynight': S.t = S.dayF > 0.5 ? 0.72 : 0.12; msg(S.t > 0.5 ? '🌙 Ночь' : '☀️ День', 1.2); break;
+    case 'freeze': S.freeze = !S.freeze; msg(S.freeze ? '⏸ Время остановлено' : '▶ Время пошло', 1.4); break;
+  }
+  sbSync();
+}));
+
+/* ---------- ожирение ---------- */
+const FAT_XP = [40, 110, 220, 380];           // сколько надо съесть до уровней 2…5
+const FAT_SCALE = [1, 1.2, 1.42, 1.66, 1.95];
+const FAT_SPEED = [1, 0.97, 0.93, 0.88, 0.82];
+const FAT_WARM = [1, 0.85, 0.7, 0.55, 0.4];
+const FAT_NAMES = ['пушистый', 'упитанный', 'круглый', 'толстучий', 'ШАР'];
+function fatLevel(xp) { let l = 1; for (const t of FAT_XP) if (xp >= t) l++; return l; }
+function addFat(n) {
+  S.fatXP += n; const lv = fatLevel(S.fatXP);
+  if (lv > S.fatLv) {
+    S.fatLv = lv; snd.good(); snd.meow();
+    setTimeout(() => msg(`🍔 Тимофей потолстел! Ожирение ур. ${lv} — ${FAT_NAMES[lv - 1]}`, 3), 900);
+  }
 }
 
 /* =====================  ИГРОК  ===================== */
 const P = { x: 0, z: 2.6, y: 0, vx: 0, vz: 0, vy: 0, yaw: Math.PI, pitch: -0.05, onGround: true, crouch: false, run: false,
   pounceT: 0, pounceCd: 0, hissT: 0, hissCd: 0, swipeT: 0, purring: false, sniffT: 0, sniffCd: 0, eye: 0.34, bob: 0, step: 0, shake: 0 };
 const S = { running: false, paused: false, over: false, t: 0.04, day: 1, caught: 0, caughtToday: 0, hp: 100, food: 75, warm: 100,
-  dayF: 1, spawnT: 0, wolfT: 0, inHome: false, wasNight: false, msgT: 0, warnT: 0, hurtT: 0, time: 0 };
+  dayF: 1, spawnT: 0, wolfT: 0, inHome: false, fatXP: 0, fatLv: 1, fatShow: 1, sandbox: false, god: false, freeze: false, panel: false, wasNight: false, msgT: 0, warnT: 0, hurtT: 0, time: 0 };
 const keys = {};
 const touch = { jx: 0, jy: 0, purr: false };
 function goal() { return 3 + S.day; }
@@ -883,15 +1198,17 @@ function goal() { return 3 + S.day; }
 function msg(text, dur = 2.5) { const m = $('msg'); m.textContent = text; m.style.opacity = 1; S.msgT = dur; }
 function warn(text, dur = 2) { const m = $('warn'); m.textContent = text; m.style.opacity = 1; S.warnT = dur; }
 function hurt(dmg, text) {
-  S.hp -= dmg; P.shake = 0.4; S.hurtT = 0.6; snd.hurt(); if (text) warn(text, 1.5);
+  if (S.sandbox && S.god) { P.shake = SET.shake ? 0.3 : 0; if (text) warn(text + ' (бессмертие)', 1.2); return; }
+  S.hp -= dmg * SET.diff; P.shake = SET.shake ? 0.4 : 0; S.hurtT = 0.6; snd.hurt(); if (text) warn(text, 1.5);
   if (S.hp <= 0) gameOver();
 }
-function catchPrey(p) {
+function catchPrey(p, how = 'Поймал') {
+  addFat(p.T.food);
   removePrey(p);
   S.food = Math.min(100, S.food + p.T.food); S.caught++; S.caughtToday++;
   snd.squeak(); setTimeout(snd.crunch, 120);
-  if (S.caughtToday === goal()) { msg(`Поймал ${p.T.name}! Цель дня выполнена! 🎉 Возвращайся в нору к ночи`, 3.5); snd.good(); }
-  else msg(`Поймал ${p.T.name}! +${p.T.food} 🍖`, 2);
+  if (S.caughtToday === goal()) { msg(`${how} ${p.T.name}! Цель дня выполнена! 🎉 Возвращайся в нору к ночи`, 3.5); snd.good(); }
+  else msg(`${how} ${p.T.name}! +${p.T.food} 🍖`, 2);
 }
 function tryCatch(rad) {
   const fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw);
@@ -963,6 +1280,10 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyF') actSleep();
   if (e.code === 'KeyM') snd.meow();
   if (e.code === 'KeyT') toggleView();
+  if (S.sandbox) {
+    if (e.code === 'Digit1') setWeapon('paws'); if (e.code === 'Digit2') setWeapon('laser'); if (e.code === 'Digit3') setWeapon('lom');
+    if (e.code === 'KeyG') toggleFly(); if (e.code === 'KeyB') togglePanel();
+  }
 });
 addEventListener('keyup', e => { keys[e.code] = false; });
 // если захват мыши недоступен (например, во встроенном окне) — смотрим, просто двигая мышь
@@ -977,20 +1298,20 @@ addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
 canvas.addEventListener('mousedown', e => {
   if (!S.running || isTouch) return;
   if (document.pointerLockElement !== canvas && !noLock) { lockPointer(); return; }
-  if (e.button === 0) actPounce(); else if (e.button === 2) actHiss();
+  if (e.button === 0) { mouseDown = true; actPrimary(); } else if (e.button === 2) actHiss();
 });
 addEventListener('contextmenu', e => e.preventDefault());
 addEventListener('mousemove', e => {
   if ((document.pointerLockElement !== canvas && !noLock) || S.paused || !S.running) return;
-  P.yaw -= e.movementX * 0.0022; P.pitch = clamp(P.pitch - e.movementY * 0.0022, -1.3, 1.3);
+  const k = 0.0022 * SET.sens; P.yaw -= e.movementX * k; P.pitch = clamp(P.pitch - e.movementY * k * (SET.invertY ? -1 : 1), -1.3, 1.3);
 });
 document.addEventListener('pointerlockchange', () => {
   if (isTouch) return;
-  if (document.pointerLockElement !== canvas && S.running && !S.over) pause(true);
+  if (document.pointerLockElement !== canvas && S.running && !S.over && !S.panel) pause(true);
 });
 function pause(on) {
   S.paused = on; $('pause').classList.toggle('hidden', !on);
-  if (on) { snd.purrOff(); for (const k in keys) keys[k] = false; }
+  if (on) { snd.purrOff(); stopLaser(); mouseDown = false; for (const k in keys) keys[k] = false; }
 }
 $('resumeBtn').onclick = () => { audioInit(); pause(false); if (!isTouch) lockPointer(); };
 $('quitBtn').onclick = () => { pause(false); toMenu(); };
@@ -1001,7 +1322,7 @@ if (isTouch) {
   const joy = $('joy'), knob = $('joyKnob'); let jid = null, jcx = 0, jcy = 0;
   joy.addEventListener('touchstart', e => { e.preventDefault(); const t = e.changedTouches[0]; jid = t.identifier; const r = joy.getBoundingClientRect(); jcx = r.left + r.width / 2; jcy = r.top + r.height / 2; moveJ(t); }, { passive: false });
   function moveJ(t) { let dx = t.clientX - jcx, dy = t.clientY - jcy; const d = Math.hypot(dx, dy), m = 55; if (d > m) { dx *= m / d; dy *= m / d; } touch.jx = dx / m; touch.jy = dy / m; knob.style.transform = `translate(${dx}px,${dy}px)`; }
-  addEventListener('touchmove', e => { for (const t of e.changedTouches) { if (t.identifier === jid) moveJ(t); if (t.identifier === lid) { P.yaw -= (t.clientX - lx) * 0.006; P.pitch = clamp(P.pitch - (t.clientY - ly) * 0.006, -1.3, 1.3); lx = t.clientX; ly = t.clientY; } } }, { passive: false });
+  addEventListener('touchmove', e => { for (const t of e.changedTouches) { if (t.identifier === jid) moveJ(t); if (t.identifier === lid) { const k = 0.006 * SET.sens; P.yaw -= (t.clientX - lx) * k; P.pitch = clamp(P.pitch - (t.clientY - ly) * k * (SET.invertY ? -1 : 1), -1.3, 1.3); lx = t.clientX; ly = t.clientY; } } }, { passive: false });
   const endT = e => { for (const t of e.changedTouches) { if (t.identifier === jid) { jid = null; touch.jx = touch.jy = 0; knob.style.transform = ''; } if (t.identifier === lid) lid = null; } };
   addEventListener('touchend', endT); addEventListener('touchcancel', endT);
   let lid = null, lx = 0, ly = 0;
@@ -1010,10 +1331,10 @@ if (isTouch) {
     const act = b.dataset.act;
     b.addEventListener('touchstart', e => {
       e.preventDefault(); e.stopPropagation(); audioInit();
-      if (act === 'pounce') actPounce(); else if (act === 'jump') actJump(); else if (act === 'hiss') actHiss();
+      if (act === 'pounce') { touch.fire = true; actPrimary(); } else if (act === 'jump') { touch.up = true; actJump(); } else if (act === 'hiss') actHiss();
       else if (act === 'sniff') actSniff(); else if (act === 'crouch') toggleCrouch(); else if (act === 'purr') touch.purr = true;
     }, { passive: false });
-    b.addEventListener('touchend', e => { e.preventDefault(); if (act === 'purr') touch.purr = false; }, { passive: false });
+    b.addEventListener('touchend', e => { e.preventDefault(); if (act === 'purr') touch.purr = false; if (act === 'pounce') touch.fire = false; if (act === 'jump') touch.up = false; }, { passive: false });
   });
   $('hint').style.pointerEvents = 'auto';
   $('hint').addEventListener('touchstart', e => { if (S.inHome) { e.preventDefault(); actSleep(); } }, { passive: false });
@@ -1027,10 +1348,12 @@ function updatePlayer(dt) {
   mf -= touch.jy; ms += touch.jx;
   const len = Math.hypot(mf, ms); if (len > 1) { mf /= len; ms /= len; }
   const moving = len > 0.1;
+  if (P.flying) return updateFlight(dt, mf, ms);
   P.purring = (keys.KeyR || touch.purr) && P.onGround;
   P.run = moving && !P.crouch && (keys.ShiftLeft || keys.ShiftRight || (isTouch && len > 0.95));
   let sp = P.crouch ? 1.7 : P.run ? 6.6 : 3.3;
   if (P.purring) sp *= 0.3;
+  sp *= FAT_SPEED[S.fatLv - 1];
   const fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw), rx = Math.cos(P.yaw), rz = -Math.sin(P.yaw);
   const tx = (fx * mf + rx * ms) * sp, tz = (fz * mf + rz * ms) * sp;
   if (P.onGround && P.pounceT <= 0) { const k = Math.min(1, dt * 12); P.vx += (tx - P.vx) * k; P.vz += (tz - P.vz) * k; }
@@ -1064,7 +1387,7 @@ function updatePlayer(dt) {
 function update(dt) {
   S.time += dt;
   // время суток: день 0..0.5 (150 с), ночь 0.5..1 (100 с)
-  S.t += dt * (S.t < 0.5 ? 1 / 300 : 1 / 200);
+  if (!S.freeze) S.t += dt * (S.t < 0.5 ? 1 / 300 : 1 / 200) / SET.dayLen;
   if (S.t >= 1) { S.t -= 1; newDay(false); }
   const e = Math.sin(S.t * Math.PI * 2);
   S.dayF = clamp(e * 2.5 + 0.35, 0, 1);
@@ -1085,16 +1408,18 @@ function update(dt) {
   updatePrey(dt, vis);
   updateWolves(dt);
   updateEagle(dt);
+  if (S.sandbox) updateSandbox(dt);
 
   // характеристики
-  S.food -= dt * (0.3 + (P.run ? 0.35 : 0) + (P.purring ? 0.5 : 0));
+  S.food -= dt * SET.diff * (0.3 + (P.run ? 0.35 : 0) + (P.purring ? 0.5 : 0));
   if (S.inHome) S.warm += dt * 6;
-  else S.warm += dt * (S.dayF > 0.7 ? 0.25 : -(1 - S.dayF) * 0.5 - 0.05) + (P.purring ? dt * 0.3 : 0);
+  else S.warm += dt * (S.dayF > 0.7 ? 0.25 : (-(1 - S.dayF) * 0.5 - 0.05) * FAT_WARM[S.fatLv - 1] * SET.diff) + (P.purring ? dt * 0.3 : 0);
   S.food = clamp(S.food, 0, 100); S.warm = clamp(S.warm, 0, 100);
   if (S.food <= 0) S.hp -= dt * 1.4;
   if (S.warm <= 0) S.hp -= dt * 1.6;
   if (S.food > 35 && S.warm > 25) S.hp += dt * (P.purring ? 3 : 0.35);
   S.hp = Math.min(100, S.hp);
+  if (S.sandbox && S.god) { S.hp = 100; S.food = 100; S.warm = 100; }
   if (S.hp <= 0 && !S.over) gameOver();
 }
 
@@ -1125,9 +1450,17 @@ function updateCamera(dt, spd) {
   P.bob = lerp(P.bob, 0, Math.min(1, dt * 8));
   const bob = P.onGround ? Math.sin(P.step * Math.PI * 2) * 0.012 * Math.min(1, spd / 3) : 0;
   P.shake = Math.max(0, P.shake - dt);
-  const sh = P.shake * 0.08;
-  if (thirdPerson && S.running) {
-    const pitch = clamp(P.pitch, -1.0, 0.7), dist = 1.3;
+  const sh = P.shake * (SET.shake ? 0.08 : 0);
+  if (view === 2 && S.running) {
+    const fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw), dist = 1.2 + (S.fatShow - 1) * 0.5;
+    const cx = P.x + fx * dist, cz = P.z + fz * dist;
+    const cy = Math.max(P.y + 0.35 + Math.sin(clamp(P.pitch, -0.8, 0.8)) * 0.6, H(cx, cz) + 0.15);
+    camera.position.set(cx + R(-sh, sh), cy + R(-sh, sh), cz);
+    camera.lookAt(P.x, P.y + 0.3, P.z);
+    return;
+  }
+  if (view === 1 && S.running) {
+    const pitch = clamp(P.pitch, -1.0, 0.7), dist = 1.3 + (S.fatShow - 1) * 0.5;
     const tx = P.x, ty = P.y + 0.35, tz = P.z;
     let cx = tx + Math.sin(P.yaw) * Math.cos(pitch) * dist, cz = tz + Math.cos(P.yaw) * Math.cos(pitch) * dist;
     let cy = ty - Math.sin(pitch) * dist + 0.15;
@@ -1150,6 +1483,7 @@ function updatePaws(dt, spd) {
     py += Math.sin(t * 2.2) * 0.004;
     if (P.crouch) { py += 0.025; pz -= 0.02; px -= s * 0.02; }
     if (!P.onGround && P.pounceT <= 0) { py += 0.04; rx += 0.15; }
+    if (P.flying) { pz -= 0.1; py += 0.04; px -= s * 0.04; rx += 0.1; }
     if (P.swipeT > 0 && s > 0) {
       const f = Math.sin((1 - P.swipeT / 0.3) * Math.PI);
       pz -= 0.14 * f; py += 0.08 * f; px -= 0.09 * f; rx += 0.3 * f; rz = 0.4 * f; claws = true;
@@ -1168,6 +1502,12 @@ function updatePaws(dt, spd) {
     }
     paw.position.set(px, py, pz); paw.rotation.set(rx, 0, rz);
     for (const c of u.claws) c.visible = claws;
+    const fp = 0.85 * (1 + (S.fatShow - 1) * 0.2); paw.scale.set(fp, fp, 0.85);
+  }
+  lomFP.visible = S.sandbox && P.weapon === 'lom';
+  if (lomFP.visible) {
+    const f = P.swingT > 0 ? Math.sin((1 - P.swingT / 0.4) * Math.PI) : 0;
+    lomFP.position.set(0.2 - f * 0.1, -0.2 + f * 0.05, -0.55); lomFP.rotation.set(-0.35 - f * 1.3, 0, 0.45 - f * 0.3);
   }
 }
 // компас
@@ -1199,18 +1539,22 @@ function updateHud(dt) {
   $('hpF').style.width = clamp(S.hp, 0, 100) + '%';
   $('foodF').style.width = S.food + '%';
   $('warmF').style.width = S.warm + '%';
+  S.fatShow = lerp(S.fatShow, FAT_SCALE[S.fatLv - 1], Math.min(1, dt * 2));
+  { const lo = S.fatLv >= 2 ? FAT_XP[S.fatLv - 2] : 0, hi = FAT_XP[S.fatLv - 1];
+    $('fatF').style.width = (S.fatLv >= 5 ? 100 : clamp((S.fatXP - lo) / (hi - lo) * 100, 0, 100)) + '%'; $('fatLv').textContent = 'ур.' + S.fatLv; }
   if (S.msgT > 0) { S.msgT -= dt; if (S.msgT <= 0) $('msg').style.opacity = 0; }
   if (S.warnT > 0) { S.warnT -= dt; if (S.warnT <= 0) $('warn').style.opacity = 0; }
   S.hurtT = Math.max(0, S.hurtT - dt); $('hurt').style.opacity = S.hurtT;
   drawCompass();
   if ((hudTick += dt) < 0.15) return; hudTick = 0;
   const icon = S.dayF > 0.6 ? '☀️' : S.dayF > 0.3 ? '🌇' : '🌙';
-  $('dayInfo').textContent = `${icon} День ${S.day}`;
+  $('dayInfo').textContent = `${S.sandbox ? '🧰 ' : ''}${icon} День ${S.day}`;
   $('goalInfo').textContent = `🐭 ${S.caughtToday}/${goal()}  ·  всего ${S.caught}`;
   const v = S.vis;
   $('stealth').textContent = v < 0.5 ? '👁 Незаметен' : v < 0.9 ? '👁 Тихо' : v < 1.2 ? '👁 Заметен' : '👁 Шумно!';
   $('stealth').style.color = v < 0.5 ? '#9df29d' : v < 0.9 ? '#e6f0a0' : v < 1.2 ? '#ffd27a' : '#ff8a6a';
   $('cover').textContent = S.inHome ? '🏠 Дома, тепло' : inCover() ? '🪨 В укрытии' : '';
+  $('sbSt').textContent = S.sandbox ? WEAPON_NAMES[P.weapon] + (P.flying ? ' · 🕊 Полёт' : '') + (S.god ? ' · ❤ ∞' : '') + (S.freeze ? ' · ⏸' : '') : '';
   $('sniffSt').textContent = P.sniffCd > 0 ? `👃 ${Math.ceil(P.sniffCd)}` : '👃 готов';
   let h = '';
   if (S.inHome) h = S.t >= 0.4 ? (isTouch ? '💤 Нажми сюда, чтобы поспать' : '💤 F — лечь спать') : 'Дома тепло и безопасно. Вечером возвращайся спать';
@@ -1223,6 +1567,7 @@ function updateHud(dt) {
 /* ---------- старт / конец ---------- */
 function loadBest() { try { return JSON.parse(localStorage.getItem('manul_timofey_best') || 'null'); } catch (e) { return null; } }
 function saveBest() {
+  if (S.sandbox) return;
   const b = loadBest() || { caught: 0, days: 0 };
   const nb = { caught: Math.max(b.caught, S.caught), days: Math.max(b.days, S.day) };
   try { localStorage.setItem('manul_timofey_best', JSON.stringify(nb)); } catch (e) {}
@@ -1231,31 +1576,34 @@ function showBest() { const b = loadBest(); $('best').textContent = b ? `Рек�
 function resetGame() {
   for (const p of prey) scene.remove(p.mesh); prey.length = 0;
   for (const w of wolves) scene.remove(w.mesh); wolves.length = 0;
-  Object.assign(P, { x: 0, z: 2.6, vx: 0, vz: 0, vy: 0, yaw: Math.PI, pitch: -0.05, onGround: true, crouch: false, pounceT: 0, pounceCd: 0, hissT: 0, hissCd: 0, swipeT: 0, sniffT: 0, sniffCd: 0, shake: 0 });
+  Object.assign(P, { x: 0, z: 2.6, vx: 0, vz: 0, vy: 0, yaw: Math.PI, pitch: -0.05, onGround: true, crouch: false, pounceT: 0, pounceCd: 0, hissT: 0, hissCd: 0, swipeT: 0, sniffT: 0, sniffCd: 0, shake: 0, flying: false, weapon: 'paws', swingT: 0, lomHit: 0, lasering: false });
   P.y = H(P.x, P.z);
-  Object.assign(S, { over: false, paused: false, t: 0.04, day: 1, caught: 0, caughtToday: 0, hp: 100, food: 75, warm: 100, spawnT: 0, wolfT: 0, wasNight: false, msgT: 0, warnT: 0, hurtT: 0 });
+  Object.assign(S, { over: false, paused: false, t: 0.04, day: 1, caught: 0, caughtToday: 0, hp: 100, food: 75, warm: 100, spawnT: 0, wolfT: 0, wasNight: false, msgT: 0, warnT: 0, hurtT: 0, god: S.sandbox, freeze: false, panel: false, fatXP: 0, fatLv: 1, fatShow: 1 });
+  $('sbPanel').classList.add('hidden'); setView(0); updatePounceLabel(); clearScorches();
   Object.assign(eagle, { state: 'circle', timer: 45, x: 30, y: 40, z: 0 });
   $('tCrouch').classList.remove('on');
   for (let i = 0; i < 30; i++) spawnPrey(['pika', 'mouse', 'lark'][i % 3]);
 }
-function startGame() {
+function startGame(sandbox) {
+  S.sandbox = !!sandbox;
   audioInit(); resetGame();
+  $('sbBtn').classList.toggle('hidden', !S.sandbox);
   S.running = true;
   $('menu').classList.add('hidden'); $('over').classList.add('hidden'); $('hud').classList.remove('hidden');
   if (isTouch) { $('touch').classList.remove('hidden'); $('pauseBtn').classList.remove('hidden'); }
   else lockPointer();
-  msg('Мрр! Я — Тимофей. Пора на охоту 🐾', 3);
+  msg(S.sandbox ? 'Песочница! B или 🧰 — лазеры, полёт, лом, волки и 2-е лицо' : 'Мрр! Я — Тимофей. Пора на охоту 🐾', 3.5);
   snd.meow();
 }
 function toMenu() {
-  S.running = false; snd.purrOff();
+  S.running = false; snd.purrOff(); stopLaser(); $('sbPanel').classList.add('hidden'); S.panel = false;
   $('hud').classList.add('hidden'); $('touch').classList.add('hidden'); $('over').classList.add('hidden'); $('menu').classList.remove('hidden');
   if (document.pointerLockElement) document.exitPointerLock();
   showBest();
 }
 function gameOver() {
   if (S.over) return;
-  S.over = true; S.running = false; snd.purrOff(); saveBest();
+  S.over = true; S.running = false; snd.purrOff(); stopLaser(); saveBest(); $('sbPanel').classList.add('hidden'); S.panel = false;
   if (document.pointerLockElement) document.exitPointerLock();
   $('hud').classList.add('hidden'); $('touch').classList.add('hidden');
   const cause = S.food <= 0 ? 'Тимофей слишком долго был голодным.' : S.warm <= 0 ? 'Тимофей замёрз в степи.' : 'Хищники оказались сильнее в этот раз.';
@@ -1264,8 +1612,9 @@ function gameOver() {
   $('overStats').innerHTML = `Прожито дней: <b>${S.day}</b><br>Поймано добычи: <b>${S.caught}</b><br><span style="color:#ffd77a">Рекорд: ${b.caught} добычи, ${b.days} дн.</span>`;
   $('over').classList.remove('hidden');
 }
-$('startBtn').onclick = startGame;
-$('againBtn').onclick = startGame;
+$('startBtn').onclick = () => startGame(false);
+$('sandBtn').onclick = () => startGame(true);
+$('againBtn').onclick = () => startGame(S.sandbox);
 $('menuBtn').onclick = toMenu;
 showBest();
 
@@ -1273,10 +1622,30 @@ showBest();
 function resize() {
   const w = innerWidth, h = innerHeight;
   renderer.setSize(w, h, false);
-  camera.aspect = pawCam.aspect = w / h; camera.fov = w < h ? 85 : 75;
+  camera.aspect = pawCam.aspect = w / h; camera.fov = w < h ? SET.fov + 10 : SET.fov;
   camera.updateProjectionMatrix(); pawCam.updateProjectionMatrix();
 }
-addEventListener('resize', resize); resize();
+addEventListener('resize', resize);
+function applySettings() {
+  renderer.setPixelRatio(SET.quality === 'low' ? 0.6 : SET.quality === 'high' ? Math.min(window.devicePixelRatio || 1, 2) : 1);
+  if (A.master) A.master.gain.value = SET.vol / 100;
+  $('whiskers').style.display = SET.whiskers ? '' : 'none';
+  resize();
+}
+const setFields = [['sSens', 'sens', 'num'], ['sVol', 'vol', 'num'], ['sFov', 'fov', 'num'], ['sQ', 'quality', 'str'], ['sDay', 'dayLen', 'num'],
+  ['sDiff', 'diff', 'num'], ['sInv', 'invertY', 'chk'], ['sShake', 'shake', 'chk'], ['sWh', 'whiskers', 'chk']];
+function showOut() { $('oSens').textContent = SET.sens.toFixed(1); $('oVol').textContent = SET.vol + '%'; $('oFov').textContent = SET.fov + '°'; }
+function fillSettings() { for (const [id, k, t] of setFields) { const el = $(id); if (t === 'chk') el.checked = !!SET[k]; else el.value = String(SET[k]); } showOut(); }
+for (const [id, k, t] of setFields) $(id).addEventListener('input', () => {
+  const el = $(id); SET[k] = t === 'chk' ? el.checked : t === 'num' ? parseFloat(el.value) : el.value;
+  showOut(); applySettings(); saveSettings();
+});
+let setFrom = 'menu';
+function openSettings(from) { setFrom = from; fillSettings(); $(from).classList.add('hidden'); $('settings').classList.remove('hidden'); }
+$('setDone').onclick = () => { $('settings').classList.add('hidden'); $(setFrom).classList.remove('hidden'); };
+$('setBtnMenu').onclick = () => openSettings('menu');
+$('setBtnPause').onclick = () => openSettings('pause');
+applySettings();
 
 // заставка в меню: камера медленно осматривает степь
 P.y = H(P.x, P.z);
@@ -1290,11 +1659,13 @@ function loop(now) {
   updateSky();
   updateCamera(dt, spd);
   updatePaws(dt, spd);
-  if (thirdPerson) updateManulModel(dt, spd);
+  if (view > 0) updateManulModel(dt, spd);
+  updateSparks(dt);
+  if (!S.running || S.paused) stopLaser();
   if (S.running) updateHud(dt);
   renderer.clear();
   renderer.render(scene, camera);
-  if (S.running && !thirdPerson) { renderer.clearDepth(); renderer.render(pawScene, pawCam); }
+  if (S.running && view === 0) { renderer.clearDepth(); renderer.render(pawScene, pawCam); }
 }
 requestAnimationFrame(loop);
 </script>
