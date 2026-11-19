@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sentinel Model Viewer</title>
+<style>
+  :root { --bg:#0d0f12; --panel:rgba(18,20,24,.82); --text:#e7e9ee; --muted:#9aa1ad; --accent:#ff3b2f; --line:#2a2f37; }
+  html,body { margin:0; height:100%; background:var(--bg); color:var(--text); font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; overflow:hidden; }
+  canvas { display:block; }
+  #ui { position:fixed; left:16px; top:16px; right:16px; max-width:340px; background:var(--panel); border:1px solid var(--line);
+        border-radius:12px; padding:14px 16px; backdrop-filter:blur(6px); }
+  h1 { margin:0 0 4px; font-size:16px; letter-spacing:.04em; }
+  h1 span { color:var(--accent); }
+  p { margin:0 0 10px; color:var(--muted); font-size:12px; }
+  .row { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
+  button { background:#1c2027; color:var(--text); border:1px solid var(--line); border-radius:8px; padding:6px 10px; cursor:pointer; font-size:12px; }
+  button.on { border-color:var(--accent); color:#fff; background:#2a1715; }
+  label { color:var(--muted); font-size:12px; display:flex; gap:6px; align-items:center; }
+  #status { position:fixed; inset:0; display:grid; place-items:center; color:var(--muted); pointer-events:none; }
+</style>
+</head>
+<body>
+<div id="ui">
+  <h1>SENTINEL <span>•</span> combat android</h1>
+  <p id="stats">Загрузка модели…</p>
+  <div class="row" id="clips"></div>
+  <div class="row">
+    <button id="lod">LOD0 (high)</button>
+    <label><input type="checkbox" id="skel"> скелет</label>
+    <label><input type="checkbox" id="wire"> сетка</label>
+    <label><input type="checkbox" id="rot" checked> вращение</label>
+  </div>
+</div>
+<div id="status">Загрузка…</div>
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+               "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.5;
+scene.environmentIntensity = 1.6;
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1a2433);
+scene.fog = new THREE.Fog(0x1a2433, 8, 22);
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+const camera = new THREE.PerspectiveCamera(35, innerWidth / innerHeight, 0.05, 100);
+camera.position.set(2.2, 1.7, 4.2);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 1.2, 0);
+controls.enableDamping = true;
+
+scene.add(new THREE.HemisphereLight(0xbfd4ff, 0x202020, 0.6));
+const key = new THREE.DirectionalLight(0xfff1e0, 2.2);
+key.position.set(-3, 5, 4); key.castShadow = true; key.shadow.mapSize.set(2048, 2048);
+Object.assign(key.shadow.camera, { left: -2, right: 2, top: 3, bottom: -1 });
+scene.add(key);
+const rim = new THREE.DirectionalLight(0xa8c4ff, 2.5); rim.position.set(3, 3, -4); scene.add(rim);
+const ground = new THREE.Mesh(new THREE.CircleGeometry(12, 64), new THREE.MeshStandardMaterial({ color: 0x15171b, roughness: 0.9 }));
+ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+
+const loader = new GLTFLoader();
+const clock = new THREE.Clock();
+let current = null, mixer = null, actions = {}, active = null, helper = null, useLod = false;
+const status = document.getElementById('status');
+
+function load(url) {
+  status.style.display = 'grid'; status.textContent = 'Загрузка…';
+  loader.load(url, (gltf) => {
+    if (current) scene.remove(current);
+    if (helper) { scene.remove(helper); helper = null; }
+    current = gltf.scene; scene.add(current);
+    let tris = 0;
+    current.traverse((o) => {
+      if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; }
+    });
+    mixer = new THREE.AnimationMixer(current);
+    actions = {};
+    const box = document.getElementById('clips'); box.innerHTML = '';
+    gltf.animations.forEach((clip) => {
+      actions[clip.name] = mixer.clipAction(clip);
+      const b = document.createElement('button'); b.textContent = clip.name;
+      b.onclick = () => play(clip.name); box.appendChild(b);
+    });
+    document.getElementById('stats').textContent =
+      `${Math.round(tris).toLocaleString('ru')} треугольников · ${gltf.animations.length} анимаций · PBR`;
+    play(actions.Idle ? 'Idle' : gltf.animations[0].name);
+    applyToggles();
+    status.style.display = 'none';
+  }, (e) => { if (e.total) status.textContent = `Загрузка… ${Math.round(e.loaded / e.total * 100)}%`; },
+  (err) => { status.textContent = 'Ошибка загрузки: ' + err.message; });
+}
+
+function play(name) {
+  const next = actions[name];
+  if (active && active !== next) active.fadeOut(0.3);
+  next.reset().fadeIn(0.3).play();
+  active = next;
+  document.querySelectorAll('#clips button').forEach((b) => b.classList.toggle('on', b.textContent === name));
+}
+
+function applyToggles() {
+  const wire = document.getElementById('wire').checked;
+  current.traverse((o) => { if (o.isMesh) [].concat(o.material).forEach((m) => (m.wireframe = wire)); });
+  if (helper) { scene.remove(helper); helper = null; }
+  if (document.getElementById('skel').checked) { helper = new THREE.SkeletonHelper(current); scene.add(helper); }
+}
+document.getElementById('wire').onchange = applyToggles;
+document.getElementById('skel').onchange = applyToggles;
+document.getElementById('lod').onclick = (e) => {
+  useLod = !useLod; e.target.textContent = useLod ? 'LOD1 (game)' : 'LOD0 (high)';
+  load(useLod ? 'export/sentinel_lod1.glb' : 'export/sentinel.glb');
+};
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight);
+});
+renderer.setAnimationLoop(() => {
+  const dt = clock.getDelta();
+  if (mixer) mixer.update(dt);
+  if (current && document.getElementById('rot').checked) current.rotation.y += dt * 0.25;
+  controls.update();
+  renderer.render(scene, camera);
+});
+load('export/sentinel.glb');
+</script>
+</body>
+</html>
