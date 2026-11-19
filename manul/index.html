@@ -35,7 +35,7 @@ button { font-family:inherit; cursor:pointer; touch-action:manipulation; }
 
 /* ---------- HUD ---------- */
 #hud { position:fixed; inset:0; pointer-events:none; z-index:10; }
-#compass { position:absolute; top:max(10px, env(safe-area-inset-top)); left:50%; transform:translateX(-50%); width:min(420px, 86vw); height:34px;
+#compass { position:absolute; top:max(10px, env(safe-area-inset-top)); left:50%; transform:translateX(-50%); width:min(420px, calc(100vw - 160px)); height:34px;
   background:linear-gradient(90deg, transparent, rgba(0,0,0,.45) 15%, rgba(0,0,0,.45) 85%, transparent); border-radius:6px; }
 #compass canvas { width:100%; height:100%; display:block; }
 #topInfo { position:absolute; top:calc(max(10px, env(safe-area-inset-top)) + 40px); left:50%; transform:translateX(-50%); font-size:15px;
@@ -65,6 +65,12 @@ button { font-family:inherit; cursor:pointer; touch-action:manipulation; }
 #vignette { position:absolute; inset:0; background:radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(30,20,10,.45) 100%); }
 #hurt { position:absolute; inset:0; background:radial-gradient(ellipse at center, transparent 40%, rgba(200,0,0,.6)); opacity:0; }
 #fade { position:fixed; inset:0; background:#000; opacity:0; pointer-events:none; z-index:25; transition:opacity .8s; }
+#viewBtn { position:absolute; top:max(10px, env(safe-area-inset-top)); left:max(10px, env(safe-area-inset-left)); pointer-events:auto; z-index:13;
+  width:68px; height:68px; border-radius:50%; border:2px solid rgba(255,230,170,.6); background:rgba(40,30,15,.55); color:#fff;
+  font-size:26px; line-height:1; padding:0; box-shadow:0 3px 10px rgba(0,0,0,.4); }
+#viewBtn small { display:block; font-size:11px; font-weight:700; margin-top:2px; color:#ffe2a0; }
+#viewBtn:active { transform:scale(.94); }
+body.third #cross, body.third #whiskers { display:none; }
 #pauseBtn { position:absolute; top:max(10px, env(safe-area-inset-top)); right:max(10px, env(safe-area-inset-right)); pointer-events:auto;
   background:rgba(0,0,0,.4); color:#fff; border:1px solid rgba(255,255,255,.3); border-radius:10px; width:42px; height:42px; font-size:18px; }
 
@@ -109,6 +115,7 @@ body.touch #cross { display:none; }
   </div>
   <div id="status"><div id="stealth"></div><div id="cover"></div><div id="sniffSt"></div></div>
   <button id="pauseBtn" class="hidden">⏸</button>
+  <button id="viewBtn" title="Вид от 1-го / 3-го лица (T)">🎥<small id="viewLbl">3-е лицо</small></button>
 </div>
 
 <div id="touch" class="hidden">
@@ -160,11 +167,13 @@ body.touch #cross { display:none; }
     <b>R (держать)</b><span>мурчать — лечит, но тратит сытость</span>
     <b>V</b><span>нюх — показывает добычу на компасе</span>
     <b>F</b><span>спать в норе (вечером)</span>
+    <b>T / 🎥</b><span>вид от 1-го или 3-го лица</span>
   </div>
   <div class="controls hidden" id="ctrlTouch">
     <b>Джойстик слева</b><span>ходить (до упора — бег)</span>
     <b>Справа по экрану</b><span>смотреть</span>
     <b>Кнопки</b><span>бросок, фыр, нюх, мур, красться, прыжок</span>
+    <b>🎥 в углу</b><span>вид от 1-го или 3-го лица</span>
   </div>
   <button class="big" id="startBtn">Играть 🐾</button>
   <div id="best"></div>
@@ -795,6 +804,73 @@ function repelEagle(text) {
   $('warn').style.opacity = 0;
 }
 
+
+/* =====================  ТОЛСТЕНЬКИЙ ТИМОФЕЙ (вид от 3-го лица)  ===================== */
+const manul = new THREE.Group(); manul.visible = false; scene.add(manul);
+{
+  const fur = lm(0xa69786), pale = lm(0xe8e0d2), darkF = lm(0x3b2f26), eyeY = lm(0xe3b93c);
+  const body = new THREE.Group(); manul.add(body); manul.userData.body = body;
+  body.add(ball(fur, 0.21, 0.19, 0.29, 0, 0.23, 0));            // круглое пузико-бочонок
+  body.add(ball(pale, 0.17, 0.12, 0.24, 0, 0.15, 0.02));         // светлый живот
+  body.add(ball(fur, 0.17, 0.15, 0.14, 0, 0.3, 0.18));           // пушистая грудь
+  const head = new THREE.Group(); head.position.set(0, 0.34, 0.3); body.add(head); manul.userData.head = head;
+  head.add(ball(fur, 0.15, 0.125, 0.13, 0, 0, 0));               // широкая голова
+  head.add(ball(fur, 0.07, 0.07, 0.05, -0.12, -0.04, 0.0), ball(fur, 0.07, 0.07, 0.05, 0.12, -0.04, 0.0)); // бакенбарды
+  head.add(ball(fur, 0.05, 0.032, 0.025, -0.13, 0.05, -0.02), ball(fur, 0.05, 0.032, 0.025, 0.13, 0.05, -0.02)); // низкие уши
+  head.add(ball(darkF, 0.03, 0.018, 0.01, -0.13, 0.05, 0.005), ball(darkF, 0.03, 0.018, 0.01, 0.13, 0.05, 0.005));
+  head.add(ball(pale, 0.045, 0.04, 0.02, -0.05, 0.02, 0.11), ball(pale, 0.045, 0.04, 0.02, 0.05, 0.02, 0.11));
+  head.add(ball(eyeY, 0.026, 0.026, 0.012, -0.05, 0.025, 0.125), ball(eyeY, 0.026, 0.026, 0.012, 0.05, 0.025, 0.125));
+  head.add(ball(M.dark, 0.012, 0.012, 0.006, -0.05, 0.025, 0.136), ball(M.dark, 0.012, 0.012, 0.006, 0.05, 0.025, 0.136));
+  head.add(ball(pale, 0.06, 0.04, 0.035, 0, -0.045, 0.11));      // мордочка
+  head.add(ball(lm(0x6b4a42), 0.015, 0.01, 0.008, 0, -0.025, 0.145));
+  for (const s of [-1, 1]) for (let k = 0; k < 2; k++) { const st = ball(darkF, 0.006, 0.035, 0.006, s * (0.08 + k * 0.02), -0.04, 0.1 - k * 0.01); st.rotation.z = s * 0.6; head.add(st); }
+  for (const [x, y] of [[-0.04, 0.09], [0, 0.1], [0.04, 0.09], [-0.02, 0.075], [0.02, 0.075]]) head.add(ball(darkF, 0.01, 0.01, 0.01, x, y, 0.1));
+  const legs = [];
+  const legG = new THREE.CylinderGeometry(0.048, 0.042, 0.15, 8); legG.translate(0, -0.075, 0);
+  for (const [x, z] of [[-0.11, 0.17], [0.11, 0.17], [-0.11, -0.16], [0.11, -0.16]]) {
+    const L = new THREE.Group(); L.position.set(x, 0.15, z);
+    L.add(new THREE.Mesh(legG, fur)); L.add(ball(pale, 0.05, 0.03, 0.06, 0, -0.145, 0.01));
+    body.add(L); legs.push(L);
+  }
+  manul.userData.legs = legs;
+  const tail = new THREE.Group(); tail.position.set(0, 0.26, -0.26); body.add(tail); manul.userData.tail = tail;
+  for (let i = 0; i < 6; i++) {
+    const c = i === 5 ? darkF : i % 2 ? darkF : fur;
+    const seg = ball(c, 0.062, 0.062, 0.06, 0, -i * 0.018, -0.03 - i * 0.07); tail.add(seg);
+  }
+  tail.rotation.x = 0.35;
+}
+let thirdPerson = false;
+function toggleView() {
+  thirdPerson = !thirdPerson;
+  manul.visible = thirdPerson;
+  document.body.classList.toggle('third', thirdPerson);
+  $('viewLbl').textContent = thirdPerson ? '1-е лицо' : '3-е лицо';
+  msg(thirdPerson ? 'Вот он какой, толстенький Тимофей 😺' : 'Снова глазами Тимофея', 1.6);
+}
+$('viewBtn').addEventListener('click', e => { e.stopPropagation(); toggleView(); });
+$('viewBtn').addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); toggleView(); }, { passive: false });
+function updateManulModel(dt, spd) {
+  const u = manul.userData, t = S.time;
+  manul.position.set(P.x, P.y, P.z);
+  manul.rotation.y = P.yaw + Math.PI;
+  const walk = P.onGround ? clamp(spd / 3, 0, 1.5) : 0;
+  const ph = P.step * Math.PI * 2;
+  u.legs.forEach((L, i) => L.rotation.x = Math.sin(ph + (i === 0 || i === 3 ? 0 : Math.PI)) * 0.7 * Math.min(1, walk));
+  const crouchK = P.crouch ? 1 : 0;
+  const b = u.body;
+  let sy = 1 - crouchK * 0.25 + Math.sin(t * 2.2) * 0.015, sz = 1, sx = 1;
+  if (P.pounceT > 0) { sz = 1.25; sy *= 0.85; }
+  if (P.hissT > 0) { sy *= 1.12; sx = 1.12; }
+  b.scale.set(sx, sy, sz);
+  b.position.y = (P.onGround ? Math.abs(Math.sin(ph)) * 0.02 * Math.min(1, walk) : 0) + (P.purring ? Math.sin(t * 150) * 0.002 : 0);
+  b.rotation.x = P.pounceT > 0 ? -0.25 : 0;
+  u.head.rotation.x = clamp(-P.pitch * 0.5, -0.4, 0.4) + (P.hissT > 0 ? -0.2 : 0);
+  u.head.rotation.z = P.purring ? Math.sin(t * 2) * 0.12 : 0;
+  u.tail.rotation.y = Math.sin(t * (P.purring ? 2 : 1.3)) * 0.35;
+  u.tail.rotation.x = P.hissT > 0 ? -0.5 : P.crouch ? 0.6 : 0.35;
+}
+
 /* =====================  ИГРОК  ===================== */
 const P = { x: 0, z: 2.6, y: 0, vx: 0, vz: 0, vy: 0, yaw: Math.PI, pitch: -0.05, onGround: true, crouch: false, run: false,
   pounceT: 0, pounceCd: 0, hissT: 0, hissCd: 0, swipeT: 0, purring: false, sniffT: 0, sniffCd: 0, eye: 0.34, bob: 0, step: 0, shake: 0 };
@@ -886,17 +962,26 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyV') actSniff();
   if (e.code === 'KeyF') actSleep();
   if (e.code === 'KeyM') snd.meow();
+  if (e.code === 'KeyT') toggleView();
 });
 addEventListener('keyup', e => { keys[e.code] = false; });
+// если захват мыши недоступен (например, во встроенном окне) — смотрим, просто двигая мышь
+let noLock = false;
+function lockPointer() {
+  try { const r = canvas.requestPointerLock(); if (r && r.catch) r.catch(() => { noLock = true; }); }
+  catch (e) { noLock = true; }
+}
+document.addEventListener('pointerlockerror', () => { noLock = true; });
+addEventListener('keydown', e => { if (noLock && S.running && !S.over && (e.code === 'Escape' || e.code === 'KeyP')) pause(!S.paused); });
 addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
 canvas.addEventListener('mousedown', e => {
   if (!S.running || isTouch) return;
-  if (document.pointerLockElement !== canvas) { canvas.requestPointerLock(); return; }
+  if (document.pointerLockElement !== canvas && !noLock) { lockPointer(); return; }
   if (e.button === 0) actPounce(); else if (e.button === 2) actHiss();
 });
 addEventListener('contextmenu', e => e.preventDefault());
 addEventListener('mousemove', e => {
-  if (document.pointerLockElement !== canvas || S.paused) return;
+  if ((document.pointerLockElement !== canvas && !noLock) || S.paused || !S.running) return;
   P.yaw -= e.movementX * 0.0022; P.pitch = clamp(P.pitch - e.movementY * 0.0022, -1.3, 1.3);
 });
 document.addEventListener('pointerlockchange', () => {
@@ -907,7 +992,7 @@ function pause(on) {
   S.paused = on; $('pause').classList.toggle('hidden', !on);
   if (on) { snd.purrOff(); for (const k in keys) keys[k] = false; }
 }
-$('resumeBtn').onclick = () => { audioInit(); pause(false); if (!isTouch) canvas.requestPointerLock(); };
+$('resumeBtn').onclick = () => { audioInit(); pause(false); if (!isTouch) lockPointer(); };
 $('quitBtn').onclick = () => { pause(false); toMenu(); };
 $('pauseBtn').onclick = () => pause(true);
 
@@ -1041,6 +1126,16 @@ function updateCamera(dt, spd) {
   const bob = P.onGround ? Math.sin(P.step * Math.PI * 2) * 0.012 * Math.min(1, spd / 3) : 0;
   P.shake = Math.max(0, P.shake - dt);
   const sh = P.shake * 0.08;
+  if (thirdPerson && S.running) {
+    const pitch = clamp(P.pitch, -1.0, 0.7), dist = 1.3;
+    const tx = P.x, ty = P.y + 0.35, tz = P.z;
+    let cx = tx + Math.sin(P.yaw) * Math.cos(pitch) * dist, cz = tz + Math.cos(P.yaw) * Math.cos(pitch) * dist;
+    let cy = ty - Math.sin(pitch) * dist + 0.15;
+    cy = Math.max(cy, H(cx, cz) + 0.2);
+    camera.position.set(cx + R(-sh, sh), cy + R(-sh, sh), cz);
+    camera.lookAt(tx, ty + Math.max(0, pitch) * 1.5, tz);
+    return;
+  }
   camera.position.set(P.x + R(-sh, sh), P.y + P.eye + bob + P.bob + (P.purring ? Math.sin(S.time * 150) * 0.0015 : 0), P.z + R(-sh, sh));
   camera.rotation.set(P.pitch + R(-sh, sh), P.yaw, 0);
 }
@@ -1148,7 +1243,7 @@ function startGame() {
   S.running = true;
   $('menu').classList.add('hidden'); $('over').classList.add('hidden'); $('hud').classList.remove('hidden');
   if (isTouch) { $('touch').classList.remove('hidden'); $('pauseBtn').classList.remove('hidden'); }
-  else canvas.requestPointerLock();
+  else lockPointer();
   msg('Мрр! Я — Тимофей. Пора на охоту 🐾', 3);
   snd.meow();
 }
@@ -1195,10 +1290,11 @@ function loop(now) {
   updateSky();
   updateCamera(dt, spd);
   updatePaws(dt, spd);
+  if (thirdPerson) updateManulModel(dt, spd);
   if (S.running) updateHud(dt);
   renderer.clear();
   renderer.render(scene, camera);
-  if (S.running) { renderer.clearDepth(); renderer.render(pawScene, pawCam); }
+  if (S.running && !thirdPerson) { renderer.clearDepth(); renderer.render(pawScene, pawCam); }
 }
 requestAnimationFrame(loop);
 </script>
