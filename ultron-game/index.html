@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Iron Protocol</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#000; --text:#ece7e1; --muted:#6d6a67; --dim:#3a3836; --red:#e2261c; --red-soft:rgba(226,38,28,.35);
+    --panel:rgba(8,8,9,.86); --line:rgba(255,255,255,.08);
+    --safe-l: env(safe-area-inset-left, 0px); --safe-r: env(safe-area-inset-right, 0px); --safe-b: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { margin:0; height:100%; background:var(--bg); color:var(--text); overflow:hidden;
+    font-family:'Oswald', 'Arial Narrow', Impact, sans-serif; user-select:none; -webkit-user-select:none; touch-action:none; }
+  canvas#gl { position:fixed; inset:0; width:100%; height:100%; display:block; }
+  .layer { position:fixed; inset:0; pointer-events:none; }
+  .layer > * { pointer-events:auto; }
+  .hidden { display:none !important; }
+
+  /* ---------- main menu ---------- */
+  #menu { padding: clamp(24px, 8vh, 90px) 0 0 calc(clamp(20px, 13vw, 260px) + var(--safe-l)); }
+  #title { font-weight:700; font-size: clamp(44px, 9.5vh, 96px); letter-spacing:.02em; line-height:1; margin:0 0 clamp(18px,4vh,40px) -48px;
+    text-shadow:0 0 30px rgba(226,38,28,.25); position:relative; display:inline-block; text-transform:uppercase; }
+  #title::after { content:''; position:absolute; left:0; right:-6%; bottom:-6px; height:5px;
+    background:linear-gradient(90deg, var(--red) 0%, rgba(226,38,28,.6) 55%, transparent 100%); box-shadow:0 0 18px var(--red-soft); }
+  #menu ul { list-style:none; margin:0; padding:0; }
+  #menu li { font-weight:500; font-size: clamp(20px, 4.4vh, 40px); letter-spacing:.14em; line-height:1.82; cursor:pointer;
+    color:var(--text); transition:color .15s, transform .15s, text-shadow .15s; width:max-content; text-transform:uppercase; }
+  #menu li:hover, #menu li:focus-visible { color:#fff; transform:translateX(8px); text-shadow:0 0 16px var(--red-soft); outline:none; }
+  #menu li.disabled { color:var(--dim); pointer-events:none; }
+  #soundHint { position:fixed; left:50%; bottom: calc(clamp(18px, 11vh, 120px) + var(--safe-b)); transform:translateX(-12%);
+    font-size: clamp(13px, 2.6vh, 22px); letter-spacing:.35em; color:var(--muted); animation: blink 2.6s ease-in-out infinite; cursor:pointer; }
+  @keyframes blink { 50% { opacity:.35; } }
+  #loading { position:fixed; right:24px; bottom:18px; font-size:12px; letter-spacing:.3em; color:var(--muted); }
+
+  /* ---------- panels ---------- */
+  .panel { position:fixed; top:0; bottom:0; left:0; width:min(560px, 100%); padding: clamp(22px,6vh,64px) 28px 28px calc(clamp(20px,8vw,120px) + var(--safe-l));
+    background:linear-gradient(90deg, rgba(0,0,0,.94) 0%, rgba(0,0,0,.86) 70%, transparent 100%); overflow-y:auto; }
+  .panel h2 { font-size: clamp(30px, 6vh, 54px); margin:0 0 18px; letter-spacing:.06em; text-transform:uppercase; position:relative; display:inline-block; }
+  .panel h2::after { content:''; position:absolute; left:0; right:-10%; bottom:-4px; height:3px; background:linear-gradient(90deg,var(--red),transparent); }
+  .panel p, .panel li { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-size:14px; line-height:1.55; color:#bdb7b0; }
+  .back { margin-top:22px; font-size:20px; letter-spacing:.2em; color:var(--muted); cursor:pointer; display:inline-block; }
+  .back:hover { color:#fff; }
+  .mission { border-left:3px solid var(--dim); padding:10px 14px; margin:10px 0; cursor:pointer; background:rgba(255,255,255,.02); }
+  .mission:hover { border-color:var(--red); background:rgba(226,38,28,.06); }
+  .mission.locked { opacity:.35; pointer-events:none; }
+  .mission b { font-size:22px; letter-spacing:.1em; font-weight:500; text-transform:uppercase; }
+  .mission small { display:block; font-family:system-ui,sans-serif; color:#9a948d; font-size:13px; margin-top:2px; }
+  .mission .best { float:right; font-size:14px; color:var(--red); letter-spacing:.1em; }
+  .row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid var(--line); }
+  .row label { font-size:18px; letter-spacing:.12em; text-transform:uppercase; }
+  .row input[type=range] { width:52%; accent-color:var(--red); }
+  .row select, .row input[type=text], .btn { background:#111; color:var(--text); border:1px solid #333; border-radius:4px; padding:7px 10px; font:inherit; font-size:15px; letter-spacing:.08em; }
+  .btn { cursor:pointer; text-transform:uppercase; }
+  .btn:hover { border-color:var(--red); }
+  .btn.primary { background:var(--red); border-color:var(--red); color:#fff; }
+  .stat { display:flex; gap:10px; align-items:center; margin:6px 0; font-family:system-ui,sans-serif; font-size:13px; color:#bdb7b0; }
+  .stat span:first-child { width:120px; text-transform:uppercase; letter-spacing:.1em; }
+  .stat .bar { flex:1; height:6px; background:#1a1a1a; }
+  .stat .bar i { display:block; height:100%; background:linear-gradient(90deg,#7a120c,var(--red)); }
+  .note { font-size:12px !important; color:#76716b !important; }
+
+  /* ---------- HUD ---------- */
+  #hud { font-family:'Oswald',sans-serif; }
+  #bars { position:fixed; left:calc(18px + var(--safe-l)); top:14px; width:min(300px, 40vw); }
+  .hbar { height:10px; background:rgba(255,255,255,.08); margin-bottom:6px; position:relative; overflow:hidden; transform:skewX(-18deg); }
+  .hbar i { position:absolute; inset:0; transform-origin:left; transition:transform .12s; }
+  #hp i { background:linear-gradient(90deg,#8b130c,#ff3b2f); }
+  #en i { background:linear-gradient(90deg,#4a5866,#cfe3ff); }
+  #hpLabel { font-size:12px; letter-spacing:.25em; color:var(--muted); }
+  #objective { position:fixed; left:50%; top:12px; transform:translateX(-50%); text-align:center; font-size: clamp(14px,2.6vh,20px); letter-spacing:.18em; text-transform:uppercase; text-shadow:0 2px 8px #000; white-space:nowrap; }
+  #objective small { display:block; font-size:.72em; color:var(--muted); letter-spacing:.25em; }
+  #bossbar { position:fixed; left:50%; top:62px; transform:translateX(-50%); width:min(520px,70vw); }
+  #bossbar .hbar { height:8px; } #bossbar i { background:linear-gradient(90deg,#6a0d08,#ff5a2f); }
+  #bossbar span { font-size:12px; letter-spacing:.3em; color:#ff8a70; }
+  #pauseBtn { position:fixed; right:calc(16px + var(--safe-r)); top:12px; width:44px; height:44px; border-radius:50%; background:rgba(0,0,0,.45); border:1px solid #333;
+    display:grid; place-items:center; font-size:18px; cursor:pointer; color:#ddd; }
+  #crosshair { position:fixed; left:50%; top:45%; width:18px; height:18px; margin:-9px; border:1px solid rgba(255,80,60,.6); border-radius:50%; pointer-events:none; }
+  #banner { position:fixed; left:0; right:0; top:34%; text-align:center; font-size: clamp(30px,8vh,72px); letter-spacing:.12em; text-transform:uppercase;
+    text-shadow:0 0 30px rgba(226,38,28,.5); pointer-events:none; opacity:0; transition:opacity .4s; }
+  #banner small { display:block; font-size:.32em; letter-spacing:.35em; color:#bdb7b0; margin-top:6px; }
+  #flash { position:fixed; inset:0; background:radial-gradient(ellipse at center, transparent 40%, rgba(200,0,0,.55)); opacity:0; pointer-events:none; transition:opacity .3s; }
+
+  /* ---------- touch controls ---------- */
+  #touch { display:none; }
+  .touch #touch { display:block; }
+  #stick { position:fixed; left:calc(28px + var(--safe-l)); bottom:calc(28px + var(--safe-b)); width:150px; height:150px; border-radius:50%;
+    border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.03); }
+  #knob { position:absolute; left:50%; top:50%; width:60px; height:60px; margin:-30px; border-radius:50%; background:rgba(226,38,28,.35); border:1px solid rgba(255,90,70,.6); }
+  .tbtn { position:fixed; width:70px; height:70px; border-radius:50%; background:rgba(0,0,0,.42); border:1px solid rgba(255,255,255,.18);
+    display:grid; place-items:center; font-size:12px; letter-spacing:.12em; color:#eee; text-transform:uppercase; }
+  .tbtn.on { border-color:var(--red); background:rgba(226,38,28,.3); }
+  #bPunch { right:calc(110px + var(--safe-r)); bottom:calc(30px + var(--safe-b)); width:86px; height:86px; font-size:14px; }
+  #bBlast { right:calc(24px + var(--safe-r)); bottom:calc(110px + var(--safe-b)); width:80px; height:80px; font-size:13px; border-color:rgba(255,80,60,.6); }
+  #bDash { right:calc(24px + var(--safe-r)); bottom:calc(24px + var(--safe-b)); }
+  #bFly { right:calc(118px + var(--safe-r)); bottom:calc(132px + var(--safe-b)); width:58px; height:58px; font-size:11px; }
+  #bUp, #bDown { right:calc(196px + var(--safe-r)); width:52px; height:52px; font-size:18px; }
+  #bUp { bottom:calc(150px + var(--safe-b)); } #bDown { bottom:calc(90px + var(--safe-b)); }
+
+  /* ---------- overlay screens ---------- */
+  .overlay { position:fixed; inset:0; background:rgba(0,0,0,.72); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; text-align:center; }
+  .overlay h2 { font-size: clamp(36px,9vh,80px); margin:0; letter-spacing:.1em; text-transform:uppercase; }
+  .overlay h2.win { text-shadow:0 0 30px rgba(226,38,28,.6); }
+  .overlay .sub { font-family:system-ui,sans-serif; color:#bdb7b0; font-size:15px; letter-spacing:.05em; }
+  .overlay .opts { display:flex; flex-direction:column; gap:6px; margin-top:12px; }
+  .overlay .opt { font-size: clamp(20px,4vh,30px); letter-spacing:.18em; cursor:pointer; text-transform:uppercase; }
+  .overlay .opt:hover { color:#fff; text-shadow:0 0 14px var(--red-soft); }
+  #toast { position:fixed; left:50%; bottom:22%; transform:translateX(-50%); background:rgba(0,0,0,.7); border:1px solid #333; padding:8px 16px;
+    font-family:system-ui,sans-serif; font-size:13px; letter-spacing:.05em; opacity:0; transition:opacity .3s; pointer-events:none; }
+
+  @media (max-width: 700px) and (orientation: portrait) {
+    #menu { padding-left: 28px; } #title { margin-left:0; }
+    #soundHint { left:28px; transform:none; letter-spacing:.2em; }
+    #rotateHint { display:block !important; }
+  }
+  #rotateHint { display:none; position:fixed; left:28px; right:28px; bottom:20px; font-family:system-ui,sans-serif; font-size:12px; color:#76716b; }
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+
+<div id="menu" class="layer">
+  <div id="title">SENTINEL</div>
+  <ul>
+    <li id="mContinue" class="disabled" tabindex="0">Продолжить</li>
+    <li id="mNew" tabindex="0">Новая игра</li>
+    <li id="mMissions" tabindex="0">Миссии</li>
+    <li id="mFree" tabindex="0">Свободный режим</li>
+    <li id="mDossier" tabindex="0">Досье</li>
+    <li id="mSettings" tabindex="0">Настройки</li>
+    <li id="mAbout" tabindex="0">Об игре</li>
+  </ul>
+  <div id="soundHint">НАЖМИТЕ, ЧТОБЫ ВКЛЮЧИТЬ ЗВУК</div>
+  <div id="rotateHint">Лучше играть в горизонтальной ориентации.</div>
+  <div id="loading">ЗАГРУЗКА…</div>
+</div>
+
+<div id="pMissions" class="panel layer hidden">
+  <h2>Миссии</h2>
+  <div id="missionList"></div>
+  <div class="back" data-back>‹ НАЗАД</div>
+</div>
+
+<div id="pDossier" class="panel layer hidden">
+  <h2 id="dossierTitle">Досье</h2>
+  <p id="dossierText">Автономная боевая платформа. Тяжёлый композитный корпус, синтетические мышцы-приводы и сеть сервоприводов
+    позволяют выдерживать прямые попадания и наносить сокрушительные удары. Репульсорные излучатели в ладонях дают энергетические залпы и полёт.</p>
+  <div class="stat"><span>Броня</span><div class="bar"><i style="width:90%"></i></div></div>
+  <div class="stat"><span>Сила</span><div class="bar"><i style="width:85%"></i></div></div>
+  <div class="stat"><span>Скорость</span><div class="bar"><i style="width:65%"></i></div></div>
+  <div class="stat"><span>Энергия</span><div class="bar"><i style="width:75%"></i></div></div>
+  <p><b style="color:#ece7e1">Способности</b></p>
+  <ul>
+    <li><b>Удар</b> — серия из трёх ударов, третий отбрасывает.</li>
+    <li><b>Залп</b> — энергетический снаряд из ладони с автонаведением.</li>
+    <li><b>Рывок</b> — короткий манёвр с неуязвимостью.</li>
+    <li><b>Полёт</b> — свободное перемещение в воздухе.</li>
+  </ul>
+  <p class="note">Управление на ПК: WASD — движение, Shift — бег, мышь (зажать) — камера, ЛКМ/J — удар, ПКМ/K — залп,
+    Q — рывок, F — полёт, Space/C — вверх/вниз в полёте, Esc — пауза.</p>
+  <div class="back" data-back>‹ НАЗАД</div>
+</div>
+
+<div id="pSettings" class="panel layer hidden">
+  <h2>Настройки</h2>
+  <div class="row"><label>Музыка</label><input type="range" id="sMusic" min="0" max="1" step="0.05"></div>
+  <div class="row"><label>Звуки</label><input type="range" id="sSfx" min="0" max="1" step="0.05"></div>
+  <div class="row"><label>Камера</label><input type="range" id="sSens" min="0.3" max="2" step="0.05"></div>
+  <div class="row"><label>Графика</label>
+    <select id="sQuality"><option value="low">Низкая</option><option value="mid">Средняя</option><option value="high">Высокая</option></select></div>
+  <div class="row"><label>Имя героя</label><input type="text" id="sName" maxlength="18"></div>
+  <div class="row"><label>Модель героя</label>
+    <span><button class="btn" id="sLoadModel">Загрузить .glb</button> <button class="btn" id="sResetModel">Сброс</button></span></div>
+  <input type="file" id="modelFile" accept=".glb,.gltf,model/gltf-binary" class="hidden">
+  <p class="note" id="modelInfo"></p>
+  <p class="note">Загруженная модель хранится только в этом браузере на вашем устройстве и никуда не отправляется.
+    Подходят гуманоидные скелеты (формат Sentinel или XPS).</p>
+  <div class="back" data-back>‹ НАЗАД</div>
+</div>
+
+<div id="pAbout" class="panel layer hidden">
+  <h2>Об игре</h2>
+  <p>Экшен от третьего лица о боевом андроиде: четыре миссии, бесконечный свободный режим, ближний бой, энергетические залпы и полёт.</p>
+  <p>Код игры, процедурные анимации, враги, арена и музыка созданы для этого проекта. Модель героя по умолчанию —
+    оригинальный андроид Sentinel. Через «Настройки» можно подключить собственную модель.</p>
+  <p class="note">Некоммерческий проект. Если вы подключаете стороннюю модель, вы сами отвечаете за наличие прав на неё.</p>
+  <div class="back" data-back>‹ НАЗАД</div>
+</div>
+
+<div id="hud" class="layer hidden">
+  <div id="bars"><div id="hp" class="hbar"><i></i></div><div id="en" class="hbar" style="height:5px"><i></i></div><div id="hpLabel">ЦЕЛОСТНОСТЬ</div></div>
+  <div id="objective"></div>
+  <div id="bossbar" class="hidden"><span id="bossName">СТРАЖ</span><div class="hbar"><i></i></div></div>
+  <div id="pauseBtn">❚❚</div>
+  <div id="crosshair"></div>
+  <div id="touch">
+    <div id="stick"><div id="knob"></div></div>
+    <div class="tbtn" id="bPunch">Удар</div>
+    <div class="tbtn" id="bBlast">Залп</div>
+    <div class="tbtn" id="bDash">Рывок</div>
+    <div class="tbtn" id="bFly">Полёт</div>
+    <div class="tbtn hidden" id="bUp">▲</div>
+    <div class="tbtn hidden" id="bDown">▼</div>
+  </div>
+</div>
+<div id="banner"></div>
+<div id="flash"></div>
+<div id="toast"></div>
+
+<div id="pause" class="overlay hidden">
+  <h2>Пауза</h2>
+  <div class="opts">
+    <div class="opt" id="oResume">Продолжить</div>
+    <div class="opt" id="oRestart">Заново</div>
+    <div class="opt" id="oQuit">В меню</div>
+  </div>
+</div>
+<div id="result" class="overlay hidden">
+  <h2 id="rTitle">Миссия выполнена</h2>
+  <div class="sub" id="rSub"></div>
+  <div class="opts">
+    <div class="opt" id="rNext">Следующая миссия</div>
+    <div class="opt" id="rRetry">Повторить</div>
+    <div class="opt" id="rMenu">В меню</div>
+  </div>
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+               "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }
+</script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
