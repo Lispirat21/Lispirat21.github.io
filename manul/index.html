@@ -108,6 +108,34 @@ body.second #cross, body.second #whiskers { display:none; }
 body.touch #bars { bottom:max(14px, env(safe-area-inset-bottom)); }
 body.touch #status { bottom:auto; top:calc(max(10px, env(safe-area-inset-top)) + 70px); }
 body.touch #cross { display:none; }
+/* ---------- размер интерфейса (настройки) ---------- */
+:root { --ui:1; --btn:1; }
+#bars { transform:scale(var(--ui)); transform-origin:left bottom; }
+#status { transform:scale(var(--ui)); transform-origin:right bottom; }
+body.touch #status { transform-origin:right top; top:calc(max(10px, env(safe-area-inset-top)) + 70px * var(--ui)); }
+#compass { transform:translateX(-50%) scale(var(--ui)); transform-origin:center top; width:min(420px, calc((100vw - 160px * var(--btn)) / var(--ui))); }
+#topInfo { transform:translateX(-50%) scale(var(--ui)); transform-origin:center top; top:calc(max(10px, env(safe-area-inset-top)) + 40px * var(--ui)); }
+#msg { font-size:calc(clamp(18px,3vw,26px) * var(--ui)); }
+#warn { font-size:calc(clamp(22px,4vw,34px) * var(--ui)); }
+#hint { font-size:calc(16px * var(--ui)); bottom:calc(max(14px, env(safe-area-inset-bottom)) + 70px * var(--ui)); }
+body.touch #hint { bottom:calc(max(14px, env(safe-area-inset-bottom)) + 150px * var(--ui)); }
+#cross { transform:scale(var(--ui)); }
+#sbPanel { transform:scale(var(--ui)); transform-origin:right top; max-height:calc((100% - 150px) / var(--ui)); }
+#viewBtn { transform:scale(var(--btn)); transform-origin:left top; }
+#sbBtn { transform:scale(var(--btn)); transform-origin:left top; top:calc(max(10px, env(safe-area-inset-top)) + 78px * var(--btn)); }
+#viewBtn:active, #sbBtn:active { transform:scale(calc(var(--btn) * .94)); }
+#pauseBtn { transform:scale(var(--btn)); transform-origin:right top; }
+#joy { transform:scale(var(--btn)); transform-origin:left bottom; bottom:calc(max(20px, env(safe-area-inset-bottom)) + 125px * var(--ui)); }
+#tbtns { transform:scale(var(--btn)); transform-origin:right bottom; }
+.screen { justify-content:flex-start; }
+.screen > :first-child { margin-top:auto; }
+.screen > :last-child { margin-bottom:auto; }
+#settings.overGame { background:rgba(15,12,8,.55); }
+.uiPreview { display:flex; align-items:center; gap:10px; justify-content:center; margin:6px 0 2px; color:#eadfc8; font-size:14px; }
+.uiPreview .bar { width:calc(160px * var(--ui)); font-size:calc(16px * var(--ui)); margin:0; }
+.uiPreview .bar .track { height:calc(12px * var(--ui)); }
+.uiPreview .pv { width:calc(56px * var(--btn)); height:calc(56px * var(--btn)); border-radius:50%; border:2px solid rgba(255,230,170,.6);
+  background:rgba(40,30,15,.55); display:grid; place-items:center; font-size:calc(22px * var(--btn)); }
 </style>
 </head>
 <body>
@@ -196,7 +224,7 @@ body.touch #cross { display:none; }
     <b>WASD / мышь</b><span>ходить и смотреть</span>
     <b>Shift</b><span>бежать (шумно!)</span>
     <b>C</b><span>красться (тебя почти не видно)</span>
-    <b>ЛКМ</b><span>бросок / удар лапой</span>
+    <b>ЛКМ</b><span>бросок / удар лапой (бей и пикирующего беркута!)</span>
     <b>Пробел</b><span>прыжок</span>
     <b>E / ПКМ</b><span>«Фыр!» — пугает орла и волков</span>
     <b>R (держать)</b><span>мурчать — лечит, но тратит сытость</span>
@@ -234,6 +262,9 @@ body.touch #cross { display:none; }
     <label for="sSens">Чувствительность мыши / пальца</label><span><input type="range" id="sSens" min="0.3" max="3" step="0.1"><output id="oSens"></output></span>
     <label for="sVol">Громкость</label><span><input type="range" id="sVol" min="0" max="100" step="5"><output id="oVol"></output></span>
     <label for="sFov">Угол обзора</label><span><input type="range" id="sFov" min="60" max="100" step="1"><output id="oFov"></output></span>
+    <label for="sUi">Размер интерфейса (полоски, компас, надписи)</label><span><input type="range" id="sUi" min="0.6" max="1.6" step="0.05"><output id="oUi"></output></span>
+    <label for="sBtnSz">Размер кнопок (🎥, 🧰, джойстик, кнопки на телефоне)</label><span><input type="range" id="sBtnSz" min="0.6" max="1.6" step="0.05"><output id="oBtn"></output></span>
+    <span class="uiPreview" style="grid-column:1 / -1"><span class="bar">❤️<span class="track"><span class="fill" id="hpF2" style="display:block;width:70%;background:linear-gradient(90deg,#c2372b,#ff6b55)"></span></span></span><span class="pv">🎥</span><span class="pv">🐾</span></span>
     <label for="sQ">Графика</label><select id="sQ"><option value="low">Низкая (быстрее)</option><option value="mid">Средняя</option><option value="high">Высокая</option></select>
     <label for="sDay">Длина дня</label><select id="sDay"><option value="0.6">Короткий</option><option value="1">Обычный</option><option value="1.8">Длинный</option></select>
     <label for="sDiff">Сложность выживания</label><select id="sDiff"><option value="0.6">Лёгкая</option><option value="1">Обычная</option><option value="1.5">Сложная</option></select>
@@ -242,6 +273,7 @@ body.touch #cross { display:none; }
     <label for="sWh">Усы на экране</label><input type="checkbox" id="sWh">
   </div>
   <button class="big" id="setDone">Готово</button>
+  <button class="ghost" id="setReset">Сбросить настройки</button>
 </div>
 
 <div id="over" class="screen hidden">
@@ -266,7 +298,8 @@ let seed = 777;
 function rnd() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
 function wrapA(a) { while (a > Math.PI) a -= Math.PI * 2; while (a < -Math.PI) a += Math.PI * 2; return a; }
 const isTouch = ('ontouchstart' in window) || matchMedia('(pointer: coarse)').matches;
-const SET = { sens: 1, vol: 70, fov: 75, quality: 'mid', dayLen: 1, diff: 1, invertY: false, shake: true, whiskers: true };
+const SET_DEF = { sens: 1, vol: 70, fov: 75, quality: 'mid', dayLen: 1, diff: 1, invertY: false, shake: true, whiskers: true, ui: 1, btn: 1 };
+const SET = Object.assign({}, SET_DEF);
 try { Object.assign(SET, JSON.parse(localStorage.getItem('manul_settings') || '{}')); } catch (e) {}
 function saveSettings() { try { localStorage.setItem('manul_settings', JSON.stringify(SET)); } catch (e) {} }
 if (isTouch) { document.body.classList.add('touch'); $('ctrlDesk').classList.add('hidden'); $('ctrlTouch').classList.remove('hidden'); }
@@ -838,11 +871,24 @@ function updateEagle(dt) {
   E.timer -= dt;
   const u = E.mesh.userData;
   let flap = 0;
+  if (E.state === 'dead') {            // сбитый беркут падает, кувыркаясь
+    E.shadow.visible = false; u.talons.visible = false;
+    const g = H(E.x, E.z) + 0.15;
+    if (E.y > g) { E.vy -= 15 * dt; E.y = Math.max(g, E.y + E.vy * dt); E.x += E.vx * dt; E.z += E.vz * dt; E.mesh.rotation.x += dt * 6; E.mesh.rotation.z += dt * 4; }
+    else { E.mesh.rotation.set(0, E.mesh.rotation.y, Math.PI * 0.9); u.wings[0].rotation.z = 0.2; u.wings[1].rotation.z = -0.2; }
+    E.mesh.position.set(E.x, E.y, E.z);
+    if (E.timer <= 0) { E.state = 'gone'; E.timer = R(25, 40); E.mesh.visible = false; }
+    return;
+  }
+  if (E.state === 'gone') {            // новый беркут прилетит позже
+    if (E.timer <= 0) { Object.assign(E, { state: 'circle', timer: R(30, 50), hp: 100, y: 90, x: P.x + 60, z: P.z }); E.mesh.visible = true; E.mesh.rotation.set(0, 0, 0); }
+    return;
+  }
   if (E.state === 'circle') {
     E.ang += dt * 0.22;
     const tx = P.x + Math.cos(E.ang) * 32, tz = P.z + Math.sin(E.ang) * 32, ty = day ? 30 : 120;
     E.x = lerp(E.x, tx, Math.min(1, dt * 0.8)); E.z = lerp(E.z, tz, Math.min(1, dt * 0.8)); E.y = lerp(E.y, ty, Math.min(1, dt * 0.5));
-    if (E.timer <= 0 && day && !S.inHome && S.dayF > 0.6) { E.state = 'warn'; E.timer = 2.6; snd.screech(); warn('⚠ Беркут! Прячься у большого камня или фыркни (E)!', 2.6); }
+    if (E.timer <= 0 && day && !S.inHome && S.dayF > 0.6) { E.state = 'warn'; E.timer = 2.6; snd.screech(); warn('⚠ Беркут! Прячься у камня, фыркни (E) или бей лапой, когда он рядом!', 2.6); }
     else if (E.timer <= 0) E.timer = R(5, 10);
     flap = 0.08;
   } else if (E.state === 'warn') {
@@ -880,8 +926,20 @@ function updateEagle(dt) {
   E.shadow.visible = show;
   if (show) { const s = clamp(2.6 - E.y * 0.08, 0.6, 2.6); E.shadow.scale.setScalar(s); E.shadow.position.set(E.x, H(E.x, E.z) + 0.06, E.z); }
 }
+function damageEagle(dmg) {
+  const E = eagle; if (E.state === 'dead' || E.state === 'gone') return;
+  E.hp -= dmg; spark(E.x, E.y, E.z, 6);
+  if (E.hp <= 0) {
+    E.state = 'dead'; E.timer = 6; E.vy = 0; E.vx *= 0.3; E.vz *= 0.3;
+    if (!E.vx && !E.vz) { E.vx = R(-2, 2); E.vz = R(-2, 2); }
+    $('warn').style.opacity = 0; snd.screech(); snd.good();
+    S.food = Math.min(100, S.food + 30); addFat(45);
+    msg('🦅💥 Тимофей победил беркута! +30 🍖', 3);
+  }
+}
 function repelEagle(text) {
-  const E = eagle; E.state = 'climb'; E.timer = 4;
+  const E = eagle; if (E.state === 'dead' || E.state === 'gone') return;
+  E.state = 'climb'; E.timer = 4;
   const a = Math.random() * Math.PI * 2; E.vx = Math.cos(a) * 10; E.vz = Math.sin(a) * 10;
   if (text) { msg(text, 2.2); snd.screech(); }
   $('warn').style.opacity = 0;
@@ -1059,7 +1117,7 @@ function lomHit() {
     if (w.dead !== undefined) continue; const dx = w.x - P.x, dz = w.z - P.z, d = Math.hypot(dx, dz);
     if (d < 2.0 && (dx * fx + dz * fz) / (d || 1) > 0.2) { hitWolf(w, 55, dx / d * 9, dz / d * 9); spark(w.x, H(w.x, w.z) + 0.8, w.z, 10); hit = true; }
   }
-  if (Math.hypot(eagle.x - P.x, eagle.y - P.y, eagle.z - P.z) < 2.6 && (eagle.state === 'dive' || eagle.state === 'warn')) { repelEagle('Бац! Беркут улетел, потирая клюв'); hit = true; }
+  if (Math.hypot(eagle.x - P.x, eagle.y - P.y, eagle.z - P.z) < 2.6 && eagle.state !== 'dead' && eagle.state !== 'gone') { damageEagle(50); if (eagle.state !== 'dead') repelEagle('Бац ломом! Беркут ранен и улетел'); hit = true; }
   for (const r of rocks) {
     const dx = r.x - P.x, dz = r.z - P.z, d = Math.hypot(dx, dz);
     if (d < r.r + 0.8 && (dx * fx + dz * fz) / (d || 1) > 0.5) { spark(P.x + fx * 0.8, P.y + 0.3, P.z + fz * 0.8, 8); hit = true; break; }
@@ -1073,7 +1131,7 @@ function laserTrace(o, d) {
     if (py < H(px, pz)) return { kind: 'ground', t };
     for (const p of prey) if (p.alive && Math.hypot(p.x - px, p.y + 0.08 - py, p.z - pz) < p.T.size + 0.14) return { kind: 'prey', t, obj: p };
     for (const w of wolves) if (w.dead === undefined && Math.hypot(w.x - px, w.z - pz) < 0.45) { const gy = H(w.x, w.z); if (py > gy + 0.25 && py < gy + 1.15) return { kind: 'wolf', t, obj: w }; }
-    if (Math.hypot(eagle.x - px, eagle.y - py, eagle.z - pz) < 1.1) return { kind: 'eagle', t };
+    if (eagle.state !== 'dead' && eagle.state !== 'gone' && Math.hypot(eagle.x - px, eagle.y - py, eagle.z - pz) < 1.1) return { kind: 'eagle', t };
     for (const r of rocks) if (py < r.top && Math.abs(r.x - px) < r.r && Math.abs(r.z - pz) < r.r && Math.hypot(r.x - px, r.z - pz) < r.r * 0.85) return { kind: 'rock', t };
   }
   return { kind: 'none', t: 90 };
@@ -1101,19 +1159,19 @@ function updateLaser(dt) {
   spark(_hp.x, _hp.y, _hp.z, 2);
   if (res.kind === 'prey') catchPrey(res.obj, 'Поджарил лазером');
   else if (res.kind === 'wolf') { hitWolf(res.obj, 170 * dt); }
-  else if (res.kind === 'eagle') { if (eagle.state !== 'climb') repelEagle('Беркут получил лазером и сбежал!'); }
+  else if (res.kind === 'eagle') { damageEagle(140 * dt); if (eagle.state === 'dive' || eagle.state === 'warn') repelEagle('Беркут обжёгся лазером!'); }
   else if (res.kind === 'ground') { scorchT -= dt; if (scorchT <= 0) { scorchT = 0.04; scorch(_hp.x, _hp.z); } }
 }
 function toggleFly() {
   P.flying = !P.flying;
-  if (P.flying) { P.vy = 4; P.onGround = false; P.pounceT = 0; msg('🕊 Тимофей летит! Смотри, куда лететь. Пробел — вверх, X — вниз', 2.5); }
+  if (P.flying) { P.vy = 4; P.onGround = false; P.pounceT = 0; msg('🕊 Тимофей летит! Смотри, куда лететь. Пробел — вверх, X — вниз, Shift — турбо', 2.5); }
   else msg('Приземляемся…', 1.5);
   sbSync();
 }
 function updateFlight(dt, mf, ms) {
   const cp = Math.cos(P.pitch), sp = Math.sin(P.pitch);
   const fast = keys.ShiftLeft || keys.ShiftRight;
-  const v = fast ? 18 : 9;
+  const v = fast ? 48 : 24;
   const up = (keys.Space || touch.up ? 1 : 0) - (keys.KeyX ? 1 : 0);
   const fx = -Math.sin(P.yaw) * cp, fz = -Math.cos(P.yaw) * cp, rx = Math.cos(P.yaw), rz = -Math.sin(P.yaw);
   const tx = (fx * mf + rx * ms) * v, ty = sp * mf * v + up * v * 0.7, tz = (fz * mf + rz * ms) * v;
@@ -1224,6 +1282,11 @@ function actPounce() {
   if (!S.running || S.paused) return;
   if (P.pounceCd > 0) return;
   P.swipeT = 0.3; snd.swipe();
+  // сдача лапой пикирующему беркуту
+  if (eagle.state === 'dive' && Math.hypot(eagle.x - P.x, eagle.y - P.y - 0.3, eagle.z - P.z) < 2.4) {
+    damageEagle(40); if (eagle.state !== 'dead') repelEagle(`Тимофей дал сдачи лапой! Беркут ранен (${Math.max(0, Math.round(eagle.hp))}%)`);
+    P.pounceCd = 0.4; return;
+  }
   if (tryCatch(0.65)) { P.pounceCd = 0.4; return; }
   if (!P.onGround) return;
   const fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw);
@@ -1580,7 +1643,7 @@ function resetGame() {
   P.y = H(P.x, P.z);
   Object.assign(S, { over: false, paused: false, t: 0.04, day: 1, caught: 0, caughtToday: 0, hp: 100, food: 75, warm: 100, spawnT: 0, wolfT: 0, wasNight: false, msgT: 0, warnT: 0, hurtT: 0, god: S.sandbox, freeze: false, panel: false, fatXP: 0, fatLv: 1, fatShow: 1 });
   $('sbPanel').classList.add('hidden'); setView(0); updatePounceLabel(); clearScorches();
-  Object.assign(eagle, { state: 'circle', timer: 45, x: 30, y: 40, z: 0 });
+  Object.assign(eagle, { state: 'circle', timer: 45, x: 30, y: 40, z: 0, hp: 100, vx: 0, vy: 0, vz: 0 }); eagle.mesh.visible = true; eagle.mesh.rotation.set(0, 0, 0);
   $('tCrouch').classList.remove('on');
   for (let i = 0; i < 30; i++) spawnPrey(['pika', 'mouse', 'lark'][i % 3]);
 }
@@ -1630,19 +1693,21 @@ function applySettings() {
   renderer.setPixelRatio(SET.quality === 'low' ? 0.6 : SET.quality === 'high' ? Math.min(window.devicePixelRatio || 1, 2) : 1);
   if (A.master) A.master.gain.value = SET.vol / 100;
   $('whiskers').style.display = SET.whiskers ? '' : 'none';
+  document.documentElement.style.setProperty('--ui', SET.ui); document.documentElement.style.setProperty('--btn', SET.btn);
   resize();
 }
 const setFields = [['sSens', 'sens', 'num'], ['sVol', 'vol', 'num'], ['sFov', 'fov', 'num'], ['sQ', 'quality', 'str'], ['sDay', 'dayLen', 'num'],
-  ['sDiff', 'diff', 'num'], ['sInv', 'invertY', 'chk'], ['sShake', 'shake', 'chk'], ['sWh', 'whiskers', 'chk']];
-function showOut() { $('oSens').textContent = SET.sens.toFixed(1); $('oVol').textContent = SET.vol + '%'; $('oFov').textContent = SET.fov + '°'; }
+  ['sDiff', 'diff', 'num'], ['sInv', 'invertY', 'chk'], ['sUi', 'ui', 'num'], ['sBtnSz', 'btn', 'num'], ['sShake', 'shake', 'chk'], ['sWh', 'whiskers', 'chk']];
+function showOut() { $('oSens').textContent = SET.sens.toFixed(1); $('oVol').textContent = SET.vol + '%'; $('oFov').textContent = SET.fov + '°'; $('oUi').textContent = Math.round(SET.ui * 100) + '%'; $('oBtn').textContent = Math.round(SET.btn * 100) + '%'; }
 function fillSettings() { for (const [id, k, t] of setFields) { const el = $(id); if (t === 'chk') el.checked = !!SET[k]; else el.value = String(SET[k]); } showOut(); }
 for (const [id, k, t] of setFields) $(id).addEventListener('input', () => {
   const el = $(id); SET[k] = t === 'chk' ? el.checked : t === 'num' ? parseFloat(el.value) : el.value;
   showOut(); applySettings(); saveSettings();
 });
 let setFrom = 'menu';
-function openSettings(from) { setFrom = from; fillSettings(); $(from).classList.add('hidden'); $('settings').classList.remove('hidden'); }
+function openSettings(from) { setFrom = from; fillSettings(); $('settings').classList.toggle('overGame', from === 'pause'); if (from === 'pause') $('hud').classList.remove('hidden'); $(from).classList.add('hidden'); $('settings').classList.remove('hidden'); }
 $('setDone').onclick = () => { $('settings').classList.add('hidden'); $(setFrom).classList.remove('hidden'); };
+$('setReset').onclick = () => { Object.assign(SET, SET_DEF); fillSettings(); applySettings(); saveSettings(); };
 $('setBtnMenu').onclick = () => openSettings('menu');
 $('setBtnPause').onclick = () => openSettings('pause');
 applySettings();
