@@ -1,0 +1,648 @@
+<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Гордон</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+SC:wght@600;700&family=Manrope:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: тёмная «сцена» — листы концепта идут сверху вниз, как в production-пакете аниматора. Одна тёмная тема намеренно. */
+:root{
+  color-scheme:dark;
+  --bg:#08071a;
+  --panel:#0e0c28;
+  --panel2:#13103a;
+  --line:#2b2660;
+  --fg:#dfe0f7;
+  --muted:#9693c4;
+  --ice:#7ef0ff;
+  --violet:#8a63e6;
+  --ember:#ff3d7a;
+  --display:'Cormorant SC','Cormorant Garamond','Times New Roman',serif;
+  --body:'Manrope',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--bg);
+  background-image:radial-gradient(900px 600px at 15% -5%,#1d1356 0%,transparent 60%),radial-gradient(800px 600px at 100% 30%,#0f1a4d 0%,transparent 60%);
+  color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.55;margin:0;
+}
+.wrap{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:40px 80px;display:flex;flex-direction:column;gap:56px}
+header.hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:32px;align-items:center}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ice)}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(64px,11vw,132px);line-height:.85;margin:10px 0 14px;letter-spacing:.02em;color:#eef0ff;text-shadow:0 0 40px rgba(126,240,255,.18)}
+h2{font-family:var(--display);font-weight:700;font-size:clamp(28px,4vw,40px);margin:0;line-height:1;text-wrap:balance}
+h3{font-family:var(--display);font-size:22px;margin:0}
+p{margin:0;max-width:65ch}
+.lead{font-size:17px;color:var(--fg)}
+.muted{color:var(--muted)}
+.palette{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.chip{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+.chip i{width:26px;height:26px;border-radius:50%;border:2px solid #000;box-shadow:0 0 0 1px var(--line)}
+.sec-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 18px;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:22px}
+.sheet-no{font-family:var(--mono);font-size:12px;color:var(--ice);letter-spacing:.1em;text-transform:uppercase}
+.sec-head p{flex-basis:100%;color:var(--muted)}
+.stage{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.turn{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.turn figure,.grid8 figure,.hands figure{margin:0;display:flex;flex-direction:column}
+figure svg{display:block;width:100%;height:auto}
+figcaption{font-family:var(--mono);font-size:12px;color:var(--muted);padding:10px 12px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+figcaption b{color:var(--fg);font-weight:600}
+.grid8{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.hands{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.two{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;align-items:start}
+.notes{display:flex;flex-direction:column;gap:14px}
+.notes ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.notes li::marker{color:var(--ice)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px}
+.kv dt{font-family:var(--mono);font-size:12px;color:var(--ice);padding-top:2px}
+.kv dd{margin:0}
+.controls{display:flex;flex-direction:column;gap:14px;padding:16px}
+.ctl-label{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.btns{display:flex;flex-wrap:wrap;gap:6px}
+button{font:600 13px var(--body);color:var(--fg);background:#16133f;border:1px solid var(--line);border-radius:4px;padding:7px 11px;cursor:pointer}
+button:hover{border-color:var(--violet)}
+button[aria-pressed="true"]{background:#2a1f6e;border-color:var(--ice);color:#fff}
+button:focus-visible,input:focus-visible{outline:2px solid var(--ice);outline-offset:2px}
+input[type=range]{width:100%;accent-color:var(--ice)}
+.layers{font-family:var(--mono);font-size:12px;color:var(--muted);line-height:1.7;margin:0;white-space:pre;overflow-x:auto}
+.layers b{color:var(--ice);font-weight:400}
+footer{color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding-top:18px}
+@media (max-width:900px){
+  header.hero,.two{grid-template-columns:minmax(0,1fr)}
+  .grid8,.hands{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:560px){
+  .turn{gap:6px}
+  .turn figcaption{font-size:10.5px;padding:8px}
+}
+</style>
+</head><body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <radialGradient id="gMask" cx=".42" cy=".32" r=".8">
+      <stop offset="0" stop-color="#f3f1ff"/><stop offset=".55" stop-color="#c7c1ea"/><stop offset="1" stop-color="#7d75b8"/>
+    </radialGradient>
+    <linearGradient id="gHorn" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#1a1442"/><stop offset=".55" stop-color="#33267a"/><stop offset="1" stop-color="#5b48b8"/>
+    </linearGradient>
+    <linearGradient id="gHornFar" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#0f0c2a"/><stop offset="1" stop-color="#2a2066"/>
+    </linearGradient>
+    <linearGradient id="gCrown" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d9e0ff"/><stop offset=".5" stop-color="#7c86b8"/><stop offset="1" stop-color="#2c3160"/>
+    </linearGradient>
+    <radialGradient id="gIce" cx=".4" cy=".35" r=".7">
+      <stop offset="0" stop-color="#f2ffff"/><stop offset=".45" stop-color="#7ef0ff"/><stop offset="1" stop-color="#1a6fb0"/>
+    </radialGradient>
+    <radialGradient id="gRage" cx=".4" cy=".35" r=".7">
+      <stop offset="0" stop-color="#fff0f6"/><stop offset=".45" stop-color="#ff3d7a"/><stop offset="1" stop-color="#6d0838"/>
+    </radialGradient>
+    <radialGradient id="gCold" cx=".4" cy=".35" r=".7">
+      <stop offset="0" stop-color="#f4f6ff"/><stop offset=".5" stop-color="#9aa6d6"/><stop offset="1" stop-color="#363e72"/>
+    </radialGradient>
+    <radialGradient id="gHeat" cx=".5" cy=".45" r=".6">
+      <stop offset="0" stop-color="#ff3d7a" stop-opacity=".0"/><stop offset="1" stop-color="#ff3d7a" stop-opacity=".55"/>
+    </radialGradient>
+    <linearGradient id="gSkull" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3a3170"/><stop offset="1" stop-color="#151131"/>
+    </linearGradient>
+    <linearGradient id="gCloak" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1d2466"/><stop offset=".6" stop-color="#121848"/><stop offset="1" stop-color="#090b26"/>
+    </linearGradient>
+    <linearGradient id="gLining" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6a3cc0"/><stop offset="1" stop-color="#2a1356"/>
+    </linearGradient>
+    <linearGradient id="gInner" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a1656"/><stop offset="1" stop-color="#0d0722"/>
+    </linearGradient>
+    <linearGradient id="gCoat" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#151a52"/><stop offset=".5" stop-color="#262f86"/><stop offset="1" stop-color="#151a52"/>
+    </linearGradient>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="3.2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+<header class="hero">
+  <div>
+    <div class="eyebrow">Концепт персонажа · пакет для 2D-анимации</div>
+    <h1>Гордон</h1>
+    <p class="lead">Король-демон в живой маске. Тело почти целиком из костей под тонкой тёмной кожей, плащ скрывает его почти полностью. Узнаётся по силуэту: огромный серповидный рог с одной стороны, обломок короны с другой и широкая улыбка, которая умеет меняться.</p>
+    <div class="palette" aria-label="Палитра">
+      <span class="chip"><i style="background:#090b26"></i>Полночь #090B26</span>
+      <span class="chip"><i style="background:#1d2466"></i>Королевский синий #1D2466</span>
+      <span class="chip"><i style="background:#4b2a8f"></i>Глубокий фиолет #4B2A8F</span>
+      <span class="chip"><i style="background:#2e2552"></i>Кожа #2E2552</span>
+      <span class="chip"><i style="background:#d7d2f2"></i>Маска #D7D2F2</span>
+      <span class="chip"><i style="background:#7ef0ff"></i>Лёд #7EF0FF</span>
+      <span class="chip"><i style="background:#ff3d7a"></i>Гнев #FF3D7A</span>
+    </div>
+  </div>
+  <div class="stage"><svg id="heroSvg" viewBox="-300 -330 440 480" role="img" aria-label="Голова Гордона: маска с рогом и короной"></svg></div>
+</header>
+
+<section>
+  <div class="sec-head"><span class="sheet-no">Листы 1–3</span><h2>Разворот в полный рост</h2>
+    <p>Рост ≈ 6 масок без рога и ≈ 6,8 с рогом. Пунктир — общие уровни для всех трёх видов: верх рога, верх маски, подбородок, плечи, бёдра, колени, пол.</p></div>
+  <div class="turn">
+    <figure class="stage"><svg id="vFront" viewBox="0 0 520 940" role="img" aria-label="Гордон спереди"></svg><figcaption><b>1 · Спереди</b><span>руки: жест / свисающая</span></figcaption></figure>
+    <figure class="stage"><svg id="vSide" viewBox="0 0 520 940" role="img" aria-label="Гордон сбоку"></svg><figcaption><b>2 · Сбоку</b><span>голова выведена вперёд</span></figcaption></figure>
+    <figure class="stage"><svg id="vBack" viewBox="0 0 520 940" role="img" aria-label="Гордон сзади"></svg><figcaption><b>3 · Сзади</b><span>герб на плаще</span></figcaption></figure>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sheet-no">Лист 4</span><h2>Голова и маска</h2>
+    <p>Маска и есть лицо. За ней тёмный череп, который виден только по краю. Рог растёт прямо из маски, корона держится на черепе.</p></div>
+  <div class="stage"><svg id="closeup" viewBox="-610 -335 1090 500" role="img" aria-label="Крупный план маски с выносками"></svg></div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sheet-no">Лист 5</span><h2>Выражения маски</h2>
+    <p>Восемь базовых эмоций. Каждое собрано из двух независимых частей: пресета глаз и пресета рта. Их можно комбинировать в риге ниже.</p></div>
+  <div class="grid8" id="exprGrid"></div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sheet-no">Лист 5а</span><h2>Риг мимики</h2>
+    <p>Глаза и рот переключаются отдельно, переходы интерполируются: так выглядит будущая анимация. Веки, брови, зрачки, углы рта и зубы — отдельные слои.</p></div>
+  <div class="two">
+    <div class="stage"><svg id="rigSvg" viewBox="-300 -330 440 480" role="img" aria-label="Интерактивная маска"></svg></div>
+    <div class="stage controls">
+      <div class="ctl-label">Глаза</div><div class="btns" id="eyeBtns"></div>
+      <div class="ctl-label">Рот</div><div class="btns" id="mouthBtns"></div>
+      <label class="ctl-label" for="gaze">Взгляд влево ↔ вправо</label>
+      <input type="range" id="gaze" min="-12" max="12" step="1" value="0">
+      <div class="btns">
+        <button id="blinkBtn" type="button">Моргнуть</button>
+        <button id="autoBtn" type="button" aria-pressed="false">Автопоказ эмоций</button>
+      </div>
+      <div class="ctl-label">Слои рига</div>
+<pre class="layers"><b>head</b>
+ ├ skull            череп (за маской)
+ ├ crown            корона-обломок
+ ├ mask_base        маска + сигил + трещина
+ ├ eye_L / eye_R    глазница, радужка, зрачок-щель, блик
+ │   └ lid_up, lid_low   веки = маска глаза
+ ├ brow_L / brow_R  гравировка-брови
+ ├ mouth            форма (4 точки), зубы верх/низ,
+ │   └ tongue, crease_L, crease_R
+ ├ horn_main, horn_prong, horn_ring
+ └ heat             свечение трещин (гнев)</pre>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sheet-no">Лист 6</span><h2>Руки и пальцы</h2>
+    <p>Четыре фаланги вместо трёх, палец в 1,6 раза длиннее ладони, на концах серебряные когти. Суставы показаны шишками, по центру каждой кости проходит светлая грань.</p></div>
+  <div class="hands" id="handsGrid"></div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sheet-no">Лист 7</span><h2>Плащ</h2>
+    <p>Снаружи тёмно-синий бархат, внутри фиолетовая подкладка. На поворотах и в движении подкладка вспыхивает по краю, поэтому силуэт читается даже в тени.</p></div>
+  <div class="two">
+    <div class="stage"><svg id="cloakSvg" viewBox="20 120 480 800" role="img" aria-label="Анимация плаща"></svg></div>
+    <div class="notes">
+      <div class="stage controls">
+        <div class="ctl-label">Движение</div>
+        <div class="btns" id="cloakBtns"></div>
+      </div>
+      <div class="stage"><svg id="patternSvg" viewBox="0 0 600 340" role="img" aria-label="Выкройка плаща"></svg></div>
+      <dl class="kv">
+        <dt>Воротник</dt><dd>веер из 7 шипов на каркасе, стоит выше макушки черепа</dd>
+        <dt>Плечи</dt><dd>острые наплечные выступы, поднимают линию плеч вверх</dd>
+        <dt>Застёжка</dt><dd>серебряная цепь и фибула с ледяным камнем</dd>
+        <dt>Подол</dt><dd>рваный, по 5 зубцов на каждой поле; зубцы отстают по фазе, хлёст идёт сверху вниз</dd>
+        <dt>Под плащом</dt><dd>колет с серебряными пуговицами, жабо, пояс с сигилом, фалды-клинья</dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<footer>Гордон — оригинальный персонаж. Все листы нарисованы векторными слоями, части маски можно двигать по отдельности.</footer>
+</div>
+
+<script>
+(()=>{
+const C={ink:'#07061a',skin:'#2e2552',skinHi:'#5a4fa0',frost:'#d4d6f6',silver:'#b4bde4',ice:'#7ef0ff',ember:'#ff3d7a',violet:'#5b3aa8',navy:'#141a4a'};
+const rad=d=>d*Math.PI/180, f=n=>Math.round(n*10)/10, P=p=>f(p[0])+','+f(p[1]);
+let UID=0;
+const reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+const q=(a,b,c,t)=>{const m=1-t;return[m*m*a[0]+2*m*t*b[0]+t*t*c[0],m*m*a[1]+2*m*t*b[1]+t*t*c[1]]};
+const cub=(A,t)=>{const m=1-t;return[0,1].map(i=>m*m*m*A[0][i]+3*m*m*t*A[1][i]+3*m*t*t*A[2][i]+t*t*t*A[3][i])};
+const MASK='M0,-120 C60,-120 100,-90 100,-30 C100,40 60,100 0,125 C-60,100 -100,40 -100,-30 C-100,-90 -60,-120 0,-120 Z';
+
+/* ---------- presets ---------- */
+const ED={lidIn:-60,lidOut:-60,lowIn:60,lowOut:60,browIn:-52,browOut:-52,scale:1,ir:21,pr:1,gx:0,gy:0,iris:'ice',hl:1,tear:0,heat:0};
+const MD={teeth:0,tl:.42,creaseL:0,creaseR:0,tongue:0};
+const E=o=>({...ED,...o}), M=o=>({...MD,...o});
+const EYES={
+ calm:{n:'Спокойные',L:E({lidIn:-28,lidOut:-30,browIn:-50,browOut:-54,gy:2})},
+ joy:{n:'Радость',L:E({lowIn:14,lowOut:9,browIn:-64,browOut:-66,ir:22,pr:1.1,gy:-3})},
+ sad:{n:'Грусть',L:E({lidIn:-38,lidOut:-6,browIn:-62,browOut:-28,ir:20,pr:.9,gy:8,tear:1})},
+ annoyed:{n:'Раздражение',L:E({lidIn:-6,lidOut:-10,lowIn:30,lowOut:30,browIn:-22,browOut:-28,ir:20,pr:.8,gx:10,gy:4,heat:.2})},
+ rage:{n:'Гнев',L:E({lidIn:6,lidOut:-30,lowIn:32,lowOut:32,browIn:-4,browOut:-48,ir:19,pr:.45,iris:'rage',heat:1})},
+ surprise:{n:'Удивление',L:E({browIn:-72,browOut:-68,scale:1.12,ir:17,pr:.4})},
+ smirk:{n:'Сарказм',L:E({lidIn:-4,lidOut:-8,lowIn:28,lowOut:28,browIn:-20,browOut:-26,ir:20,pr:.8,gx:6}),R:E({lidIn:-38,lidOut:-42,browIn:-66,browOut:-74,ir:21,gx:6})},
+ cold:{n:'Холод',L:E({lidIn:-12,lidOut:-12,lowIn:14,lowOut:14,browIn:-26,browOut:-26,ir:15,pr:.55,iris:'cold',hl:0})},
+};
+for(const k in EYES) if(!EYES[k].R) EYES[k].R=EYES[k].L;
+const MOUTHS={
+ calm:{n:'Улыбка',m:M({L:[-66,46],R:[66,46],U:[0,62],D:[0,90],teeth:9,creaseL:.8,creaseR:.8})},
+ joy:{n:'Широкая',m:M({L:[-88,20],R:[88,20],U:[0,50],D:[0,140],teeth:12,tl:.3,creaseL:1,creaseR:1,tongue:1})},
+ sad:{n:'Грусть',m:M({L:[-50,86],R:[50,86],U:[0,46],D:[0,62],teeth:5,tl:.45})},
+ annoyed:{n:'Сжатая',m:M({L:[-50,64],R:[54,58],U:[0,56],D:[4,74],teeth:7,tl:.5})},
+ rage:{n:'Оскал',m:M({L:[-82,48],R:[82,48],U:[0,14],D:[0,134],teeth:11,tl:.34,tongue:1})},
+ surprise:{n:'«О»',m:M({L:[-22,66],R:[22,66],U:[0,26],D:[0,106],tongue:.8})},
+ smirk:{n:'Ухмылка',m:M({L:[-44,64],R:[80,30],U:[24,52],D:[30,78],teeth:6,tl:.45,creaseR:1})},
+ cold:{n:'Линия',m:M({L:[-56,64],R:[56,64],U:[0,63],D:[0,67]})},
+};
+const EXPR=[['calm','Спокойная улыбка'],['joy','Широкая радость'],['sad','Грусть'],['annoyed','Раздражение'],['rage','Сильный гнев'],['surprise','Удивление'],['smirk','Саркастическая ухмылка'],['cold','Холодное безразличие']];
+const IRIS={ice:['gIce','#7ef0ff'],rage:['gRage','#ff3d7a'],cold:['gCold','#9aa6d6']};
+
+/* ---------- head parts ---------- */
+function eyeSVG(cx,cy,side,e){
+  const u=++UID,r=38*e.scale,ix=cx-side*45,ox=cx+side*45;
+  const up=`${f(ix)},${f(cy+e.lidIn)} ${f(ox)},${f(cy+e.lidOut)} ${f(ox)},${cy+200} ${f(ix)},${cy+200}`;
+  const lo=`${f(ix)},${f(cy+e.lowIn)} ${f(ox)},${f(cy+e.lowOut)} ${f(ox)},${cy-200} ${f(ix)},${cy-200}`;
+  const [g,ring]=IRIS[e.iris]||IRIS.ice, icx=f(cx+e.gx), icy=f(cy+e.gy), ir=e.ir;
+  const bix=cx-side*14,box=cx+side*42,biy=cy+e.browIn,boy=cy+e.browOut,bmx=(bix+box)/2,bmy=(biy+boy)/2;
+  let s=`<defs><clipPath id="u${u}"><polygon points="${up}"/></clipPath><clipPath id="l${u}"><polygon points="${lo}"/></clipPath><clipPath id="c${u}"><circle cx="${cx}" cy="${cy}" r="${f(r+3)}"/></clipPath></defs>
+  <g clip-path="url(#u${u})"><g clip-path="url(#l${u})">
+   <circle cx="${cx}" cy="${cy}" r="${f(r)}" fill="#0a0820"/>
+   <circle cx="${cx}" cy="${cy}" r="${f(r*.82)}" fill="none" stroke="${ring}" stroke-width="2" opacity=".35"/>
+   <circle cx="${icx}" cy="${icy}" r="${f(ir)}" fill="url(#${g})" filter="url(#glow)"/>
+   <ellipse cx="${icx}" cy="${icy}" rx="${f(4.2*e.pr+1.2)}" ry="${f(14*e.pr+2.5)}" fill="${C.ink}"/>
+   <circle cx="${f(cx+e.gx-ir*.38)}" cy="${f(cy+e.gy-ir*.42)}" r="5" fill="#fff" opacity="${f(e.hl)}"/>
+   <circle cx="${f(cx+e.gx+ir*.32)}" cy="${f(cy+e.gy+ir*.36)}" r="2.3" fill="#fff" opacity="${f(e.hl*.8)}"/>
+   <circle cx="${cx}" cy="${cy}" r="${f(r)}" fill="none" stroke="${C.ink}" stroke-width="5"/>
+  </g></g>
+  <g clip-path="url(#c${u})" stroke="${C.ink}" stroke-linecap="round">
+   <line x1="${f(ix)}" y1="${f(cy+e.lidIn)}" x2="${f(ox)}" y2="${f(cy+e.lidOut)}" stroke-width="5.5"/>
+   <line x1="${f(ix)}" y1="${f(cy+e.lowIn)}" x2="${f(ox)}" y2="${f(cy+e.lowOut)}" stroke-width="4"/>
+  </g>
+  <path d="M${f(bix)},${f(biy-4.5)} Q${f(bmx)},${f(bmy-5)} ${f(box)},${f(boy)} Q${f(bmx)},${f(bmy+1.5)} ${f(bix)},${f(biy+4.5)} Z" fill="#2b2160" stroke="${C.ink}" stroke-width="1.5"/>`;
+  if(e.tear>.02){const tx=cx+side*28,ty=cy+34;s+=`<path d="M${tx},${ty} q-6,10 0,14 q6,-4 0,-14 Z" fill="${C.ice}" stroke="${C.ink}" stroke-width="1.5" opacity="${f(e.tear)}"/>`}
+  return s;
+}
+function mouthSVG(m){
+  const u=++UID,{L,R,U,D}=m,n=Math.round(m.teeth);
+  const d=`M${P(L)} Q${P(U)} ${P(R)} Q${P(D)} ${P(L)} Z`;
+  let teeth='';
+  if(n>0){
+    for(let i=0;i<n;i++){const t0=i/n,t1=(i+1)/n,tm=(t0+t1)/2,a=q(L,U,R,t0),b=q(L,U,R,t1),um=q(L,U,R,tm),dm=q(L,D,R,tm);
+      teeth+=`<polygon points="${P(a)} ${P(b)} ${P([um[0]+(dm[0]-um[0])*m.tl,um[1]+(dm[1]-um[1])*m.tl])}"/>`;}
+    const n2=Math.max(n-2,1);
+    for(let i=0;i<n2;i++){const t0=.12+.76*i/n2,t1=.12+.76*(i+1)/n2,tm=(t0+t1)/2,a=q(L,D,R,t0),b=q(L,D,R,t1),um=q(L,U,R,tm),dm=q(L,D,R,tm);
+      teeth+=`<polygon points="${P(a)} ${P(b)} ${P([dm[0]+(um[0]-dm[0])*m.tl*.75,dm[1]+(um[1]-dm[1])*m.tl*.75])}"/>`;}
+  }
+  const mid=q(L,D,R,.5),w=Math.abs(R[0]-L[0]);
+  let s=`<defs><clipPath id="m${u}"><path d="${d}"/></clipPath></defs><path d="${d}" fill="#170628"/>
+  <g clip-path="url(#m${u})">
+   ${m.tongue>.02?`<ellipse cx="${f(mid[0])}" cy="${f(mid[1]-4)}" rx="${f(w*.26)}" ry="16" fill="#6b2a8a" opacity="${f(m.tongue)}"/>`:''}
+   <g fill="#eef0ff" stroke="${C.ink}" stroke-width="2" stroke-linejoin="round">${teeth}</g>
+  </g>
+  <path d="${d}" fill="none" stroke="${C.ink}" stroke-width="5" stroke-linejoin="round"/>`;
+  if(m.creaseL>.02)s+=`<path d="M${f(L[0]+2)},${f(L[1]-11)} Q${f(L[0]-11)},${f(L[1])} ${f(L[0]+2)},${f(L[1]+11)}" fill="none" stroke="${C.ink}" stroke-width="3.5" stroke-linecap="round" opacity="${f(m.creaseL)}"/>`;
+  if(m.creaseR>.02)s+=`<path d="M${f(R[0]-2)},${f(R[1]-11)} Q${f(R[0]+11)},${f(R[1])} ${f(R[0]-2)},${f(R[1]+11)}" fill="none" stroke="${C.ink}" stroke-width="3.5" stroke-linecap="round" opacity="${f(m.creaseR)}"/>`;
+  return s;
+}
+const HO=[[-98,-50],[-170,-80],[-205,-180],[-125,-305]], HI=[[-125,-305],[-150,-230],[-140,-170],[-45,-115]];
+const HORN='M-98,-50 C-170,-80 -205,-180 -125,-305 C-150,-230 -140,-170 -45,-115 Z';
+const PRONG='M-150,-100 C-200,-105 -240,-135 -262,-195 C-235,-170 -205,-160 -172,-150 Z';
+function hornSVG(far){
+  const fill=far?'url(#gHornFar)':'url(#gHorn)';
+  let ridges='';
+  [.13,.25,.37,.49,.6,.71,.81].forEach(t=>{const a=cub(HO,t),b=cub(HI,1-t);ridges+=`<path d="M${P(a)} Q${f((a[0]+b[0])/2)},${f((a[1]+b[1])/2-9)} ${P(b)}"/>`});
+  const band=[cub(HO,.03),cub(HO,.11),cub(HI,.89),cub(HI,.97)].map(P).join(' ');
+  return `<path d="${PRONG}" fill="${fill}"/><path d="M-200,-118 Q-206,-128 -226,-136 M-226,-150 Q-238,-162 -246,-176" stroke="${C.ink}" stroke-width="2" fill="none" opacity=".5"/>
+  <path d="M-262,-195 C-235,-170 -205,-160 -172,-150" fill="none" stroke="${C.ice}" stroke-width="2.5" opacity="${far?.25:.6}"/>
+  <path d="${PRONG}" fill="none" stroke="${C.ink}" stroke-width="5" stroke-linejoin="round"/>
+  <path d="${HORN}" fill="${fill}"/>
+  <g stroke="${C.ink}" stroke-width="2.4" fill="none" opacity=".55">${ridges}</g>
+  <path d="M-125,-305 C-150,-230 -140,-170 -45,-115" fill="none" stroke="${C.ice}" stroke-width="3" opacity="${far?.25:.7}"/>
+  <path d="${HORN}" fill="none" stroke="${C.ink}" stroke-width="6" stroke-linejoin="round"/>
+  <polygon points="${band}" fill="url(#gCrown)" stroke="${C.ink}" stroke-width="4" stroke-linejoin="round"/>`;
+}
+function crown(x,y,rot,sx=1){
+  return `<g transform="translate(${x},${y}) rotate(${rot}) scale(${sx},1)">
+   <path d="M-36,0 L-34,-14 L-42,-36 L-22,-18 L-15,-48 L0,-20 L14,-50 L22,-18 L36,-30 L34,-14 L36,0 Z" fill="url(#gCrown)" stroke="${C.ink}" stroke-width="4" stroke-linejoin="round"/>
+   <path d="M14,-50 L18,-38 L10,-36 Z" fill="${C.ink}"/>
+   <rect x="-37" y="-13" width="74" height="13" rx="2" fill="#262c5c" stroke="${C.ink}" stroke-width="3"/>
+   <circle cx="-20" cy="-6.5" r="3.6" fill="${C.ice}"/><circle cx="0" cy="-6.5" r="4.4" fill="${C.ice}" filter="url(#glow)"/><circle cx="20" cy="-6.5" r="3.6" fill="${C.ice}"/>
+   <circle cx="-15" cy="-48" r="3" fill="${C.ice}"/>
+  </g>`;
+}
+function maskBase(heat){
+  let s=`<path d="${MASK}" fill="url(#gMask)" stroke="${C.ink}" stroke-width="6"/>
+  <path d="${MASK}" transform="scale(.93)" fill="none" stroke="#fff" stroke-width="3" opacity=".28"/>
+  <path d="M0,-108 L9,-92 L0,-76 L-9,-92 Z" fill="${C.ice}" stroke="${C.ink}" stroke-width="2.5"/>
+  <path d="M-16,-92 L-26,-92 M16,-92 L26,-92" stroke="${C.violet}" stroke-width="2.5" stroke-linecap="round"/>
+  <g fill="${C.violet}">${[-1,1].map(s=>`<circle cx="${s*86}" cy="-2" r="3.4"/><circle cx="${s*84}" cy="12" r="3"/><circle cx="${s*80}" cy="25" r="2.5"/>`).join('')}</g>
+  <path d="M-58,-106 L-50,-94 L-57,-86 L-44,-74 L-49,-64" fill="none" stroke="${C.ink}" stroke-width="2.5" stroke-linejoin="round"/>`;
+  if(heat>.02){s+=`<path d="${MASK}" fill="url(#gHeat)" opacity="${f(heat)}"/>
+   <g fill="none" stroke="${C.ember}" stroke-width="2.5" stroke-linecap="round" filter="url(#glow)" opacity="${f(heat)}">
+    <path d="M-58,-106 L-50,-94 L-57,-86 L-44,-74 L-49,-64"/><path d="M-88,-30 L-96,-40 L-92,-52"/><path d="M88,-30 L96,-40 L92,-52"/><path d="M-30,96 L-22,108"/></g>`}
+  return s;
+}
+function headFront(eL,eR,m){
+  const heat=Math.max(eL.heat,eR.heat);
+  return `<ellipse cx="0" cy="-8" rx="106" ry="126" fill="url(#gSkull)" stroke="${C.ink}" stroke-width="5"/>
+   ${crown(60,-114,22)}${maskBase(heat)}${eyeSVG(-46,-20,-1,eL)}${eyeSVG(46,-20,1,eR)}${mouthSVG(m)}${hornSVG(false)}`;
+}
+const exprHead=k=>headFront(EYES[k].L,EYES[k].R,MOUTHS[k].m);
+
+function headSide(){
+  return `<g transform="translate(52,10)">${hornSVG(true)}</g>
+  <path d="M40,-124 C-30,-142 -112,-92 -108,-10 C-104,62 -56,110 12,118 C42,90 44,-80 40,-124 Z" fill="url(#gSkull)" stroke="${C.ink}" stroke-width="5"/>
+  ${[[-74,-102,-130],[-98,-58,-160],[-108,-8,-180],[-98,40,-200]].map(([x,y,a])=>{const d=[Math.cos(rad(a)),Math.sin(rad(a))],n=[-d[1],d[0]];return `<polygon points="${P([x+n[0]*8,y+n[1]*8])} ${P([x-n[0]*8,y-n[1]*8])} ${P([x+d[0]*22,y+d[1]*22])}" fill="#2a2258" stroke="${C.ink}" stroke-width="3" stroke-linejoin="round"/>`}).join('')}
+  ${crown(10,-126,6,.72)}
+  <path d="M26,-124 C78,-122 104,-84 100,-44 C110,-32 110,-12 101,-2 C106,52 82,102 26,130 C46,92 56,44 52,0 C54,-50 46,-100 26,-124 Z" fill="url(#gMask)" stroke="${C.ink}" stroke-width="6"/>
+  <path d="M90,-100 L96,-90 L90,-80 L86,-90 Z" fill="${C.ice}" stroke="${C.ink}" stroke-width="2"/>
+  <g fill="${C.violet}"><circle cx="62" cy="-2" r="3"/><circle cx="63" cy="12" r="2.6"/><circle cx="64" cy="25" r="2.2"/></g>
+  <defs><clipPath id="sideLid"><rect x="40" y="-50" width="80" height="80"/></clipPath></defs>
+  <g clip-path="url(#sideLid)"><ellipse cx="86" cy="-22" rx="14" ry="36" fill="#0a0820" stroke="${C.ink}" stroke-width="4"/>
+   <ellipse cx="91" cy="-18" rx="7" ry="18" fill="url(#gIce)" filter="url(#glow)"/><ellipse cx="92" cy="-18" rx="2" ry="11" fill="${C.ink}"/><circle cx="88" cy="-26" r="3" fill="#fff"/></g>
+  <line x1="68" y1="-50" x2="104" y2="-50" stroke="${C.ink}" stroke-width="5" stroke-linecap="round"/>
+  <path d="M70,-70 Q86,-76 102,-74 Q88,-70 70,-64 Z" fill="#2b2160" stroke="${C.ink}" stroke-width="1.5"/>
+  <path d="M103,38 Q84,50 58,44 Q82,78 100,70 Z" fill="#170628"/>
+  <g fill="#eef0ff" stroke="${C.ink}" stroke-width="2" stroke-linejoin="round"><polygon points="101,40 91,45 95,57"/><polygon points="91,45 80,47 85,59"/><polygon points="80,47 69,46 74,57"/><polygon points="98,70 88,71 92,60"/><polygon points="88,71 77,67 82,58"/></g>
+  <path d="M103,38 Q84,50 58,44 Q82,78 100,70 Z" fill="none" stroke="${C.ink}" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M60,32 Q50,44 60,56" fill="none" stroke="${C.ink}" stroke-width="3.5" stroke-linecap="round"/>`;
+}
+function headBack(){
+  return `<g transform="scale(-1,1)">${hornSVG(false)}</g>
+  <path d="${MASK}" transform="scale(1.08)" fill="url(#gMask)" stroke="${C.ink}" stroke-width="5"/>
+  ${crown(-60,-114,-22)}
+  <ellipse cx="0" cy="-6" rx="100" ry="122" fill="url(#gSkull)" stroke="${C.ink}" stroke-width="5"/>
+  <path d="M-60,-90 Q-20,-118 30,-108" fill="none" stroke="${C.skinHi}" stroke-width="5" stroke-linecap="round" opacity=".7"/>
+  ${[-116,-78,-40,-2].map((y,i)=>`<polygon points="-9,${y+14} 9,${y+14} 0,${y-6+i*2}" fill="#2a2258" stroke="${C.ink}" stroke-width="3" stroke-linejoin="round"/>`).join('')}`;
+}
+
+/* ---------- body parts ---------- */
+function limb(pts,w,col=C.skin,hi=C.skinHi){
+  const d='M'+pts.map(P).join(' L');
+  return `<path d="${d}" fill="none" stroke="${C.ink}" stroke-width="${w+8}" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>${hi?`<path d="${d}" fill="none" stroke="${hi}" stroke-width="${f(Math.max(1.5,w*.26))}" stroke-linecap="round"/>`:''}`;
+}
+const knob=(x,y,r)=>`<circle cx="${f(x)}" cy="${f(y)}" r="${r}" fill="${C.skin}" stroke="${C.ink}" stroke-width="3"/><circle cx="${f(x-r*.3)}" cy="${f(y-r*.3)}" r="${f(r*.35)}" fill="${C.skinHi}"/>`;
+const FING=[{b:[-14,-33],l:[16,14,12,9]},{b:[-5,-37],l:[18,16,13,10]},{b:[5,-36],l:[17,14,12,9]},{b:[14,-31],l:[13,12,10,8]}];
+const POSES={
+ open:{n:'Открытая ладонь',sp:[-26,-9,8,25],c:[[-3,-2,-2,-2],[0,1,1,1],[2,2,2,2],[4,4,3,3]],ta:-80,tc:[8,10,8]},
+ elegant:{n:'Изящный жест',sp:[-16,-5,5,15],c:[[2,6,8,8],[12,16,16,10],[20,24,22,14],[28,28,24,16]],ta:-58,tc:[16,24,18]},
+ point:{n:'Указание',sp:[-4,6,12,18],c:[[0,1,2,2],[65,80,70,30],[62,78,70,30],[58,70,60,30]],ta:-28,tc:[38,40,25]},
+ claw:{n:'Хватка-клетка',sp:[-38,-13,13,38],c:[[24,26,24,18],[9,14,14,10],[-9,-14,-14,-10],[-24,-26,-24,-18]],ta:-95,tc:[24,26,20]},
+ hang:{n:'Свисающая',sp:[-9,-3,4,11],c:[[5,7,9,8],[3,6,8,8],[5,8,10,9],[8,10,12,10]],ta:-42,tc:[10,12,10]},
+};
+function handGeo(pose){
+  const H=POSES[pose],chains=[];
+  FING.forEach((F,i)=>{let a=H.sp[i],p=F.b,ch=[p];F.l.forEach((L,j)=>{a+=H.c[i][j];p=[p[0]+Math.sin(rad(a))*L,p[1]-Math.cos(rad(a))*L];ch.push(p)});chains.push({ch,a,w:[6.4,5.6,4.9,4.2]})});
+  let a=H.ta,p=[-15,-9],ch=[p];[13,11,9].forEach((L,j)=>{a+=H.tc[j];p=[p[0]+Math.sin(rad(a))*L,p[1]-Math.cos(rad(a))*L];ch.push(p)});chains.push({ch,a,w:[6.6,5.6,4.6]});
+  return chains;
+}
+const PALM='M-10,8 L10,8 L19,-29 Q3,-41 -18,-33 L-16,-8 Z';
+function hand(pose,x,y,rot,s=1,flip=1){
+  const chains=handGeo(pose);let ink='',fill='',hi='',kn='',cl='';
+  chains.forEach(({ch,a,w})=>{for(let i=0;i<ch.length-1;i++){const d=`M${P(ch[i])} L${P(ch[i+1])}`;
+    ink+=`<path d="${d}" stroke-width="${f(w[i]+6)}"/>`;fill+=`<path d="${d}" stroke-width="${w[i]}"/>`;hi+=`<path d="${d}" stroke-width="1.4"/>`;
+    if(i>0)kn+=`<circle cx="${f(ch[i][0])}" cy="${f(ch[i][1])}" r="${f(w[i]*.62)}"/>`;}
+    const t=ch[ch.length-1],dv=[Math.sin(rad(a)),-Math.cos(rad(a))],nv=[-dv[1],dv[0]];
+    cl+=`<polygon points="${P([t[0]+nv[0]*2.6,t[1]+nv[1]*2.6])} ${P([t[0]-nv[0]*2.6,t[1]-nv[1]*2.6])} ${P([t[0]+dv[0]*11+nv[0]*1.5,t[1]+dv[1]*11+nv[1]*1.5])}"/>`;});
+  return `<g transform="translate(${f(x)},${f(y)}) rotate(${f(rot)}) scale(${f(s*flip)},${f(s)})">
+   <g fill="none" stroke="${C.ink}" stroke-linecap="round">${ink}<path d="${PALM}" fill="${C.ink}" stroke-width="7" stroke-linejoin="round"/></g>
+   <path d="${PALM}" fill="${C.skin}"/>
+   <g fill="none" stroke="${C.skin}" stroke-linecap="round">${fill}</g>
+   <g fill="none" stroke="${C.skinHi}" stroke-linecap="round">${hi}<path d="M-4,4 L-12,-30 M2,4 L-4,-34 M6,4 L6,-33 M9,4 L14,-28" stroke-width="1.4" opacity=".8"/></g>
+   <g fill="${C.skin}" stroke="${C.ink}" stroke-width="1.6">${kn}</g>
+   <g fill="${C.silver}" stroke="${C.ink}" stroke-width="1.6" stroke-linejoin="round">${cl}</g>
+  </g>`;
+}
+function handSkeleton(pose,x,y,s){
+  const chains=handGeo(pose);let l='',j='';
+  chains.forEach(({ch})=>{l+=`<path d="M${ch.map(P).join(' L')}"/>`;ch.forEach(p=>j+=`<circle cx="${f(p[0])}" cy="${f(p[1])}" r="2.6"/>`)});
+  return `<g transform="translate(${x},${y}) scale(${s})"><path d="${PALM}" fill="none" stroke="${C.ice}" stroke-width="1" stroke-dasharray="3 3" opacity=".6"/><g fill="none" stroke="${C.ice}" stroke-width="1.6">${l}</g><g fill="#0a0820" stroke="${C.ice}" stroke-width="1.3">${j}</g></g>`;
+}
+const angTo=(a,b)=>Math.atan2(b[0]-a[0],-(b[1]-a[1]))*180/Math.PI;
+function cuff(p,rot,s=1){return `<g transform="translate(${P(p)}) rotate(${f(rot)}) scale(${s})"><path d="M-12,5 L12,5 L17,-4 Q11,-11 6,-4 Q0,-13 -6,-4 Q-11,-11 -17,-4 Z" fill="${C.frost}" stroke="${C.ink}" stroke-width="2.5" stroke-linejoin="round"/></g>`}
+function arm(sleeve,s=1.12,pose='elegant',flip=1){
+  const a=sleeve[sleeve.length-2],b=sleeve[sleeve.length-1],r=angTo(a,b);
+  const dv=[Math.sin(rad(r)),-Math.cos(rad(r))],w=[b[0]+dv[0]*8,b[1]+dv[1]*8];
+  return {sleeve:limb(sleeve,20,'#1c2263','#2f3a8c'),end:limb([b,w],8)+hand(pose,w[0],w[1],r,s,flip)+cuff(b,r,1.1)};
+}
+function fan(cx,cy,r1,r2,a0,a1,n){let d='';for(let i=0;i<=n*2;i++){const a=rad(a0+(a1-a0)*i/(2*n)),r=i%2?r1:r2;d+=(i?' L':'M')+P([cx+Math.cos(a)*r,cy+Math.sin(a)*r])}
+  const e=rad(a1),s=rad(a0);return d+` L${P([cx+Math.cos(e)*58,cy+Math.sin(e)*58])} Q${cx},${cy+16} ${P([cx+Math.cos(s)*58,cy+Math.sin(s)*58])} Z`}
+function collarFront(){return `<path d="${fan(260,318,170,118,196,344,7)}" fill="url(#gLining)" stroke="${C.ink}" stroke-width="5" stroke-linejoin="round"/>
+  <path d="${fan(260,318,132,100,206,334,6)}" fill="#1a1f5c" stroke="${C.ink}" stroke-width="4" stroke-linejoin="round"/>
+  <path d="${fan(260,318,132,100,206,334,6)}" fill="none" stroke="${C.ice}" stroke-width="1.5" opacity=".55" transform="translate(260,318) scale(.92) translate(-260,-318)"/>`}
+function jag(x0,x1,y,n,dep){let d='';for(let i=0;i<n;i++){const xa=x0+(x1-x0)*(i+.5)/n,xb=x0+(x1-x0)*(i+1)/n;d+=` L${f(xa)},${f(y+dep+(i%2)*7)} L${f(xb)},${y}`}return d}
+const PANEL_L=`M236,322 L228,300 L166,294 L172,312 C140,420 96,650 62,888${jag(62,190,888,5,18)} C212,700 228,480 236,322 Z`;
+const PANEL_L_OUT=`M226,334 L228,300 L166,294 L172,312 C140,420 96,650 62,888${jag(62,176,888,5,18)} C198,700 214,480 226,334 Z`;
+function legs(mirror){
+  const g=`${limb([[250,594],[243,735]],12)}${limb([[243,735],[238,856]],9)}
+   <path d="M232,850 L247,854 L249,878 L198,890 Q214,872 232,850 Z" fill="${C.skin}" stroke="${C.ink}" stroke-width="4" stroke-linejoin="round"/>
+   <path d="M206,884 L192,892 L210,890 Z" fill="${C.silver}" stroke="${C.ink}" stroke-width="2.5" stroke-linejoin="round"/>
+   <path d="M247,862 L258,870 L249,878 Z" fill="${C.silver}" stroke="${C.ink}" stroke-width="2.5" stroke-linejoin="round"/>
+   ${knob(243,735,9)}${knob(238,854,6)}
+   <rect x="234" y="752" width="18" height="6" rx="2" fill="${C.silver}" stroke="${C.ink}" stroke-width="2"/>`;
+  return mirror?`<g transform="translate(520,0) scale(-1,1)">${g}</g>`:g;
+}
+function doublet(){
+  return `<path d="M244,300 L276,300 L292,420 L282,520 L302,632 L280,606 L260,642 L240,606 L218,632 L238,520 L228,420 Z" fill="url(#gCoat)" stroke="${C.ink}" stroke-width="4" stroke-linejoin="round"/>
+   <path d="M260,370 L260,512" stroke="${C.ink}" stroke-width="2"/>
+   <g fill="${C.silver}" stroke="${C.ink}" stroke-width="1.5">${[384,408,432,456,480].map(y=>`<circle cx="260" cy="${y}" r="3.6"/>`).join('')}</g>
+   <path d="M228,420 L292,420" stroke="${C.ice}" stroke-width="1.5" opacity=".4"/>
+   <rect x="236" y="512" width="48" height="14" rx="2" fill="#0d0b26" stroke="${C.ink}" stroke-width="3"/>
+   <path d="M260,510 L268,519 L260,528 L252,519 Z" fill="${C.ice}" stroke="${C.ink}" stroke-width="2"/>
+   ${[0,1,2,3,4].map(i=>`<ellipse cx="260" cy="${308+i*13}" rx="${17-i*2}" ry="8" fill="${C.frost}" stroke="${C.ink}" stroke-width="2.2"/>`).join('')}`;
+}
+function guides(svg,showLabels){
+  const G=[[31,'верх рога'],[128,'верх маски'],[255,'подбородок'],[300,'плечи'],[598,'бёдра'],[735,'колени'],[890,'пол']];
+  return G.map(([y,t])=>`<line x1="0" x2="520" y1="${y}" y2="${y}" stroke="#3b3580" stroke-width="1.2" stroke-dasharray="6 6"/>${showLabels?`<text x="8" y="${y-5}" fill="#8b88c0" font-family="JetBrains Mono, monospace" font-size="13">${t}</text>`:''}`).join('');
+}
+function floorShadow(){return `<ellipse cx="260" cy="896" rx="190" ry="14" fill="#000" opacity=".45"/>`}
+
+function viewFront(){
+  const A=arm([[318,546],[300,478]],1.15,'elegant',-1), B=arm([[204,548],[222,612]],1.12,'hang',1);
+  return guides(0,true)+floorShadow()+collarFront()+
+   `<path d="M236,322 L284,322 C292,480 308,700 330,900 L190,900 C212,700 228,480 236,322 Z" fill="url(#gInner)" stroke="${C.ink}" stroke-width="3"/>`+
+   legs(false)+legs(true)+limb([[260,248],[260,304]],13)+doublet()+A.sleeve+B.sleeve+
+   `<path d="${PANEL_L}" fill="url(#gLining)" stroke="${C.ink}" stroke-width="5" stroke-linejoin="round"/>
+    <path d="${PANEL_L_OUT}" fill="url(#gCloak)" stroke="${C.ink}" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M160,420 Q140,620 120,860 M200,430 Q190,640 168,870" fill="none" stroke="${C.ink}" stroke-width="2.5" opacity=".45"/>
+    <path d="M172,312 L136,268 L198,302 Z" fill="#1d2466" stroke="${C.ink}" stroke-width="4" stroke-linejoin="round"/>
+    <g transform="translate(520,0) scale(-1,1)">
+     <path d="${PANEL_L}" fill="url(#gLining)" stroke="${C.ink}" stroke-width="5" stroke-linejoin="round"/>
+     <path d="${PANEL_L_OUT}" fill="url(#gCloak)" stroke="${C.ink}" stroke-width="4" stroke-linejoin="round"/>
+     <path d="M160,420 Q140,620 120,860 M200,430 Q190,640 168,870" fill="none" stroke="${C.ink}" stroke-width="2.5" opacity=".45"/>
+     <path d="M172,312 L136,268 L198,302 Z" fill="#1d2466" stroke="${C.ink}" stroke-width="4" stroke-linejoin="round"/>
+    </g>
+    <path d="M232,336 Q260,352 288,336" fill="none" stroke="${C.silver}" stroke-width="3" stroke-dasharray="4 3"/>
+    <path d="M260,334 L270,346 L260,360 L250,346 Z" fill="${C.ice}" stroke="${C.ink}" stroke-width="2.5" filter="url(#glow)"/>
+    <g transform="translate(260,190) scale(.52)">${exprHead('calm')}</g>`+A.end+B.end;
+}
+function viewSide(){
+  const A=arm([[288,334],[268,452],[300,522]],1.12,'hang',1);
+  const cloak=`M262,304 C200,360 140,620 90,888${jag(90,250,888,5,18)} C268,720 296,520 298,330 Z`;
+  return guides(0,false)+floorShadow()+
+   `<path d="${cloak}" fill="url(#gLining)" stroke="${C.ink}" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M262,304 C200,360 140,620 90,888${jag(90,238,888,5,18)} C252,720 282,520 286,330 Z" fill="url(#gCloak)" stroke="${C.ink}" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M240,360 Q190,600 140,870 M262,380 Q230,620 200,872" fill="none" stroke="${C.ink}" stroke-width="2.5" opacity=".45"/>
+    <g opacity=".75">${limb([[262,594],[272,735]],11,'#221b40','#3b3270')}${limb([[272,735],[262,856]],8,'#221b40','#3b3270')}
+     <path d="M256,850 L268,852 L320,882 L262,880 Z" fill="#221b40" stroke="${C.ink}" stroke-width="4" stroke-linejoin="round"/></g>
+    <path d="M272,300 L300,300 C322,340 324,400 312,440 L304,520 L314,616 L290,600 L270,630 L262,520 C254,440 254,360 272,300 Z" fill="url(#gCoat)" stroke="${C.ink}" stroke-width="4" stroke-linejoin="round"/>
+    <rect x="262" y="512" width="44" height="13" rx="2" fill="#0d0b26" stroke="${C.ink}" stroke-width="3"/>
+    ${[0,1,2,3].map(i=>`<ellipse cx="${310+i*2}" cy="${306+i*14}" rx="9" ry="7" fill="${C.frost}" stroke="${C.ink}" stroke-width="2.2"/>`).join('')}
+    ${limb([[276,594],[290,733]],12)}${limb([[290,733],[278,856]],9)}
+    <path d="M270,850 L286,852 L338,884 L274,882 Z" fill="${C.skin}" stroke="${C.ink}" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M330,878 L346,888 L326,886 Z" fill="${C.silver}" stroke="${C.ink}" stroke-width="2.5"/>
+    <path d="M270,860 L258,872 L272,876 Z" fill="${C.silver}" stroke="${C.ink}" stroke-width="2.5"/>
+    ${knob(290,733,9)}${knob(278,854,6)}
+    ${limb([[286,302],[306,244]],13)}
+    <path d="M262,322 C232,282 216,220 222,140 L238,178 L244,124 L258,182 L272,146 L276,212 C280,256 288,292 300,320 Z" fill="url(#gLining)" stroke="${C.ink}" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M286,300 L262,262 L300,296 Z" fill="#1d2466" stroke="${C.ink}" stroke-width="4" stroke-linejoin="round"/>
+    ${A.sleeve}
+    <g transform="translate(316,196) scale(.52)">${headSide()}</g>${A.end}`;
+}
+function viewBack(){
+  const cloak=`M166,294 L172,312 C140,420 96,650 62,888${jag(62,458,888,15,18)} C424,650 380,420 348,312 L354,294 L290,302 L230,302 Z`;
+  return guides(0,false)+floorShadow()+
+   `<g transform="translate(260,190) scale(.52)">${headBack()}</g>
+    <path d="${cloak}" fill="url(#gCloak)" stroke="${C.ink}" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M214,340 Q180,600 150,880 M240,350 Q234,620 226,884 M280,350 Q286,620 294,884 M306,340 Q340,600 370,880" fill="none" stroke="${C.ink}" stroke-width="2.6" opacity=".4"/>
+    <g transform="translate(260,540)" fill="none" stroke="${C.ice}" stroke-width="3" stroke-linejoin="round" opacity=".85">
+     <circle r="46" stroke="${C.silver}"/><circle r="38" stroke-width="1.5" opacity=".6"/>
+     <path d="M-22,-10 L-26,-40 L-10,-22 L0,-46 L10,-22 L26,-40 L22,-10 Z"/>
+     <path d="M-18,6 L18,6 L0,34 Z"/><circle cy="16" r="4" fill="${C.ice}"/>
+    </g>
+    <path d="M172,312 L136,268 L198,302 Z M348,312 L384,268 L322,302 Z" fill="#1d2466" stroke="${C.ink}" stroke-width="4" stroke-linejoin="round"/>
+    <path d="${fan(260,318,152,110,200,340,7)}" fill="#1a1f5c" stroke="${C.ink}" stroke-width="5" stroke-linejoin="round"/>
+    <path d="${fan(260,318,152,110,200,340,7)}" fill="none" stroke="${C.ice}" stroke-width="1.6" opacity=".6" transform="translate(260,318) scale(.93) translate(-260,-318)"/>
+    <path d="M186,896 L198,880 L206,898 Z M334,896 L322,880 L314,898 Z" fill="${C.silver}" stroke="${C.ink}" stroke-width="2.5"/>`;
+}
+
+/* ---------- close-up ---------- */
+function closeup(){
+  const L=[[-252,-196,'Боковой отросток рога','-285'],[-182,-150,'Главный рог: серп, 7 колец','-205'],[-76,-84,'Серебряное кольцо у основания','-120'],[-46,-20,'Глаз ≈ ⅓ площади лица','-30'],[-84,12,'Точки на скулах','50'],[-66,46,'Подвижные уголки рта','125']];
+  const R=[[64,-150,'Обломок короны, наклон 22°','-250'],[0,-92,'Сигил: ледяной камень','-180'],[34,-70,'Брови-гравировка','-100'],[52,-14,'Зрачок-щель со свечением','-20'],[40,64,'Зубы: 9 верх / 7 низ','80']];
+  const txt=(x,y,t,a)=>`<text x="${x}" y="${y}" text-anchor="${a}" fill="#dfe0f7" font-family="Manrope, sans-serif" font-size="17" font-weight="600">${t}</text>`;
+  let s=exprHead('calm');
+  L.forEach(([x,y,t,ty])=>{s+=`<path d="M${x},${y} L-300,${ty} L-312,${ty}" fill="none" stroke="${C.ice}" stroke-width="1.4"/><circle cx="${x}" cy="${y}" r="4" fill="${C.ice}"/>${txt(-318,+ty+6,t,'end')}`});
+  R.forEach(([x,y,t,ty])=>{s+=`<path d="M${x},${y} L170,${ty} L182,${ty}" fill="none" stroke="${C.ice}" stroke-width="1.4"/><circle cx="${x}" cy="${y}" r="4" fill="${C.ice}"/>${txt(188,+ty+6,t,'start')}`});
+  return s;
+}
+
+/* ---------- render static sheets ---------- */
+const $=id=>document.getElementById(id);
+$('heroSvg').innerHTML=exprHead('joy');
+$('vFront').innerHTML=viewFront();
+$('vSide').innerHTML=viewSide();
+$('vBack').innerHTML=viewBack();
+$('closeup').innerHTML=closeup();
+$('exprGrid').innerHTML=EXPR.map(([k,n])=>`<figure class="stage"><svg viewBox="-280 -322 420 474" role="img" aria-label="${n}">${exprHead(k)}</svg><figcaption><b>${n}</b><span>глаза: ${EYES[k].n.toLowerCase()} · рот: ${MOUTHS[k].n.toLowerCase()}</span></figcaption></figure>`).join('');
+const HP=[['open','Открытая ладонь'],['elegant','Изящный жест'],['point','Указание'],['claw','Хватка-клетка']];
+$('handsGrid').innerHTML=HP.map(([k,n])=>`<figure class="stage"><svg viewBox="-80 -112 160 136" role="img" aria-label="${n}">${k==='point'?'':''}${limb([[0,22],[0,8]],10)}${hand(k,0,10,0,1)}</svg><figcaption><b>${n}</b></figcaption></figure>`).join('')+
+ `<figure class="stage" style="grid-column:1/-1"><svg viewBox="-260 -120 520 150" role="img" aria-label="Строение кисти">
+   <g transform="translate(-130,0)">${limb([[0,26],[0,8]],10)}${hand('open',0,10,0,1)}</g>
+   ${handSkeleton('open',30,10,1)}
+   <g font-family="JetBrains Mono, monospace" font-size="10" fill="#9693c4">
+    <text x="78" y="-90" fill="#7ef0ff">4 фаланги × 4 пальца</text><text x="78" y="-74">+ 3 фаланги большого</text>
+    <text x="78" y="-52">палец ≈ 1,6 × ладони</text><text x="78" y="-36">средний: 18/16/13/10</text>
+    <text x="78" y="-14">коготь: серебро, 11 ед.</text><text x="78" y="2">ширина кости 6,4 → 4,2</text>
+   </g>
+   <text x="-130" y="26" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#9693c4">чистовой</text>
+   <text x="30" y="26" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#9693c4">кости и суставы</text>
+  </svg><figcaption><b>Строение кисти</b><span>суставы = точки вращения для рига</span></figcaption></figure>`;
+
+/* ---------- pattern ---------- */
+(function(){
+  const cx=300,cy=60,R=250,r0=46;let hem='';const n=18;
+  for(let i=0;i<=n*2;i++){const a=rad(180*i/(n*2)),rr=i%2?R+16:R;hem+=(i?' L':'M')+P([cx+Math.cos(a)*rr,cy+Math.sin(a)*rr])}
+  const inner=`M${cx+R-16},${cy} A${R-16},${R-16} 0 0 1 ${cx-R+16},${cy}`;
+  $('patternSvg').innerHTML=`<path d="${hem} L${cx-r0},${cy} A${r0},${r0} 0 0 0 ${cx+r0},${cy} Z" fill="url(#gCloak)" stroke="${C.ink}" stroke-width="3" stroke-linejoin="round"/>
+   <path d="${inner}" fill="none" stroke="#6a3cc0" stroke-width="5" opacity=".7"/>
+   <path d="${fan(cx,cy+6,98,66,200,340,7)}" transform="translate(0,30)" fill="url(#gLining)" stroke="${C.ink}" stroke-width="3" opacity=".95"/>
+   <path d="M${cx-50},${cy+6} L${cx+50},${cy+6}" stroke="${C.silver}" stroke-width="3" stroke-dasharray="4 3"/>
+   <path d="M${cx},${cy} l8,10 l-8,12 l-8,-12 Z" fill="${C.ice}" stroke="${C.ink}" stroke-width="2"/>
+   <line x1="${cx}" y1="${cy+120}" x2="${cx}" y2="${cy+R}" stroke="${C.ice}" stroke-dasharray="4 5" opacity=".5"/>
+   <g font-family="JetBrains Mono, monospace" font-size="12" fill="#9693c4">
+    <text x="${cx}" y="${cy+150}" text-anchor="middle" fill="#dfe0f7">полукруг, Ø ≈ 2,1 роста</text>
+    <text x="${cx}" y="${cy+168}" text-anchor="middle">центр спины — герб</text>
+    <text x="30" y="24">выкройка, вид сверху</text>
+    <text x="570" y="24" text-anchor="end" fill="#7ef0ff">18 зубцов подола</text>
+   </g>`;
+})();
+
+/* ---------- rig ---------- */
+const lerp=(a,b,t)=>typeof a==='number'?a+(b-a)*t:Array.isArray(a)?a.map((v,i)=>lerp(v,b[i],t)):(a&&typeof a==='object')?Object.fromEntries(Object.keys(a).map(k=>[k,lerp(a[k],b[k],t)])):(t<.5?a:b);
+const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+const rig={eye:'calm',mouth:'calm',cur:{L:EYES.calm.L,R:EYES.calm.R,m:MOUTHS.calm.m},from:null,t:1,gaze:0,blink:0,auto:false,autoI:0,autoT:0};
+function rigTarget(){return{L:EYES[rig.eye].L,R:EYES[rig.eye].R,m:MOUTHS[rig.mouth].m}}
+function go(eye,mouth){rig.from=JSON.parse(JSON.stringify(rig.cur));if(eye)rig.eye=eye;if(mouth)rig.mouth=mouth;rig.t=reduce?1:0;syncBtns();if(reduce){rig.cur=rigTarget();drawRig()}else kick()}
+function drawRig(){
+  let L={...rig.cur.L},R={...rig.cur.R};
+  const b=rig.blink>0?Math.sin(Math.min(rig.blink,1)*Math.PI):0;
+  [L,R].forEach(e=>{e.gx+=rig.gaze;if(b>0){const close=(e.lowIn+e.lowOut)/2>36?6:(e.lowIn+e.lowOut)/2-2;e.lidIn=lerp(e.lidIn,close,b);e.lidOut=lerp(e.lidOut,close,b);e.lowIn=lerp(e.lowIn,close+1,b);e.lowOut=lerp(e.lowOut,close+1,b)}});
+  $('rigSvg').innerHTML=headFront(L,R,rig.cur.m);
+}
+let raf=0,last=0;
+function kick(){if(!raf){last=performance.now();raf=requestAnimationFrame(tick)}}
+function tick(now){
+  const dt=Math.min(.05,(now-last)/1000);last=now;let busy=false;
+  if(rig.t<1){rig.t=Math.min(1,rig.t+dt/.35);const T=rigTarget(),k=ease(rig.t);rig.cur={L:lerp(rig.from.L,T.L,k),R:lerp(rig.from.R,T.R,k),m:lerp(rig.from.m,T.m,k)};busy=true}
+  if(rig.blink>0){rig.blink+=dt/.18;if(rig.blink>=1)rig.blink=0;busy=true}
+  if(rig.auto){busy=true;rig.autoT+=dt;if(rig.autoT>1.6){rig.autoT=0;rig.autoI=(rig.autoI+1)%EXPR.length;const k=EXPR[rig.autoI][0];go(k,k)}}
+  drawRig();
+  raf=busy?requestAnimationFrame(tick):0;
+}
+function syncBtns(){
+  document.querySelectorAll('#eyeBtns button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.k===rig.eye));
+  document.querySelectorAll('#mouthBtns button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.k===rig.mouth));
+}
+$('eyeBtns').innerHTML=Object.entries(EYES).map(([k,v])=>`<button type="button" data-k="${k}">${v.n}</button>`).join('');
+$('mouthBtns').innerHTML=Object.entries(MOUTHS).map(([k,v])=>`<button type="button" data-k="${k}">${v.n}</button>`).join('');
+$('eyeBtns').addEventListener('click',e=>{const k=e.target.closest('button')?.dataset.k;if(k)go(k,null)});
+$('mouthBtns').addEventListener('click',e=>{const k=e.target.closest('button')?.dataset.k;if(k)go(null,k)});
+$('gaze').addEventListener('input',e=>{rig.gaze=+e.target.value;drawRig()});
+$('blinkBtn').addEventListener('click',()=>{if(reduce)return;rig.blink=.001;kick()});
+$('autoBtn').addEventListener('click',e=>{rig.auto=!rig.auto;e.currentTarget.setAttribute('aria-pressed',rig.auto);if(rig.auto&&!reduce)kick()});
+syncBtns();drawRig();
+
+/* ---------- cloak animation ---------- */
+const CO=[[172,312],[140,420],[96,650],[62,888]], CI=[[190,890],[212,700],[228,480],[236,322]];
+const MODES={still:{n:'Покой',amp:.25,speed:1.3,wind:0,osc:0},walk:{n:'Шаг',amp:1,speed:4.2,wind:.12,osc:0},wind:{n:'Ветер',amp:.8,speed:3,wind:1,osc:0},turn:{n:'Разворот',amp:.6,speed:2.4,wind:0,osc:1.1}};
+const cl={mode:'wind',p:{...MODES.wind},t:0};
+function panelPath(sg,t,p,lag,gain){
+  const X=x=>sg<0?x:520-x,kOf=y=>Math.max(0,(y-310)/580);
+  const wind=p.wind+p.osc*Math.sin(t*.9);
+  const disp=(x,y,k)=>{const ph=t*p.speed-k*2.6+(sg>0?1.3:0)-lag;return[x+Math.sin(ph)*p.amp*16*k*gain+wind*Math.pow(k,1.5)*150*gain,y-Math.abs(wind)*k*k*55*gain+Math.cos(ph*1.3)*p.amp*5*k]};
+  const pts=[[236,322],[228,300],[166,294],[172,312]].map(q=>[X(q[0]),q[1]]);
+  for(let i=1;i<=16;i++){const b=cub(CO,i/16);pts.push(disp(X(b[0]),b[1],kOf(b[1])))}
+  const n=5;for(let i=0;i<n;i++){const xa=62+128*(i+.5)/n,xb=62+128*(i+1)/n;pts.push(disp(X(xa),906+(i%2)*7,1.08));pts.push(disp(X(xb),888,1))}
+  for(let i=1;i<=16;i++){const b=cub(CI,i/16);pts.push(disp(X(b[0]),b[1],kOf(b[1])*.9))}
+  return 'M'+pts.map(P).join(' L')+' Z';
+}
+const cloakStatic=floorShadow()+collarFront()+legs(false)+legs(true)+limb([[260,248],[260,304]],13)+doublet();
+const cloakHead=`<g transform="translate(260,190) scale(.52)">${exprHead('cold')}</g>`;
+function drawCloak(){
+  const t=cl.t,p=cl.p;
+  $('cloakSvg').innerHTML=cloakStatic+[-1,1].map(sg=>`<path d="${panelPath(sg,t,p,.55,1.12)}" fill="url(#gLining)" stroke="${C.ink}" stroke-width="4" stroke-linejoin="round"/><path d="${panelPath(sg,t,p,0,1)}" fill="url(#gCloak)" stroke="${C.ink}" stroke-width="4" stroke-linejoin="round"/>`).join('')+
+   `<path d="M172,312 L136,268 L198,302 Z M348,312 L384,268 L322,302 Z" fill="#1d2466" stroke="${C.ink}" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M232,336 Q260,352 288,336" fill="none" stroke="${C.silver}" stroke-width="3" stroke-dasharray="4 3"/>
+    <path d="M260,334 L270,346 L260,360 L250,346 Z" fill="${C.ice}" stroke="${C.ink}" stroke-width="2.5"/>`+cloakHead;
+}
+$('cloakBtns').innerHTML=Object.entries(MODES).map(([k,v])=>`<button type="button" data-k="${k}" aria-pressed="${k===cl.mode}">${v.n}</button>`).join('');
+$('cloakBtns').addEventListener('click',e=>{const k=e.target.closest('button')?.dataset.k;if(!k)return;cl.mode=k;document.querySelectorAll('#cloakBtns button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.k===k));if(reduce){cl.p={...MODES[k]};drawCloak()}});
+cl.t=1.2;drawCloak();
+if(!reduce){let lt=performance.now(),visible=true;
+  const io='IntersectionObserver' in window?new IntersectionObserver(es=>{visible=es[0].isIntersecting}):null;if(io)io.observe($('cloakSvg'));
+  (function loop(now){const dt=Math.min(.05,(now-lt)/1000);lt=now;cl.p=lerp(cl.p,MODES[cl.mode],Math.min(1,dt*3));cl.t+=dt;if(visible)drawCloak();requestAnimationFrame(loop)})(lt);}
+})();
+</script>
+</body></html>
