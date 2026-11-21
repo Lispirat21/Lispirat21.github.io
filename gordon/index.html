@@ -45,7 +45,7 @@ p{margin:0;max-width:65ch}
 .stage{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:6px;overflow:hidden}
 .turn{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .turn figure,.grid8 figure,.hands figure{margin:0;display:flex;flex-direction:column}
-figure svg{display:block;width:100%;height:auto}
+figure svg,.stage svg{display:block;width:100%;height:auto;shape-rendering:geometricPrecision}
 figcaption{font-family:var(--mono);font-size:12px;color:var(--muted);padding:10px 12px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
 figcaption b{color:var(--fg);font-weight:600}
 .grid8{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
@@ -91,7 +91,7 @@ footer{color:var(--muted);font-size:13px;border-top:1px solid var(--line);paddin
       <stop offset="0" stop-color="#0f0c2a"/><stop offset="1" stop-color="#2a2066"/>
     </linearGradient>
     <linearGradient id="gCrown" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#d9e0ff"/><stop offset=".5" stop-color="#7c86b8"/><stop offset="1" stop-color="#2c3160"/>
+      <stop offset="0" stop-color="#fff3c4"/><stop offset=".5" stop-color="#e8b23e"/><stop offset="1" stop-color="#8a5414"/>
     </linearGradient>
     <radialGradient id="gIce" cx=".4" cy=".35" r=".7">
       <stop offset="0" stop-color="#f2ffff"/><stop offset=".45" stop-color="#7ef0ff"/><stop offset="1" stop-color="#1a6fb0"/>
@@ -112,7 +112,7 @@ footer{color:var(--muted);font-size:13px;border-top:1px solid var(--line);paddin
       <stop offset="0" stop-color="#1d2466"/><stop offset=".6" stop-color="#121848"/><stop offset="1" stop-color="#090b26"/>
     </linearGradient>
     <linearGradient id="gLining" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#6a3cc0"/><stop offset="1" stop-color="#2a1356"/>
+      <stop offset="0" stop-color="#9a46e0"/><stop offset=".6" stop-color="#5a2398"/><stop offset="1" stop-color="#2e0f5e"/>
     </linearGradient>
     <linearGradient id="gInner" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#2a1656"/><stop offset="1" stop-color="#0d0722"/>
@@ -121,10 +121,10 @@ footer{color:var(--muted);font-size:13px;border-top:1px solid var(--line);paddin
       <stop offset="0" stop-color="#151a52"/><stop offset=".5" stop-color="#262f86"/><stop offset="1" stop-color="#151a52"/>
     </linearGradient>
     <radialGradient id="gVoid" cx=".4" cy=".3" r=".85">
-      <stop offset="0" stop-color="#2b2d3e"/><stop offset=".5" stop-color="#101019"/><stop offset="1" stop-color="#000"/>
+      <stop offset="0" stop-color="#3a4fb4"/><stop offset=".55" stop-color="#1a2468"/><stop offset="1" stop-color="#0a0f36"/>
     </radialGradient>
     <linearGradient id="gWood" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#c2a77a"/><stop offset=".5" stop-color="#8a7050"/><stop offset="1" stop-color="#57442e"/>
+      <stop offset="0" stop-color="#d9b984"/><stop offset=".5" stop-color="#a5814f"/><stop offset="1" stop-color="#6a4f30"/>
     </linearGradient>
     <linearGradient id="gWoodFar" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#7d6a4c"/><stop offset="1" stop-color="#3d2f20"/>
@@ -160,13 +160,14 @@ footer{color:var(--muted);font-size:13px;border-top:1px solid var(--line);paddin
   <div>
     <div class="eyebrow">Концепт персонажа · пакет для 2D-анимации</div>
     <h1>Гордон</h1>
-    <p class="lead">Король-демон без лица. Вместо него гладкая чёрная маска, на которой светятся белые глаза и широкая улыбка, и они умеют менять форму. Над маской резной деревянный обруч с рогами-отростками и бусинами на шнурах. Руки и ноги — тёмно-синий человеческий скелет, остальное скрывает королевский плащ.</p>
+    <p class="lead">Король-демон без лица. Вместо него гладкая тёмно-синяя маска, на которой светятся белые глаза и широкая улыбка, и они умеют менять форму. Над маской резной деревянный обруч с рогами-отростками и бусинами на шнурах. Руки и ноги — тёмно-синий человеческий скелет, остальное скрывает королевский плащ.</p>
     <div class="palette" aria-label="Палитра">
       <span class="chip"><i style="background:#090b26"></i>Полночь #090B26</span>
       <span class="chip"><i style="background:#1d2466"></i>Королевский синий #1D2466</span>
       <span class="chip"><i style="background:#4b2a8f"></i>Глубокий фиолет #4B2A8F</span>
       <span class="chip"><i style="background:#22307a"></i>Кости #22307A</span>
-      <span class="chip"><i style="background:#0b0b12"></i>Маска #0B0B12</span>
+      <span class="chip"><i style="background:#1a2468"></i>Маска #1A2468</span>
+      <span class="chip"><i style="background:#f2c14e"></i>Золото #F2C14E</span>
       <span class="chip"><i style="background:#f4f7ff"></i>Свечение #F4F7FF</span>
       <span class="chip"><i style="background:#8a7050"></i>Дерево #8A7050</span>
       <span class="chip"><i style="background:#f0a040"></i>Бусины #F0A040</span>
@@ -179,7 +180,7 @@ footer{color:var(--muted);font-size:13px;border-top:1px solid var(--line);paddin
 
 <section>
   <div class="sec-head"><span class="sheet-no">Листы 1–3</span><h2>Разворот в полный рост</h2>
-    <p>Рост ≈ 6 масок без рога и ≈ 6,8 с рогом. Пунктир — общие уровни для всех трёх видов: верх рога, верх маски, подбородок, плечи, бёдра, колени, пол.</p></div>
+    <p>Рост ≈ 5 масок без рогов и ≈ 5,7 с рогами. Пунктир — общие уровни для всех трёх видов: верх рогов, верх маски, подбородок, плечи, бёдра, колени, пол.</p></div>
   <div class="turn">
     <figure class="stage"><svg id="vFront" viewBox="0 0 520 940" role="img" aria-label="Гордон спереди"></svg><figcaption><b>1 · Спереди</b><span>кости рук и ног</span></figcaption></figure>
     <figure class="stage"><svg id="vSide" viewBox="0 0 520 940" role="img" aria-label="Гордон сбоку"></svg><figcaption><b>2 · Сбоку</b><span>голова выведена вперёд</span></figcaption></figure>
@@ -189,8 +190,8 @@ footer{color:var(--muted);font-size:13px;border-top:1px solid var(--line);paddin
 
 <section>
   <div class="sec-head"><span class="sheet-no">Лист 4</span><h2>Голова и маска</h2>
-    <p>Маска и есть лицо: гладкая и чёрная, без носа и рта. Светятся только глаза и улыбка. Сверху маску охватывает деревянный обруч с четырьмя рогами-отростками, резьбой из кругов и линий и двумя бусинами на шнурах. За маской тёмный череп, виден только по краю.</p></div>
-  <div class="stage"><svg id="closeup" viewBox="-630 -335 1160 500" role="img" aria-label="Крупный план маски с выносками"></svg></div>
+    <p>Маска и есть лицо: большая, гладкая и тёмно-синяя, без носа и рта. Она закрывает голову целиком. Светятся только глаза и улыбка. Сверху маску охватывает деревянный обруч с четырьмя плоскими рогами-отростками, резьбой из кругов и линий, крючками на концах и тремя бусинами на шнурах.</p></div>
+  <div class="stage"><svg id="closeup" viewBox="-640 -335 1290 500" role="img" aria-label="Крупный план маски с выносками"></svg></div>
 </section>
 
 <section>
@@ -203,7 +204,7 @@ footer{color:var(--muted);font-size:13px;border-top:1px solid var(--line);paddin
   <div class="sec-head"><span class="sheet-no">Лист 5а</span><h2>Риг мимики</h2>
     <p>Глаза и рот переключаются отдельно, переходы интерполируются: так выглядит будущая анимация. Срезы глаз сверху и снизу, углы рта и зубы — отдельные слои.</p></div>
   <div class="two">
-    <div class="stage"><svg id="rigSvg" viewBox="-300 -330 440 480" role="img" aria-label="Интерактивная маска"></svg></div>
+    <div class="stage"><svg id="rigSvg" viewBox="-285 -300 560 460" role="img" aria-label="Интерактивная маска"></svg></div>
     <div class="stage controls">
       <div class="ctl-label">Глаза</div><div class="btns" id="eyeBtns"></div>
       <div class="ctl-label">Рот</div><div class="btns" id="mouthBtns"></div>
@@ -218,7 +219,7 @@ footer{color:var(--muted);font-size:13px;border-top:1px solid var(--line);paddin
  ├ skull            череп (за маской)
  ├ wood_horns       4 отростка + шнуры + бусины
  ├ crown            корона-обломок
- ├ mask_base        чёрная маска + блик
+ ├ mask_base        тёмно-синяя маска + блик
  ├ eye_L / eye_R    светящаяся форма глаза
  │   └ lid_up, lid_low   срез сверху/снизу
  ├ mouth            форма (4 точки), свечение,
@@ -276,7 +277,7 @@ function cel(d,o){
   <g clip-path="url(#k${u})"><path d="${d}" fill="${rim}"/><path d="${d}" transform="translate(-3.5,0)" fill="${o.shade}"/><path d="${d}" transform="translate(${sx},${sy})" fill="${o.base}"/>${o.extra||''}</g>
   <path d="${d}" fill="none" stroke="${C.ink}" stroke-width="${w}" stroke-linejoin="round"/>`;
 }
-const INK=s=>`<g filter="url(#ink)">${s}</g>`;
+const INK=s=>s;
 const MASK='M0,-120 C60,-120 100,-90 100,-30 C100,40 60,100 0,125 C-60,100 -100,40 -100,-30 C-100,-90 -60,-120 0,-120 Z';
 
 /* ---------- presets ---------- */
@@ -340,23 +341,24 @@ function mouthSVG(m,col){
   return s;
 }
 /* деревянный обруч с рогами */
-const PRONGS=['M-104,-62 C-160,-100 -215,-160 -246,-248 C-205,-215 -150,-175 -58,-126 Z','M-52,-128 C-70,-170 -85,-210 -96,-252 C-70,-220 -40,-180 -16,-136 Z','M12,-136 C35,-170 60,-195 92,-222 C78,-190 60,-160 50,-128 Z','M72,-116 C120,-130 165,-145 210,-160 C175,-125 140,-95 104,-70 Z'];
-const GROOVES='M-82,-94 Q-160,-150 -220,-222 M-34,-132 Q-60,-190 -86,-236 M31,-132 Q55,-170 82,-208 M88,-94 Q140,-128 192,-154';
+const PRONGS=['M-100,-68 C-150,-80 -205,-96 -248,-128 Q-266,-142 -250,-152 C-200,-142 -150,-132 -94,-120 Z','M-72,-116 C-92,-160 -110,-200 -126,-236 Q-132,-254 -116,-250 C-80,-216 -50,-176 -22,-134 Z','M8,-136 C50,-176 92,-210 140,-242 Q158,-250 152,-232 C122,-196 92,-160 66,-122 Z','M86,-102 C130,-110 182,-114 238,-126 Q256,-128 246,-112 C192,-90 142,-76 100,-62 Z'];
+const GROOVES='M-98,-94 Q-170,-108 -244,-140 M-48,-126 Q-86,-180 -120,-240 M37,-130 Q92,-182 146,-238 M94,-82 Q164,-96 242,-120';
 const BAND='M-106,-48 C-110,-100 -70,-136 0,-138 C70,-136 110,-100 106,-48 C92,-62 60,-70 22,-66 L0,-46 L-22,-66 C-60,-70 -92,-62 -106,-48 Z';
 const WOODLINE='#4a3622';
 function orb(x,y,r,c){return `<circle cx="${x}" cy="${y}" r="${r}" fill="${c}" stroke="${C.ink}" stroke-width="3"/><path d="M${x},${y} L${x},${y+r} M${x},${y} L${f(x-r*.86)},${f(y-r*.5)} M${x},${y} L${f(x+r*.86)},${f(y-r*.5)}" stroke="#5a3410" stroke-width="2"/><circle cx="${f(x-r*.38)}" cy="${f(y-r*.42)}" r="${f(r*.24)}" fill="#fff" opacity=".65"/>`}
 function woodBack(far){
   const fill=far?'url(#gWoodFar)':'url(#gWood)';
-  return PRONGS.map(d=>cel(d,{base:fill,shade:far?'#2a1f14':'#5b4329',rim:far?'#7a2a5a':'#ff7ab8',w:4.5,sx:-6,sy:-6})).join('')+
+  return PRONGS.map(d=>cel(d,{base:fill,shade:far?'#2a1f14':'#6a4c2c',rim:far?'#7a2a5a':'#ff7ab8',w:4.5,sx:-5,sy:-7})).join('')+
   `<path d="${GROOVES}" fill="none" stroke="${WOODLINE}" stroke-width="2.5" stroke-linecap="round" opacity=".85"/>
-   <g fill="none" stroke="${WOODLINE}" stroke-width="2.2"><circle cx="-140" cy="-140" r="6"/><circle cx="-58" cy="-184" r="5"/><circle cx="55" cy="-170" r="5"/><circle cx="140" cy="-124" r="5"/></g>
-   <path d="M-208,-206 L-214,-123 M184,-150 L190,-73" stroke="#2a1d10" stroke-width="2"/>
-   <circle cx="-211" cy="-160" r="4" fill="#7a5530" stroke="${C.ink}" stroke-width="1.5"/>
-   ${orb(-214,-108,15,'#f0a040')}${orb(190,-60,13,'#f2d257')}`;
+   <g fill="none" stroke="${WOODLINE}" stroke-width="2.4"><circle cx="-172" cy="-112" r="7"/><circle cx="-172" cy="-112" r="2.5" fill="${WOODLINE}"/><path d="M-165,-110 L-140,-104"/><circle cx="-136" cy="-103" r="3.5"/>
+    <circle cx="-88" cy="-186" r="6"/><circle cx="94" cy="-184" r="8"/><circle cx="94" cy="-184" r="3" fill="${WOODLINE}"/><path d="M87,-178 L70,-160"/><circle cx="67" cy="-157" r="3.5"/><circle cx="168" cy="-98" r="6"/></g>
+   <g fill="none" stroke="#3a2a1a" stroke-width="4" stroke-linecap="round"><path d="M-250,-146 q-14,4 -10,18"/><path d="M246,-120 q12,6 6,20"/><path d="M-120,-246 q-12,-4 -14,8"/></g>
+   <path d="M-260,-128 L-258,-48 M252,-100 L250,-50" stroke="#2a1d10" stroke-width="2"/>
+   ${orb(-259,-86,13,'#f0a040')}${orb(-258,-44,12,'#f2d257')}${orb(250,-40,14,'#f0a040')}`;
 }
 function woodFront(){
   return `${cel(BAND,{base:'url(#gWood)',shade:'#5b4329',rim:'#ff7ab8',w:5,sx:-4,sy:-7})}
-  <path d="M-96,-60 C-90,-104 -60,-126 0,-128 C60,-126 90,-104 96,-60" fill="none" stroke="#e8d4a8" stroke-width="2" opacity=".45"/>
+  <path d="M-96,-60 C-90,-104 -60,-126 0,-128 C60,-126 90,-104 96,-60" fill="none" stroke="#f3dfb2" stroke-width="2.5" opacity=".6"/><path d="M-102,-76 C-88,-100 -50,-110 0,-110 C50,-110 88,-100 102,-76" fill="none" stroke="#5b4329" stroke-width="6" opacity=".55"/>
   <g fill="none" stroke="${WOODLINE}" stroke-width="2.6" stroke-linecap="round">
    <circle cx="-58" cy="-100" r="10"/><circle cx="-58" cy="-100" r="3.5" fill="${WOODLINE}"/>
    <path d="M-48,-102 L-20,-110"/><circle cx="-17" cy="-111" r="3"/><path d="M-68,-97 L-94,-72"/>
@@ -367,13 +369,13 @@ function woodFront(){
 }
 function crown(x,y,rot,sx=1){
   return `<g transform="translate(${x},${y}) rotate(${rot}) scale(${sx},1)">
-   ${cel('M-36,0 L-34,-14 L-42,-36 L-22,-18 L-15,-48 L0,-20 L14,-50 L22,-18 L36,-30 L34,-14 L36,0 Z',{base:'url(#gCrown)',shade:'#3a4074',w:4,sx:-4,sy:-5})}
+   ${cel('M-36,0 L-34,-14 L-42,-36 L-22,-18 L-15,-48 L0,-20 L14,-50 L22,-18 L36,-30 L34,-14 L36,0 Z',{base:'url(#gCrown)',shade:'#9a5e16',w:4,sx:-4,sy:-5})}
    <rect x="-37" y="-13" width="74" height="13" rx="2" fill="#262c5c" stroke="${C.ink}" stroke-width="3"/>
    <circle cx="-20" cy="-6.5" r="3.6" fill="${C.ice}"/><circle cx="0" cy="-6.5" r="4.4" fill="${C.ice}" filter="url(#glow)"/><circle cx="20" cy="-6.5" r="3.6" fill="${C.ice}"/>
   </g>`;
 }
 function maskBase(heat){
-  let s=`${cel(MASK,{base:'url(#gVoid)',shade:'#000',w:5.5,sx:-9,sy:-10})}
+  let s=`${cel(MASK,{base:'url(#gVoid)',shade:'#070a2a',w:5.5,sx:-9,sy:-10})}
   <path d="${MASK}" transform="scale(.965)" fill="none" stroke="#3d4378" stroke-width="2"/>
   <path d="M-72,-30 Q-84,40 -34,96" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" opacity=".07"/>`;
   if(heat>.02)s+=`<g fill="none" stroke="${C.ember}" stroke-width="2.2" stroke-linecap="round" filter="url(#glow)" opacity="${f(heat*.8)}"><path d="M-92,-20 L-84,-8 L-90,4"/><path d="M92,-20 L84,-8 L90,4"/><path d="M-30,104 L-22,112"/><path d="M30,104 L22,112"/></g>`;
@@ -381,8 +383,7 @@ function maskBase(heat){
 }
 function headFront(eL,eR,m){
   const heat=Math.max(eL.heat,eR.heat);
-  return `${cel('M-106,-8 a106,126 0 1,0 212,0 a106,126 0 1,0 -212,0',{base:'url(#gSkull)',shade:'#0d0a24',w:5,sx:-10,sy:-8})}
-   ${woodBack(false)}${crown(26,-134,10,.8)}${maskBase(heat)}${eyeSVG(-46,-20,-1,eL)}${eyeSVG(46,-20,1,eR)}${mouthSVG(m,GLOW[eL.iris]||GLOW.ice)}${woodFront()}`;
+  return `${woodBack(false)}${crown(26,-134,10,.8)}${maskBase(heat)}${eyeSVG(-46,-20,-1,eL)}${eyeSVG(46,-20,1,eR)}${mouthSVG(m,GLOW[eL.iris]||GLOW.ice)}${woodFront()}`;
 }
 const exprHead=k=>headFront(EYES[k].L,EYES[k].R,MOUTHS[k].m);
 
@@ -458,7 +459,7 @@ function fan(cx,cy,r1,r2,a0,a1,n){let d='';for(let i=0;i<=n*2;i++){const a=rad(a
   const e=rad(a1),s=rad(a0);return d+` L${P([cx+Math.cos(e)*58,cy+Math.sin(e)*58])} Q${cx},${cy+16} ${P([cx+Math.cos(s)*58,cy+Math.sin(s)*58])} Z`}
 function collarFront(){return `${cel(fan(260,318,170,118,196,344,7),{base:'url(#gLining)',shade:'#22104a',w:5,sx:-6,sy:-10})}
   ${cel(fan(260,318,132,100,206,334,6),{base:'#1a1f5c',shade:'#0a0d30',w:4,sx:-5,sy:-8})}
-  <path d="${fan(260,318,132,100,206,334,6)}" fill="none" stroke="${C.ice}" stroke-width="1.5" opacity=".55" transform="translate(260,318) scale(.92) translate(-260,-318)"/>`}
+  <path d="${fan(260,318,132,100,206,334,6)}" fill="none" stroke="#f2c14e" stroke-width="2.5" transform="translate(260,318) scale(.92) translate(-260,-318)"/>`}
 function jag(x0,x1,y,n,dep){let d='';for(let i=0;i<n;i++){const xa=x0+(x1-x0)*(i+.5)/n,xb=x0+(x1-x0)*(i+1)/n;d+=` L${f(xa)},${f(y+dep+(i%2)*7)} L${f(xb)},${y}`}return d}
 const PANEL_L=`M236,322 L228,300 L166,294 L172,312 C140,420 96,650 62,888${jag(62,190,888,5,18)} C212,700 228,480 236,322 Z`;
 const PANEL_L_OUT=`M226,334 L228,300 L166,294 L172,312 C140,420 96,650 62,888${jag(62,176,888,5,18)} C198,700 214,480 226,334 Z`;
@@ -480,14 +481,14 @@ function legs(mirror){
 function doublet(){
   return `${cel('M244,300 L276,300 L292,420 L282,520 L302,632 L280,606 L260,642 L240,606 L218,632 L238,520 L228,420 Z',{base:'url(#gCoat)',shade:'#0c0f38',w:4,sx:-8,sy:-6})}
    <path d="M260,370 L260,512" stroke="${C.ink}" stroke-width="2"/>
-   <g fill="${C.silver}" stroke="${C.ink}" stroke-width="1.5">${[384,408,432,456,480].map(y=>`<circle cx="260" cy="${y}" r="3.6"/>`).join('')}</g>
+   <g fill="#f2c14e" stroke="${C.ink}" stroke-width="1.5">${[384,408,432,456,480].map(y=>`<circle cx="260" cy="${y}" r="3.6"/>`).join('')}</g>
    <path d="M228,420 L292,420" stroke="${C.ice}" stroke-width="1.5" opacity=".4"/>
    <rect x="236" y="512" width="48" height="14" rx="2" fill="#0d0b26" stroke="${C.ink}" stroke-width="3"/>
    <path d="M260,510 L268,519 L260,528 L252,519 Z" fill="${C.ice}" stroke="${C.ink}" stroke-width="2"/>
    ${[0,1,2,3,4].map(i=>`<ellipse cx="260" cy="${308+i*13}" rx="${17-i*2}" ry="8" fill="${C.frost}" stroke="${C.ink}" stroke-width="2.2"/>`).join('')}`;
 }
 function guides(svg,showLabels){
-  const G=[[31,'верх рога'],[128,'верх маски'],[255,'подбородок'],[300,'плечи'],[598,'бёдра'],[735,'колени'],[890,'пол']];
+  const G=[[56,'верх рогов'],[135,'верх маски'],[282,'подбородок'],[300,'плечи'],[598,'бёдра'],[735,'колени'],[890,'пол']];
   return G.map(([y,t])=>`<line x1="0" x2="520" y1="${y}" y2="${y}" stroke="#3b3580" stroke-width="1.2" stroke-dasharray="6 6"/>${showLabels?`<text x="8" y="${y-5}" fill="#8b88c0" font-family="JetBrains Mono, monospace" font-size="13">${t}</text>`:''}`).join('');
 }
 function floorShadow(){return `<ellipse cx="260" cy="898" rx="230" ry="26" fill="${C.rim}" opacity=".16" filter="url(#glowP)"/><ellipse cx="260" cy="896" rx="190" ry="13" fill="#000" opacity=".55"/>`}
@@ -496,20 +497,22 @@ function viewFront(){
   const A=arm([[322,560],[312,520]],1.15,'elegant',-1), B=arm([[200,532],[210,566]],1.12,'hang',1);
   return guides(0,true)+floorShadow()+collarFront()+
    `<path d="M236,322 L284,322 C292,480 308,700 330,900 L190,900 C212,700 228,480 236,322 Z" fill="url(#gInner)" stroke="${C.ink}" stroke-width="3"/>`+
-   legs(false)+legs(true)+vertebrae([260,246],[260,304],5)+doublet()+A.sleeve+B.sleeve+
+   legs(false)+legs(true)+vertebrae([260,278],[260,306],2)+doublet()+A.sleeve+B.sleeve+
    `${cel(PANEL_L,{base:'url(#gLining)',shade:'#22104a',w:5,sx:-10,sy:-6})}
     ${cel(PANEL_L_OUT,{base:'url(#gCloak)',shade:'#060920',w:4.5,sx:-18,sy:-4})}
     <path d="M160,420 Q140,620 120,860 M200,430 Q190,640 168,870" fill="none" stroke="${C.ink}" stroke-width="2.5" opacity=".45"/>
     <path d="M172,312 L136,268 L198,302 Z" fill="#1d2466" stroke="${C.ink}" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M226,334 C214,480 198,700 176,888" fill="none" stroke="#f2c14e" stroke-width="3"/><path d="M172,312 C140,420 96,650 62,888" fill="none" stroke="#f2c14e" stroke-width="2" opacity=".7" transform="translate(5,0)"/>
     <g transform="translate(520,0) scale(-1,1)">
      ${cel(PANEL_L,{base:'url(#gLining)',shade:'#22104a',w:5,sx:-10,sy:-6})}
      ${cel(PANEL_L_OUT,{base:'url(#gCloak)',shade:'#060920',w:4.5,sx:-18,sy:-4})}
      <path d="M160,420 Q140,620 120,860 M200,430 Q190,640 168,870" fill="none" stroke="${C.ink}" stroke-width="2.5" opacity=".45"/>
      <path d="M172,312 L136,268 L198,302 Z" fill="#1d2466" stroke="${C.ink}" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M226,334 C214,480 198,700 176,888" fill="none" stroke="#f2c14e" stroke-width="3"/><path d="M172,312 C140,420 96,650 62,888" fill="none" stroke="#f2c14e" stroke-width="2" opacity=".7" transform="translate(5,0)"/>
     </g>
     <path d="M232,336 Q260,352 288,336" fill="none" stroke="${C.silver}" stroke-width="3" stroke-dasharray="4 3"/>
     <path d="M260,334 L270,346 L260,360 L250,346 Z" fill="${C.ice}" stroke="${C.ink}" stroke-width="2.5" filter="url(#glow)"/>
-    <g transform="translate(260,190) scale(.52)">${exprHead('calm')}</g>`+A.end+B.end;
+    <g transform="translate(260,207) scale(.6)">${exprHead('calm')}</g>`+A.end+B.end;
 }
 function viewSide(){
   const A=arm([[288,334],[268,452],[280,478]],1.12,'hang',1);
@@ -523,16 +526,16 @@ function viewSide(){
     <rect x="262" y="512" width="44" height="13" rx="2" fill="#0d0b26" stroke="${C.ink}" stroke-width="3"/>
     ${[0,1,2,3].map(i=>`<ellipse cx="${310+i*2}" cy="${306+i*14}" rx="9" ry="7" fill="${C.frost}" stroke="${C.ink}" stroke-width="2.2"/>`).join('')}
     ${bone([276,596],[290,722],13)}<ellipse cx="294" cy="733" rx="6" ry="8.5" fill="${C.skin}" stroke="${C.ink}" stroke-width="3"/>${double([290,744],[278,846],13)}${footSide(278,850)}
-    ${vertebrae([286,302],[308,244],5)}
+    ${vertebrae([286,304],[294,282],2)}
     <path d="M262,322 C232,282 216,220 222,140 L238,178 L244,124 L258,182 L272,146 L276,212 C280,256 288,292 300,320 Z" fill="url(#gLining)" stroke="${C.ink}" stroke-width="5" stroke-linejoin="round"/>
     <path d="M286,300 L262,262 L300,296 Z" fill="#1d2466" stroke="${C.ink}" stroke-width="4" stroke-linejoin="round"/>
     ${A.sleeve}
-    <g transform="translate(316,196) scale(.52)">${headSide()}</g>${A.end}`;
+    <g transform="translate(306,212) scale(.6)">${headSide()}</g>${A.end}`;
 }
 function viewBack(){
   const cloak=`M166,294 L172,312 C140,420 96,650 62,888${jag(62,458,888,15,18)} C424,650 380,420 348,312 L354,294 L290,302 L230,302 Z`;
   return guides(0,false)+floorShadow()+
-   `<g transform="translate(260,190) scale(.52)">${headBack()}</g>
+   `<g transform="translate(260,207) scale(.6)">${headBack()}</g>
     ${cel(cloak,{base:'url(#gCloak)',shade:'#060920',w:5,sx:-20,sy:-4})}
     <path d="M214,340 Q180,600 150,880 M240,350 Q234,620 226,884 M280,350 Q286,620 294,884 M306,340 Q340,600 370,880" fill="none" stroke="${C.ink}" stroke-width="2.6" opacity=".4"/>
     <g transform="translate(260,540)" fill="none" stroke="${C.ice}" stroke-width="3" stroke-linejoin="round" opacity=".85">
@@ -542,7 +545,7 @@ function viewBack(){
     </g>
     <path d="M172,312 L136,268 L198,302 Z M348,312 L384,268 L322,302 Z" fill="#1d2466" stroke="${C.ink}" stroke-width="4" stroke-linejoin="round"/>
     ${cel(fan(260,318,152,110,200,340,7),{base:'#1a1f5c',shade:'#0a0d30',w:5,sx:-6,sy:-10})}
-    <path d="${fan(260,318,152,110,200,340,7)}" fill="none" stroke="${C.ice}" stroke-width="1.6" opacity=".6" transform="translate(260,318) scale(.93) translate(-260,-318)"/>
+    <path d="${fan(260,318,152,110,200,340,7)}" fill="none" stroke="#f2c14e" stroke-width="2.5" transform="translate(260,318) scale(.93) translate(-260,-318)"/>
     <path d="M186,896 L198,880 L206,898 Z M334,896 L322,880 L314,898 Z" fill="${C.skin}" stroke="${C.ink}" stroke-width="2.5"/>`;
 }
 
@@ -559,12 +562,12 @@ function keyArt(){
   const P0={amp:.9,speed:3,wind:.55,osc:0},t=2.3;
   const A=arm([[324,556],[346,500]],1.4,'elegant',-1),B=arm([[200,532],[206,568]],1.2,'hang',1);
   const fig=collarFront()+`<path d="M236,322 L284,322 C292,480 308,700 330,900 L190,900 C212,700 228,480 236,322 Z" fill="url(#gInner)" stroke="${C.ink}" stroke-width="3"/>`+
-    legs(false)+legs(true)+vertebrae([260,246],[260,304],5)+doublet()+A.sleeve+B.sleeve+
+    legs(false)+legs(true)+vertebrae([260,278],[260,306],2)+doublet()+A.sleeve+B.sleeve+
     [-1,1].map(sg=>cel(panelPath(sg,t,P0,.55,1.15),{base:'url(#gLining)',shade:'#22104a',w:4.5,sx:-8*sg,sy:-5})+cel(panelPath(sg,t,P0,0,1),{base:'url(#gCloak)',shade:'#060920',w:5,sx:-16*sg,sy:-4})).join('')+
     `<path d="M172,312 L136,268 L198,302 Z M348,312 L384,268 L322,302 Z" fill="#1d2466" stroke="${C.ink}" stroke-width="4" stroke-linejoin="round"/>
      <path d="M232,336 Q260,352 288,336" fill="none" stroke="${C.silver}" stroke-width="3" stroke-dasharray="4 3"/>
      <path d="M260,334 L270,346 L260,360 L250,346 Z" fill="${C.ice}" stroke="${C.ink}" stroke-width="2.5" filter="url(#glow)"/>
-     <g transform="translate(262,192) rotate(-9) scale(.56)">${headFront(EYES.smirk.L,EYES.smirk.R,MOUTHS.joy.m)}</g>`+A.end+B.end;
+     <g transform="translate(262,210) rotate(-9) scale(.64)">${headFront(EYES.smirk.L,EYES.smirk.R,MOUTHS.joy.m)}</g>`+A.end+B.end;
   return `<rect width="600" height="760" fill="url(#gSky)"/>
    <g fill="#ff4fa3" opacity=".12"><polygon points="0,90 600,10 600,40 0,140"/><polygon points="0,250 600,150 600,170 0,280"/><polygon points="0,420 600,330 600,340 0,440"/></g>
    <g fill="none" stroke="${C.rim}" filter="url(#glowP)" opacity=".75">
@@ -584,12 +587,12 @@ function keyArt(){
 
 /* ---------- close-up ---------- */
 function closeup(){
-  const L=[[-96,-244,'Верхний отросток','-292'],[-200,-200,'Главный рог: дерево с резьбой','-228'],[-214,-108,'Бусина на шнуре','-130'],[-58,-100,'Резной круг-символ','-62'],[-46,-24,'Светящийся глаз ≈ ⅓ лица','10'],[-50,62,'Светящаяся улыбка','90']];
-  const R=[[90,-220,'Правый отросток','-262'],[28,-160,'Обломок короны','-200'],[0,-88,'Резная стрелка над переносицей','-130'],[190,-60,'Вторая бусина','-60'],[66,24,'Гладкая чёрная маска','24']];
+  const L=[[-122,-240,'Верхний отросток','-292'],[-200,-120,'Левый рог: доска с резьбой','-215'],[-258,-44,'Бусины на шнуре','-130'],[-58,-100,'Резной круг-символ','-62'],[-46,-24,'Светящийся глаз ≈ ⅓ лица','10'],[-50,62,'Светящаяся улыбка','90']];
+  const R=[[120,-220,'Правый отросток','-262'],[28,-160,'Обломок короны','-200'],[0,-88,'Резная стрелка над переносицей','-130'],[250,-40,'Третья бусина','-60'],[66,24,'Гладкая тёмно-синяя маска','24']];
   const txt=(x,y,t,a)=>`<text x="${x}" y="${y}" text-anchor="${a}" fill="#dfe0f7" font-family="Manrope, sans-serif" font-size="17" font-weight="600">${t}</text>`;
   let s=INK(exprHead('calm'));
   L.forEach(([x,y,t,ty])=>{s+=`<path d="M${x},${y} L-300,${ty} L-312,${ty}" fill="none" stroke="${C.ice}" stroke-width="1.4"/><circle cx="${x}" cy="${y}" r="4" fill="${C.ice}"/>${txt(-318,+ty+6,t,'end')}`});
-  R.forEach(([x,y,t,ty])=>{s+=`<path d="M${x},${y} L232,${ty} L244,${ty}" fill="none" stroke="${C.ice}" stroke-width="1.4"/><circle cx="${x}" cy="${y}" r="4" fill="${C.ice}"/>${txt(250,+ty+6,t,'start')}`});
+  R.forEach(([x,y,t,ty])=>{s+=`<path d="M${x},${y} L290,${ty} L302,${ty}" fill="none" stroke="${C.ice}" stroke-width="1.4"/><circle cx="${x}" cy="${y}" r="4" fill="${C.ice}"/>${txt(308,+ty+6,t,'start')}`});
   return s;
 }
 
@@ -600,7 +603,7 @@ $('vFront').innerHTML=INK(viewFront());
 $('vSide').innerHTML=INK(viewSide());
 $('vBack').innerHTML=INK(viewBack());
 $('closeup').innerHTML=closeup();
-$('exprGrid').innerHTML=EXPR.map(([k,n])=>`<figure class="stage"><svg viewBox="-280 -322 420 474" role="img" aria-label="${n}">${INK(exprHead(k))}</svg><figcaption><b>${n}</b><span>глаза: ${EYES[k].n.toLowerCase()} · рот: ${MOUTHS[k].n.toLowerCase()}</span></figcaption></figure>`).join('');
+$('exprGrid').innerHTML=EXPR.map(([k,n])=>`<figure class="stage"><svg viewBox="-285 -300 560 460" role="img" aria-label="${n}">${INK(exprHead(k))}</svg><figcaption><b>${n}</b><span>глаза: ${EYES[k].n.toLowerCase()} · рот: ${MOUTHS[k].n.toLowerCase()}</span></figcaption></figure>`).join('');
 const HP=[['open','Открытая ладонь'],['elegant','Изящный жест'],['point','Указание'],['claw','Хватка-клетка']];
 $('handsGrid').innerHTML=HP.map(([k,n])=>`<figure class="stage"><svg viewBox="-80 -104 160 146" role="img" aria-label="${n}">${double([0,38],[0,14],11)}${hand(k,0,10,0,1)}</svg><figcaption><b>${n}</b></figcaption></figure>`).join('')+
  `<figure class="stage" style="grid-column:1/-1"><svg viewBox="-260 -112 520 156" role="img" aria-label="Строение кисти">
@@ -683,8 +686,8 @@ function panelPath(sg,t,p,lag,gain){
   for(let i=1;i<=16;i++){const b=cub(CI,i/16);pts.push(disp(X(b[0]),b[1],kOf(b[1])*.9))}
   return 'M'+pts.map(P).join(' L')+' Z';
 }
-const cloakStatic=floorShadow()+collarFront()+legs(false)+legs(true)+vertebrae([260,246],[260,304],5)+doublet();
-const cloakHead=`<g transform="translate(260,190) scale(.52)">${exprHead('cold')}</g>`;
+const cloakStatic=floorShadow()+collarFront()+legs(false)+legs(true)+vertebrae([260,278],[260,306],2)+doublet();
+const cloakHead=`<g transform="translate(260,207) scale(.6)">${exprHead('cold')}</g>`;
 function drawCloak(){
   const t=cl.t,p=cl.p;
   $('cloakSvg').innerHTML=cloakStatic+[-1,1].map(sg=>cel(panelPath(sg,t,p,.55,1.12),{base:'url(#gLining)',shade:'#22104a',w:4,sx:-8*sg,sy:-5})+cel(panelPath(sg,t,p,0,1),{base:'url(#gCloak)',shade:'#060920',w:4.5,sx:-16*sg,sy:-4})).join('')+
